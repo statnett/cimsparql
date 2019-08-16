@@ -1,0 +1,35 @@
+image:
+  name: "artifactory.statnett.no/datascience-docker-local/python-ci-cd-statnett-3.6:latest"
+
+stages:
+  - tests
+  - deploy
+
+run_tests:
+  stage: tests
+  tags:
+    - dind
+  script:
+    - tox
+  artifacts:
+    paths:
+      - coverage.xml
+    expire_in: 1 day
+
+sonar_update:
+  stage: deploy
+  tags:
+    - dind
+  when:
+    always
+  script:
+    - sonar-scanner
+
+publish_toolbox_to_artifactory:
+  stage: deploy
+  tags:
+    - dind
+  only:
+    - tags
+  script:
+    - publish-to-artifactory $CI_PROJECT_NAME

@@ -1,0 +1,188 @@
+import networkx as nx
+import pandas as pd
+
+from typing import Tuple, Dict, List
+
+
+def region_query(region: str, container: str) -> List:
+    return [
+        f"?{container} cim:{container}.Region ?subgeographicalregion",
+        "?subgeographicalregion cim:SubGeographicalRegion.Region ?region",
+        "?region cim:IdentifiedObject.name ?regionname ",
+        f"\tFILTER regex(str(?regionname), '{region}')",
+    ]
+
+
+def where_query(x: List) -> str:
+    return "\nWHERE {\n\t" + " .\n\t".join(x) + "\n}"
+
+
+def connectivity_mrid(
+    var: str = "connectivity_mrid", sparql: bool = True, sequence_numbers: List[int] = [1, 2]
+) -> [str, List]:
+    if sparql:
+        return " ".join([f"?{var}_{i}" for i in sequence_numbers])
+    else:
+        return [f"{var}_{i}" for i in sequence_numbers]
+
+
+def terminal_query(var: str = "connectivity_mrid") -> List:
+    return [
+        "?terminal_mrid rdf:type cim:Terminal",
+        "?terminal_mrid cim:Terminal.ConductingEquipment ?mrid",
+        f"?terminal_mrid cim:Terminal.ConnectivityNode ?{var}",
+    ]
+
+
+def terminal_sequence_query(
+    sequence_numbers: List[int] = [1, 2], var: str = "connectivity_mrid"
+) -> List:
+    query_list = []
+    for i in sequence_numbers:
+        mrid = f"?mrid_{i} "
+        query_list += [
+            mrid + "rdf:type cim:Terminal",
+            mrid + f"cim:Terminal.ConnectivityNode ?{var}_{i}",
+            mrid + f"cim:Terminal.ConductingEquipment ?mrid",
+            mrid + f"cim:Terminal.sequenceNumber {i}",
+        ]
+    return query_list
+
+
+def load_query(conform: bool = True, region: str = "NO") -> str:
+    container = "Substation"
+    connectivity_mrid = "connectivity_mrid"
+    select_query = f"SELECT ?mrid ?{connectivity_mrid}"
+
+    if conform:
+        cim_type = "ConformLoad"
+    else:
+        cim_type = "NonConformLoad"
+
+    where_list = [
+        f"?mrid rdf:type cim:{cim_type}",
+        "?mrid cim:Equipment.EquipmentContainer ?container",
+        f"?container cim:VoltageLevel.Substation ?{container}",
+    ]
+    return select_query + where_query(
+        where_list + terminal_query(connectivity_mrid) + region_query(region, container)
+    )
+
+
+def synchronous_machines_query(region: str = "NO") -> str:
+    container = "Substation"
+    connectivity_mrid = "connectivity_mrid"
+
+    select_query = f"SELECT ?mrid ?sn ?{connectivity_mrid}"
+    where_list = [
+        "?mrid rdf:type cim:SynchronousMachine",
+        "?mrid cim:RotatingMachine.ratedS ?sn",
+        "?mrid cim:SynchronousMachine.type ?machine",
+        "?machine rdfs:label 'generator'",
+        "?mrid cim:Equipment.EquipmentContainer ?container",
+        f"?container cim:VoltageLevel.Substation ?{container}",
+    ]
+    return select_query + where_query(
+        where_list + terminal_query(connectivity_mrid) + region_query(region, container)
+    )
+
+
+def transformer_query(region: str = "NO") -> str:
+    container = "Substation"
+    select_query = "SELECT ?mrid ?c ?x ?endNumber ?Sn ?Un ?connectivity_mrid"
+    where_list = [
+        "?mrid rdf:type cim:PowerTransformer",
+        "?c cim:PowerTransformerEnd.PowerTransformer ?mrid",
+        "?c cim:PowerTransformerEnd.x ?x",
+        "?c cim:PowerTransformerEnd.ratedU ?Un",
+        "?c cim:TransformerEnd.endNumber ?endNumber",
+        "?c cim:TransformerEnd.Terminal ?t_mrid",
+        "?t_mrid cim:Terminal.ConnectivityNode ?connectivity_mrid",
+        f"?mrid cim:Equipment.EquipmentContainer ?{container}",
+    ]
+    return select_query + where_query(where_list + region_query(region, container))
+
+
+def ac_line_query(region: str = "NO") -> str:
+    container = "Line"
+    connectivity = "connectivity_mrid"
+    select_query = f"SELECT {connectivity_mrid(connectivity)} ?x ?un"
+    where_list = [
+        "?mrid rdf:type cim:ACLineSegment",
+        "?mrid cim:ACLineSegment.x ?x",
+        "?mrid cim:ConductingEquipment.BaseVoltage ?obase",
+        "?obase cim:BaseVoltage.nominalVoltage ?un",
+        f"?mrid cim:Equipment.EquipmentContainer ?{container}",
+    ]
+    return select_query + where_query(
+        where_list + terminal_sequence_query(var=connectivity) + region_query(region, container)
+    )
+
+
+def connection_query(rdf_type: str) -> str:
+    connectivity = "connectivity_mrid"
+    select_query = f"SELECT ?mrid {connectivity_mrid(connectivity)}"
+    where_list = [f"?mrid rdf:type {rdf_type}"]
+    return select_query + where_query(where_list + terminal_sequence_query(var=connectivity))
+
+
+def windings_to_tr(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    cols = ["x", "Un", "connectivity_mrid"]
+    wd = [
+        windings[windings["endNumber"] == i][["mrid"] + cols]
+        .rename(columns={f"{var}": f"{var}_{i}" for var in cols})
+        .set_index(["mrid"])
+        for i in range(1, 4)
+    ]
+
+    tr = pd.concat(wd, axis=1, sort=False)
+
+    connectivity_mrids = connectivity_mrid(sparql=False)
+
+    two_tr = tr[tr["x_3"].isna()][["x_1", "Un_1"] + connectivity_mrids]
+    two_tr.reset_index(inplace=True)
+    two_tr.set_index(connectivity_mrids, inplace=True)
+
+    three_tr = tr[tr["x_3"].notna()]
+    return two_tr.rename(columns={"index": "mrid", "Un_1": "Un", "x_1": "x"}), three_tr
+
+
+def reference_nodes(connections: pd.DataFrame) -> Dict:
+    g = nx.Graph()
+    g.add_edges_from(connections.to_numpy())
+    node_dict = dict()
+    for group in list(nx.connected_components(g)):
+        ref = group.pop()
+        node_dict[ref] = ref
+        for node in group:
+            node_dict[node] = ref
+    return node_dict
+
+
+def members(nodes: pd.DataFrame, branch: pd.DataFrame, columns: List) -> pd.DataFrame:
+    return branch.loc[:, columns].isin(nodes.index).to_numpy().transpose()
+
+
+def connect_nodes(nodes: pd.DataFrame, branch: pd.DataFrame, columns: List) -> pd.DataFrame:
+    for indx, column in zip(members(nodes, branch, columns), columns):
+        branch.loc[indx, column] = nodes.loc[branch.loc[indx, column].values].values
+
+
+def branches(
+    connectors: pd.DataFrame, lines: pd.DataFrame, windings: pd.DataFrame, columns: List
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+
+    node_dict = reference_nodes(connectors)
+    node = pd.DataFrame.from_dict(node_dict, orient="index")
+
+    two_tr, three_tr = windings_to_tr(windings)
+
+    for winding in [two_tr, three_tr]:
+        winding.reset_index(inplace=True)
+
+    for br in [lines, two_tr]:
+        connect_nodes(node, br, columns[:2])
+
+    connect_nodes(node, three_tr, columns)
+
+    return lines, two_tr, three_tr

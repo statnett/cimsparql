@@ -1,0 +1,57 @@
+# Example configuration for Black.
+
+# NOTE: you have to use single-quoted strings in TOML for regular expressions.
+# It's the equivalent of r-strings in Python.  Multiline strings are treated as
+# verbose regular expressions by Black.  Use [ ] to denote a significant space
+# character.
+[tool.poetry]
+name = "cimsparql"
+version = "1.0.0"
+description = "CIM query utilities"
+authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
+repository = "https://gitlab.statnett.no/general/cimsparql.git"
+
+[[tool.poetry.source]]
+name = "artifactory"
+url = "https://artifactory.statnett.no/artifactory/api/pypi/pypi_statnett_ia_virtual/simple/"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+scipy = "*"
+numpy = "*"
+pandas = "*"
+tables = "*"
+networkx = "*"
+SPARQLWrapper = "*"
+
+[tool.poetry.dev-dependencies]
+autopep8 = "*"
+black = { version = "*", allows-prereleases = true }
+flake8 = "*"
+ipython = "*"
+jedi = "*"
+pytest = "*"
+pytest-cov = "*"
+rope = "*"
+yapf = "*"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
+[tool.black]
+line-length = 100
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | profiling
+)/
+'''
