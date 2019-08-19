@@ -1,4 +1,4 @@
-from cimsparql.url import prefix
+from cimsparql.url import Prefix
 
 
 def test_prefix_input_none(cim15):
@@ -7,7 +7,7 @@ def test_prefix_input_none(cim15):
 
 def test_prefix_input():
     prefix_dict = {"cim": 15}
-    cim15 = prefix(15, prefix_dict)
+    cim15 = Prefix(15, prefix_dict)
     assert cim15.prefix_dict is prefix_dict
 
 

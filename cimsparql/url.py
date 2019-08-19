@@ -4,7 +4,7 @@ def service(
     return f"https://{server}/repositories/{repo}"
 
 
-class prefix:
+class Prefix:
     def __init__(self, cim_version, prefix_dict=None):
 
         if prefix_dict is None:

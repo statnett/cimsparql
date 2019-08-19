@@ -11,19 +11,19 @@ class GraphDBClient(object):
         """
         self.sparql = SPARQLWrapper(service)
 
-    def get_table(self, query: str, infer: bool = False, sameAs: bool = True) -> pd.DataFrame:
+    def get_table(self, query: str, infer: bool = False, sameas: bool = True) -> pd.DataFrame:
         """
         Gets given table from the configured database.
 
         :param query: to sparql server
         :param infer: include inferred data
-        :param sameAs: expand results over owl:sameAs
+        :param sameas: expand results over owl:sameas
         :return: table as DataFrame
         """
         self.sparql.setQuery(query)
         self.sparql.setReturnFormat(JSON)
         self.sparql.addParameter("infer", str(infer))
-        self.sparql.addParameter("sameAs", str(sameAs))
+        self.sparql.addParameter("sameAs", str(sameas))
 
         processed_results = self.sparql.queryAndConvert()
 
