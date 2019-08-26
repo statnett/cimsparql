@@ -38,29 +38,29 @@ def test_conform_load(cim15, gdb_cli):
     query = f"{cim15}\n\n{load_query()} limit {n_samples}"
     load = gdb_cli.get_table(query).set_index("mrid")
     assert len(load) == n_samples
-    assert set(load.columns).issubset(["connectivity_mrid"])
+    assert set(load.columns).issubset(["connectivity_mrid", "terminal_mrid"])
 
 
 def test_non_conform_load(cim15, gdb_cli):
     query = f"{cim15}\n\n{load_query(conform=False)} limit {n_samples}"
     load = gdb_cli.get_table(query).set_index("mrid")
     assert len(load) == n_samples
-    assert set(load.columns).issubset(["connectivity_mrid"])
+    assert set(load.columns).issubset(["connectivity_mrid", "terminal_mrid"])
 
 
 def test_synchronous_machines(cim15, gdb_cli):
     query = f"{cim15}\n\n{synchronous_machines_query()} limit {n_samples}"
     synchronous_machines = gdb_cli.get_table(query).set_index("mrid")
     assert len(synchronous_machines) == n_samples
-    assert set(synchronous_machines.columns).issuperset(["sn", "connectivity_mrid"])
+    assert set(synchronous_machines.columns).issubset(["sn", "connectivity_mrid", "terminal_mrid"])
 
 
 def test_branch(cim15, gdb_cli):
     query = f"{cim15}\n{ac_line_query()} limit {n_samples}"
-    lines = gdb_cli.get_table(query).set_index(connectivity_mrid(sparql=False)).astype(float)
-
+    indx_columns = connectivity_mrid(sparql=False) + connectivity_mrid(var="mrid", sparql=False)
+    lines = gdb_cli.get_table(query).set_index(indx_columns).astype(float)
     assert len(lines) == n_samples
-    assert set(lines.columns).issuperset(["x", "un"])
+    assert set(lines.columns).issubset(["x", "un"])
 
 
 def test_transformers(cim15, gdb_cli):
@@ -71,11 +71,11 @@ def test_transformers(cim15, gdb_cli):
 
     two_tr, three_tr = windings_to_tr(windings)
     assert len(two_tr) > 10
-    assert set(two_tr.columns).issuperset(["mrid", "x", "Un"])
+    assert set(two_tr.columns).issubset(["mrid", "x", "Un"])
 
     assert len(three_tr) > 2
     cols = [[f"x_{i}", f"Un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
-    assert set(three_tr.columns).issuperset(itertools.chain.from_iterable(cols))
+    assert set(three_tr.columns).issubset(itertools.chain.from_iterable(cols))
 
 
 def test_reference_nodes():
@@ -90,8 +90,9 @@ def test_breaker_length(breakers):
 
 
 def test_breaker_reference_nodes(breakers):
-    node_dict = reference_nodes(breakers)
-    assert len(node_dict) == len(np.unique(breakers.to_numpy()))
+    connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
+    node_dict = reference_nodes(breakers[connect_columns])
+    assert len(node_dict) == len(np.unique(breakers[connect_columns].to_numpy()))
     assert len(set(node_dict.keys())) == len(node_dict)
     assert len(set(node_dict.values())) < len(node_dict)
 
@@ -101,8 +102,9 @@ def test_connectors_length(disconnectors):
 
 
 def test_connectors_reference_nodes(disconnectors):
-    node_dict = reference_nodes(disconnectors)
-    assert len(node_dict) == len(np.unique(disconnectors.to_numpy()))
+    connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
+    node_dict = reference_nodes(disconnectors[connect_columns])
+    assert len(node_dict) == len(np.unique(disconnectors[connect_columns].to_numpy()))
     assert len(set(node_dict.keys())) == len(node_dict)
     assert len(set(node_dict.values())) < len(node_dict)
 

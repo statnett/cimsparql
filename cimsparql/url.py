@@ -16,6 +16,10 @@ class Prefix:
                 "alg": f"www.alstom.com/grid/CIM-schema-cim{cim_version}-extension",
                 "cim": f"iec.ch/TC57/{cim_year[cim_version]}/CIM-schema-cim{cim_version}",
                 "SN": f"www.statnett.no/CIM-schema-cim{cim_version}-extension",
+                "pti": f"http://www.pti-us.com/PTI_CIM-schema-cim{cim_version}#",
+                "md": "http://iec.ch/TC57/61970-552/ModelDescription/1#",
+                "entsoe": "http://entsoe.eu/CIM/SchemaExtension/3/1#",
+                "entsoe2": "http://entsoe.eu/CIM/SchemaExtension/3/2#",
             }
         else:
             self.prefix_dict = prefix_dict

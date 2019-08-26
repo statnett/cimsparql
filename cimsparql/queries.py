@@ -52,7 +52,7 @@ def terminal_sequence_query(
 def load_query(conform: bool = True, region: str = "NO") -> str:
     container = "Substation"
     connectivity_mrid = "connectivity_mrid"
-    select_query = f"SELECT ?mrid ?{connectivity_mrid}"
+    select_query = f"SELECT ?mrid ?{connectivity_mrid} ?terminal_mrid"
 
     if conform:
         cim_type = "ConformLoad"
@@ -73,7 +73,7 @@ def synchronous_machines_query(region: str = "NO") -> str:
     container = "Substation"
     connectivity_mrid = "connectivity_mrid"
 
-    select_query = f"SELECT ?mrid ?sn ?{connectivity_mrid}"
+    select_query = f"SELECT ?mrid ?sn ?{connectivity_mrid} ?terminal_mrid"
     where_list = [
         "?mrid rdf:type cim:SynchronousMachine",
         "?mrid cim:RotatingMachine.ratedS ?sn",
@@ -89,7 +89,7 @@ def synchronous_machines_query(region: str = "NO") -> str:
 
 def transformer_query(region: str = "NO") -> str:
     container = "Substation"
-    select_query = "SELECT ?mrid ?c ?x ?endNumber ?Sn ?Un ?connectivity_mrid"
+    select_query = "SELECT ?mrid ?c ?x ?endNumber ?Sn ?Un ?connectivity_mrid ?terminal_mrid"
     where_list = [
         "?mrid rdf:type cim:PowerTransformer",
         "?c cim:PowerTransformerEnd.PowerTransformer ?mrid",
@@ -106,7 +106,7 @@ def transformer_query(region: str = "NO") -> str:
 def ac_line_query(region: str = "NO") -> str:
     container = "Line"
     connectivity = "connectivity_mrid"
-    select_query = f"SELECT {connectivity_mrid(connectivity)} ?x ?un"
+    select_query = f"SELECT {connectivity_mrid(connectivity)} ?x ?un ?mrid_1 ?mrid_2"
     where_list = [
         "?mrid rdf:type cim:ACLineSegment",
         "?mrid cim:ACLineSegment.x ?x",
@@ -121,7 +121,7 @@ def ac_line_query(region: str = "NO") -> str:
 
 def connection_query(rdf_type: str) -> str:
     connectivity = "connectivity_mrid"
-    select_query = f"SELECT ?mrid {connectivity_mrid(connectivity)}"
+    select_query = f"SELECT ?mrid {connectivity_mrid(connectivity)} ?mrid_1 ?mrid_2"
     where_list = [f"?mrid rdf:type {rdf_type}"]
     return select_query + where_query(where_list + terminal_sequence_query(var=connectivity))
 
