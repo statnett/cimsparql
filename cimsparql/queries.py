@@ -4,6 +4,10 @@ import pandas as pd
 from typing import Tuple, Dict, List
 
 
+def where_query(x: List) -> str:
+    return "\nWHERE {\n\t" + " .\n\t".join(x) + "\n}"
+
+
 def region_query(region: str, container: str) -> List:
     return [
         f"?{container} cim:{container}.Region ?subgeographicalregion",
@@ -11,10 +15,6 @@ def region_query(region: str, container: str) -> List:
         "?region cim:IdentifiedObject.name ?regionname ",
         f"\tFILTER regex(str(?regionname), '{region}')",
     ]
-
-
-def where_query(x: List) -> str:
-    return "\nWHERE {\n\t" + " .\n\t".join(x) + "\n}"
 
 
 def connectivity_mrid(
@@ -59,14 +59,16 @@ def load_query(conform: bool = True, region: str = "NO") -> str:
     else:
         cim_type = "NonConformLoad"
 
-    where_list = [
-        f"?mrid rdf:type cim:{cim_type}",
-        "?mrid cim:Equipment.EquipmentContainer ?container",
-        f"?container cim:VoltageLevel.Substation ?{container}",
-    ]
-    return select_query + where_query(
-        where_list + terminal_query(connectivity_mrid) + region_query(region, container)
+    where_list = (
+        [
+            f"?mrid rdf:type cim:{cim_type}",
+            "?mrid cim:Equipment.EquipmentContainer ?container",
+            f"?container cim:VoltageLevel.Substation ?{container}",
+        ]
+        + terminal_query(connectivity_mrid)
+        + region_query(region, container)
     )
+    return select_query + where_query(where_list)
 
 
 def synchronous_machines_query(region: str = "NO") -> str:
@@ -74,17 +76,19 @@ def synchronous_machines_query(region: str = "NO") -> str:
     connectivity_mrid = "connectivity_mrid"
 
     select_query = f"SELECT ?mrid ?sn ?{connectivity_mrid} ?terminal_mrid"
-    where_list = [
-        "?mrid rdf:type cim:SynchronousMachine",
-        "?mrid cim:RotatingMachine.ratedS ?sn",
-        "?mrid cim:SynchronousMachine.type ?machine",
-        "?machine rdfs:label 'generator'",
-        "?mrid cim:Equipment.EquipmentContainer ?container",
-        f"?container cim:VoltageLevel.Substation ?{container}",
-    ]
-    return select_query + where_query(
-        where_list + terminal_query(connectivity_mrid) + region_query(region, container)
+    where_list = (
+        [
+            "?mrid rdf:type cim:SynchronousMachine",
+            "?mrid cim:RotatingMachine.ratedS ?sn",
+            "?mrid cim:SynchronousMachine.type ?machine",
+            "?machine rdfs:label 'generator'",
+            "?mrid cim:Equipment.EquipmentContainer ?container",
+            f"?container cim:VoltageLevel.Substation ?{container}",
+        ]
+        + terminal_query(connectivity_mrid)
+        + region_query(region, container)
     )
+    return select_query + where_query(where_list)
 
 
 def transformer_query(region: str = "NO") -> str:
@@ -99,31 +103,42 @@ def transformer_query(region: str = "NO") -> str:
         "?c cim:TransformerEnd.Terminal ?t_mrid",
         "?t_mrid cim:Terminal.ConnectivityNode ?connectivity_mrid",
         f"?mrid cim:Equipment.EquipmentContainer ?{container}",
-    ]
-    return select_query + where_query(where_list + region_query(region, container))
+    ] + region_query(region, container)
+    return select_query + where_query(where_list)
 
 
 def ac_line_query(region: str = "NO") -> str:
     container = "Line"
     connectivity = "connectivity_mrid"
     select_query = f"SELECT {connectivity_mrid(connectivity)} ?x ?un ?mrid_1 ?mrid_2"
-    where_list = [
-        "?mrid rdf:type cim:ACLineSegment",
-        "?mrid cim:ACLineSegment.x ?x",
-        "?mrid cim:ConductingEquipment.BaseVoltage ?obase",
-        "?obase cim:BaseVoltage.nominalVoltage ?un",
-        f"?mrid cim:Equipment.EquipmentContainer ?{container}",
-    ]
-    return select_query + where_query(
-        where_list + terminal_sequence_query(var=connectivity) + region_query(region, container)
+    where_list = (
+        [
+            "?mrid rdf:type cim:ACLineSegment",
+            "?mrid cim:ACLineSegment.x ?x",
+            "?mrid cim:ConductingEquipment.BaseVoltage ?obase",
+            "?obase cim:BaseVoltage.nominalVoltage ?un",
+            f"?mrid cim:Equipment.EquipmentContainer ?{container}",
+        ]
+        + region_query(region, container)
+        + terminal_sequence_query(var=connectivity)
     )
+    return select_query + where_query(where_list)
 
 
-def connection_query(rdf_type: str) -> str:
+def connection_query(rdf_type: str, region: str = "NO") -> str:
     connectivity = "connectivity_mrid"
     select_query = f"SELECT ?mrid {connectivity_mrid(connectivity)} ?mrid_1 ?mrid_2"
-    where_list = [f"?mrid rdf:type {rdf_type}"]
-    return select_query + where_query(where_list + terminal_sequence_query(var=connectivity))
+    where_list = (
+        [
+            f"?mrid rdf:type {rdf_type}",
+            "?mrid cim:Equipment.EquipmentContainer ?EquipmentContainer",
+            "?EquipmentContainer cim:Bay.VoltageLevel ?VoltageLevel",
+            "?VoltageLevel cim:VoltageLevel.Substation ?Substation",
+        ]
+        + region_query(region, "Substation")
+        + terminal_sequence_query(var=connectivity)
+    )
+    return select_query + where_query(where_list)
 
 
 def windings_to_tr(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -165,14 +180,14 @@ def members(nodes: pd.DataFrame, branch: pd.DataFrame, columns: List) -> pd.Data
 
 def connect_nodes(nodes: pd.DataFrame, branch: pd.DataFrame, columns: List) -> pd.DataFrame:
     for indx, column in zip(members(nodes, branch, columns), columns):
-        branch.loc[indx, column] = nodes.loc[branch.loc[indx, column].values].values
+        branch.loc[indx, column] = nodes.loc[branch.loc[indx, column].values].values.squeeze()
 
 
 def branches(
     connectors: pd.DataFrame, lines: pd.DataFrame, windings: pd.DataFrame, columns: List
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
-    node_dict = reference_nodes(connectors)
+    node_dict = reference_nodes(connectors.iloc[:, :2])
     node = pd.DataFrame.from_dict(node_dict, orient="index")
 
     two_tr, three_tr = windings_to_tr(windings)

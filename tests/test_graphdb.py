@@ -120,13 +120,11 @@ def test_connect_system(cim15, gdb_cli):
     # Lines
     columns = connectivity_mrid(sparql=False, sequence_numbers=[1, 2, 3])
     query = f"{cim15}\n{ac_line_query()}"
-    lines = gdb_cli.get_table(query).set_index(columns[:2]).astype(float)
-    lines.reset_index(inplace=True)
+    lines = gdb_cli.get_table(query)
 
     query = f"{cim15}\n{transformer_query()}"
     windings = gdb_cli.get_table(query)
     windings["endNumber"] = windings["endNumber"].astype(int)
-    windings[["x", "Un"]] = windings[["x", "Un"]].astype(float)
 
     connectors = pd.concat([breakers, disconnector_status]).set_index("mrid")
     lines, two_tr, three_tr = branches(connectors, lines, windings, columns)

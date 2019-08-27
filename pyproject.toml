@@ -17,7 +17,6 @@ url = "https://artifactory.statnett.no/artifactory/api/pypi/pypi_statnett_ia_vir
 
 [tool.poetry.dependencies]
 python = "^3.6"
-bsddb3 = "*"
 scipy = "*"
 numpy = "*"
 pandas = "*"
