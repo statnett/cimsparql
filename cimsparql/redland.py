@@ -1,7 +1,9 @@
 import RDF
 
 import pandas as pd
+
 from pathlib import PosixPath
+from typing import Dict
 
 name = {".n3": "ntriples", ".xml": "rdfxml"}
 
@@ -36,3 +38,11 @@ class Model:
             result.set_index(index, inplace=True)
 
         return result
+
+
+def get_table_and_convert(model: Model, query: str, columns: Dict = None) -> pd.DataFrame:
+    result = model.get_table(query)
+    if len(result) > 0 and columns:
+        for column, column_type in columns.items():
+            result[column] = result[column].apply(str).astype(column_type)
+    return result

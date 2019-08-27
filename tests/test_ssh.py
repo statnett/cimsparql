@@ -9,17 +9,8 @@ from conftest import need_cim_ssh
 
 
 @pytest.fixture(scope="module")
-def sshmodel(root_dir, identifier):
-    return redland.Model(root_dir / "data" / f"{identifier}.xml", base_uri="http://example.org")
-
-
-@need_cim_ssh
-def skip_test_model_ssh_components(sshmodel, cim16):
-    query = str(cim16) + "\n\nselect distinct ?o \n where { ?s rdf:type ?o . }"
-
-    # print(sshmodel.get_table(query))
-    for r in sshmodel.get_table(query)["o"]:
-        print(r)
+def sshmodel(root_dir, ssh_profile):
+    return redland.Model(root_dir / "data" / f"{ssh_profile}.xml", base_uri="http://example.org")
 
 
 @need_cim_ssh

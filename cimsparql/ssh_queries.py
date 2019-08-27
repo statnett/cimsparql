@@ -1,15 +1,7 @@
 import pandas as pd
 
-from cimsparql.redland import Model
-from typing import Dict
-
-
-def get_table_and_convert(model: Model, query: str, columns: Dict = None) -> pd.DataFrame:
-    result = model.get_table(query)
-    if len(result) > 0 and columns:
-        for column, column_type in columns.items():
-            result[column] = result[column].apply(str).astype(column_type)
-    return result
+from cimsparql.redland import Model, get_table_and_convert
+from typing import List
 
 
 def ssh_disconnected(model: Model, cimversion: str) -> pd.DataFrame:
@@ -34,7 +26,7 @@ def ssh_synchronous_machines(model: Model, cimversion: str) -> pd.DataFrame:
     WHERE {
     ?mrid rdf:type cim:SynchronousMachine .
     ?mrid cim:RotatingMachine.p ?p .
-    ?mrid cim:RotatingMachine.p ?q .
+    ?mrid cim:RotatingMachine.q ?q .
     ?mrid cim:RegulatingCondEq.controlEnabled ?controlEnabled
     }
     """
@@ -78,9 +70,35 @@ def ssh_combined_load(model: Model, cimversion: str) -> pd.DataFrame:
     return get_table_and_convert(model, cimversion + query, columns)
 
 
+def _generating_unit(rdf_type: str) -> str:
+    return " .\n".join(
+        [f"?mrid rdf:type {rdf_type}", "?mrid cim:GeneratingUnit.normalPF ?normalPF"]
+    )
+
+
+def ssh_generating_unit(model: Model, cimversion: str, rdf_type: str) -> pd.DataFrame:
+    query = "SELECT ?mrid ?normalPF \n WHERE {\n"
+    query += _generating_unit(rdf_type)
+    query += "\n}"
+    columns = {"normalPF": float}
+    return get_table_and_convert(model, cimversion + query, columns).set_index("mrid")
+
+
+def ssh_generating_unit_union(model: Model, cimversion: str, rdf_types: List[str]) -> pd.DataFrame:
+    query = "SELECT ?mrid ?normalPF \n WHERE {{\n"
+    query += "\n} UNION {\n".join([_generating_unit(rdf_type) for rdf_type in rdf_types])
+    query += "}}\n"
+    columns = {"normalPF": float}
+    return get_table_and_convert(model, cimversion + query, columns).set_index("mrid")
+
+
 def ssh_hydro_generating_unit(model: Model, cimversion: str) -> pd.DataFrame:
-    pass
+    return ssh_generating_unit(model, cimversion, "cim:HydroGeneratingUnit")
 
 
 def ssh_thermal_generating_unit(model: Model, cimversion: str) -> pd.DataFrame:
-    pass
+    return ssh_generating_unit(model, cimversion, "cim:ThermalGeneratingUnit")
+
+
+def ssh_wind_generating_unit(model: Model, cimversion: str) -> pd.DataFrame:
+    return ssh_generating_unit(model, cimversion, "cim:WindGeneratingUnit")
