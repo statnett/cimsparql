@@ -1,3 +1,6 @@
+from typing import Dict
+
+
 def service(
     server: str = "graphdb.statnett.no", repo: str = "SNMST-Master1Repo-VERSION-LATEST"
 ) -> str:
@@ -5,7 +8,9 @@ def service(
 
 
 class Prefix:
-    def __init__(self, cim_version, prefix_dict=None):
+    def __init__(self, cim_version: int, prefix_dict: Dict = None):
+
+        self._cim_version = cim_version
 
         if prefix_dict is None:
 
@@ -24,7 +29,7 @@ class Prefix:
         else:
             self.prefix_dict = prefix_dict
 
-    def __str__(self):
+    def header_str(self) -> str:
         return "\n".join(
             [f"PREFIX {name}:<http://{url}#>" for name, url in self.prefix_dict.items()]
         )

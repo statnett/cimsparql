@@ -1,17 +1,24 @@
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 
+from cimsparql.model import CimModel
+
 pd.set_option("display.max_columns", None)
 
 
-class GraphDBClient(object):
-    def __init__(self, service: str):
+class GraphDBClient(CimModel):
+    def __init__(self, cim_version: int, service: str, infer: bool = False, sameas: bool = True):
         """
         :param service:
         """
-        self.sparql = SPARQLWrapper(service)
+        super().__init__(cim_version)
 
-    def get_table(self, query: str, infer: bool = False, sameas: bool = True) -> pd.DataFrame:
+        self.sparql = SPARQLWrapper(service)
+        self.sparql.setReturnFormat(JSON)
+        self.sparql.addParameter("infer", str(infer))
+        self.sparql.addParameter("sameAs", str(sameas))
+
+    def get_table(self, query: str, index: str = None, limit: int = None) -> pd.DataFrame:
         """
         Gets given table from the configured database.
 
@@ -20,10 +27,7 @@ class GraphDBClient(object):
         :param sameas: expand results over owl:sameas
         :return: table as DataFrame
         """
-        self.sparql.setQuery(query)
-        self.sparql.setReturnFormat(JSON)
-        self.sparql.addParameter("infer", str(infer))
-        self.sparql.addParameter("sameAs", str(sameas))
+        self.sparql.setQuery(self._query_str(query, limit))
 
         processed_results = self.sparql.queryAndConvert()
 
@@ -36,4 +40,9 @@ class GraphDBClient(object):
                 item.append(row.get(c, {}).get("value"))
             out.append(item)
 
-        return pd.DataFrame(out, columns=cols)
+        result = pd.DataFrame(out, columns=cols)
+
+        if len(result) > 0 and index:
+            result.set_index(index, inplace=True)
+
+        return result

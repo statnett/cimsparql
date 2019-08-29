@@ -1,73 +1,56 @@
 import itertools
 import pytest
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 
 
-from cimsparql.queries import (
-    ac_line_query,
-    branches,
-    connection_query,
-    connectivity_mrid,
-    load_query,
-    reference_nodes,
-    synchronous_machines_query,
-    transformer_query,
-    windings_to_tr,
-)
+from cimsparql.queries import reference_nodes, windings_to_tr
 
 
 n_samples = 40
 
 
 @pytest.fixture(scope="module")
-def breakers(cim15, gdb_cli):
-    query = f"{cim15}\n\n{connection_query('cim:Breaker')} limit {n_samples}"
-    return gdb_cli.get_table(query).set_index("mrid")
+def breakers(gdb_cli):
+    return gdb_cli.connections(rdf_type="cim:Breaker", limit=n_samples)
 
 
 @pytest.fixture(scope="module")
-def disconnectors(cim15, gdb_cli):
-    query = f"{cim15}\n\n{connection_query('cim:Disconnector')} limit {n_samples}"
-    return gdb_cli.get_table(query).set_index("mrid")
+def disconnectors(gdb_cli):
+    return gdb_cli.connections(rdf_type="cim:Disconnector", limit=n_samples)
 
 
-def test_conform_load(cim15, gdb_cli):
-    query = f"{cim15}\n\n{load_query()} limit {n_samples}"
-    load = gdb_cli.get_table(query).set_index("mrid")
+def test_cimversion(gdb_cli):
+    assert gdb_cli._cim_version == 15
+
+
+def test_conform_load(gdb_cli):
+    load = gdb_cli.loads(limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(["connectivity_mrid", "terminal_mrid"])
 
 
-def test_non_conform_load(cim15, gdb_cli):
-    query = f"{cim15}\n\n{load_query(conform=False)} limit {n_samples}"
-    load = gdb_cli.get_table(query).set_index("mrid")
+def test_non_conform_load(gdb_cli):
+    load = gdb_cli.loads(conform=False, limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(["connectivity_mrid", "terminal_mrid"])
 
 
-def test_synchronous_machines(cim15, gdb_cli):
-    query = f"{cim15}\n\n{synchronous_machines_query()} limit {n_samples}"
-    synchronous_machines = gdb_cli.get_table(query).set_index("mrid")
+def test_synchronous_machines(gdb_cli):
+    synchronous_machines = gdb_cli.synchronous_machines(limit=n_samples)
     assert len(synchronous_machines) == n_samples
     assert set(synchronous_machines.columns).issubset(["sn", "connectivity_mrid", "terminal_mrid"])
 
 
-def test_branch(cim15, gdb_cli):
-    query = f"{cim15}\n{ac_line_query()} limit {n_samples}"
-    indx_columns = connectivity_mrid(sparql=False) + connectivity_mrid(var="mrid", sparql=False)
-    lines = gdb_cli.get_table(query).set_index(indx_columns).astype(float)
-    assert len(lines) == n_samples
-    assert set(lines.columns).issubset(["x", "un"])
+def test_branch(gdb_cli):
+    lines = gdb_cli.ac_lines(limit=n_samples)
+    assert lines.shape == (n_samples, 6)
+    assert all(lines[["x", "un"]].dtypes == np.float)
 
 
-def test_transformers(cim15, gdb_cli):
-    query = f"{cim15}\n{transformer_query()} limit {n_samples}"
-    windings = gdb_cli.get_table(query)
-    windings["endNumber"] = windings["endNumber"].astype(int)
-    windings[["x", "Un"]] = windings[["x", "Un"]].astype(float)
+def test_transformers(gdb_cli):
+    windings = gdb_cli.transformers(limit=n_samples)
 
     two_tr, three_tr = windings_to_tr(windings)
     assert len(two_tr) > 10
@@ -107,38 +90,3 @@ def test_connectors_reference_nodes(disconnectors):
     assert len(node_dict) == len(np.unique(disconnectors[connect_columns].to_numpy()))
     assert len(set(node_dict.keys())) == len(node_dict)
     assert len(set(node_dict.values())) < len(node_dict)
-
-
-@pytest.mark.integration
-def test_connect_system(cim15, gdb_cli):
-    query = f"{cim15}\n\n{connection_query('cim:Disconnector')}"
-    disconnector_status = gdb_cli.get_table(query)
-
-    query = f"{cim15}\n\n{connection_query('cim:Breaker')}"
-    breakers = gdb_cli.get_table(query)
-
-    # Lines
-    columns = connectivity_mrid(sparql=False, sequence_numbers=[1, 2, 3])
-    query = f"{cim15}\n{ac_line_query()}"
-    lines = gdb_cli.get_table(query)
-
-    query = f"{cim15}\n{transformer_query()}"
-    windings = gdb_cli.get_table(query)
-    windings["endNumber"] = windings["endNumber"].astype(int)
-
-    connectors = pd.concat([breakers, disconnector_status]).set_index("mrid")
-    lines, two_tr, three_tr = branches(connectors, lines, windings, columns)
-
-    g = nx.Graph()
-    for connections in [lines, two_tr]:
-        g.add_edges_from(connections.loc[:, columns[:2]].to_numpy())
-
-    for col in columns:
-        g.add_edges_from(three_tr.loc[:, ["index", col]].to_numpy())
-
-    for i, group in enumerate(nx.connected_components(g)):
-        if i == 0:
-            assert len(group) > 4100
-        else:
-            assert len(group) < 8
-    assert i < 65

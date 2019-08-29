@@ -2,6 +2,7 @@ import pytest
 import pathlib
 
 from cimsparql.graphdb import GraphDBClient
+from cimsparql.redland import Model
 from cimsparql.url import service, Prefix
 
 this_dir = pathlib.Path(__file__).parent
@@ -27,6 +28,11 @@ need_cim_tp = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="session")
+def ieee118():
+    return Model(16, pathlib.Path(this_dir / "data" / f"IEEE118.xml"), base_uri="ieee118_case")
+
+
+@pytest.fixture(scope="session")
 def sv_profile():
     return sv
 
@@ -42,11 +48,6 @@ def tp_profile():
 
 
 @pytest.fixture(scope="session")
-def identifier():
-    return ssh
-
-
-@pytest.fixture(scope="session")
 def root_dir():
     return this_dir
 
@@ -57,10 +58,5 @@ def cim15():
 
 
 @pytest.fixture(scope="session")
-def cim16():
-    return Prefix(16)
-
-
-@pytest.fixture(scope="session")
 def gdb_cli():
-    return GraphDBClient(service())
+    return GraphDBClient(15, service())

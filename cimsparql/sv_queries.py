@@ -1,10 +1,5 @@
-import pandas as pd
-
-from cimsparql.redland import Model, get_table_and_convert
-
-
-def sv_powerflow(model: Model, cimversion: str) -> pd.DataFrame:
-    query = """
+def powerflow() -> str:
+    return """
     SELECT ?mrid ?p ?q
     WHERE {
     ?p_mrid rdf:type cim:SvPowerFlow .
@@ -13,12 +8,10 @@ def sv_powerflow(model: Model, cimversion: str) -> pd.DataFrame:
     ?p_mrid cim:SvPowerFlow.q ?q .
     }
     """
-    columns = {"p": float, "q": float}
-    return get_table_and_convert(model, cimversion + query, columns).set_index("mrid")
 
 
-def sv_voltage(model: Model, cimversion: str) -> pd.DataFrame:
-    query = """
+def voltage() -> str:
+    return """
     SELECT ?mrid ?v ?angle
     WHERE {
     ?s_mrid rdf:type cim:SvVoltage .
@@ -27,12 +20,10 @@ def sv_voltage(model: Model, cimversion: str) -> pd.DataFrame:
     ?s_mrid cim:SvVoltage.angle ?angle
     }
     """
-    columns = {"v": float, "angle": float}
-    return get_table_and_convert(model, cimversion + query, columns).set_index("mrid")
 
 
-def sv_tapstep(model: Model, cimversion: str) -> pd.DataFrame:
-    query = """
+def tapstep() -> str:
+    return """
     SELECT ?mrid ?position
     WHERE {
     ?t_mrid rdf:type cim:SvTapStep .
@@ -40,5 +31,3 @@ def sv_tapstep(model: Model, cimversion: str) -> pd.DataFrame:
     ?t_mrid cim:SvTapStep.position ?position .
     }
     """
-    columns = {"position": int}
-    return get_table_and_convert(model, cimversion + query, columns).set_index("mrid")

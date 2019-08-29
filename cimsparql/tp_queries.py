@@ -1,23 +1,20 @@
-import pandas as pd
-
-from cimsparql.redland import Model, get_table_and_convert
-
-
-def tp_terminal(model: Model, cimversion: str) -> pd.DataFrame:
-    query = """
+def terminal() -> str:
+    return """
     SELECT ?mrid ?connected ?tp_node
-    WHERE {
+    WHERE {{
     ?mrid rdf:type cim:Terminal .
     ?mrid cim:Terminal.TopologicalNode ?tp_node .
     ?mrid cim:Terminal.connected ?connected
-    }
+    } UNION {
+    ?mrid rdf:type cim:Terminal .
+    ?mrid cim:Terminal.TopologicalNode ?tp_node .
+    ?mrid cim:ACDCTerminal.connected ?connected
+    }}
     """
-    columns = {"connected": bool}
-    return get_table_and_convert(model, cimversion + query, columns).set_index("mrid")
 
 
-def tp_topological_node(model: Model, cimversion: str) -> pd.DataFrame:
-    query = """
+def topological_node() -> str:
+    return """
     SELECT ?mrid ?name ?ConnectivityNodeContainer ?BaseVoltage
     WHERE {
     ?mrid rdf:type cim:TopologicalNode .
@@ -26,4 +23,3 @@ def tp_topological_node(model: Model, cimversion: str) -> pd.DataFrame:
     ?mrid cim:TopologicalNode.BaseVoltage ?BaseVoltage
     }
     """
-    return get_table_and_convert(model, cimversion + query).set_index("mrid")
