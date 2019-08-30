@@ -93,12 +93,12 @@ def synchronous_machines_query(region: str = "NO") -> str:
 
 def transformer_query(region: str = "NO") -> str:
     container = "Substation"
-    select_query = "SELECT ?mrid ?c ?x ?endNumber ?Sn ?Un ?connectivity_mrid ?terminal_mrid"
+    select_query = "SELECT ?mrid ?c ?x ?endNumber ?sn ?un ?connectivity_mrid ?terminal_mrid"
     where_list = [
         "?mrid rdf:type cim:PowerTransformer",
         "?c cim:PowerTransformerEnd.PowerTransformer ?mrid",
         "?c cim:PowerTransformerEnd.x ?x",
-        "?c cim:PowerTransformerEnd.ratedU ?Un",
+        "?c cim:PowerTransformerEnd.ratedU ?un",
         "?c cim:TransformerEnd.endNumber ?endNumber",
         "?c cim:TransformerEnd.Terminal ?t_mrid",
         "?t_mrid cim:Terminal.ConnectivityNode ?connectivity_mrid",
@@ -142,7 +142,7 @@ def connection_query(rdf_type: str, region: str = "NO") -> str:
 
 
 def windings_to_tr(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    cols = ["x", "Un", "connectivity_mrid"]
+    cols = ["x", "un", "connectivity_mrid"]
     wd = [
         windings[windings["endNumber"] == i][["mrid"] + cols]
         .rename(columns={f"{var}": f"{var}_{i}" for var in cols})
@@ -154,12 +154,12 @@ def windings_to_tr(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     connectivity_mrids = connectivity_mrid(sparql=False)
 
-    two_tr = tr[tr["x_3"].isna()][["x_1", "Un_1"] + connectivity_mrids]
+    two_tr = tr[tr["x_3"].isna()][["x_1", "un_1"] + connectivity_mrids]
     two_tr.reset_index(inplace=True)
     two_tr.set_index(connectivity_mrids, inplace=True)
 
     three_tr = tr[tr["x_3"].notna()]
-    return two_tr.rename(columns={"index": "mrid", "Un_1": "Un", "x_1": "x"}), three_tr
+    return two_tr.rename(columns={"index": "mrid", "un_1": "un", "x_1": "x"}), three_tr
 
 
 def reference_nodes(connections: pd.DataFrame) -> Dict:

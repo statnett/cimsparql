@@ -32,7 +32,7 @@ class CimModel(Prefix):
 
     def transformers(self, region: str = "NO", limit: int = None) -> pd.DataFrame:
         query = queries.transformer_query(region)
-        columns = {"endNumber": int, "x": float, "Un": float}
+        columns = {"endNumber": int, "x": float, "un": float}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
     def ssh_disconnected(self, limit: int = None) -> pd.DataFrame:

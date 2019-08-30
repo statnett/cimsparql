@@ -54,10 +54,10 @@ def test_transformers(gdb_cli):
 
     two_tr, three_tr = windings_to_tr(windings)
     assert len(two_tr) > 10
-    assert set(two_tr.columns).issubset(["mrid", "x", "Un"])
+    assert set(two_tr.columns).issubset(["mrid", "x", "un"])
 
+    cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert len(three_tr) > 2
-    cols = [[f"x_{i}", f"Un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert set(three_tr.columns).issubset(itertools.chain.from_iterable(cols))
 
 
