@@ -2,9 +2,11 @@ from typing import Dict
 
 
 def service(
-    server: str = "graphdb.statnett.no", repo: str = "SNMST-Master1Repo-VERSION-LATEST"
+    server: str = "graphdb.statnett.no",
+    repo: str = "SNMST-Master1Repo-VERSION-LATEST",
+    protocol: str = "https",
 ) -> str:
-    return f"https://{server}/repositories/{repo}"
+    return f"{protocol}://{server}/repositories/{repo}"
 
 
 class Prefix:
