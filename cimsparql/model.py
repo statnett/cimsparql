@@ -22,12 +22,12 @@ class CimModel(Prefix):
         return self.get_table(query, index="mrid", limit=limit)
 
     def connections(self, rdf_type: str, region: str = "NO", limit: int = None):
-        query = queries.connection_query(rdf_type, region)
+        query = queries.connection_query(self._cim_version, rdf_type, region)
         return self.get_table(query, index="mrid", limit=limit)
 
     def ac_lines(self, region: str = "NO", limit: int = None) -> pd.DataFrame:
-        query = queries.ac_line_query(region)
-        columns = {"x": float, "un": float}
+        query = queries.ac_line_query(cim_version=self._cim_version, region=region)
+        columns = {var: float for var in ["x", "r", "un", "bch", "length"]}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
     def transformers(self, region: str = "NO", limit: int = None) -> pd.DataFrame:
@@ -59,7 +59,7 @@ class CimModel(Prefix):
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def terminal(self, limit: int = None) -> pd.DataFrame:
-        query = tp_queries.terminal()
+        query = tp_queries.terminal(self._cim_version)
         columns = {"connected": bool}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 

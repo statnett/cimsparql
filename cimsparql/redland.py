@@ -27,11 +27,17 @@ class Model(CimModel):
             parser = RDF.Parser(name=name[fname.suffix])
             parser.parse_into_model(self._model, fname.as_uri(), base_uri)
 
-    def _option_string(self, new: bool, hash_type: str, fname: PosixPath):
+    def _option_string(
+        self, new: bool, hash_type: str, fname: PosixPath, with_context: bool = False
+    ):
         if new:
             option_string = "new='yes',"
         else:
             option_string = ""
+
+        if with_context:
+            option_string += "context='yes'"
+
         return option_string + f"hash-type='{hash_type}',dir='{fname.parent}'"
 
     def get_table(self, query: str, index: str = None, limit: int = None) -> pd.DataFrame:

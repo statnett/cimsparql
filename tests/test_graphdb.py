@@ -45,7 +45,7 @@ def test_synchronous_machines(gdb_cli):
 
 def test_branch(gdb_cli):
     lines = gdb_cli.ac_lines(limit=n_samples)
-    assert lines.shape == (n_samples, 6)
+    assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
