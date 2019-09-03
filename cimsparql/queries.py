@@ -29,19 +29,24 @@ def connectivity_mrid(
         return [f"{var}_{i}" for i in sequence_numbers]
 
 
-def terminal_query(var: str = "connectivity_mrid") -> List:
-    return [
-        "?terminal_mrid rdf:type cim:Terminal",
-        "?terminal_mrid cim:Terminal.ConductingEquipment ?mrid",
-        f"?terminal_mrid cim:Terminal.ConnectivityNode ?{var}",
-    ]
-
-
 def acdc_terminal(cim_version: int) -> str:
     if cim_version > 15:
         return "ACDCTerminal"
     else:
         return "Terminal"
+
+
+def terminal_where_query(
+    cim_version: int = None, var: str = "connectivity_mrid", with_sequence_number: bool = False
+) -> List:
+    out = [
+        "?terminal_mrid rdf:type cim:Terminal",
+        "?terminal_mrid cim:Terminal.ConductingEquipment ?mrid",
+        f"?terminal_mrid cim:Terminal.ConnectivityNode ?{var}",
+    ]
+    if with_sequence_number:
+        out += [f"?terminal_mrid cim:{acdc_terminal(cim_version)}.sequenceNumber ?sequenceNumber"]
+    return out
 
 
 def terminal_sequence_query(
@@ -51,8 +56,8 @@ def terminal_sequence_query(
     for i in sequence_numbers:
         mrid = f"?mrid_{i} "
         query_list += [
-            mrid + f"cim:Terminal.ConductingEquipment ?mrid",
             mrid + "rdf:type cim:Terminal",
+            mrid + f"cim:Terminal.ConductingEquipment ?mrid",
             mrid + f"cim:Terminal.ConnectivityNode ?{var}_{i}",
             mrid + f"cim:{acdc_terminal(cim_version)}.sequenceNumber {i}",
         ]
@@ -75,7 +80,7 @@ def load_query(conform: bool = True, region: str = "NO") -> str:
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
         ]
-        + terminal_query(connectivity_mrid)
+        + terminal_where_query(connectivity_mrid)
         + region_query(region, container)
     )
     return select_query + where_query(where_list)
@@ -95,7 +100,7 @@ def synchronous_machines_query(region: str = "NO") -> str:
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
         ]
-        + terminal_query(connectivity_mrid)
+        + terminal_where_query(connectivity_mrid)
         + region_query(region, container)
     )
     return select_query + where_query(where_list)
@@ -123,7 +128,9 @@ def ac_line_query(cim_version: int, region: str = "NO") -> str:
     select_query = (
         f"SELECT {connectivity_mrid(connectivity)} ?x ?r ?bch ?length ?un ?mrid_1 ?mrid_2"
     )
-    where_list = [
+
+    where_list = []
+    ac_list = [
         "?mrid rdf:type cim:ACLineSegment",
         "?mrid cim:ACLineSegment.x ?x",
         "?mrid cim:ACLineSegment.r ?r",
@@ -134,10 +141,11 @@ def ac_line_query(cim_version: int, region: str = "NO") -> str:
     ]
 
     if region is not None:
-        where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
+        ac_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
 
-    where_list += region_query(region, container)
     where_list += terminal_sequence_query(cim_version=cim_version, var=connectivity)
+    where_list += ac_list
+    where_list += region_query(region, container)
 
     return select_query + where_query(where_list)
 

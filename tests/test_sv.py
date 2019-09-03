@@ -7,7 +7,7 @@ from conftest import need_cim_sv
 
 @pytest.fixture(scope="module")
 def svmodel(root_dir, sv_profile):
-    return redland.Model(15, root_dir / "data" / f"{sv_profile}.xml", base_uri="http://example.org")
+    return redland.Model(root_dir / "data" / f"{sv_profile}.xml", base_uri="http://example.org")
 
 
 @need_cim_sv

@@ -1,4 +1,24 @@
+import requests
+
 from typing import Dict
+
+
+prefixes = [
+    "rdf",
+    "alg",
+    "ALG",
+    "owl",
+    "cim",
+    "SN",
+    "pti",
+    "md",
+    "entsoe",
+    "entsoe2",
+    "wgs",
+    "gn",
+    "xsd",
+    "rdfs",
+]
 
 
 def service(
@@ -9,38 +29,30 @@ def service(
     return f"{protocol}://{server}/repositories/{repo}"
 
 
-class Prefix:
-    def __init__(self, cim_version: int, prefix_dict: Dict = None):
-
-        self._cim_version = cim_version
-
-        if prefix_dict is None:
-
-            cim_year = {15: 2010, 16: 2013}
-
-            self.prefix_dict = {
-                "rdf": "www.w3.org/1999/02/22-rdf-syntax-ns",
-                "alg": f"www.alstom.com/grid/CIM-schema-cim{cim_version}-extension",
-                "cim": f"iec.ch/TC57/{cim_year[cim_version]}/CIM-schema-cim{cim_version}",
-                "SN": f"www.statnett.no/CIM-schema-cim{cim_version}-extension",
-                "pti": f"http://www.pti-us.com/PTI_CIM-schema-cim{cim_version}#",
-                "md": "http://iec.ch/TC57/61970-552/ModelDescription/1#",
-                "entsoe": "http://entsoe.eu/CIM/SchemaExtension/3/1#",
-                "entsoe2": "http://entsoe.eu/CIM/SchemaExtension/3/2#",
-            }
-        else:
-            self.prefix_dict = prefix_dict
+class Prefix(object):
+    def set_cim_version(self):
+        self._cim_version = int(self.prefix_dict["cim"].split("CIM-schema-cim")[1])
 
     def header_str(self) -> str:
-        return "\n".join(
-            [f"PREFIX {name}:<http://{url}#>" for name, url in self.prefix_dict.items()]
-        )
+        try:
+            return "\n".join([f"PREFIX {name}:<{url}#>" for name, url in self.prefix_dict.items()])
+        except AttributeError:
+            return ""
 
-    def ns(self):
-        return {name: f"http://{url}#" for name, url in self.prefix_dict.items()}
+    def get_prefix_dict(self, service: str):
+        self.prefix_dict = {}
+        response = requests.get(service + f"/namespaces")
+        if response.ok:
+            for line in response.text.split():
+                prefix, uri = line.split(",")
+                if prefix != "prefix":
+                    self.prefix_dict[prefix] = uri.rstrip("#")
+
+    def ns(self) -> Dict:
+        return {name: f"{url}#" for name, url in self.prefix_dict.items()}
 
     def items(self):
         return self.prefix_dict.items()
 
-    def inverse(self):
-        return {f"http://{url}#": name for name, url in self.prefix_dict.items()}
+    def inverse(self) -> Dict:
+        return {f"{url}#": name for name, url in self.prefix_dict.items()}

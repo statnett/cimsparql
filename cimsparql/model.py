@@ -26,7 +26,7 @@ class CimModel(Prefix):
         return self.get_table(query, index="mrid", limit=limit)
 
     def ac_lines(self, region: str = "NO", limit: int = None) -> pd.DataFrame:
-        query = queries.ac_line_query(cim_version=self._cim_version, region=region)
+        query = queries.ac_line_query(self._cim_version, region)
         columns = {var: float for var in ["x", "r", "un", "bch", "length"]}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 

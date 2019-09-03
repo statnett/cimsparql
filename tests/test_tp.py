@@ -7,7 +7,7 @@ from conftest import need_cim_tp
 
 @pytest.fixture(scope="module")
 def tpmodel(root_dir, tp_profile):
-    return redland.Model(15, root_dir / "data" / f"{tp_profile}.xml", base_uri="http://example.org")
+    return redland.Model(root_dir / "data" / f"{tp_profile}.xml", base_uri="http://example.org")
 
 
 @need_cim_tp

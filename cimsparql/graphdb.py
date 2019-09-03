@@ -1,4 +1,5 @@
 import pandas as pd
+
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 from cimsparql import url
@@ -8,16 +9,17 @@ pd.set_option("display.max_columns", None)
 
 
 class GraphDBClient(CimModel):
-    def __init__(
-        self, cim_version: int, service: str = None, infer: bool = False, sameas: bool = True
-    ):
+    def __init__(self, service: str = None, infer: bool = False, sameas: bool = True):
         """
         :param service:
         """
-        super().__init__(cim_version)
+        super().__init__()
 
         if service is None:
             service = url.service()
+
+        self.get_prefix_dict(service)
+        self.set_cim_version()
 
         self.sparql = SPARQLWrapper(service)
         self.sparql.setReturnFormat(JSON)
