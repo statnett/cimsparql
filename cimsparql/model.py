@@ -13,6 +13,10 @@ class CimModel(Prefix):
             q += f" limit {limit}"
         return q
 
+    def bus_data(self, region: str = "NO", limit: int = None) -> pd.DataFrame:
+        query = queries.bus_data(region)
+        return self.get_table(query, index="mrid", limit=limit)
+
     def loads(self, conform: bool = True, region: str = "NO", limit: int = None) -> pd.DataFrame:
         query = queries.load_query(conform, region)
         return self.get_table(query, index="mrid", limit=limit)

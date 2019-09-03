@@ -64,6 +64,21 @@ def terminal_sequence_query(
     return query_list
 
 
+def bus_data(region: str = "NO") -> str:
+    container = "Substation"
+    select_query = "SELECT ?mrid ?name"
+    where_list = ["?mrid rdf:type cim:TopologicalNode", "?mrid cim:IdentifiedObject.name ?name"]
+
+    if region is not None:
+        where_list += [
+            "?mrid cim:TopologicalNode.ConnectivityNodeContainer ?container",
+            f"?container cim:VoltageLevel.Substation ?{container}",
+        ]
+        where_list += region_query(region, container)
+
+    return select_query + where_query(where_list)
+
+
 def load_query(conform: bool = True, region: str = "NO") -> str:
     container = "Substation"
     connectivity_mrid = "connectivity_mrid"
