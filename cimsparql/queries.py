@@ -206,7 +206,7 @@ def connection_query(
     return select_query + where_query(where_list)
 
 
-def windings_to_tr(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     cols = [col for col in ["x", "un", "t_mrid", "connectivity_mrid"] if col in windings.columns]
 
     wd = [
@@ -260,7 +260,7 @@ def branches(
     node_dict = reference_nodes(connectors.iloc[:, :2])
     node = pd.DataFrame.from_dict(node_dict, orient="index")
 
-    two_tr, three_tr = windings_to_tr(windings)
+    two_tr, three_tr = windings_to_tx(windings)
 
     for winding in [two_tr, three_tr]:
         winding.reset_index(inplace=True)

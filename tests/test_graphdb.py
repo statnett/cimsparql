@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-from cimsparql.queries import reference_nodes, windings_to_tr
+from cimsparql.queries import reference_nodes, windings_to_tx
 
 
 n_samples = 40
@@ -13,12 +13,16 @@ n_samples = 40
 
 @pytest.fixture(scope="module")
 def breakers(gdb_cli):
-    return gdb_cli.connections(rdf_type="cim:Breaker", limit=n_samples)
+    return gdb_cli.connections(
+        rdf_type="cim:Breaker", limit=n_samples, connectivity="connectivity_mrid"
+    )
 
 
 @pytest.fixture(scope="module")
 def disconnectors(gdb_cli):
-    return gdb_cli.connections(rdf_type="cim:Disconnector", limit=n_samples)
+    return gdb_cli.connections(
+        rdf_type="cim:Disconnector", limit=n_samples, connectivity="connectivity_mrid"
+    )
 
 
 def test_cimversion(gdb_cli):
@@ -45,20 +49,38 @@ def test_synchronous_machines(gdb_cli):
 
 def test_branch(gdb_cli):
     lines = gdb_cli.ac_lines(limit=n_samples)
+    assert lines.shape == (n_samples, 7)
+    assert all(lines[["x", "un"]].dtypes == np.float)
+
+
+def test_branch_with_connectivity(gdb_cli):
+    lines = gdb_cli.ac_lines(limit=n_samples, connectivity="connectivity_mrid")
     assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == np.float)
+
+
+def test_transformers_with_connectivity(gdb_cli):
+    windings = gdb_cli.transformers(limit=n_samples, connectivity="connectivity_mrid")
+
+    two_tr, three_tr = windings_to_tx(windings)
+    assert len(two_tr) > 10
+    assert set(two_tr.columns).issuperset(["mrid", "x", "un"])
+
+    cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
+    assert len(three_tr) > 2
+    assert set(three_tr.columns).issuperset(itertools.chain.from_iterable(cols))
 
 
 def test_transformers(gdb_cli):
     windings = gdb_cli.transformers(limit=n_samples)
 
-    two_tr, three_tr = windings_to_tr(windings)
+    two_tr, three_tr = windings_to_tx(windings)
     assert len(two_tr) > 10
-    assert set(two_tr.columns).issubset(["mrid", "x", "un"])
+    assert set(two_tr.columns).issuperset(["mrid", "x", "un"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert len(three_tr) > 2
-    assert set(three_tr.columns).issubset(itertools.chain.from_iterable(cols))
+    assert not set(three_tr.columns).issuperset(itertools.chain.from_iterable(cols))
 
 
 def test_reference_nodes():

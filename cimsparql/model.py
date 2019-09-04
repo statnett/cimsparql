@@ -113,9 +113,9 @@ class CimModel(Prefix):
 
                 result[column] = result[column].apply(str)
 
-                if column_type is not str:
+                if not isinstance(column_type, str):
                     result[column] = result[column].apply(column_type)
 
-        if index in columns:
+        if len(result) > 0 and isinstance(columns, dict) and index in columns:
             result.set_index(index, inplace=True)
         return result
