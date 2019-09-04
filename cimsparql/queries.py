@@ -42,8 +42,10 @@ def terminal_where_query(
     out = [
         "?terminal_mrid rdf:type cim:Terminal",
         "?terminal_mrid cim:Terminal.ConductingEquipment ?mrid",
-        f"?terminal_mrid cim:Terminal.ConnectivityNode ?{var}",
     ]
+    if var is not None:
+        out += [f"?terminal_mrid cim:Terminal.ConnectivityNode ?{var}"]
+
     if with_sequence_number:
         out += [f"?terminal_mrid cim:{acdc_terminal(cim_version)}.sequenceNumber ?sequenceNumber"]
     return out
@@ -54,13 +56,15 @@ def terminal_sequence_query(
 ) -> List:
     query_list = []
     for i in sequence_numbers:
-        mrid = f"?mrid_{i} "
+        mrid = f"?t_mrid_{i} "
         query_list += [
             mrid + "rdf:type cim:Terminal",
             mrid + f"cim:Terminal.ConductingEquipment ?mrid",
-            mrid + f"cim:Terminal.ConnectivityNode ?{var}_{i}",
             mrid + f"cim:{acdc_terminal(cim_version)}.sequenceNumber {i}",
         ]
+        if var is not None:
+            query_list += [mrid + f"cim:Terminal.ConnectivityNode ?{var}_{i}"]
+
     return query_list
 
 
@@ -79,10 +83,14 @@ def bus_data(region: str = "NO") -> str:
     return select_query + where_query(where_list)
 
 
-def load_query(conform: bool = True, region: str = "NO") -> str:
+def load_query(
+    conform: bool = True, region: str = "NO", connectivity: str = "connectivity_mrid"
+) -> str:
     container = "Substation"
-    connectivity_mrid = "connectivity_mrid"
-    select_query = f"SELECT ?mrid ?{connectivity_mrid} ?terminal_mrid"
+    select_query = "SELECT ?mrid ?terminal_mrid"
+
+    if connectivity is not None:
+        select_query += f" ?{connectivity}"
 
     if conform:
         cim_type = "ConformLoad"
@@ -95,17 +103,19 @@ def load_query(conform: bool = True, region: str = "NO") -> str:
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
         ]
-        + terminal_where_query(connectivity_mrid)
+        + terminal_where_query(connectivity)
         + region_query(region, container)
     )
     return select_query + where_query(where_list)
 
 
-def synchronous_machines_query(region: str = "NO") -> str:
+def synchronous_machines_query(region: str = "NO", connectivity: str = "connectivity_mrid") -> str:
     container = "Substation"
-    connectivity_mrid = "connectivity_mrid"
 
-    select_query = f"SELECT ?mrid ?sn ?{connectivity_mrid} ?terminal_mrid"
+    select_query = "SELECT ?mrid ?terminal_mrid ?sn"
+    if connectivity is not None:
+        select_query += f" ?{connectivity}"
+
     where_list = (
         [
             "?mrid rdf:type cim:SynchronousMachine",
@@ -115,15 +125,17 @@ def synchronous_machines_query(region: str = "NO") -> str:
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
         ]
-        + terminal_where_query(connectivity_mrid)
+        + terminal_where_query(connectivity)
         + region_query(region, container)
     )
     return select_query + where_query(where_list)
 
 
-def transformer_query(region: str = "NO") -> str:
+def transformer_query(region: str = "NO", connectivity: str = "connectivity_mrid") -> str:
     container = "Substation"
-    select_query = "SELECT ?mrid ?c ?x ?endNumber ?sn ?un ?connectivity_mrid ?terminal_mrid"
+
+    select_query = "SELECT ?mrid ?c ?x ?endNumber ?sn ?un ?t_mrid"
+
     where_list = [
         "?mrid rdf:type cim:PowerTransformer",
         "?c cim:PowerTransformerEnd.PowerTransformer ?mrid",
@@ -131,18 +143,25 @@ def transformer_query(region: str = "NO") -> str:
         "?c cim:PowerTransformerEnd.ratedU ?un",
         "?c cim:TransformerEnd.endNumber ?endNumber",
         "?c cim:TransformerEnd.Terminal ?t_mrid",
-        "?t_mrid cim:Terminal.ConnectivityNode ?connectivity_mrid",
         f"?mrid cim:Equipment.EquipmentContainer ?{container}",
-    ] + region_query(region, container)
+    ]
+    if connectivity is not None:
+        select_query += f" ?{connectivity}"
+        where_list += [f"?t_mrid cim:Terminal.ConnectivityNode ?{connectivity}"]
+
+    where_list += region_query(region, container)
     return select_query + where_query(where_list)
 
 
-def ac_line_query(cim_version: int, region: str = "NO") -> str:
+def ac_line_query(
+    cim_version: int, region: str = "NO", connectivity: str = "connectivity_mrid"
+) -> str:
     container = "Line"
-    connectivity = "connectivity_mrid"
-    select_query = (
-        f"SELECT {connectivity_mrid(connectivity)} ?x ?r ?bch ?length ?un ?mrid_1 ?mrid_2"
-    )
+
+    select_query = "SELECT  ?x ?r ?bch ?length ?un ?t_mrid_1 ?t_mrid_2"
+
+    if connectivity is not None:
+        select_query += f" {connectivity_mrid(connectivity)}"
 
     where_list = []
     ac_list = [
@@ -165,9 +184,15 @@ def ac_line_query(cim_version: int, region: str = "NO") -> str:
     return select_query + where_query(where_list)
 
 
-def connection_query(cim_version: int, rdf_type: str, region: str = "NO") -> str:
-    connectivity = "connectivity_mrid"
-    select_query = f"SELECT ?mrid {connectivity_mrid(connectivity)} ?mrid_1 ?mrid_2"
+def connection_query(
+    cim_version: int, rdf_type: str, region: str = "NO", connectivity: str = "connectivity_mrid"
+) -> str:
+
+    select_query = "SELECT ?mrid  ?t_mrid_1 ?t_mrid_2"
+
+    if connectivity is not None:
+        select_query += f" {connectivity_mrid(connectivity)}"
+
     where_list = (
         [
             f"?mrid rdf:type {rdf_type}",
@@ -182,7 +207,8 @@ def connection_query(cim_version: int, rdf_type: str, region: str = "NO") -> str
 
 
 def windings_to_tr(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    cols = ["x", "un", "connectivity_mrid"]
+    cols = [col for col in ["x", "un", "t_mrid", "connectivity_mrid"] if col in windings.columns]
+
     wd = [
         windings[windings["endNumber"] == i][["mrid"] + cols]
         .rename(columns={f"{var}": f"{var}_{i}" for var in cols})
@@ -192,11 +218,15 @@ def windings_to_tr(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     tr = pd.concat(wd, axis=1, sort=False)
 
-    connectivity_mrids = connectivity_mrid(sparql=False)
+    if "connectivity_mrid" in cols:
+        connectivity_mrids = connectivity_mrid(sparql=False)
+    else:
+        connectivity_mrids = []
 
-    two_tr = tr[tr["x_3"].isna()][["x_1", "un_1"] + connectivity_mrids]
+    two_tr = tr[tr["x_3"].isna()][
+        ["x_1", "un_1"] + connectivity_mrid(var="t_mrid", sparql=False) + connectivity_mrids
+    ]
     two_tr.reset_index(inplace=True)
-    two_tr.set_index(connectivity_mrids, inplace=True)
 
     three_tr = tr[tr["x_3"].notna()]
     return two_tr.rename(columns={"index": "mrid", "un_1": "un", "x_1": "x"}), three_tr
