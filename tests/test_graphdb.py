@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-from cimsparql.queries import reference_nodes, windings_to_tx
+from cimsparql.queries import reference_nodes, windings_to_tx, three_tx_to_windings
 
 
 n_samples = 40
@@ -62,25 +62,29 @@ def test_branch_with_connectivity(gdb_cli):
 def test_transformers_with_connectivity(gdb_cli):
     windings = gdb_cli.transformers(limit=n_samples, connectivity="connectivity_mrid")
 
-    two_tr, three_tr = windings_to_tx(windings)
-    assert len(two_tr) > 10
-    assert set(two_tr.columns).issuperset(["mrid", "x", "un"])
+    two_tx, three_tx = windings_to_tx(windings)
+    assert len(two_tx) > 10
+    assert set(two_tx.columns).issuperset(["mrid", "x", "un"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
-    assert len(three_tr) > 2
-    assert set(three_tr.columns).issuperset(itertools.chain.from_iterable(cols))
+    assert len(three_tx) > 2
+    assert set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
+
+    dummy_tx = three_tx_to_windings(three_tx)
+    assert len(dummy_tx) == 3 * len(three_tx)
+    assert set(dummy_tx.columns).issuperset(["t_mrid_1", "t_mrid_2", "b"])
 
 
 def test_transformers(gdb_cli):
     windings = gdb_cli.transformers(limit=n_samples)
 
-    two_tr, three_tr = windings_to_tx(windings)
-    assert len(two_tr) > 10
-    assert set(two_tr.columns).issuperset(["mrid", "x", "un"])
+    two_tx, three_tx = windings_to_tx(windings)
+    assert len(two_tx) > 10
+    assert set(two_tx.columns).issuperset(["mrid", "x", "un"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
-    assert len(three_tr) > 2
-    assert not set(three_tr.columns).issuperset(itertools.chain.from_iterable(cols))
+    assert len(three_tx) > 2
+    assert not set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
 
 
 def test_reference_nodes():

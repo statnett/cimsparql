@@ -206,7 +206,22 @@ def connection_query(
     return select_query + where_query(where_list)
 
 
-def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def three_tx_to_windings(three_tx: pd.DataFrame) -> pd.DataFrame:
+    three_tx.reset_index(inplace=True)
+    three_tx.rename(columns={"mrid": "t_mrid_2"}, inplace=True)
+    windings = pd.concat(
+        [
+            three_tx.loc[:, [f"x_{i}", "t_mrid_1", "t_mrid_2"]]
+            .copy()
+            .rename(columns={f"x_{i}": "x"})
+            for i in [1, 2, 3]
+        ]
+    )
+    windings["b"] = 1 / windings["x"]
+    return windings.loc[:, ["t_mrid_1", "t_mrid_2", "b"]].copy()
+
+
+def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
     cols = [col for col in ["x", "un", "t_mrid", "connectivity_mrid"] if col in windings.columns]
 
     wd = [
