@@ -1,25 +1,21 @@
-def powerflow() -> str:
-    return """
-    SELECT ?mrid ?p ?q
-    WHERE {
-    ?p_mrid rdf:type cim:SvPowerFlow .
-    ?p_mrid cim:SvPowerFlow.Terminal ?mrid .
-    ?p_mrid cim:SvPowerFlow.p ?p .
-    ?p_mrid cim:SvPowerFlow.q ?q .
-    }
-    """
+from typing import List
+
+from cimsparql.queries import where_query
 
 
-def voltage() -> str:
-    return """
-    SELECT ?mrid ?v ?angle
-    WHERE {
-    ?s_mrid rdf:type cim:SvVoltage .
-    ?s_mrid cim:SvVoltage.TopologicalNode ?mrid .
-    ?s_mrid cim:SvVoltage.v ?v .
-    ?s_mrid cim:SvVoltage.angle ?angle
-    }
-    """
+def _query_str(var_list: List[str], rdf_type: str, connection: str) -> str:
+    select = "SELECT ?mrid " + " ".join([f"?{x}" for x in var_list])
+    where = [f"?s rdf:type cim:{rdf_type}", f"?s cim:{rdf_type}.{connection} ?mrid"]
+    where += [f"?s cim:{rdf_type}.{x} ?{x}" for x in var_list]
+    return select + where_query(where)
+
+
+def powerflow(power: List[str] = ["p", "q"]) -> str:
+    return _query_str(power, "SvPowerFlow", "Terminal")
+
+
+def voltage(voltage_vars: List[str] = ["v", "angle"]) -> str:
+    return _query_str(voltage_vars, "SvVoltage", "TopologicalNode")
 
 
 def tapstep() -> str:
