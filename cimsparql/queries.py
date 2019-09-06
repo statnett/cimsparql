@@ -187,7 +187,7 @@ def ac_line_query(
 ) -> str:
     container = "Line"
 
-    select_query = "SELECT  ?x ?r ?bch ?length ?un ?t_mrid_1 ?t_mrid_2"
+    select_query = "SELECT ?mrid ?x ?r ?bch ?length ?un ?t_mrid_1 ?t_mrid_2"
 
     if connectivity is not None:
         select_query += f" {connectivity_mrid(connectivity)}"
@@ -233,9 +233,8 @@ def connection_query(
     return combine_statements(select_query, group_query(where_list))
 
 
-def three_tx_to_windings(three_tx: pd.DataFrame) -> pd.DataFrame:
-    three_tx.reset_index(inplace=True)
-    three_tx.rename(columns={"mrid": "t_mrid_2"}, inplace=True)
+def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
+    three_tx.rename(columns={"index": "t_mrid_2"}, inplace=True)
     windings = pd.concat(
         [
             three_tx.loc[:, [f"x_{i}", "t_mrid_1", "t_mrid_2"]]
@@ -244,8 +243,10 @@ def three_tx_to_windings(three_tx: pd.DataFrame) -> pd.DataFrame:
             for i in [1, 2, 3]
         ]
     )
+    windings = windings.reset_index(drop=True)
     windings["b"] = 1 / windings["x"]
-    return windings.loc[:, ["t_mrid_1", "t_mrid_2", "b"]].copy()
+    windings["ckt"] = windings["t_mrid_2"]
+    return windings.loc[:, cols].copy()
 
 
 def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
@@ -271,7 +272,7 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
     two_tr.reset_index(inplace=True)
 
     three_tr = tr[tr["x_3"].notna()]
-    return two_tr.rename(columns={"index": "mrid", "un_1": "un", "x_1": "x"}), three_tr
+    return two_tr.rename(columns={"index": "ckt", "un_1": "un", "x_1": "x"}), three_tr
 
 
 def reference_nodes(connections: pd.DataFrame) -> Dict:

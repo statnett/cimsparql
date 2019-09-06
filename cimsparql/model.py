@@ -51,14 +51,14 @@ class CimModel(Prefix):
     ) -> pd.DataFrame:
         query = queries.ac_line_query(self._cim_version, region, connectivity)
         columns = {var: float for var in ["x", "r", "un", "bch", "length"]}
-        columns["t_mrid_1"] = columns["t_mrid_2"] = str
+        columns["mrid"] = columns["t_mrid_1"] = columns["t_mrid_2"] = str
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
     def transformers(
         self, region: str = "NO", limit: int = None, connectivity: str = None
     ) -> pd.DataFrame:
         query = queries.transformer_query(region, connectivity)
-        columns = {"endNumber": int, "x": float, "un": float, "t_mrid": str}
+        columns = {"endNumber": int, "x": float, "un": float, "t_mrid": str, "mrid": str}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
     def ssh_disconnected(self, limit: int = None) -> pd.DataFrame:
