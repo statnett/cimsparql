@@ -16,7 +16,7 @@ class Model(CimModel):
         fname: PosixPath,
         new: bool = False,
         hash_type: str = "bdb",
-        base_uri: str = None,
+        base_uri: str = "urn:snmst:",
         query_language: str = "sparql",
     ):
         self._query_language = query_language
