@@ -1,13 +1,13 @@
 from typing import List
 
-from cimsparql.queries import where_query
+from cimsparql.queries import group_query, combine_statements
 
 
 def _query_str(var_list: List[str], rdf_type: str, connection: str) -> str:
     select = "SELECT ?mrid " + " ".join([f"?{x}" for x in var_list])
     where = [f"?s rdf:type cim:{rdf_type}", f"?s cim:{rdf_type}.{connection} ?mrid"]
     where += [f"?s cim:{rdf_type}.{x} ?{x}" for x in var_list]
-    return select + where_query(where)
+    return combine_statements(select, group_query(where))
 
 
 def powerflow(power: List[str] = ["p", "q"]) -> str:

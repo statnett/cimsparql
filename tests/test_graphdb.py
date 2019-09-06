@@ -29,22 +29,31 @@ def test_cimversion(gdb_cli):
     assert gdb_cli._cim_version == 15
 
 
+load_columns = ["connectivity_mrid", "terminal_mrid", "p", "q"]
+
+
 def test_conform_load(gdb_cli):
-    load = gdb_cli.loads(limit=n_samples)
+    load = gdb_cli.loads(load_type=["ConformLoad"], limit=n_samples)
     assert len(load) == n_samples
-    assert set(load.columns).issubset(["connectivity_mrid", "terminal_mrid"])
+    assert set(load.columns).issubset(load_columns)
 
 
 def test_non_conform_load(gdb_cli):
-    load = gdb_cli.loads(conform=False, limit=n_samples)
+    load = gdb_cli.loads(load_type=["NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples
-    assert set(load.columns).issubset(["connectivity_mrid", "terminal_mrid"])
+    assert set(load.columns).issubset(load_columns)
+
+
+def test_conform_and_non_conform_load(gdb_cli):
+    load = gdb_cli.loads(load_type=["ConformLoad", "NonConformLoad"], limit=n_samples)
+    assert len(load) == n_samples
+    assert set(load.columns).issubset(load_columns)
 
 
 def test_synchronous_machines(gdb_cli):
     synchronous_machines = gdb_cli.synchronous_machines(limit=n_samples)
     assert len(synchronous_machines) == n_samples
-    assert set(synchronous_machines.columns).issubset(["sn", "connectivity_mrid", "terminal_mrid"])
+    assert set(synchronous_machines.columns).difference(["sn", "terminal_mrid", "p", "q"]) == set()
 
 
 def test_branch(gdb_cli):

@@ -3,9 +3,18 @@ import pandas as pd
 
 from typing import Tuple, Dict, List
 
+allowed_load_types = ["ConformLoad", "NonConformLoad", "EnergyConsumer"]
 
-def where_query(x: List) -> str:
-    return "\nWHERE {\n\t" + " .\n\t".join(x) + "\n}"
+
+def combine_statements(*args, group: bool = False, split: str = "\n"):
+    if group:
+        return "{\n" + split.join(args) + "\n}"
+    else:
+        return split.join(args)
+
+
+def group_query(x: List, command: str = "WHERE", split: str = " .\n", group: bool = True) -> str:
+    return command + " " + combine_statements(*x, group=group, split=split)
 
 
 def region_query(region: str, container: str) -> List:
@@ -80,55 +89,73 @@ def bus_data(region: str = "NO") -> str:
         ]
         where_list += region_query(region, container)
 
-    return select_query + where_query(where_list)
+    return combine_statements(select_query, group_query(where_list))
 
 
 def load_query(
-    conform: bool = True, region: str = "NO", connectivity: str = "connectivity_mrid"
+    load_type: List[str],
+    load_vars: List[str] = ["p", "q"],
+    region: str = "NO",
+    connectivity: str = "connectivity_mrid",
 ) -> str:
+
+    if not set(load_type).issubset(allowed_load_types) or len(load_type) == 0:
+        raise ValueError(f"load_type should be any combination of {allowed_load_types}")
+
     container = "Substation"
-    select_query = "SELECT ?mrid ?terminal_mrid"
+
+    select_query = "SELECT ?mrid ?terminal_mrid " + " ".join([f"?{p}" for p in load_vars])
 
     if connectivity is not None:
         select_query += f" ?{connectivity}"
 
-    if conform:
-        cim_type = "ConformLoad"
-    else:
-        cim_type = "NonConformLoad"
+    cim_types = [f"?mrid rdf:type cim:{cim_type}" for cim_type in load_type]
+    where_list = [combine_statements(*cim_types, group=len(cim_types) > 1, split="\n} UNION \n {")]
+    where_list += [
+        group_query([f"?mrid cim:EnergyConsumer.{p} ?{p}" for p in load_vars], command="OPTIONAL")
+    ]
+    where_list += terminal_where_query(connectivity)
 
-    where_list = (
-        [
-            f"?mrid rdf:type cim:{cim_type}",
+    if region is not None:
+        where_list += [
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
-        ]
-        + terminal_where_query(connectivity)
-        + region_query(region, container)
-    )
-    return select_query + where_query(where_list)
+        ] + region_query(region, container)
+
+    return combine_statements(select_query, group_query(where_list))
 
 
-def synchronous_machines_query(region: str = "NO", connectivity: str = "connectivity_mrid") -> str:
-    container = "Substation"
+def synchronous_machines_query(
+    sync_vars: List[str] = ["sn", "p", "q"],
+    region: str = "NO",
+    connectivity: str = "connectivity_mrid",
+) -> str:
 
-    select_query = "SELECT ?mrid ?terminal_mrid ?sn"
+    var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
+
+    select_query = "SELECT ?mrid ?terminal_mrid " + " ".join([f"?{var}" for var in sync_vars])
     if connectivity is not None:
         select_query += f" ?{connectivity}"
 
-    where_list = (
-        [
-            "?mrid rdf:type cim:SynchronousMachine",
-            "?mrid cim:RotatingMachine.ratedS ?sn",
-            "?mrid cim:SynchronousMachine.type ?machine",
-            "?machine rdfs:label 'generator'",
+    where_list = [
+        "?mrid rdf:type cim:SynchronousMachine",
+        "OPTIONAL { ?mrid cim:SynchronousMachine.type ?machine",
+        "?machine rdfs:label 'generator' }",
+    ]
+    where_list += [
+        group_query([f"?mrid cim:RotatingMachine.{var_dict[var]} ?{var}"], command="OPTIONAL")
+        for var in sync_vars
+    ]
+    where_list += terminal_where_query(connectivity)
+
+    if region is not None:
+        container = "Substation"
+        where_list += [
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
-        ]
-        + terminal_where_query(connectivity)
-        + region_query(region, container)
-    )
-    return select_query + where_query(where_list)
+        ] + region_query(region, container)
+
+    return combine_statements(select_query, group_query(where_list))
 
 
 def transformer_query(region: str = "NO", connectivity: str = "connectivity_mrid") -> str:
@@ -143,14 +170,16 @@ def transformer_query(region: str = "NO", connectivity: str = "connectivity_mrid
         "?c cim:PowerTransformerEnd.ratedU ?un",
         "?c cim:TransformerEnd.endNumber ?endNumber",
         "?c cim:TransformerEnd.Terminal ?t_mrid",
-        f"?mrid cim:Equipment.EquipmentContainer ?{container}",
     ]
     if connectivity is not None:
         select_query += f" ?{connectivity}"
         where_list += [f"?t_mrid cim:Terminal.ConnectivityNode ?{connectivity}"]
 
-    where_list += region_query(region, container)
-    return select_query + where_query(where_list)
+    if region is not None:
+        where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
+        where_list += region_query(region, container)
+
+    return combine_statements(select_query, group_query(where_list))
 
 
 def ac_line_query(
@@ -163,8 +192,8 @@ def ac_line_query(
     if connectivity is not None:
         select_query += f" {connectivity_mrid(connectivity)}"
 
-    where_list = []
-    ac_list = [
+    where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
+    where_list += [
         "?mrid rdf:type cim:ACLineSegment",
         "?mrid cim:ACLineSegment.x ?x",
         "?mrid cim:ACLineSegment.r ?r",
@@ -175,13 +204,10 @@ def ac_line_query(
     ]
 
     if region is not None:
-        ac_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
+        where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
+        where_list += region_query(region, container)
 
-    where_list += terminal_sequence_query(cim_version=cim_version, var=connectivity)
-    where_list += ac_list
-    where_list += region_query(region, container)
-
-    return select_query + where_query(where_list)
+    return combine_statements(select_query, group_query(where_list))
 
 
 def connection_query(
@@ -193,17 +219,18 @@ def connection_query(
     if connectivity is not None:
         select_query += f" {connectivity_mrid(connectivity)}"
 
-    where_list = (
-        [
-            f"?mrid rdf:type {rdf_type}",
+    where_list = [f"?mrid rdf:type {rdf_type}"]
+
+    if region is not None:
+        where_list += [
             "?mrid cim:Equipment.EquipmentContainer ?EquipmentContainer",
             "?EquipmentContainer cim:Bay.VoltageLevel ?VoltageLevel",
             "?VoltageLevel cim:VoltageLevel.Substation ?Substation",
-        ]
-        + region_query(region, "Substation")
-        + terminal_sequence_query(cim_version=cim_version, var=connectivity)
-    )
-    return select_query + where_query(where_list)
+        ] + region_query(region, "Substation")
+
+    where_list += terminal_sequence_query(cim_version=cim_version, var=connectivity)
+
+    return combine_statements(select_query, group_query(where_list))
 
 
 def three_tx_to_windings(three_tx: pd.DataFrame) -> pd.DataFrame:

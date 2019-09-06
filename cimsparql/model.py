@@ -18,16 +18,27 @@ class CimModel(Prefix):
         return self.get_table(query, index="mrid", limit=limit)
 
     def loads(
-        self, conform: bool = True, region: str = "NO", limit: int = None, connectivity: str = None
+        self,
+        load_type: List[str],
+        load_vars: List[str] = ["p", "q"],
+        region: str = "NO",
+        limit: int = None,
+        connectivity: str = None,
     ) -> pd.DataFrame:
-        query = queries.load_query(conform, region, connectivity)
-        return self.get_table(query, index="mrid", limit=limit)
+        query = queries.load_query(load_type, load_vars, region, connectivity)
+        columns = {var: float for var in load_vars}
+        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def synchronous_machines(
-        self, region: str = "NO", limit: int = None, connectivity: str = None
+        self,
+        synchronous_vars: List[str] = ["sn", "p", "q"],
+        region: str = "NO",
+        limit: int = None,
+        connectivity: str = None,
     ) -> pd.DataFrame:
-        query = queries.synchronous_machines_query(region, connectivity)
-        return self.get_table(query, index="mrid", limit=limit)
+        query = queries.synchronous_machines_query(synchronous_vars, region, connectivity)
+        columns = {var: float for var in synchronous_vars}
+        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def connections(
         self, rdf_type: str, region: str = "NO", limit: int = None, connectivity: str = None
@@ -47,8 +58,7 @@ class CimModel(Prefix):
         self, region: str = "NO", limit: int = None, connectivity: str = None
     ) -> pd.DataFrame:
         query = queries.transformer_query(region, connectivity)
-        columns = {"endNumber": int, "x": float, "un": float}
-        columns["t_mrid"] = str
+        columns = {"endNumber": int, "x": float, "un": float, "t_mrid": str}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
     def ssh_disconnected(self, limit: int = None) -> pd.DataFrame:
@@ -83,14 +93,15 @@ class CimModel(Prefix):
         query = tp_queries.topological_node()
         return self.get_table_and_convert(query, index="mrid", limit=limit)
 
-    def powerflow(self, limit: int = None) -> pd.DataFrame:
-        query = sv_queries.powerflow()
-        columns = {"p": float, "q": float}
+    def powerflow(self, power: List[str] = ["p", "q"], limit: int = None) -> pd.DataFrame:
+        query = sv_queries.powerflow(power)
+        columns = {x: float for x in power}
+        columns["mrid"] = str
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def voltage(self, limit: int = None) -> pd.DataFrame:
-        query = sv_queries.voltage()
-        columns = {"v": float, "angle": float}
+    def voltage(self, voltage_vars: List[str] = ["v", "angle"], limit: int = None) -> pd.DataFrame:
+        query = sv_queries.voltage(voltage_vars)
+        columns = {x: float for x in voltage_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def tapstep(self, limit: int = None) -> pd.DataFrame:
@@ -114,7 +125,11 @@ class CimModel(Prefix):
                 result[column] = result[column].apply(str)
 
                 if not isinstance(column_type, str):
-                    result[column] = result[column].apply(column_type)
+                    try:
+                        result[column] = result[column].apply(column_type)
+                    except ValueError:
+                        if (result[column] == "None").all():
+                            result[column] = None
 
         if len(result) > 0 and isinstance(columns, dict) and index in columns:
             result.set_index(index, inplace=True)
