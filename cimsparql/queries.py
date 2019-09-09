@@ -234,19 +234,20 @@ def connection_query(
 
 
 def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
-    three_tx.rename(columns={"index": "t_mrid_2"}, inplace=True)
+    three_tx.reset_index(inplace=True)
     windings = pd.concat(
         [
-            three_tx.loc[:, [f"x_{i}", "t_mrid_1", "t_mrid_2"]]
+            three_tx.loc[:, [f"x_{i}", f"t_mrid_{i}", "index"]]
             .copy()
-            .rename(columns={f"x_{i}": "x"})
+            .rename(columns={f"x_{i}": "x", f"t_mrid_{i}": "t_mrid_1"})
             for i in [1, 2, 3]
-        ]
+        ],
+        ignore_index=True,
     )
-    windings = windings.reset_index(drop=True)
     windings["b"] = 1 / windings["x"]
-    windings["ckt"] = windings["t_mrid_2"]
-    return windings.loc[:, cols].copy()
+    windings["ckt"] = windings["index"]
+    windings.rename(columns={"index": "t_mrid_2"}, inplace=True)
+    return windings.loc[:, cols]
 
 
 def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
@@ -266,13 +267,13 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
     else:
         connectivity_mrids = []
 
-    two_tr = tr[tr["x_3"].isna()][
+    two_tx = tr[tr["x_3"].isna()][
         ["x_1", "un_1"] + connectivity_mrid(var="t_mrid", sparql=False) + connectivity_mrids
     ]
-    two_tr.reset_index(inplace=True)
+    two_tx.reset_index(inplace=True)
 
-    three_tr = tr[tr["x_3"].notna()]
-    return two_tr.rename(columns={"index": "ckt", "un_1": "un", "x_1": "x"}), three_tr
+    three_tx = tr[tr["x_3"].notna()]
+    return two_tx.rename(columns={"index": "ckt", "un_1": "un", "x_1": "x"}), three_tx
 
 
 def reference_nodes(connections: pd.DataFrame) -> Dict:
@@ -303,14 +304,14 @@ def branches(
     node_dict = reference_nodes(connectors.iloc[:, :2])
     node = pd.DataFrame.from_dict(node_dict, orient="index")
 
-    two_tr, three_tr = windings_to_tx(windings)
+    two_tx, three_tx = windings_to_tx(windings)
 
-    for winding in [two_tr, three_tr]:
+    for winding in [two_tx, three_tx]:
         winding.reset_index(inplace=True)
 
-    for br in [lines, two_tr]:
+    for br in [lines, two_tx]:
         connect_nodes(node, br, columns[:2])
 
-    connect_nodes(node, three_tr, columns)
+    connect_nodes(node, three_tx, columns)
 
-    return lines, two_tr, three_tr
+    return lines, two_tx, three_tx

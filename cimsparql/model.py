@@ -15,7 +15,8 @@ class CimModel(Prefix):
 
     def bus_data(self, region: str = "NO", limit: int = None) -> pd.DataFrame:
         query = queries.bus_data(region)
-        return self.get_table(query, index="mrid", limit=limit)
+        columns = {var: str for var in ["mrid", "name"]}
+        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def loads(
         self,
@@ -44,7 +45,8 @@ class CimModel(Prefix):
         self, rdf_type: str, region: str = "NO", limit: int = None, connectivity: str = None
     ):
         query = queries.connection_query(self._cim_version, rdf_type, region, connectivity)
-        return self.get_table(query, index="mrid", limit=limit)
+        columns = {var: str for var in ["mrid", "t_mrid_1", "t_mrid_2"]}
+        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def ac_lines(
         self, region: str = "NO", limit: int = None, connectivity: str = None
@@ -86,12 +88,13 @@ class CimModel(Prefix):
 
     def terminal(self, limit: int = None) -> pd.DataFrame:
         query = tp_queries.terminal(self._cim_version)
-        columns = {"connected": bool, "mrid": str}
+        columns = {"connected": bool, "mrid": str, "tp_node": str}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def topological_node(self, limit: int = None) -> pd.DataFrame:
         query = tp_queries.topological_node()
-        return self.get_table_and_convert(query, index="mrid", limit=limit)
+        columns = {"mrid": str, "name": str, "ConnectivityNodeContainer": str, "BaseVoltage": float}
+        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def powerflow(self, power: List[str] = ["p", "q"], limit: int = None) -> pd.DataFrame:
         query = sv_queries.powerflow(power)

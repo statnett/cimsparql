@@ -57,13 +57,13 @@ def test_synchronous_machines(gdb_cli):
 
 
 def test_branch(gdb_cli):
-    lines = gdb_cli.ac_lines(limit=n_samples)
+    lines = gdb_cli.ac_lines(limit=n_samples).set_index("mrid")
     assert lines.shape == (n_samples, 7)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
 def test_branch_with_connectivity(gdb_cli):
-    lines = gdb_cli.ac_lines(limit=n_samples, connectivity="connectivity_mrid")
+    lines = gdb_cli.ac_lines(limit=n_samples, connectivity="connectivity_mrid").set_index("mrid")
     assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
@@ -73,15 +73,15 @@ def test_transformers_with_connectivity(gdb_cli):
 
     two_tx, three_tx = windings_to_tx(windings)
     assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["mrid", "x", "un"])
+    assert set(two_tx.columns).issuperset(["ckt", "x", "un"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert len(three_tx) > 2
     assert set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
 
-    dummy_tx = three_tx_to_windings(three_tx)
+    dummy_tx = three_tx_to_windings(three_tx, ["t_mrid_1", "t_mrid_2", "b", "x", "ckt"])
     assert len(dummy_tx) == 3 * len(three_tx)
-    assert set(dummy_tx.columns).issuperset(["t_mrid_1", "t_mrid_2", "b"])
+    assert set(dummy_tx.columns).difference(["t_mrid_1", "t_mrid_2", "b", "x", "ckt"]) == set()
 
 
 def test_transformers(gdb_cli):
@@ -89,7 +89,7 @@ def test_transformers(gdb_cli):
 
     two_tx, three_tx = windings_to_tx(windings)
     assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["mrid", "x", "un"])
+    assert set(two_tx.columns).issuperset(["ckt", "x", "un"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert len(three_tx) > 2
