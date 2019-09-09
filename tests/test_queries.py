@@ -39,6 +39,24 @@ def test_load_query_raises_value_error_empty_list(monkeypatch):
         queries.load_query(load_type=[], connectivity=None)
 
 
+def test_load_query_no_connectivity():
+    assert "connectivity_mrid" not in queries.load_query(
+        load_type=["ConformLoad"], connectivity=None
+    )
+
+
+def test_load_query_with_connectivity():
+    assert "connectivity_mrid" in queries.load_query(load_type=["ConformLoad"])
+
+
+def test_load_query_with_region():
+    assert "Substation" in queries.load_query(load_type=["ConformLoad"])
+
+
+def test_load_query_with_no_region():
+    assert "Substation" not in queries.load_query(load_type=["ConformLoad"], region=None)
+
+
 def test_load_query_conform(monkeypatch):
     _combine_statements_mock = MagicMock()
     _group_query_mock = MagicMock()
@@ -66,3 +84,23 @@ def test_load_query_combined(monkeypatch):
         group=True,
         split="\n} UNION \n {",
     )
+
+
+def test_default_terminal_where_query():
+    assert len(queries.terminal_where_query()) == 3
+
+
+def test_terminal_where_query_no_var():
+    assert len(queries.terminal_where_query(var=None)) == 2
+
+
+def test_terminal_where_query_no_var_with_sequence():
+    assert len(queries.terminal_where_query(cim_version=15, var=None, with_sequence_number=1)) == 3
+
+
+def test_bus_data_default():
+    assert "Substation" in queries.bus_data()
+
+
+def test_bus_data_no_region():
+    assert "Substation" not in queries.bus_data(region=None)

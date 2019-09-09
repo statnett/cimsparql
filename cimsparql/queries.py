@@ -97,6 +97,8 @@ def load_query(
     load_vars: List[str] = ["p", "q"],
     region: str = "NO",
     connectivity: str = "connectivity_mrid",
+    cim_version: int = 15,
+    with_sequence_number: bool = False,
 ) -> str:
 
     if not set(load_type).issubset(allowed_load_types) or len(load_type) == 0:
@@ -114,7 +116,7 @@ def load_query(
     where_list += [
         group_query([f"?mrid cim:EnergyConsumer.{p} ?{p}" for p in load_vars], command="OPTIONAL")
     ]
-    where_list += terminal_where_query(connectivity)
+    where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
     if region is not None:
         where_list += [
@@ -129,6 +131,8 @@ def synchronous_machines_query(
     sync_vars: List[str] = ["sn", "p", "q"],
     region: str = "NO",
     connectivity: str = "connectivity_mrid",
+    cim_version: int = 15,
+    with_sequence_number=False,
 ) -> str:
 
     var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
@@ -146,7 +150,7 @@ def synchronous_machines_query(
         group_query([f"?mrid cim:RotatingMachine.{var_dict[var]} ?{var}"], command="OPTIONAL")
         for var in sync_vars
     ]
-    where_list += terminal_where_query(connectivity)
+    where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
     if region is not None:
         container = "Substation"
@@ -286,32 +290,3 @@ def reference_nodes(connections: pd.DataFrame) -> Dict:
         for node in group:
             node_dict[node] = ref
     return node_dict
-
-
-def members(nodes: pd.DataFrame, branch: pd.DataFrame, columns: List) -> pd.DataFrame:
-    return branch.loc[:, columns].isin(nodes.index).to_numpy().transpose()
-
-
-def connect_nodes(nodes: pd.DataFrame, branch: pd.DataFrame, columns: List) -> pd.DataFrame:
-    for indx, column in zip(members(nodes, branch, columns), columns):
-        branch.loc[indx, column] = nodes.loc[branch.loc[indx, column].values].values.squeeze()
-
-
-def branches(
-    connectors: pd.DataFrame, lines: pd.DataFrame, windings: pd.DataFrame, columns: List
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-
-    node_dict = reference_nodes(connectors.iloc[:, :2])
-    node = pd.DataFrame.from_dict(node_dict, orient="index")
-
-    two_tx, three_tx = windings_to_tx(windings)
-
-    for winding in [two_tx, three_tx]:
-        winding.reset_index(inplace=True)
-
-    for br in [lines, two_tx]:
-        connect_nodes(node, br, columns[:2])
-
-    connect_nodes(node, three_tx, columns)
-
-    return lines, two_tx, three_tx
