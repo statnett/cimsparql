@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-from cimsparql.queries import reference_nodes, windings_to_tx, three_tx_to_windings
+from cimsparql.queries import windings_to_tx, three_tx_to_windings, Islands
 
 
 n_samples = 40
@@ -99,7 +99,7 @@ def test_transformers(gdb_cli):
 def test_reference_nodes():
     a = pd.DataFrame([[1, 2], [1, 3], [3, 4], [5, 6], [8, 7]])
     nodes_ref = {1: 1, 2: 1, 3: 1, 4: 1, 5: 5, 6: 5, 7: 8, 8: 8}
-    nodes = reference_nodes(a)
+    nodes = Islands(a).reference_nodes_dict()
     assert nodes_ref == nodes
 
 
@@ -109,7 +109,7 @@ def test_breaker_length(breakers):
 
 def test_breaker_reference_nodes(breakers):
     connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
-    node_dict = reference_nodes(breakers[connect_columns])
+    node_dict = Islands(breakers[connect_columns]).reference_nodes_dict()
     assert len(node_dict) == len(np.unique(breakers[connect_columns].to_numpy()))
     assert len(set(node_dict.keys())) == len(node_dict)
     assert len(set(node_dict.values())) < len(node_dict)
@@ -121,7 +121,7 @@ def test_connectors_length(disconnectors):
 
 def test_connectors_reference_nodes(disconnectors):
     connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
-    node_dict = reference_nodes(disconnectors[connect_columns])
+    node_dict = Islands(disconnectors[connect_columns]).reference_nodes_dict()
     assert len(node_dict) == len(np.unique(disconnectors[connect_columns].to_numpy()))
     assert len(set(node_dict.keys())) == len(node_dict)
     assert len(set(node_dict.values())) < len(node_dict)

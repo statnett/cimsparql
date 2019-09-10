@@ -1,3 +1,4 @@
+import copy
 import networkx as nx
 import pandas as pd
 
@@ -280,13 +281,20 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
     return two_tx.rename(columns={"index": "ckt", "un_1": "un", "x_1": "x"}), three_tx
 
 
-def reference_nodes(connections: pd.DataFrame) -> Dict:
-    g = nx.Graph()
-    g.add_edges_from(connections.to_numpy())
-    node_dict = dict()
-    for group in list(nx.connected_components(g)):
-        ref = group.pop()
-        node_dict[ref] = ref
-        for node in group:
-            node_dict[node] = ref
-    return node_dict
+class Islands(nx.Graph):
+    def __init__(self, connections: pd.DataFrame):
+        super().__init__()
+        self.add_edges_from(connections.to_numpy())
+        self._groups = list(nx.connected_components(self))
+
+    def reference_nodes_dict(self) -> Dict:
+        node_dict = dict()
+        for group in copy.deepcopy(self._groups):
+            ref = group.pop()
+            node_dict[ref] = ref
+            for node in group:
+                node_dict[node] = ref
+        return node_dict
+
+    def groups(self) -> List:
+        return copy.deepcopy(self._groups)
