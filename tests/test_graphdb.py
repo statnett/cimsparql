@@ -53,7 +53,12 @@ def test_conform_and_non_conform_load(gdb_cli):
 def test_synchronous_machines(gdb_cli):
     synchronous_machines = gdb_cli.synchronous_machines(limit=n_samples)
     assert len(synchronous_machines) == n_samples
-    assert set(synchronous_machines.columns).difference(["sn", "terminal_mrid", "p", "q"]) == set()
+    assert (
+        set(synchronous_machines.columns).difference(
+            ["sn", "terminal_mrid", "p", "q", "Stasjonsgr"]
+        )
+        == set()
+    )
 
 
 def test_branch(gdb_cli):
