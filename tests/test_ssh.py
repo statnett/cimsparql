@@ -9,7 +9,7 @@ from conftest import need_cim_ssh
 
 @pytest.fixture(scope="module")
 def sshmodel(root_dir, ssh_profile):
-    return redland.Model(root_dir / "data" / f"{ssh_profile}.xml", base_uri="http://example.org")
+    return redland.Model(root_dir / "data" / f"{ssh_profile}.xml")
 
 
 def test_ieee118_ssh_synchronous_machines(ieee118):

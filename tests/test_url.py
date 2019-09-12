@@ -1,9 +1,24 @@
 import pytest
 
-from cimsparql.url import Prefix, service, prefixes
+from cimsparql.url import Prefix, service
 
 
-cim_keys = ["rdf", "alg", "cim", "SN", "pti", "entsoe", "entsoe2", "md"]
+prefixes = [
+    "rdf",
+    "alg",
+    "ALG",
+    "owl",
+    "cim",
+    "SN",
+    "pti",
+    "md",
+    "entsoe",
+    "entsoe2",
+    "wgs",
+    "gn",
+    "xsd",
+    "rdfs",
+]
 
 
 @pytest.fixture(scope="module")

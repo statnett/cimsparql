@@ -3,24 +3,6 @@ import requests
 from typing import Dict
 
 
-prefixes = [
-    "rdf",
-    "alg",
-    "ALG",
-    "owl",
-    "cim",
-    "SN",
-    "pti",
-    "md",
-    "entsoe",
-    "entsoe2",
-    "wgs",
-    "gn",
-    "xsd",
-    "rdfs",
-]
-
-
 def service(
     server: str = "graphdb.statnett.no",
     repo: str = "SNMST-Master1Repo-VERSION-LATEST",
