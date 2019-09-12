@@ -55,7 +55,7 @@ def test_synchronous_machines(gdb_cli):
     assert len(synchronous_machines) == n_samples
     assert (
         set(synchronous_machines.columns).difference(
-            ["sn", "terminal_mrid", "p", "q", "Stasjonsgr"]
+            ["sn", "terminal_mrid", "p", "q", "station_group"]
         )
         == set()
     )
