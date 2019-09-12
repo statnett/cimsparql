@@ -137,8 +137,9 @@ def synchronous_machines_query(
 ) -> str:
 
     var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
-
-    select_query = "SELECT ?mrid ?terminal_mrid " + " ".join([f"?{var}" for var in sync_vars])
+    select_query = "SELECT ?mrid ?terminal_mrid ?Stasjonsgr " + " ".join(
+        [f"?{var}" for var in sync_vars]
+    )
     if connectivity is not None:
         select_query += f" ?{connectivity}"
 
@@ -151,6 +152,7 @@ def synchronous_machines_query(
         group_query([f"?mrid cim:RotatingMachine.{var_dict[var]} ?{var}"], command="OPTIONAL")
         for var in sync_vars
     ]
+    where_list += ["OPTIONAL {?ScheduleResource SN:ScheduleResource.marketCode ?Stasjonsgr }"]
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
     if region is not None:
