@@ -129,22 +129,25 @@ def load_query(
 
 
 def synchronous_machines_query(
-    sync_vars: List[str] = ["sn", "p", "q"],
+    sync_vars: List[str] = ("sn",),
     region: str = "NO",
     connectivity: str = "connectivity_mrid",
     cim_version: int = 15,
-    with_sequence_number=False,
+    with_sequence_number: bool = False,
 ) -> str:
 
-    var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
-    select_query = "SELECT ?mrid ?terminal_mrid ?station_group ?market_code " + " ".join(
-        [f"?{var}" for var in sync_vars]
+    var_dict = {"sn": "ratedS"}
+    select_query = (
+        "SELECT ?mrid ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax ?allocationWeight ?minP  ?maxQ ?minQ "
+        + " ".join([f"?{var}" for var in sync_vars])
     )
     if connectivity is not None:
         select_query += f" ?{connectivity}"
 
     where_list = [
         "?mrid rdf:type cim:SynchronousMachine",
+        "?mrid cim:SynchronousMachine.maxQ ?maxQ",
+        "?mrid cim:SynchronousMachine.minQ ?minQ",
         "OPTIONAL { ?mrid cim:SynchronousMachine.type ?machine",
         "?machine rdfs:label 'generator' }",
     ]
@@ -152,10 +155,16 @@ def synchronous_machines_query(
         group_query([f"?mrid cim:RotatingMachine.{var_dict[var]} ?{var}"], command="OPTIONAL")
         for var in sync_vars
     ]
-    where_list += ["OPTIONAL { ?mrid cim:SynchronousMachine.GeneratingUnit ?gu",
-                   "?gu SN:GeneratingUnit.marketCode ?market_code",
-                   "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
-                   "?ScheduleResource SN:ScheduleResource.marketCode ?station_group}"]
+    where_list += [
+        "OPTIONAL { ?mrid cim:SynchronousMachine.GeneratingUnit ?gu",
+        "?gu SN:GeneratingUnit.marketCode ?market_code",
+        "?gu cim:GeneratingUnit.maxOperatingP ?maxP",
+        "?gu cim:GeneratingUnit.minOperatingP ?minP",
+        "?gu SN:GeneratingUnit.groupAllocationMax ?allocationMax",
+        "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
+        "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
+        "?ScheduleResource SN:ScheduleResource.marketCode ?station_group}",
+    ]
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
     if region is not None:

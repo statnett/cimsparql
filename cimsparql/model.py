@@ -39,6 +39,7 @@ class CimModel(Prefix):
     ) -> pd.DataFrame:
         query = queries.synchronous_machines_query(synchronous_vars, region, connectivity)
         columns = {var: float for var in synchronous_vars}
+        columns["allocationWeight"] = float
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def connections(
