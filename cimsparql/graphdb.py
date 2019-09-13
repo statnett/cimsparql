@@ -4,8 +4,11 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 
 from cimsparql import url
 from cimsparql.model import CimModel
+from typing import List, Dict
 
-pd.set_option("display.max_columns", None)
+
+def sparql_to_list(results: List[Dict], columns: List[str]) -> List[List]:
+    return [[row.get(column, {}).get("value") for column in columns] for row in results]
 
 
 class GraphDBClient(CimModel):
@@ -39,16 +42,9 @@ class GraphDBClient(CimModel):
 
         processed_results = self.sparql.queryAndConvert()
 
-        cols = processed_results["head"]["vars"]
-
-        out = []
-        for row in processed_results["results"]["bindings"]:
-            item = []
-            for c in cols:
-                item.append(row.get(c, {}).get("value"))
-            out.append(item)
-
-        result = pd.DataFrame(out, columns=cols)
+        columns = processed_results["head"]["vars"]
+        sparql_results = processed_results["results"]["bindings"]
+        result = pd.DataFrame(data=sparql_to_list(sparql_results, columns), columns=columns)
 
         if len(result) > 0 and index:
             result.set_index(index, inplace=True)
