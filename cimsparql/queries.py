@@ -135,8 +135,7 @@ def synchronous_machines_query(
     cim_version: int = 15,
     with_sequence_number: bool = False,
 ) -> str:
-
-    var_dict = {"sn": "ratedS"}
+    var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
     select_query = (
         "SELECT ?mrid ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax ?allocationWeight ?minP  ?maxQ ?minQ "
         + " ".join([f"?{var}" for var in sync_vars])
