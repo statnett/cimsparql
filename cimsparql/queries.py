@@ -78,6 +78,12 @@ def terminal_sequence_query(
     return query_list
 
 
+def connectivity_names() -> str:
+    select_query = "SELECT ?mrid ?name"
+    where_list = ["?mrid rdf:type cim:ConnectivityNode", "?mrid cim:IdentifiedObject.name ?name"]
+    return combine_statements(select_query, group_query(where_list))
+
+
 def bus_data(region: str = "NO") -> str:
     container = "Substation"
     select_query = "SELECT ?mrid ?name"
