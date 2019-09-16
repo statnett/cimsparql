@@ -68,6 +68,7 @@ def test_synchronous_machines(gdb_cli):
                 "minP",
                 "maxQ",
                 "minQ",
+                "MO",
             ]
         )
         == set()
