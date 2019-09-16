@@ -2,7 +2,7 @@ import copy
 import networkx as nx
 import pandas as pd
 
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Union
 
 allowed_load_types = ["ConformLoad", "NonConformLoad", "EnergyConsumer"]
 
@@ -236,7 +236,10 @@ def ac_line_query(
 
 
 def connection_query(
-    cim_version: int, rdf_type: str, region: str = "NO", connectivity: str = "connectivity_mrid"
+    cim_version: int,
+    rdf_types: Union[str, List[str]],
+    region: str = "NO",
+    connectivity: str = "connectivity_mrid",
 ) -> str:
 
     select_query = "SELECT ?mrid  ?t_mrid_1 ?t_mrid_2"
@@ -244,7 +247,11 @@ def connection_query(
     if connectivity is not None:
         select_query += f" {connectivity_mrid(connectivity)}"
 
-    where_list = [f"?mrid rdf:type {rdf_type}"]
+    if isinstance(rdf_types, str):
+        rdf_types = [rdf_types]
+
+    cim_types = [f"?mrid rdf:type {rdf_type}" for rdf_type in rdf_types]
+    where_list = [combine_statements(*cim_types, group=len(cim_types) > 1, split="\n} UNION \n {")]
 
     if region is not None:
         where_list += [

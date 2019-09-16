@@ -30,3 +30,34 @@ def test_disconnected_disconnectors_and_terminals(gcli_ssh):
         ssh_queries.disconnected(gcli_ssh._cim_version), index="mrid", limit=n_lim
     )
     assert len(disconnected) == n_lim
+
+
+def test_connections_disconnector(gcli_eq):
+    cim_version = gcli_eq._cim_version
+    rdf_types = ["cim:Disconnector"]
+    connections = gcli_eq.get_table(
+        queries.connection_query(cim_version=cim_version, rdf_types=rdf_types, region=None),
+        limit=n_lim,
+    )
+    assert len(connections) == n_lim
+
+
+def test_connections_breaker(gcli_eq):
+    cim_version = gcli_eq._cim_version
+    rdf_types = ["cim:Breaker"]
+    connections = gcli_eq.get_table(
+        queries.connection_query(cim_version=cim_version, rdf_types=rdf_types, region=None),
+        limit=n_lim,
+    )
+    assert len(connections) == n_lim
+
+
+def test_connections_combined(gcli_eq):
+    rdf_types = ["cim:Disconnector", "cim:Breaker"]
+    connections = gcli_eq.get_table(
+        queries.connection_query(
+            cim_version=gcli_eq._cim_version, rdf_types=rdf_types, region=None
+        ),
+        limit=n_lim,
+    )
+    assert len(connections) == n_lim
