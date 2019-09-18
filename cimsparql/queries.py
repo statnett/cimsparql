@@ -186,15 +186,17 @@ def synchronous_machines_query(
 def transformer_query(region: str = "NO", connectivity: str = "connectivity_mrid") -> str:
     container = "Substation"
 
-    select_query = "SELECT ?mrid ?c ?x ?endNumber ?sn ?un ?t_mrid"
+    select_query = "SELECT ?name ?mrid ?c ?x ?r ?endNumber ?sn ?un ?t_mrid"
 
     where_list = [
         "?mrid rdf:type cim:PowerTransformer",
         "?c cim:PowerTransformerEnd.PowerTransformer ?mrid",
         "?c cim:PowerTransformerEnd.x ?x",
+        "?c cim:PowerTransformerEnd.r ?r",
         "?c cim:PowerTransformerEnd.ratedU ?un",
         "?c cim:TransformerEnd.endNumber ?endNumber",
         "?c cim:TransformerEnd.Terminal ?t_mrid",
+        "?c cim:IdentifiedObject.name ?name",
     ]
     if connectivity is not None:
         select_query += f" ?{connectivity}"
@@ -212,7 +214,7 @@ def ac_line_query(
 ) -> str:
     container = "Line"
 
-    select_query = "SELECT ?mrid ?x ?r ?bch ?length ?un ?t_mrid_1 ?t_mrid_2"
+    select_query = "SELECT ?name ?mrid ?x ?r ?bch ?length ?un ?t_mrid_1 ?t_mrid_2 "
 
     if connectivity is not None:
         select_query += f" {connectivity_mrid(connectivity)}"
@@ -226,6 +228,7 @@ def ac_line_query(
         "?mrid cim:Conductor.length ?length",
         "?mrid cim:ConductingEquipment.BaseVoltage ?obase",
         "?obase cim:BaseVoltage.nominalVoltage ?un",
+        "?mrid cim:IdentifiedObject.name ?name",
     ]
 
     if region is not None:
@@ -269,9 +272,9 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
     three_tx.reset_index(inplace=True)
     windings = pd.concat(
         [
-            three_tx.loc[:, [f"x_{i}", f"t_mrid_{i}", "index"]]
+            three_tx.loc[:, [f"x_{i}", f"name_{i}", f"t_mrid_{i}", "index"]]
             .copy()
-            .rename(columns={f"x_{i}": "x", f"t_mrid_{i}": "t_mrid_1"})
+            .rename(columns={f"x_{i}": "x", f"name_{i}": "name", f"t_mrid_{i}": "t_mrid_1"})
             for i in [1, 2, 3]
         ],
         ignore_index=True,
@@ -283,7 +286,9 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
 
 
 def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
-    cols = [col for col in ["x", "un", "t_mrid", "connectivity_mrid"] if col in windings.columns]
+    cols = [
+        col for col in ["name", "x", "un", "t_mrid", "connectivity_mrid"] if col in windings.columns
+    ]
 
     wd = [
         windings[windings["endNumber"] == i][["mrid"] + cols]
@@ -300,12 +305,17 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
         connectivity_mrids = []
 
     two_tx = tr[tr["x_3"].isna()][
-        ["x_1", "un_1"] + connectivity_mrid(var="t_mrid", sparql=False) + connectivity_mrids
+        ["x_1", "un_1", "name_1"]
+        + connectivity_mrid(var="t_mrid", sparql=False)
+        + connectivity_mrids
     ]
     two_tx.reset_index(inplace=True)
 
     three_tx = tr[tr["x_3"].notna()]
-    return two_tx.rename(columns={"index": "ckt", "un_1": "un", "x_1": "x"}), three_tx
+    return (
+        two_tx.rename(columns={"index": "ckt", "un_1": "un", "x_1": "x", "name_1": "name"}),
+        three_tx,
+    )
 
 
 class Islands(nx.Graph):
