@@ -4,6 +4,8 @@ import pytest
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.url import service
 from cimsparql import queries, ssh_queries
+from conftest import need_local_graphdb
+
 
 n_lim = 100
 
@@ -20,11 +22,13 @@ def gcli_ssh():
     return GraphDBClient(service=service(server=server, repo=2, protocol="http"))
 
 
+@need_local_graphdb
 def test_connectivity_names(gcli_eq):
     connectivity_names = gcli_eq.get_table(queries.connectivity_names(), index="mrid", limit=n_lim)
     assert connectivity_names.shape == (n_lim, 1)
 
 
+@need_local_graphdb
 def test_disconnected_disconnectors_and_terminals(gcli_ssh):
     disconnected = gcli_ssh.get_table(
         ssh_queries.disconnected(gcli_ssh._cim_version), index="mrid", limit=n_lim
@@ -32,6 +36,7 @@ def test_disconnected_disconnectors_and_terminals(gcli_ssh):
     assert len(disconnected) == n_lim
 
 
+@need_local_graphdb
 def test_connections_disconnector(gcli_eq):
     cim_version = gcli_eq._cim_version
     rdf_types = ["cim:Disconnector"]
@@ -42,6 +47,7 @@ def test_connections_disconnector(gcli_eq):
     assert len(connections) == n_lim
 
 
+@need_local_graphdb
 def test_connections_breaker(gcli_eq):
     cim_version = gcli_eq._cim_version
     rdf_types = ["cim:Breaker"]
@@ -52,6 +58,7 @@ def test_connections_breaker(gcli_eq):
     assert len(connections) == n_lim
 
 
+@need_local_graphdb
 def test_connections_combined(gcli_eq):
     rdf_types = ["cim:Disconnector", "cim:Breaker"]
     connections = gcli_eq.get_table(

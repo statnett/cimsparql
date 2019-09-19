@@ -1,3 +1,4 @@
+import os
 import pytest
 import pathlib
 
@@ -24,6 +25,10 @@ need_cim_sv = pytest.mark.skipif(
 
 need_cim_tp = pytest.mark.skipif(
     not pathlib.Path(this_dir / "data" / f"{tp}.xml").exists(), reason=f"Require {tp} to run"
+)
+
+need_local_graphdb = pytest.mark.skipif(
+    "GRAPHDB_LOCAL_TEST_SERVER" not in os.environ, reason="Require local GraphDB server"
 )
 
 
