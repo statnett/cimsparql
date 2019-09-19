@@ -71,9 +71,9 @@ class CimModel(Prefix):
         columns = {"endNumber": int, "x": float, "un": float}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
-    def ssh_disconnected(self, limit: int = None) -> pd.DataFrame:
+    def disconnected(self, index: str = None, limit: int = None) -> pd.DataFrame:
         query = ssh_queries.disconnected(self._cim_version)
-        return self.get_table(query, limit=limit)
+        return self.get_table(query, index=index, limit=limit)
 
     def ssh_synchronous_machines(self, limit: int = None) -> pd.DataFrame:
         query = ssh_queries.synchronous_machines()

@@ -17,8 +17,8 @@ def test_ieee118_ssh_synchronous_machines(ieee118):
     assert synchronous_machines.shape == (19, 3)
 
 
-def test_ieee118_ssh_disconnected_all_connected(ieee118):
-    assert ieee118.ssh_disconnected().empty
+def test_ieee118_disconnected_all_connected(ieee118):
+    assert ieee118.disconnected().empty
 
 
 def test_ieee118_ssh_conformed_load(ieee118):
@@ -78,8 +78,8 @@ def test_model_ssh_synchronous_machine(sshmodel):
 
 
 @need_cim_ssh
-def test_ssh_disconnected(sshmodel):
-    disconnected = sshmodel.ssh_disconnected(limit=100)
+def test_disconnected(sshmodel):
+    disconnected = sshmodel.disconnected(limit=100)
     assert list(disconnected.columns) == ["mrid"]
     assert len(disconnected) == 100
 
