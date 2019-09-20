@@ -1,5 +1,5 @@
 image:
-  name: "artifactory.statnett.no/datascience-docker-local/redland-ci-cd-statnett:latest"
+  name: "artifactory.statnett.no/datascience-docker-local/redland-ci-cd-statnett-3.7:latest"
 
 stages:
   - tests
