@@ -18,5 +18,5 @@ def test_tp_terminal(tpmodel):
 
 @need_cim_tp
 def test_tp_topological_node(tpmodel):
-    topological_node = tpmodel.topological_node(limit=100)
-    assert topological_node.shape == (100, 3)
+    topological_node = tpmodel.topological_node(limit=2)
+    assert topological_node.shape == (0, 0)
