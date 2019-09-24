@@ -42,7 +42,6 @@ class CimModel(Prefix):
             "maxQ",
             "sn",
             "minQ",
-            "referencePriority",
             "maxP",
             "minP",
             "allocationMax",

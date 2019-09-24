@@ -138,7 +138,7 @@ def synchronous_machines_query(
     var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
     select_query = (
         "SELECT ?mrid ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax "
-        "?allocationWeight ?minP  ?maxQ ?minQ ?referencePriority"
+        "?allocationWeight ?minP  ?maxQ ?minQ"
         + " ".join([f"?{var}" for var in sync_vars])
     )
     if connectivity is not None:
@@ -148,7 +148,6 @@ def synchronous_machines_query(
         "?mrid rdf:type cim:SynchronousMachine",
         "?mrid cim:SynchronousMachine.maxQ ?maxQ",
         "?mrid cim:SynchronousMachine.minQ ?minQ",
-        "?mrid cim:SynchronousMachine.referencePriority ?referencePriority",
         "OPTIONAL { ?mrid cim:SynchronousMachine.type ?machine",
         "?machine rdfs:label 'generator' }",
     ]
