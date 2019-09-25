@@ -62,6 +62,7 @@ def test_synchronous_machines(gdb_cli):
                 "q",
                 "station_group",
                 "market_code",
+                "bid_market_code",
                 "maxP",
                 "allocationMax",
                 "allocationWeight",

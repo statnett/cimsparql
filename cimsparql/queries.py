@@ -148,7 +148,8 @@ def synchronous_machines_query(
     var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
     select_query = (
         "SELECT ?mrid ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax "
-        "?allocationWeight ?minP ?maxQ ?minQ" + " ".join([f"?{var}" for var in sync_vars])
+        "?allocationWeight ?minP ?maxQ ?minQ ?bid_market_code"
+        + " ".join([f"?{var}" for var in sync_vars])
     )
     if connectivity is not None:
         select_query += f" ?{connectivity}"
@@ -159,6 +160,16 @@ def synchronous_machines_query(
         "?mrid cim:SynchronousMachine.minQ ?minQ",
         "OPTIONAL { ?mrid cim:SynchronousMachine.type ?machine",
         "?machine rdfs:label 'generator' }",
+    ]
+
+    where_list += [
+        "OPTIONAL { ?mrid cim:Equipment.EquipmentContainer ?container",
+        "?container cim:VoltageLevel.Substation ?Substation",
+        "?Substation cim:PowerSystemResource.Location ?location",
+        "?location cim:Location.PowerSystemResources ?system_resource",
+        "?system_resource SN:Substation.MarketDeliveryPoint ?delivery_point",
+        "?delivery_point SN:MarketDeliveryPoint.BiddingArea ?bidding_area",
+        "?bidding_area SN:BiddingArea.marketCode ?bid_market_code }",
     ]
     where_list += [
         group_query([f"?mrid cim:RotatingMachine.{var_dict[var]} ?{var}"], command="OPTIONAL")
