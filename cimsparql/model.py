@@ -54,17 +54,29 @@ class CimModel(Prefix):
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def ac_lines(
-        self, region: str = "NO", limit: int = None, connectivity: str = None
+        self,
+        region: str = "NO",
+        limit: int = None,
+        connectivity: str = None,
+        rates: List[str] = ["Normal", "Warning", "Overload"],
     ) -> pd.DataFrame:
-        query = queries.ac_line_query(self._cim_version, region, connectivity)
-        columns = {var: float for var in ["x", "r", "un", "bch", "length"]}
+        query = queries.ac_line_query(self._cim_version, region, connectivity, rates)
+        columns = {
+            var: float
+            for var in ["x", "r", "un", "bch", "length"] + [f"rate{rate}" for rate in rates]
+        }
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
     def transformers(
-        self, region: str = "NO", limit: int = None, connectivity: str = None
+        self,
+        region: str = "NO",
+        limit: int = None,
+        connectivity: str = None,
+        rates: List[str] = ["Normal", "Warning", "Overload"],
     ) -> pd.DataFrame:
-        query = queries.transformer_query(region, connectivity)
-        columns = {"endNumber": int, "x": float, "un": float}
+        query = queries.transformer_query(region, connectivity, rates)
+        columns = {var: float for var in ["x", "un"] + [f"rate{rate}" for rate in rates]}
+        columns["endNumber"] = int
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
     def disconnected(self, index: str = None, limit: int = None) -> pd.DataFrame:

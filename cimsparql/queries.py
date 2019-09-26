@@ -3,8 +3,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-
-from typing import Tuple, Dict, List, Union
+from typing import Tuple, List, Union
 
 allowed_load_types = ["ConformLoad", "NonConformLoad", "EnergyConsumer"]
 
@@ -187,7 +186,22 @@ def synchronous_machines_query(
     return combine_statements(select_query, group_query(where_list))
 
 
-def transformer_query(region: str = "NO", connectivity: str = con_mrid_str) -> str:
+def operational_limit(mrid: str, rate: str, limitset: str = "operationallimitset") -> List[str]:
+    return [
+        f"?{limitset} cim:OperationalLimitSet.Equipment {mrid}",
+        f"?activepowerlimit{rate} cim:OperationalLimit.OperationalLimitSet ?{limitset}",
+        f"?activepowerlimit{rate} rdf:type cim:ActivePowerLimit",
+        f"?activepowerlimit{rate} cim:IdentifiedObject.name ?limitname{rate}",
+        f"?activepowerlimit{rate} cim:ActivePowerLimit.value ?rate{rate}",
+        f"filter regex(str(?limitname{rate}), '{rate}')",
+    ]
+
+
+def transformer_query(
+    region: str = "NO",
+    connectivity: str = con_mrid_str,
+    rates: List[str] = ["Normal", "Warning", "Overload"],
+) -> str:
     container = "Substation"
 
     select_query = "SELECT ?name ?mrid ?c ?x ?r ?endNumber ?sn ?un ?t_mrid"
@@ -210,16 +224,29 @@ def transformer_query(region: str = "NO", connectivity: str = con_mrid_str) -> s
         where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
         where_list += region_query(region, container)
 
+    if rates:
+        limitset = "operationallimitset"
+        where_list += [f"?{limitset} cim:OperationalLimitSet.Terminal ?t_mrid"]
+
+        for rate in rates:
+            select_query += f"?rate{rate} "
+            where_list += operational_limit("?mrid", rate, limitset)
+
     return combine_statements(select_query, group_query(where_list))
 
 
-def ac_line_query(cim_version: int, region: str = "NO", connectivity: str = con_mrid_str) -> str:
+def ac_line_query(
+    cim_version: int,
+    region: str = "NO",
+    connectivity: str = con_mrid_str,
+    rates: List[str] = ["Normal", "Warning", "Overload"],
+) -> str:
     container = "Line"
 
     select_query = "SELECT ?name ?mrid ?x ?r ?bch ?length ?un ?t_mrid_1 ?t_mrid_2 "
 
     if connectivity is not None:
-        select_query += f" {connectivity_mrid(connectivity)}"
+        select_query += f"{connectivity_mrid(connectivity)} "
 
     where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
     where_list += [
@@ -236,6 +263,10 @@ def ac_line_query(cim_version: int, region: str = "NO", connectivity: str = con_
     if region is not None:
         where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
         where_list += region_query(region, container)
+
+    for rate in rates:
+        select_query += f"?rate{rate} "
+        where_list += operational_limit("?mrid", rate)
 
     return combine_statements(select_query, group_query(where_list))
 
@@ -287,35 +318,30 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
     return windings.loc[:, cols]
 
 
+def windings_set_end(windings, i, cols):
+    columns = {f"{var}": f"{var}_{i}" for var in cols}
+    return windings[windings["endNumber"] == i][["mrid"] + cols].rename(columns=columns)
+
+
 def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
-    cols = [col for col in ["name", "x", "un", "t_mrid", con_mrid_str] if col in windings.columns]
-
-    wd = [
-        windings[windings["endNumber"] == i][["mrid"] + cols]
-        .rename(columns={f"{var}": f"{var}_{i}" for var in cols})
-        .set_index(["mrid"])
-        for i in range(1, 4)
+    possible_columns = [
+        "name",
+        "x",
+        "un",
+        "t_mrid",
+        con_mrid_str,
+        "rateNormal",
+        "rateWarning",
+        "rateOverload",
     ]
-
-    tr = pd.concat(wd, axis=1, sort=False)
-
-    if con_mrid_str in cols:
-        connectivity_mrids = connectivity_mrid(sparql=False)
-    else:
-        connectivity_mrids = []
-
-    two_tx = tr[tr["x_3"].isna()][
-        ["x_1", "un_1", "name_1"]
-        + connectivity_mrid(var="t_mrid", sparql=False)
-        + connectivity_mrids
-    ]
-    two_tx.reset_index(inplace=True)
-
-    three_tx = tr[tr["x_3"].notna()]
-    return (
-        two_tx.rename(columns={"index": "ckt", "un_1": "un", "x_1": "x", "name_1": "name"}),
-        three_tx,
-    )
+    cols = [col for col in possible_columns if col in windings.columns]
+    three_winding_mrid = windings[windings["endNumber"] == 3]["mrid"]
+    two_tx = windings[~windings["mrid"].isin(three_winding_mrid)]
+    two_tx.rename(columns={"mrid": "ckt"}, inplace=True)
+    three_windings = windings.loc[windings["mrid"].isin(three_winding_mrid), :]
+    wd = [windings_set_end(three_windings, i, cols).set_index("mrid") for i in range(1, 4)]
+    three_tx = pd.concat(wd, axis=1, sort=False)
+    return two_tx, three_tx
 
 
 class Islands(nx.Graph):

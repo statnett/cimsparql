@@ -76,13 +76,13 @@ def test_synchronous_machines(gdb_cli):
 
 def test_branch(gdb_cli):
     lines = gdb_cli.ac_lines(limit=n_samples).set_index("mrid")
-    assert lines.shape == (n_samples, 8)
+    assert lines.shape == (n_samples, 11)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
 def test_branch_with_connectivity(gdb_cli):
     lines = gdb_cli.ac_lines(limit=n_samples, connectivity="connectivity_mrid").set_index("mrid")
-    assert lines.shape == (n_samples, 10)
+    assert lines.shape == (n_samples, 13)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
