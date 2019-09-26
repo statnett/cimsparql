@@ -1,10 +1,15 @@
 import copy
 import networkx as nx
+import numpy as np
 import pandas as pd
+
 
 from typing import Tuple, Dict, List, Union
 
 allowed_load_types = ["ConformLoad", "NonConformLoad", "EnergyConsumer"]
+
+con_mrid_str = "connectivity_mrid"
+connectivity_columns = [f"{con_mrid_str}_{nr}" for nr in [1, 2]]
 
 
 def combine_statements(*args, group: bool = False, split: str = "\n"):
@@ -31,7 +36,7 @@ def region_query(region: str, container: str) -> List:
 
 
 def connectivity_mrid(
-    var: str = "connectivity_mrid", sparql: bool = True, sequence_numbers: List[int] = [1, 2]
+    var: str = con_mrid_str, sparql: bool = True, sequence_numbers: List[int] = [1, 2]
 ) -> [str, List]:
     if sparql:
         return " ".join([f"?{var}_{i}" for i in sequence_numbers])
@@ -47,7 +52,7 @@ def acdc_terminal(cim_version: int) -> str:
 
 
 def terminal_where_query(
-    cim_version: int = None, var: str = "connectivity_mrid", with_sequence_number: bool = False
+    cim_version: int = None, var: str = con_mrid_str, with_sequence_number: bool = False
 ) -> List:
     out = [
         "?terminal_mrid rdf:type cim:Terminal",
@@ -62,7 +67,7 @@ def terminal_where_query(
 
 
 def terminal_sequence_query(
-    cim_version: int, sequence_numbers: List[int] = [1, 2], var: str = "connectivity_mrid"
+    cim_version: int, sequence_numbers: List[int] = [1, 2], var: str = con_mrid_str
 ) -> List:
     query_list = []
     for i in sequence_numbers:
@@ -103,7 +108,7 @@ def load_query(
     load_type: List[str],
     load_vars: List[str] = ["p", "q"],
     region: str = "NO",
-    connectivity: str = "connectivity_mrid",
+    connectivity: str = con_mrid_str,
     cim_version: int = 15,
     with_sequence_number: bool = False,
 ) -> str:
@@ -137,15 +142,14 @@ def load_query(
 def synchronous_machines_query(
     sync_vars: List[str] = ("sn",),
     region: str = "NO",
-    connectivity: str = "connectivity_mrid",
+    connectivity: str = con_mrid_str,
     cim_version: int = 15,
     with_sequence_number: bool = False,
 ) -> str:
     var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
     select_query = (
         "SELECT ?mrid ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax "
-        "?allocationWeight ?minP  ?maxQ ?minQ"
-        + " ".join([f"?{var}" for var in sync_vars])
+        "?allocationWeight ?minP ?maxQ ?minQ" + " ".join([f"?{var}" for var in sync_vars])
     )
     if connectivity is not None:
         select_query += f" ?{connectivity}"
@@ -183,7 +187,7 @@ def synchronous_machines_query(
     return combine_statements(select_query, group_query(where_list))
 
 
-def transformer_query(region: str = "NO", connectivity: str = "connectivity_mrid") -> str:
+def transformer_query(region: str = "NO", connectivity: str = con_mrid_str) -> str:
     container = "Substation"
 
     select_query = "SELECT ?name ?mrid ?c ?x ?r ?endNumber ?sn ?un ?t_mrid"
@@ -209,9 +213,7 @@ def transformer_query(region: str = "NO", connectivity: str = "connectivity_mrid
     return combine_statements(select_query, group_query(where_list))
 
 
-def ac_line_query(
-    cim_version: int, region: str = "NO", connectivity: str = "connectivity_mrid"
-) -> str:
+def ac_line_query(cim_version: int, region: str = "NO", connectivity: str = con_mrid_str) -> str:
     container = "Line"
 
     select_query = "SELECT ?name ?mrid ?x ?r ?bch ?length ?un ?t_mrid_1 ?t_mrid_2 "
@@ -242,7 +244,7 @@ def connection_query(
     cim_version: int,
     rdf_types: Union[str, List[str]],
     region: str = "NO",
-    connectivity: str = "connectivity_mrid",
+    connectivity: str = con_mrid_str,
 ) -> str:
 
     select_query = "SELECT ?mrid  ?t_mrid_1 ?t_mrid_2"
@@ -286,9 +288,7 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
 
 
 def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
-    cols = [
-        col for col in ["name", "x", "un", "t_mrid", "connectivity_mrid"] if col in windings.columns
-    ]
+    cols = [col for col in ["name", "x", "un", "t_mrid", con_mrid_str] if col in windings.columns]
 
     wd = [
         windings[windings["endNumber"] == i][["mrid"] + cols]
@@ -299,7 +299,7 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
 
     tr = pd.concat(wd, axis=1, sort=False)
 
-    if "connectivity_mrid" in cols:
+    if con_mrid_str in cols:
         connectivity_mrids = connectivity_mrid(sparql=False)
     else:
         connectivity_mrids = []
@@ -324,14 +324,14 @@ class Islands(nx.Graph):
         self.add_edges_from(connections.to_numpy())
         self._groups = list(nx.connected_components(self))
 
-    def reference_nodes_dict(self) -> Dict:
-        node_dict = dict()
+    def reference_nodes(self, columns: List[str] = ["mrid", "ref_node"]) -> pd.DataFrame:
+        keys = list()
+        values = list()
         for group in copy.deepcopy(self._groups):
-            ref = group.pop()
-            node_dict[ref] = ref
-            for node in group:
-                node_dict[node] = ref
-        return node_dict
+            ref = list(group)[0]
+            keys += list(group)
+            values += [ref] * len(group)
+        return pd.DataFrame(np.array([keys, values]).transpose(), columns=columns).set_index("mrid")
 
     def groups(self) -> List:
         return copy.deepcopy(self._groups)

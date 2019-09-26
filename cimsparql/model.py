@@ -38,22 +38,18 @@ class CimModel(Prefix):
         connectivity: str = None,
     ) -> pd.DataFrame:
         query = queries.synchronous_machines_query(synchronous_vars, region, connectivity)
-        float_list = [
-            "maxQ",
-            "sn",
-            "minQ",
-            "maxP",
-            "minP",
-            "allocationMax",
-            "allocationWeight",
-        ]
+        float_list = ["maxQ", "sn", "minQ", "maxP", "minP", "allocationMax", "allocationWeight"]
         columns = {var: float for var in synchronous_vars + float_list}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def connections(
-        self, rdf_type: str, region: str = "NO", limit: int = None, connectivity: str = None
+        self,
+        rdf_types: List[str] = ["cim:Breaker", "cim:Disconnector"],
+        region: str = "NO",
+        limit: int = None,
+        connectivity: bool = True,
     ):
-        query = queries.connection_query(self._cim_version, rdf_type, region, connectivity)
+        query = queries.connection_query(self._cim_version, rdf_types, region, connectivity)
         columns = {"mrid": str}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
