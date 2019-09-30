@@ -8,7 +8,23 @@ def service(
     repo: str = "SNMST-Master1Repo-VERSION-LATEST",
     protocol: str = "https",
 ) -> str:
-    return f"{protocol}://{server}/repositories/{repo}"
+    url = f"{protocol}://{server}/repositories"
+    if repo is not None:
+        url += f"/{repo}"
+    return url
+
+
+class GraphDbConfig(object):
+    def __init__(self, server: str = "graphdb.statnett.no", protocol: str = "https"):
+        self._service = service(server, None, protocol)
+        repos = requests.get(self._service, headers={"Accept": "application/json"})
+        if repos.ok:
+            self._repos = repos.json()["results"]["bindings"]
+        else:
+            self._repos = {}
+
+    def repos(self):
+        return [repo["id"]["value"] for repo in self._repos]
 
 
 class Prefix(object):
