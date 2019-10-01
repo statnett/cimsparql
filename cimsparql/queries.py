@@ -301,24 +301,25 @@ def connection_query(
     return combine_statements(select_query, group_query(where_list))
 
 
+def winding_from_three_tx(three_tx: pd.DataFrame, i: int) -> pd.DataFrame:
+    winding = three_tx[[f"x_{i}", f"name_{i}", f"t_mrid_{i}", "mrid"]]
+    return winding.rename(columns={f"x_{i}": "x", f"name_{i}": "name", f"t_mrid_{i}": "t_mrid_1"})
+
+
+def winding_list(three_tx: pd.DataFrame) -> List[pd.DataFrame]:
+    return [winding_from_three_tx(three_tx, i) for i in [1, 2, 3]]
+
+
 def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
     three_tx.reset_index(inplace=True)
-    windings = pd.concat(
-        [
-            three_tx.loc[:, [f"x_{i}", f"name_{i}", f"t_mrid_{i}", "index"]]
-            .copy()
-            .rename(columns={f"x_{i}": "x", f"name_{i}": "name", f"t_mrid_{i}": "t_mrid_1"})
-            for i in [1, 2, 3]
-        ],
-        ignore_index=True,
-    )
+    windings = pd.concat(winding_list(three_tx), ignore_index=True)
     windings["b"] = 1 / windings["x"]
-    windings["ckt"] = windings["index"]
-    windings.rename(columns={"index": "t_mrid_2"}, inplace=True)
+    windings["ckt"] = windings["mrid"]
+    windings.rename(columns={"mrid": "t_mrid_2"}, inplace=True)
     return windings.loc[:, cols]
 
 
-def windings_set_end(windings, i, cols):
+def windings_set_end(windings: pd.DataFrame, i: int, cols: List[str]):
     columns = {f"{var}": f"{var}_{i}" for var in cols}
     return windings[windings["endNumber"] == i][["mrid"] + cols].rename(columns=columns)
 
