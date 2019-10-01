@@ -1,15 +1,6 @@
-import pytest
-
 import numpy as np
 
-from cimsparql import redland
-
-from conftest import need_cim_ssh
-
-
-@pytest.fixture(scope="module")
-def sshmodel(root_dir, ssh_profile):
-    return redland.Model(root_dir / "data" / f"{ssh_profile}.xml")
+from conftest import need_local_graphdb_ssh
 
 
 def test_ieee118_ssh_synchronous_machines(ieee118):
@@ -70,80 +61,80 @@ def test_ieee118_terminal(ieee118):
     assert terminal.shape == (626, 2)
 
 
-@need_cim_ssh
-def test_model_ssh_synchronous_machine(sshmodel):
-    synchronous_machines = sshmodel.ssh_synchronous_machines()
+@need_local_graphdb_ssh
+def test_model_ssh_synchronous_machine(gcli_ssh):
+    synchronous_machines = gcli_ssh.ssh_synchronous_machines()
     assert list(synchronous_machines.columns) == ["p", "q", "controlEnabled"]
     assert len(synchronous_machines) == 2296
 
 
-@need_cim_ssh
-def test_disconnected(sshmodel):
-    disconnected = sshmodel.disconnected(limit=100)
+@need_local_graphdb_ssh
+def test_disconnected(gcli_ssh):
+    disconnected = gcli_ssh.disconnected(limit=100)
     assert list(disconnected.columns) == ["mrid"]
     assert len(disconnected) == 100
 
 
-@need_cim_ssh
-def test_ssh_conformed_load(sshmodel):
-    load = sshmodel.ssh_load(rdf_types=["cim:ConformLoad"])
+@need_local_graphdb_ssh
+def test_ssh_conformed_load(gcli_ssh):
+    load = gcli_ssh.ssh_load(rdf_types=["cim:ConformLoad"])
     assert list(load.columns) == ["p", "q"]
     assert len(load) == 1856
 
 
-@need_cim_ssh
-def test_ssh_nonconformed_load(sshmodel):
-    load = sshmodel.ssh_load(rdf_types=["cim:NonConformLoad"])
+@need_local_graphdb_ssh
+def test_ssh_nonconformed_load(gcli_ssh):
+    load = gcli_ssh.ssh_load(rdf_types=["cim:NonConformLoad"])
     assert list(load.columns) == ["p", "q"]
     assert len(load) == 194
 
 
-@need_cim_ssh
-def test_ssh_combined_load(sshmodel):
-    load = sshmodel.ssh_load()
+@need_local_graphdb_ssh
+def test_ssh_combined_load(gcli_ssh):
+    load = gcli_ssh.ssh_load()
     assert list(load.columns) == ["p", "q"]
     assert len(load) == 1856 + 194
 
 
-@need_cim_ssh
-def test_ssh_hydro_generating_unit(sshmodel):
-    hydro = sshmodel.ssh_generating_unit(["cim:HydroGeneratingUnit"])
+@need_local_graphdb_ssh
+def test_ssh_hydro_generating_unit(gcli_ssh):
+    hydro = gcli_ssh.ssh_generating_unit(["cim:HydroGeneratingUnit"])
     assert np.all(hydro == 0.0)
     assert len(hydro) == 2177
 
 
-@need_cim_ssh
-def test_ssh_thermal_generating_unit(sshmodel):
-    thermal = sshmodel.ssh_generating_unit(["cim:ThermalGeneratingUnit"])
+@need_local_graphdb_ssh
+def test_ssh_thermal_generating_unit(gcli_ssh):
+    thermal = gcli_ssh.ssh_generating_unit(["cim:ThermalGeneratingUnit"])
     assert np.all(thermal == 0.0)
     assert len(thermal) == 40
 
 
-@need_cim_ssh
-def test_ssh_wind_generating_unit(sshmodel):
-    wind = sshmodel.ssh_generating_unit(["cim:WindGeneratingUnit"])
+@need_local_graphdb_ssh
+def test_ssh_wind_generating_unit(gcli_ssh):
+    wind = gcli_ssh.ssh_generating_unit(["cim:WindGeneratingUnit"])
     assert np.all(wind == 0.0)
     assert len(wind) == 71
 
 
-@need_cim_ssh
-def test_ssh_generating_unit_hydro_thermal(sshmodel):
-    gen = sshmodel.ssh_generating_unit(["cim:HydroGeneratingUnit", "cim:ThermalGeneratingUnit"])
+@need_local_graphdb_ssh
+def test_ssh_generating_unit_hydro_thermal(gcli_ssh):
+    gen = gcli_ssh.ssh_generating_unit(["cim:HydroGeneratingUnit", "cim:ThermalGeneratingUnit"])
     assert np.all(gen == 0.0)
     assert len(gen) == 40 + 2177
 
 
-@need_cim_ssh
-def test_ssh_generating_unit_union_all(sshmodel):
-    gen = sshmodel.ssh_generating_unit(
+@need_local_graphdb_ssh
+def test_ssh_generating_unit_union_all(gcli_ssh):
+    gen = gcli_ssh.ssh_generating_unit(
         ["cim:HydroGeneratingUnit", "cim:ThermalGeneratingUnit", "cim:WindGeneratingUnit"]
     )
     assert np.all(gen == 0.0)
     assert len(gen) == 40 + 2177 + 71
 
 
-@need_cim_ssh
-def test_ssh_generating_unit_union_all_default(sshmodel):
-    gen = sshmodel.ssh_generating_unit()
+@need_local_graphdb_ssh
+def test_ssh_generating_unit_union_all_default(gcli_ssh):
+    gen = gcli_ssh.ssh_generating_unit()
     assert np.all(gen == 0.0)
     assert len(gen) == 40 + 2177 + 71

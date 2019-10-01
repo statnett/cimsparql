@@ -8,25 +8,13 @@ from cimsparql.url import service, GraphDbConfig
 
 this_dir = pathlib.Path(__file__).parent
 
-ssh = "20190522T0730Z_1D_NO_SSH_1"
+ssh_repo = "20190522T0730Z"
+eq_repo = "20190521T0030Z"
 
 cim_date = "20190522_070618"
 
 sv = f"cim_{cim_date}_val_bymin_rtnet_ems_sv"
 tp = f"cim_{cim_date}_val_bymin_rtnet_ems_tp"
-
-
-need_cim_ssh = pytest.mark.skipif(
-    not pathlib.Path(this_dir / "data" / f"{ssh}.xml").exists(), reason=f"Require {ssh} to run"
-)
-
-need_cim_sv = pytest.mark.skipif(
-    not pathlib.Path(this_dir / "data" / f"{sv}.xml").exists(), reason=f"Require {sv} to run"
-)
-
-need_cim_tp = pytest.mark.skipif(
-    not pathlib.Path(this_dir / "data" / f"{tp}.xml").exists(), reason=f"Require {tp} to run"
-)
 
 
 def local_server():
@@ -36,35 +24,44 @@ def local_server():
         return "127.0.0.1:7200"
 
 
-need_local_graphdb = pytest.mark.skipif(
-    GraphDbConfig(local_server(), protocol="http").repos() == [],
-    reason="Need repos in local repository",
+local_graphdb = GraphDbConfig(local_server(), protocol="http")
+
+need_local_graphdb_ssh = pytest.mark.skipif(
+    ssh_repo not in local_graphdb.repos(), reason=f"Need {ssh_repo} in local repository"
+)
+
+need_local_graphdb_eq = pytest.mark.skipif(
+    eq_repo not in local_graphdb.repos(), reason=f"Need {eq_repo} in local repository"
+)
+
+need_local_graphdb_cim = pytest.mark.skipif(
+    cim_date not in local_graphdb.repos(), reason=f"Need {cim_date} in local repository"
 )
 
 
 @pytest.fixture(scope="session")
 def local_graphdb_config():
-    return GraphDbConfig(server=local_server(), protocol="http")
+    return local_graphdb
+
+
+@pytest.fixture(scope="session")
+def gcli_eq():
+    return GraphDBClient(service=service(server=local_server(), repo=eq_repo, protocol="http"))
+
+
+@pytest.fixture(scope="session")
+def gcli_ssh():
+    return GraphDBClient(service=service(server=local_server(), repo=ssh_repo, protocol="http"))
+
+
+@pytest.fixture(scope="session")
+def gcli_cim():
+    return GraphDBClient(service=service(server=local_server(), repo=cim_date, protocol="http"))
 
 
 @pytest.fixture(scope="session")
 def ieee118():
     return Model(pathlib.Path(this_dir / "data" / f"IEEE118.xml"), base_uri="ieee118_case")
-
-
-@pytest.fixture(scope="session")
-def sv_profile():
-    return sv
-
-
-@pytest.fixture(scope="session")
-def ssh_profile():
-    return ssh
-
-
-@pytest.fixture(scope="session")
-def tp_profile():
-    return tp
 
 
 @pytest.fixture(scope="session")
@@ -74,9 +71,4 @@ def root_dir():
 
 @pytest.fixture(scope="session")
 def gdb_cli():
-    return GraphDBClient(service())
-
-
-@pytest.fixture(scope="session")
-def gdb_cli_local():
     return GraphDBClient(service())

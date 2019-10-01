@@ -355,7 +355,7 @@ class Islands(nx.Graph):
     def reference_nodes(self, columns: List[str] = ["mrid", "ref_node"]) -> pd.DataFrame:
         keys = list()
         values = list()
-        for group in copy.deepcopy(self._groups):
+        for group in self.groups():
             ref = list(group)[0]
             keys += list(group)
             values += [ref] * len(group)

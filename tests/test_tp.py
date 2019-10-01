@@ -1,22 +1,13 @@
-import pytest
-
-from cimsparql import redland
-
-from conftest import need_cim_tp
+from conftest import need_local_graphdb_cim
 
 
-@pytest.fixture(scope="module")
-def tpmodel(root_dir, tp_profile):
-    return redland.Model(root_dir / "data" / f"{tp_profile}.xml", base_uri="http://example.org")
-
-
-@need_cim_tp
-def test_tp_terminal(tpmodel):
-    terminal = tpmodel.terminal(limit=100)
+@need_local_graphdb_cim
+def test_tp_terminal(gcli_cim):
+    terminal = gcli_cim.terminal(limit=100)
     assert terminal.shape == (100, 2)
 
 
-@need_cim_tp
-def test_tp_topological_node(tpmodel):
-    topological_node = tpmodel.topological_node(limit=2)
-    assert topological_node.shape == (0, 0)
+@need_local_graphdb_cim
+def test_tp_topological_node(gcli_cim):
+    topological_node = gcli_cim.topological_node(limit=2)
+    assert topological_node.shape == (0, 4)
