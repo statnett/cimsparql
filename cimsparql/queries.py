@@ -338,8 +338,11 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
     ]
     cols = [col for col in possible_columns if col in windings.columns]
     three_winding_mrid = windings[windings["endNumber"] == 3]["mrid"]
-    two_tx = windings[~windings["mrid"].isin(three_winding_mrid)]
-    two_tx = two_tx.rename(columns={"mrid": "ckt"})
+    two_tx_group = windings[~windings["mrid"].isin(three_winding_mrid)].groupby("endNumber")
+    two_tx = two_tx_group.get_group(1).set_index("mrid")
+    t_mrid_2 = two_tx_group.get_group(2).set_index("mrid")["t_mrid"]
+    two_tx.loc[t_mrid_2.index, "t_mrid_2"] = t_mrid_2
+    two_tx = two_tx.reset_index().rename(columns={"mrid": "ckt", "t_mrid": "t_mrid_1"})
     three_windings = windings.loc[windings["mrid"].isin(three_winding_mrid), :]
     wd = [windings_set_end(three_windings, i, cols).set_index("mrid") for i in range(1, 4)]
     three_tx = pd.concat(wd, axis=1, sort=False)
