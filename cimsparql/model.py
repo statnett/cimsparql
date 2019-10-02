@@ -132,17 +132,11 @@ class CimModel(Prefix):
         return self.get_table("SELECT * \n WHERE { ?s ?p ?o } limit 1").empty
 
     @staticmethod
-    def _assign_column_types(result, columns, reset_index):
-        if reset_index:
-            result.reset_index(inplace=True)
-
-        result.loc[:, :] = result.astype(str)
-
+    def _assign_column_types(result, columns):
         for column, column_type in columns.items():
             if column_type is str:
                 continue
-
-            if column_type is bool:
+            elif column_type is bool:
                 result.loc[:, column] = result.loc[:, column].astype(column_type)
             else:
                 result.loc[result[column] == "None", column] = ""
@@ -155,9 +149,14 @@ class CimModel(Prefix):
         self, query: str, index: str = None, limit: int = None, columns: Dict = None
     ) -> pd.DataFrame:
         result = self.get_table(query, index=index, limit=limit)
-        if len(result) > 0 and columns:
+        if len(result) > 0:
+            if columns is None:
+                columns = {}
             reset_index = index is not None
-            self._assign_column_types(result, columns, reset_index)
+            if reset_index:
+                result.reset_index(inplace=True)
+            result = result.astype(str)
+            self._assign_column_types(result, columns)
             if reset_index:
                 result.set_index(index, inplace=True)
         return result
