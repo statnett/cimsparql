@@ -26,6 +26,7 @@ def local_server():
 
 local_graphdb = GraphDbConfig(local_server(), protocol="http")
 
+
 need_local_graphdb_ssh = pytest.mark.skipif(
     ssh_repo not in local_graphdb.repos(), reason=f"Need {ssh_repo} in local repository"
 )

@@ -226,12 +226,12 @@ def transformer_query(
 
     if rates:
         limitset = "operationallimitset"
-        where_list += [f"?{limitset} cim:OperationalLimitSet.Terminal ?t_mrid"]
+        where_rate = [f"?{limitset} cim:OperationalLimitSet.Terminal ?t_mrid"]
 
         for rate in rates:
-            select_query += f"?rate{rate} "
-            where_list += operational_limit("?mrid", rate, limitset)
-
+            select_query += f" ?rate{rate}"
+            where_rate += operational_limit("?mrid", rate, limitset)
+        where_list += [group_query(where_rate, command="OPTIONAL")]
     return combine_statements(select_query, group_query(where_list))
 
 
