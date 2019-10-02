@@ -30,6 +30,15 @@ class CimModel(Prefix):
         columns = {var: float for var in load_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
+    def energy_consumers(self, mrid_columns=None):
+        mrid_columns = ["mrid"] if mrid_columns is None else mrid_columns
+        query = queries.energy_consumer_query()
+        float_list = ["pfixed", "pfixedPct", "qfixed", "qfixedPct"]
+        columns = {var: float for var in float_list}
+        return self.get_table_and_convert(
+            query, index="mrid", limit=None, columns=columns, mrid_columns=mrid_columns
+        )
+
     def wind_generating_units(self, mrid_columns=None):
 
         mrid_columns = ["mrid", "power_plant_mrid"] if mrid_columns is None else mrid_columns

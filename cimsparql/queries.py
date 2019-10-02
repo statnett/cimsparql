@@ -65,6 +65,16 @@ def terminal_where_query(
     return out
 
 
+def bid_market_code_query():
+    return [
+        "?mrid cim:Equipment.EquipmentContainer ?eq_container",
+        "?eq_container cim:VoltageLevel.Substation ?substation",
+        "?substation SN:Substation.MarketDeliveryPoint ?market_delivery_point",
+        "?market_delivery_point SN:MarketDeliveryPoint.BiddingArea ?bidding_area",
+        "?bidding_area SN:BiddingArea.marketCode ?bid_market_code",
+    ]
+
+
 def terminal_sequence_query(
     cim_version: int, sequence_numbers: List[int] = [1, 2], var: str = con_mrid_str
 ) -> List:
@@ -162,15 +172,8 @@ def synchronous_machines_query(
         "?machine rdfs:label 'generator' }",
     ]
 
-    where_list += [
-        "OPTIONAL { ?mrid cim:Equipment.EquipmentContainer ?container",
-        "?container cim:VoltageLevel.Substation ?Substation",
-        "?Substation cim:PowerSystemResource.Location ?location",
-        "?location cim:Location.PowerSystemResources ?system_resource",
-        "?system_resource SN:Substation.MarketDeliveryPoint ?delivery_point",
-        "?delivery_point SN:MarketDeliveryPoint.BiddingArea ?bidding_area",
-        "?bidding_area SN:BiddingArea.marketCode ?bid_market_code }",
-    ]
+    where_list += bid_market_code_query()
+
     where_list += [
         group_query([f"?mrid cim:RotatingMachine.{var_dict[var]} ?{var}"], command="OPTIONAL")
         for var in sync_vars
@@ -226,6 +229,22 @@ def wind_generating_unit_query():
         "?mrid SN:GeneratingUnit.ScheduleResource ?sr",
         "?sr SN:ScheduleResource.marketCode ?station_group",
     ]
+    return combine_statements(select_query, group_query(where_list))
+
+
+def energy_consumer_query():
+    select_query = "SELECT ?mrid ?pfixed ?pfixedPct ?qfixed ?qfixedPct ?bid_market_code"
+    where_list = [
+        "?mrid rdf:type cim:EnergyConsumer",
+        "?mrid rdf:type ?type",
+        "?mrid cim:EnergyConsumer.pfixed ?pfixed",
+        "?mrid cim:EnergyConsumer.pfixedPct ?pfixedPct",
+        "?mrid cim:EnergyConsumer.qfixed ?qfixed",
+        "?mrid cim:EnergyConsumer.qfixedPct ?qfixedPct",
+    ]
+
+    where_list += bid_market_code_query()
+    where_list += ["FILTER regex(str(?type), 'EnergyConsumer')"]
     return combine_statements(select_query, group_query(where_list))
 
 
