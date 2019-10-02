@@ -65,14 +65,13 @@ def terminal_where_query(
     return out
 
 
-def bid_market_code_query():
-    return [
-        "?mrid cim:Equipment.EquipmentContainer ?eq_container",
-        "?eq_container cim:VoltageLevel.Substation ?substation",
-        "?substation SN:Substation.MarketDeliveryPoint ?market_delivery_point",
-        "?market_delivery_point SN:MarketDeliveryPoint.BiddingArea ?bidding_area",
-        "?bidding_area SN:BiddingArea.marketCode ?bid_market_code",
-    ]
+bid_market_code_query = [
+    "?mrid cim:Equipment.EquipmentContainer ?eq_container",
+    "?eq_container cim:VoltageLevel.Substation ?substation",
+    "?substation SN:Substation.MarketDeliveryPoint ?market_delivery_point",
+    "?market_delivery_point SN:MarketDeliveryPoint.BiddingArea ?bidding_area",
+    "?bidding_area SN:BiddingArea.marketCode ?bid_market_code",
+]
 
 
 def terminal_sequence_query(
@@ -127,7 +126,9 @@ def load_query(
 
     container = "Substation"
 
-    select_query = "SELECT ?mrid ?terminal_mrid " + " ".join([f"?{p}" for p in load_vars])
+    select_query = "SELECT ?mrid ?terminal_mrid ?bid_market_code " + " ".join(
+        [f"?{p}" for p in load_vars]
+    )
 
     if connectivity is not None:
         select_query += f" ?{connectivity}"
@@ -138,7 +139,7 @@ def load_query(
         group_query([f"?mrid cim:EnergyConsumer.{p} ?{p}" for p in load_vars], command="OPTIONAL")
     ]
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
-
+    where_list += bid_market_code_query
     if region is not None:
         where_list += [
             "?mrid cim:Equipment.EquipmentContainer ?container",
@@ -156,10 +157,11 @@ def synchronous_machines_query(
     with_sequence_number: bool = False,
 ) -> str:
     var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
+    var_dict = {k: var_dict[k] for k in sync_vars}
+
     select_query = (
         "SELECT ?mrid ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax "
-        "?allocationWeight ?minP ?maxQ ?minQ ?bid_market_code"
-        + " ".join([f"?{var}" for var in sync_vars])
+        "?allocationWeight ?minP ?bid_market_code" + " ".join([f"?{var}" for var in sync_vars])
     )
     if connectivity is not None:
         select_query += f" ?{connectivity}"
@@ -172,7 +174,7 @@ def synchronous_machines_query(
         "?machine rdfs:label 'generator' }",
     ]
 
-    where_list += bid_market_code_query()
+    where_list += bid_market_code_query
 
     where_list += [
         group_query([f"?mrid cim:RotatingMachine.{var_dict[var]} ?{var}"], command="OPTIONAL")
@@ -229,22 +231,6 @@ def wind_generating_unit_query():
         "?mrid SN:GeneratingUnit.ScheduleResource ?sr",
         "?sr SN:ScheduleResource.marketCode ?station_group",
     ]
-    return combine_statements(select_query, group_query(where_list))
-
-
-def energy_consumer_query():
-    select_query = "SELECT ?mrid ?pfixed ?pfixedPct ?qfixed ?qfixedPct ?bid_market_code"
-    where_list = [
-        "?mrid rdf:type cim:EnergyConsumer",
-        "?mrid rdf:type ?type",
-        "?mrid cim:EnergyConsumer.pfixed ?pfixed",
-        "?mrid cim:EnergyConsumer.pfixedPct ?pfixedPct",
-        "?mrid cim:EnergyConsumer.qfixed ?qfixed",
-        "?mrid cim:EnergyConsumer.qfixedPct ?qfixedPct",
-    ]
-
-    where_list += bid_market_code_query()
-    where_list += ["FILTER regex(str(?type), 'EnergyConsumer')"]
     return combine_statements(select_query, group_query(where_list))
 
 

@@ -10,4 +10,4 @@ def test_tp_terminal(gcli_cim):
 @need_local_graphdb_cim
 def test_tp_topological_node(gcli_cim):
     topological_node = gcli_cim.topological_node(limit=2)
-    assert topological_node.shape == (0, 4)
+    assert len(topological_node) == 0

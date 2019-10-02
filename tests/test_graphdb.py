@@ -29,7 +29,7 @@ def test_cimversion(gdb_cli):
     assert gdb_cli._cim_version == 15
 
 
-load_columns = ["connectivity_mrid", "terminal_mrid", "p", "q"]
+load_columns = ["connectivity_mrid", "terminal_mrid", "bid_market_code", "p", "q"]
 
 
 def test_conform_load(gdb_cli):

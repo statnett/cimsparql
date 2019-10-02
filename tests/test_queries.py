@@ -50,11 +50,11 @@ def test_load_query_with_connectivity():
 
 
 def test_load_query_with_region():
-    assert "Substation" in queries.load_query(load_type=["ConformLoad"])
+    assert "SubGeographicalRegion" in queries.load_query(load_type=["ConformLoad"])
 
 
 def test_load_query_with_no_region():
-    assert "Substation" not in queries.load_query(load_type=["ConformLoad"], region=None)
+    assert "SubGeographicalRegion" not in queries.load_query(load_type=["ConformLoad"], region=None)
 
 
 def test_load_query_conform(monkeypatch):

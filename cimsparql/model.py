@@ -30,24 +30,11 @@ class CimModel(Prefix):
         columns = {var: float for var in load_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def energy_consumers(self, mrid_columns=None):
-        mrid_columns = ["mrid"] if mrid_columns is None else mrid_columns
-        query = queries.energy_consumer_query()
-        float_list = ["pfixed", "pfixedPct", "qfixed", "qfixedPct"]
-        columns = {var: float for var in float_list}
-        return self.get_table_and_convert(
-            query, index="mrid", limit=None, columns=columns, mrid_columns=mrid_columns
-        )
-
-    def wind_generating_units(self, mrid_columns=None):
-
-        mrid_columns = ["mrid", "power_plant_mrid"] if mrid_columns is None else mrid_columns
+    def wind_generating_units(self):
         query = queries.wind_generating_unit_query()
         float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
         columns = {var: float for var in float_list}
-        return self.get_table_and_convert(
-            query, index="mrid", limit=None, columns=columns, mrid_columns=mrid_columns
-        )
+        return self.get_table_and_convert(query, index="mrid", limit=None, columns=columns)
 
     def synchronous_machines(
         self,
@@ -55,15 +42,14 @@ class CimModel(Prefix):
         region: str = "NO",
         limit: int = None,
         connectivity: str = None,
-        mrid_columns=None,
     ) -> pd.DataFrame:
         query = queries.synchronous_machines_query(synchronous_vars, region, connectivity)
-        float_list = ["maxQ", "sn", "minQ", "maxP", "minP", "allocationMax", "allocationWeight"]
+
+        float_list = ["maxP", "minP", "allocationMax", "allocationWeight"]
+        float_list += synchronous_vars
+
         columns = {var: float for var in synchronous_vars + float_list}
-        mrid_columns = ["mrid", "terminal_mrid"] if mrid_columns is None else mrid_columns
-        return self.get_table_and_convert(
-            query, index="mrid", limit=limit, columns=columns, mrid_columns=mrid_columns
-        )
+        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def connections(
         self,
@@ -168,20 +154,8 @@ class CimModel(Prefix):
                 except ValueError:
                     raise
 
-    @staticmethod
-    def _clean_mrid(result: pd.DataFrame, mrid_columns: list):
-        if mrid_columns is not None:
-            for c in mrid_columns:
-                result[c] = result[c].apply(lambda x: x.split("_")[-1])
-        return result
-
     def get_table_and_convert(
-        self,
-        query: str,
-        index: str = None,
-        limit: int = None,
-        columns: Dict = None,
-        mrid_columns: list = None,
+        self, query: str, index: str = None, limit: int = None, columns: Dict = None
     ) -> pd.DataFrame:
         result = self.get_table(query, index=index, limit=limit)
         if len(result) > 0:
@@ -192,7 +166,6 @@ class CimModel(Prefix):
                 result.reset_index(inplace=True)
             result = result.astype(str)
             self._assign_column_types(result, columns)
-            self._clean_mrid(result, mrid_columns)
             if reset_index:
                 result.set_index(index, inplace=True)
         return result
