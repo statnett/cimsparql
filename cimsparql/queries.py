@@ -302,8 +302,16 @@ def connection_query(
 
 
 def winding_from_three_tx(three_tx: pd.DataFrame, i: int) -> pd.DataFrame:
-    winding = three_tx[[f"x_{i}", f"name_{i}", f"t_mrid_{i}", "mrid"]]
-    return winding.rename(columns={f"x_{i}": "x", f"name_{i}": "name", f"t_mrid_{i}": "t_mrid_1"})
+    columns = [col for col in three_tx.columns if col.endswith(f"_{i}") or col == "mrid"]
+    winding = three_tx[columns]
+    t_mrid = f"t_mrid_{i}"
+    rename_columns = {
+        column: "_".join(column.split("_")[:-1])
+        for column in columns
+        if column not in [t_mrid, "mrid"]
+    }
+    rename_columns[t_mrid] = "t_mrid_1"
+    return winding.rename(columns=rename_columns)
 
 
 def winding_list(three_tx: pd.DataFrame) -> List[pd.DataFrame]:
