@@ -208,6 +208,27 @@ def operational_limit(mrid: str, rate: str, limitset: str = "operationallimitset
     ]
 
 
+def wind_generating_unit_query():
+
+    select_query = (
+        "SELECT ?mrid ?station_group ?market_code ?maxP "
+        "?allocationMax ?allocationWeight ?minP ?name ?power_plant_mrid"
+    )
+    where_list = [
+        "?mrid rdf:type cim:WindGeneratingUnit",
+        "?mrid cim:GeneratingUnit.maxOperatingP ?maxP",
+        "?mrid SN:GeneratingUnit.marketCode ?market_code",
+        "?mrid cim:GeneratingUnit.minOperatingP ?minP",
+        "?mrid cim:IdentifiedObject.name ?name",
+        "?mrid SN:WindGeneratingUnit.WindPowerPlant ?power_plant_mrid",
+        "?mrid SN:GeneratingUnit.groupAllocationMax ?allocationMax",
+        "?mrid SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
+        "?mrid SN:GeneratingUnit.ScheduleResource ?sr",
+        "?sr SN:ScheduleResource.marketCode ?station_group",
+    ]
+    return combine_statements(select_query, group_query(where_list))
+
+
 def transformer_query(
     region: str = "NO",
     connectivity: str = con_mrid_str,
