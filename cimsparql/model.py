@@ -30,11 +30,11 @@ class CimModel(Prefix):
         columns = {var: float for var in load_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def wind_generating_units(self):
+    def wind_generating_units(self, limit: int = None):
         query = queries.wind_generating_unit_query()
         float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
         columns = {var: float for var in float_list}
-        return self.get_table_and_convert(query, index="mrid", limit=None, columns=columns)
+        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def synchronous_machines(
         self,

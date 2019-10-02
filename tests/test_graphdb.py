@@ -67,8 +67,27 @@ def test_synchronous_machines(gdb_cli):
                 "allocationMax",
                 "allocationWeight",
                 "minP",
-                "maxQ",
-                "minQ",
+                "bid_market_code",
+            ]
+        )
+        == set()
+    )
+
+
+def test_wind_generating_units(gdb_cli):
+    wind_units_machines = gdb_cli.wind_generating_units(limit=n_samples)
+    assert len(wind_units_machines) == n_samples
+    assert (
+        set(wind_units_machines.columns).difference(
+            [
+                "station_group",
+                "market_code",
+                "maxP",
+                "allocationMax",
+                "allocationWeight",
+                "minP",
+                "name",
+                "power_plant_mrid",
             ]
         )
         == set()
