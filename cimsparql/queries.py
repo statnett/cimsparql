@@ -170,8 +170,10 @@ def synchronous_machines_query(
         "?mrid rdf:type cim:SynchronousMachine",
         "?mrid cim:SynchronousMachine.maxQ ?maxQ",
         "?mrid cim:SynchronousMachine.minQ ?minQ",
-        "OPTIONAL { ?mrid cim:SynchronousMachine.type ?machine",
-        "?machine rdfs:label 'generator' }",
+        group_query(
+            ["?mrid cim:SynchronousMachine.type ?machine", "?machine rdfs:label 'generator'"],
+            command="OPTIONAL",
+        ),
     ]
 
     where_list += bid_market_code_query
@@ -181,14 +183,19 @@ def synchronous_machines_query(
         for var in sync_vars
     ]
     where_list += [
-        "OPTIONAL { ?mrid cim:SynchronousMachine.GeneratingUnit ?gu",
-        "?gu SN:GeneratingUnit.marketCode ?market_code",
-        "?gu cim:GeneratingUnit.maxOperatingP ?maxP",
-        "?gu cim:GeneratingUnit.minOperatingP ?minP",
-        "?gu SN:GeneratingUnit.groupAllocationMax ?allocationMax",
-        "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
-        "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
-        "?ScheduleResource SN:ScheduleResource.marketCode ?station_group}",
+        group_query(
+            [
+                "?mrid cim:SynchronousMachine.GeneratingUnit ?gu",
+                "?gu SN:GeneratingUnit.marketCode ?market_code",
+                "?gu cim:GeneratingUnit.maxOperatingP ?maxP",
+                "?gu cim:GeneratingUnit.minOperatingP ?minP",
+                "?gu SN:GeneratingUnit.groupAllocationMax ?allocationMax",
+                "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
+                "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
+                "?ScheduleResource SN:ScheduleResource.marketCode ?station_group",
+            ],
+            command="OPTIONAL",
+        )
     ]
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
