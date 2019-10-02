@@ -30,3 +30,8 @@ def test_local_graphdb_repos(local_graphdb_config):
         assert cim_date in local_graphdb_config.repos()
     except KeyError:
         pass
+
+
+def test_local_graphdb_config_raise_connection_exception():
+    graphdb_config = GraphDbConfig(server="127.0.0.1:7200")
+    assert graphdb_config.repos() == []

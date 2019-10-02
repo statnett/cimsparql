@@ -1,5 +1,4 @@
 import requests
-
 from typing import Dict
 
 
@@ -17,10 +16,13 @@ def service(
 class GraphDbConfig(object):
     def __init__(self, server: str = "graphdb.statnett.no", protocol: str = "https"):
         self._service = service(server, None, protocol)
-        repos = requests.get(self._service, headers={"Accept": "application/json"})
-        if repos.ok:
-            self._repos = repos.json()["results"]["bindings"]
-        else:
+        try:
+            repos = requests.get(self._service, headers={"Accept": "application/json"})
+            if repos.ok:
+                self._repos = repos.json()["results"]["bindings"]
+            else:
+                self._repos = {}
+        except requests.exceptions.ConnectionError:
             self._repos = {}
 
     def repos(self):
