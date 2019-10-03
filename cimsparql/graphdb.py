@@ -27,11 +27,13 @@ class GraphDBClient(CimModel):
 
     @staticmethod
     def value_getter(d):
-        if not d:
-            return None
-        if d["type"] == "uri":
-            return d["value"].split("_")[-1]
-        return d["value"]
+        try:
+            if d["type"] == "uri":
+                return d["value"].split("_")[-1]
+            else:
+                return d["value"]
+        except KeyError:
+            pass
 
     def get_table(self, query: str, index: str = None, limit: int = None) -> pd.DataFrame:
         """
