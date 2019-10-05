@@ -13,9 +13,6 @@ eq_repo = "20190521T0030Z"
 
 cim_date = "20190522_070618"
 
-sv = f"cim_{cim_date}_val_bymin_rtnet_ems_sv"
-tp = f"cim_{cim_date}_val_bymin_rtnet_ems_tp"
-
 
 def local_server():
     try:
