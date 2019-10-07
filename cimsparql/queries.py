@@ -22,6 +22,12 @@ def group_query(x: List, command: str = "WHERE", split: str = " .\n", group: boo
     return command + " " + combine_statements(*x, group=group, split=split)
 
 
+def unionize(*args, group: bool = True):
+    if group:
+        args = [f"{{\n{arg}\n}}" for arg in args]
+    return "\nUNION\n".join(args)
+
+
 def region_query(region: str, container: str) -> List:
     if region is None:
         return []

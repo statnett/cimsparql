@@ -1,6 +1,7 @@
 import os
 import pytest
 import pathlib
+import pandas as pd
 
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.redland import Model
@@ -73,3 +74,64 @@ def root_dir():
 @pytest.fixture(scope="session")
 def gdb_cli():
     return GraphDBClient(service())
+
+
+@pytest.fixture
+def type_dataframe():
+    return pd.DataFrame(
+        {
+            "str_col": ["a", "b", "c"],
+            "int_col": [1.0, 2.0, 3.0],
+            "float_col": ["2.2", "3.3", "4.4"],
+            "prefixed_col": ["prefix_a", "prefix_b", "prefix_c"],
+            "boolean_col": ["True", "True", "False"],
+        }
+    )
+
+
+@pytest.fixture
+def type_dataframe_ref():
+    return pd.DataFrame(
+        {
+            "str_col": ["a", "b", "c"],
+            "int_col": [1, 2, 3],
+            "float_col": [2.2, 3.3, 4.4],
+            "prefixed_col": ["a", "b", "c"],
+            "boolean_col": [True, True, False],
+        }
+    ).astype({"int_col": int})
+
+
+@pytest.fixture
+def sparql_data_types():
+    return pd.DataFrame(
+        {
+            "sparql_type": [
+                "http://www.alstom.com/grid/CIM-schema-cim15-extension#Stage.priority",
+                "http://iec.ch/TC57/2010/CIM-schema-cim15#PerCent",
+            ],
+            "type": ["Integer", "float"],
+            "prefix": [None, None],
+        }
+    )
+
+
+@pytest.fixture
+def data_row():
+    return {
+        "str_col": {"type": "literal", "value": "a"},
+        "int_col": {
+            "datatype": "http://www.alstom.com/grid/CIM-schema-cim15-extension#Stage.priority",
+            "type": "literal",
+            "value": "1",
+        },
+        "float_col": {
+            "datatype": "http://iec.ch/TC57/2010/CIM-schema-cim15#PerCent",
+            "type": "literal",
+            "value": "2.2",
+        },
+        "prefixed_col": {"type": "uri", "value": "prefixed_a"},
+        "boolean_col": {
+            "datatype": "http://entsoe.eu/Secretariat/ProfileExtension/1#AsynchronousMachine.converterFedDrive"
+        },
+    }
