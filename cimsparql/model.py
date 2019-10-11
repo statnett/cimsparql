@@ -146,7 +146,7 @@ class CimModel(Prefix):
             if column_type is str:
                 continue
             elif column_type is bool:
-                result.loc[:, column] = result.loc[:, column].astype(column_type)
+                result.loc[:, column] = result.loc[:, column].str.contains("True|true")
             else:
                 result.loc[result[column] == "None", column] = ""
                 try:
