@@ -15,8 +15,7 @@ class CimModel(Prefix):
 
     def bus_data(self, region: str = "NO", limit: int = None) -> pd.DataFrame:
         query = queries.bus_data(region)
-        columns = {"mrid": str}
-        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self.get_table_and_convert(query, index="mrid", limit=limit)
 
     def loads(
         self,
@@ -59,8 +58,7 @@ class CimModel(Prefix):
         connectivity: bool = True,
     ):
         query = queries.connection_query(self._cim_version, rdf_types, region, connectivity)
-        columns = {"mrid": str}
-        return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self.get_table_and_convert(query, index="mrid", limit=limit)
 
     def ac_lines(
         self,
