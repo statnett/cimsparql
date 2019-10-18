@@ -33,6 +33,7 @@ ipython = "*"
 jedi = "*"
 pytest = "*"
 pytest-cov = "*"
+mock = "*"
 rope = "*"
 yapf = "*"
 

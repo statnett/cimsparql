@@ -39,15 +39,6 @@ class Prefix(object):
         except AttributeError:
             return ""
 
-    def get_prefix_dict(self, service: str):
-        self.prefix_dict = {}
-        response = requests.get(service + f"/namespaces")
-        if response.ok:
-            for line in response.text.split():
-                prefix, uri = line.split(",")
-                if prefix != "prefix":
-                    self.prefix_dict[prefix] = uri.rstrip("#")
-
     def ns(self) -> Dict:
         return {name: f"{url}#" for name, url in self.prefix_dict.items()}
 

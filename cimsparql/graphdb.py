@@ -1,31 +1,41 @@
+import requests
 import pandas as pd
-from typing import Dict
+
 from SPARQLWrapper import SPARQLWrapper, JSON
+from typing import Tuple, Dict
 
 from cimsparql import url
 from cimsparql.model import CimModel
-from cimsparql.type_mapper import TypeMapper
 
 
 class GraphDBClient(CimModel):
-    def __init__(self, service: str = None, infer: bool = False, sameas: bool = True):
+    def __init__(
+        self, service: str = None, mapper: CimModel = None, infer: bool = False, sameas: bool = True
+    ):
         """
         :param service:
         """
-        super().__init__()
+        super().__init__(service=service, mapper=mapper, infer=infer, sameas=sameas)
 
+    def _load_from_source(self, service: str, infer: bool, sameas: bool, **kwargs):
         if service is None:
-            service = url.service()
+            self._service = url.service()
+        else:
+            self._service = service
 
-        self.get_prefix_dict(service)
-        self.set_cim_version()
-
-        self.sparql = SPARQLWrapper(service)
+        self.sparql = SPARQLWrapper(self._service)
         self.sparql.setReturnFormat(JSON)
         self.sparql.addParameter("infer", str(infer))
         self.sparql.addParameter("sameAs", str(sameas))
 
-        self.mapper = TypeMapper(self)
+    def get_prefix_dict(self, *args, **kwargs):
+        self.prefix_dict = {}
+        response = requests.get(self._service + f"/namespaces")
+        if response.ok:
+            for line in response.text.split():
+                prefix, uri = line.split(",")
+                if prefix != "prefix":
+                    self.prefix_dict[prefix] = uri.rstrip("#")
 
     @staticmethod
     def value_getter(d):
@@ -34,49 +44,20 @@ class GraphDBClient(CimModel):
         except KeyError:
             pass
 
-    def get_table(
-        self,
-        query: str,
-        index: str = None,
-        limit: int = None,
-        map_data_types: bool = True,
-        custom_maps: dict = None,
-        columns: dict = None,
-    ) -> pd.DataFrame:
-        """
-        Gets given table from the configured database.
+    @staticmethod
+    def _col_map(data_row) -> Dict:
+        return {
+            column: data.get("datatype", data.get("type", None))
+            for column, data in data_row.items()
+        }
 
-        :param query: to sparql server
-        :param index: column name to use as index
-        :param limit: limit number of resulting rows
-        :param map_data_types: gets datatypes from the configured graphdb & maps the
-                               types in the result to correct python types
-        :param custom_maps: dictionary of 'sparql_datatype': function
-                            to apply on columns with that type.
-                            Overwrites sparql map for the types specified.
-        :param columns: dictionary of 'column_name': function,
-                        uses pandas astype on the column, or applies function.
-                        Overwrites sparql map for the columns specified
-        :return: table as DataFrame
-        """
+    def _get_table(self, query: str, limit: int, **kwargs) -> Tuple[pd.DataFrame, Dict]:
         self.sparql.setQuery(self._query_str(query, limit))
 
         processed_results = self.sparql.queryAndConvert()
 
         cols = processed_results["head"]["vars"]
         data = processed_results["results"]["bindings"]
-
         out = [{c: self.value_getter(row.get(c, {})) for c in cols} for row in data]
-        result = pd.DataFrame(out)
-        if map_data_types and len(result) > 0:
-            result = self.mapper.map_data_types(result, data[0], custom_maps, columns)
 
-        if len(result) > 0 and index:
-            result.set_index(index, inplace=True)
-        return result
-
-    def get_table_and_convert(
-        self, query: str, index: str = None, limit: int = None, columns: Dict = None
-    ) -> pd.DataFrame:
-        result = self.get_table(query, index=index, limit=limit, columns=columns)
-        return result
+        return pd.DataFrame(out), data[0]
