@@ -2,11 +2,27 @@ import pandas as pd
 
 from cimsparql import queries, ssh_queries, tp_queries, sv_queries
 from cimsparql.url import Prefix
+from cimsparql.type_mapper import TypeMapper
 
-from typing import Dict, List
+
+from typing import Dict, List, TypeVar
+
+CimModelType = TypeVar("CimModelType", bound="CimModel")
 
 
 class CimModel(Prefix):
+    def __init__(self, mapper: TypeMapper = None, *args, **kwargs):
+        self._load_from_source(*args, **kwargs)
+        self.get_prefix_dict(*args, **kwargs)
+        self._set_mapper(mapper)
+        self.set_cim_version()
+
+    def _set_mapper(self, mapper: TypeMapper = None):
+        if mapper is None and "rdfs" in self.prefix_dict:
+            self.mapper = TypeMapper(self)
+        else:
+            self.mapper = mapper
+
     def _query_str(self, query: str, limit: int = None) -> str:
         q = f"{self.header_str()}\n\n{query}"
         if limit is not None:
@@ -136,7 +152,11 @@ class CimModel(Prefix):
 
     @property
     def empty(self) -> bool:
-        return self.get_table("SELECT * \n WHERE { ?s ?p ?o } limit 1").empty
+        try:
+            table, _ = self._get_table("SELECT * \n WHERE { ?s ?p ?o } limit 1")
+        except IndexError:
+            return True
+        return False
 
     @staticmethod
     def _assign_column_types(result, columns):
@@ -152,18 +172,86 @@ class CimModel(Prefix):
                 except ValueError:
                     raise
 
-    def get_table_and_convert(
-        self, query: str, index: str = None, limit: int = None, columns: Dict = None
+    @classmethod
+    def col_map(cls, data_row, columns):
+        columns = {} if columns is None else columns
+        col_map = cls._col_map(data_row)
+        return col_map, {col: columns[col] for col in set(columns).difference(col_map)}
+
+    def get_table(
+        self,
+        query: str,
+        index: str = None,
+        limit: int = None,
+        map_data_types: bool = True,
+        custom_maps: Dict = None,
+        columns: Dict = None,
     ) -> pd.DataFrame:
-        result = self.get_table(query, index=index, limit=limit)
-        if len(result) > 0:
-            if columns is None:
-                columns = {}
-            reset_index = index is not None
-            if reset_index:
-                result.reset_index(inplace=True)
-            result = result.astype(str)
-            self._assign_column_types(result, columns)
-            if reset_index:
-                result.set_index(index, inplace=True)
+        """
+        Gets given table from the configured database.
+
+        :param query: to sparql server
+        :param index: column name to use as index
+        :param limit: limit number of resulting rows
+        :param map_data_types: gets datatypes from the configured graphdb & maps the
+                               types in the result to correct python types
+        :param custom_maps: dictionary of 'sparql_datatype': function
+                            to apply on columns with that type.
+                            Overwrites sparql map for the types specified.
+        :param columns: dictionary of 'column_name': function,
+                        uses pandas astype on the column, or applies function.
+                        Sparql map overwrites columns when available
+        :return: table as DataFrame
+        """
+        try:
+            result, data_row = self._get_table(query=query, limit=limit)
+        except IndexError:
+            return pd.DataFrame([])
+
+        if map_data_types and self.mapper is not None and len(result) > 0:
+            col_map, columns = self.col_map(data_row, columns)
+            result = self.mapper.map_data_types(result, col_map, custom_maps, columns)
+
+        if len(result) > 0 and index:
+            result.set_index(index, inplace=True)
+        return result
+
+    @property
+    def map_data_types(self) -> bool:
+        try:
+            return self.mapper.have_cim_version(self.prefix_dict["cim"])
+        except AttributeError:
+            return False
+
+    @classmethod
+    def manual_convert_types(
+        cls: CimModelType, df: pd.DataFrame, columns: Dict, index: str
+    ) -> pd.DataFrame:
+        if columns is None:
+            columns = {}
+        reset_index = index is not None
+        if reset_index:
+            df.reset_index(inplace=True)
+        df = df.astype(str)
+        cls._assign_column_types(df, columns)
+        if reset_index:
+            df.set_index(index, inplace=True)
+        return df
+
+    def get_table_and_convert(
+        self,
+        query: str,
+        index: str = None,
+        limit: int = None,
+        custom_maps: Dict = None,
+        columns: Dict = None,
+    ) -> pd.DataFrame:
+
+        map_data_types = self.map_data_types
+
+        result = self.get_table(query, index, limit, map_data_types, custom_maps, columns)
+
+        if not map_data_types and len(result) > 0:
+            result = self.manual_convert_types(result, columns, index)
+
         return result

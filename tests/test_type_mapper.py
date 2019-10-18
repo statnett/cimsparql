@@ -1,13 +1,13 @@
 import pytest
 from cimsparql import type_mapper
-from mock import Mock
+from mock import MagicMock
 from pandas.testing import assert_frame_equal
 import warnings
 
 
 @pytest.fixture
 def mocked_graphdb(sparql_data_types):
-    cli = Mock()
+    cli = MagicMock()
     cli.get_table.return_value = sparql_data_types
     return cli
 
@@ -31,7 +31,12 @@ def test_map_data_types(type_mapper_instance, type_dataframe, data_row, type_dat
     columns = {"prefixed_col": lambda x: x.split("_")[-1]}
     entsoe_profile = "http://entsoe.eu/Secretariat/ProfileExtension/1"
     custom_maps = {f"{entsoe_profile}#AsynchronousMachine.converterFedDrive": lambda x: x == "True"}
+    col_map = {
+        column: data.get("datatype", data.get("type", None))
+        for column, data in data_row.items()
+        if column not in columns.keys()
+    }
     result = type_mapper_instance.map_data_types(
-        type_dataframe, data_row, custom_maps=custom_maps, columns=columns
+        type_dataframe, col_map, custom_maps=custom_maps, columns=columns
     )
     assert_frame_equal(result, type_dataframe_ref)

@@ -1,13 +1,13 @@
 from __future__ import annotations
 import datetime as dt
 from cimsparql.queries import combine_statements, unionize
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List
 
 import pandas as pd
 import warnings
 
 if TYPE_CHECKING:
-    from cimsparql.graphdb import GraphDBClient
+    from cimsparql.model import CimModel
 
 as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
 
@@ -24,7 +24,7 @@ sparql_type_map = {"literal": str, "uri": lambda x: x.split("_")[-1] if len(x) =
 
 class TypeMapperQueries:
     @property
-    def generals(self) -> list:
+    def generals(self) -> List:
         """
         For sparql-types that are not sourced from objects of type rdf:property,
         sparql & type are required.
@@ -45,7 +45,7 @@ class TypeMapperQueries:
         ]
 
     @property
-    def prefix_general(self) -> list:
+    def prefix_general(self) -> List:
         """
         Common query used as a base for all prefix_based queries.
         """
@@ -56,7 +56,7 @@ class TypeMapperQueries:
         ]
 
     @property
-    def prefix_based(self) -> dict:
+    def prefix_based(self) -> Dict:
         """
         Each prefix can have different locations of where DataTypes are described.
         Based on a object of type rdf:property & its rdfs:range, one has edit the
@@ -89,30 +89,33 @@ class TypeMapperQueries:
 
 
 class TypeMapper(TypeMapperQueries):
-    def __init__(self, client: GraphDBClient, custom_additions: dict = None):
+    def __init__(self, client: CimModel, custom_additions: Dict = None):
         self.prefixes = client.prefix_dict
         custom_additions = custom_additions if custom_additions is not None else {}
         self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
 
+    def have_cim_version(self, cim):
+        return cim in set([val.split("#")[0] for val in self.map.keys()])
+
     @staticmethod
-    def type_map(df: pd.DataFrame) -> dict:
+    def type_map(df: pd.DataFrame) -> Dict:
         df["type"] = df["type"].str.lower()
         d = df.set_index("sparql_type").to_dict("index")
         return {k: python_type_map.get(v.get("type", "String")) for k, v in d.items()}
 
     @staticmethod
-    def prefix_map(df: pd.DataFrame) -> dict:
+    def prefix_map(df: pd.DataFrame) -> Dict:
         df = df.loc[~df["prefix"].isna()].head()
         df["comb"] = df["prefix"] + "#" + df["type"]
         df = df.drop_duplicates("comb")
         d2 = df.set_index("comb").to_dict("index")
         return {k: python_type_map.get(v.get("type", "String")) for k, v in d2.items()}
 
-    def get_map(self, client: GraphDBClient) -> dict:
+    def get_map(self, client: CimModel) -> Dict:
         """
         Reads all metadata from the sparql backend & creates a sparql-type -> python type map
 
-        :param client: initialized GraphDBClient
+        :param client: initialized CimModel
         :return: sparql-type -> python type map
         """
         df = client.get_table(self._query, map_data_types=False)
@@ -120,9 +123,13 @@ class TypeMapper(TypeMapperQueries):
             return {}
         type_map = self.type_map(df)
         prefix_map = self.prefix_map(df)
-        return {**type_map, **prefix_map}
+        xsd_map = {
+            f"{self.prefixes['xsd']}#{xsd_type}": xsd_map
+            for xsd_type, xsd_map in python_type_map.items()
+        }
+        return {**type_map, **prefix_map, **xsd_map}
 
-    def get_type(self, sparql_type, missing_return="identity", custom_maps: dict = None):
+    def get_type(self, sparql_type, missing_return="identity", custom_maps: Dict = None):
         """
         Gets the python type/function to apply on columns of the sparql_type,
 
@@ -134,9 +141,9 @@ class TypeMapper(TypeMapperQueries):
             on all columns in the DataFrame that are of the sparql_data_type.
         :return: python datatype or function to apply on DataFrame columns
         """
-        map = {**self.map, **custom_maps} if custom_maps is not None else self.map
+        type_map = {**self.map, **custom_maps} if custom_maps is not None else self.map
         try:
-            return map[sparql_type]
+            return type_map[sparql_type]
         except KeyError:
             warnings.warn(f"{sparql_type} not found in the sparql -> python type map")
             if missing_return == "identity":
@@ -144,7 +151,7 @@ class TypeMapper(TypeMapperQueries):
             else:
                 return None
 
-    def convert_dict(self, d: dict, drop_missing: bool = True, custom_maps: dict = None) -> dict:
+    def convert_dict(self, d: Dict, drop_missing: bool = True, custom_maps: Dict = None) -> Dict:
         """
         Converts a col_name -> sparql_datatype map to a col_name -> python_type map
 
@@ -165,7 +172,7 @@ class TypeMapper(TypeMapperQueries):
         return base
 
     @staticmethod
-    def map_base_types(df: pd.DataFrame, type_map: dict) -> pd.DataFrame:
+    def map_base_types(df: pd.DataFrame, type_map: Dict) -> pd.DataFrame:
         """
         Maps the datatypes in type_map which can be used with the df.astype function.
 
@@ -179,7 +186,7 @@ class TypeMapper(TypeMapperQueries):
         return df
 
     @staticmethod
-    def map_exceptions(df: pd.DataFrame, type_map: dict) -> pd.DataFrame:
+    def map_exceptions(df: pd.DataFrame, type_map: Dict) -> pd.DataFrame:
         """
         Maps the functions/datatypes in type_map which cant be done with the df.astype function.
 
@@ -194,7 +201,7 @@ class TypeMapper(TypeMapperQueries):
         return df
 
     def map_data_types(
-        self, df: pd.DataFrame, data_row: dict, custom_maps: dict = None, columns: dict = None
+        self, df: pd.DataFrame, col_map: Dict, custom_maps: Dict = None, columns: Dict = None
     ) -> pd.DataFrame:
         """
         Maps the dtypes of a DataFrame to the python-corresponding types of the sparql-types
@@ -211,14 +218,7 @@ class TypeMapper(TypeMapperQueries):
             Applies the function/datatype on the column.
         :return: mapped DataFrame
         """
-        columns = {} if columns is None else columns
-        col_map = {
-            column: data.get("datatype", data.get("type", None))
-            for column, data in data_row.items()
-            if column not in columns.keys()
-        }
         type_map = {**self.convert_dict(col_map, custom_maps=custom_maps), **columns}
-
         df = self.map_base_types(df, type_map)
         df = self.map_exceptions(df, type_map)
         return df
