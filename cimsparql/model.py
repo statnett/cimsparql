@@ -208,11 +208,11 @@ class CimModel(Prefix):
         except IndexError:
             return pd.DataFrame([])
 
-        if map_data_types and self.mapper is not None and len(result) > 0:
+        if map_data_types and self.mapper is not None:
             col_map, columns = self.col_map(data_row, columns)
             result = self.mapper.map_data_types(result, col_map, custom_maps, columns)
 
-        if len(result) > 0 and index:
+        if index:
             result.set_index(index, inplace=True)
         return result
 
@@ -247,11 +247,11 @@ class CimModel(Prefix):
         columns: Dict = None,
     ) -> pd.DataFrame:
 
-        map_data_types = self.map_data_types
+        result = self.get_table(
+            query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns
+        )
 
-        result = self.get_table(query, index, limit, map_data_types, custom_maps, columns)
-
-        if not map_data_types and len(result) > 0:
+        if not self.map_data_types and len(result) > 0:
             result = self.manual_convert_types(result, columns, index)
 
         return result
