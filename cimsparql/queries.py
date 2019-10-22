@@ -125,6 +125,7 @@ def load_query(
     connectivity: str = con_mrid_str,
     cim_version: int = 15,
     with_sequence_number: bool = False,
+    network_analysis: bool = True,
 ) -> str:
 
     if not set(load_type).issubset(allowed_load_types) or len(load_type) == 0:
@@ -146,6 +147,10 @@ def load_query(
     ]
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
     where_list += bid_market_code_query
+
+    if network_analysis is not None:
+        where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
+
     if region is not None:
         where_list += [
             "?mrid cim:Equipment.EquipmentContainer ?container",
@@ -161,6 +166,7 @@ def synchronous_machines_query(
     connectivity: str = con_mrid_str,
     cim_version: int = 15,
     with_sequence_number: bool = False,
+    network_analysis: bool = True,
 ) -> str:
     var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
     var_dict = {k: var_dict[k] for k in sync_vars}
@@ -181,6 +187,9 @@ def synchronous_machines_query(
             command="OPTIONAL",
         ),
     ]
+
+    if network_analysis is not None:
+        where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
 
     where_list += bid_market_code_query
 
@@ -226,7 +235,7 @@ def operational_limit(mrid: str, rate: str, limitset: str = "operationallimitset
     ]
 
 
-def wind_generating_unit_query():
+def wind_generating_unit_query(network_analysis: bool = True,):
 
     select_query = (
         "SELECT ?mrid ?station_group ?market_code ?maxP "
@@ -244,6 +253,10 @@ def wind_generating_unit_query():
         "?mrid SN:GeneratingUnit.ScheduleResource ?sr",
         "?sr SN:ScheduleResource.marketCode ?station_group",
     ]
+
+    if network_analysis is not None:
+        where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
+
     return combine_statements(select_query, group_query(where_list))
 
 
@@ -251,6 +264,7 @@ def transformer_query(
     region: str = "NO",
     connectivity: str = con_mrid_str,
     rates: List[str] = ["Normal", "Warning", "Overload"],
+    network_analysis: bool = True,
 ) -> str:
     container = "Substation"
 
@@ -266,6 +280,10 @@ def transformer_query(
         "?c cim:TransformerEnd.Terminal ?t_mrid",
         "?c cim:IdentifiedObject.name ?name",
     ]
+
+    if network_analysis is not None:
+        where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
+
     if connectivity is not None:
         select_query += f" ?{connectivity}"
         where_list += [f"?t_mrid cim:Terminal.ConnectivityNode ?{connectivity}"]
@@ -290,6 +308,7 @@ def ac_line_query(
     region: str = "NO",
     connectivity: str = con_mrid_str,
     rates: List[str] = ["Normal", "Warning", "Overload"],
+    network_analysis: bool = True,
 ) -> str:
     container = "Line"
 
@@ -309,6 +328,9 @@ def ac_line_query(
         "?obase cim:BaseVoltage.nominalVoltage ?un",
         "?mrid cim:IdentifiedObject.name ?name",
     ]
+
+    if network_analysis is not None:
+        where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
 
     if region is not None:
         where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]

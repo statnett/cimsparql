@@ -19,6 +19,7 @@ class Model(CimModel):
         base_uri: str = "urn:snmst:",
         query_language: str = "sparql",
         mapper: CimModel = None,
+        network_analysis: bool = True,
     ):
         super().__init__(
             fname=fname,
@@ -27,6 +28,7 @@ class Model(CimModel):
             new=new,
             hash_type=hash_type,
             query_language=query_language,
+            network_analysis=network_analysis,
         )
 
     def _load_from_source(
