@@ -38,6 +38,12 @@ for AC line values. To see the actual sparql used do the following:
 >>> cim_version = 15
 >>> print(ac_line_query(cim_version))
 ```
+or also inluding prefix (required when copying into graphdb)
+```python
+>>> from cimsparql.queries import ac_line_query
+>>> gdbc = GraphDBClient()
+>>> print(gdbc._query_str(ac_line_query(gdbc._cim_version)))
+```
 
 Other predefined queries can be found in `cimsparql.queries`,
 `cimsparql.ssh_queries`, `cimsparql.sv_queries` or
