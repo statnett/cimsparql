@@ -11,7 +11,8 @@ CimModelType = TypeVar("CimModelType", bound="CimModel")
 
 
 class CimModel(Prefix):
-    def __init__(self, mapper: TypeMapper = None, *args, **kwargs):
+    def __init__(self, mapper: TypeMapper, network_analysis: bool, *args, **kwargs):
+        self._network_analysis = network_analysis
         self._load_from_source(*args, **kwargs)
         self.get_prefix_dict(*args, **kwargs)
         self._set_mapper(mapper)
@@ -41,12 +42,14 @@ class CimModel(Prefix):
         limit: int = None,
         connectivity: str = None,
     ) -> pd.DataFrame:
-        query = queries.load_query(load_type, load_vars, region, connectivity)
+        query = queries.load_query(
+            load_type, load_vars, region, connectivity, self._network_analysis
+        )
         columns = {var: float for var in load_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def wind_generating_units(self, limit: int = None):
-        query = queries.wind_generating_unit_query()
+    def wind_generating_units(self, limit: int = None) -> pd.DataFrame:
+        query = queries.wind_generating_unit_query(self._network_analysis)
         float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
         columns = {var: float for var in float_list}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
