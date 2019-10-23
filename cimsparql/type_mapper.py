@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 import datetime as dt
 from cimsparql.queries import combine_statements, unionize
 from typing import TYPE_CHECKING, Dict, List
@@ -19,7 +20,8 @@ python_type_map = {
     "dateTime": dt.datetime,
 }
 
-sparql_type_map = {"literal": str, "uri": lambda x: x.split("_")[-1] if len(x) == 48 else x}
+uri_snmst = re.compile("^urn:snmst:#_")
+sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x)}
 
 
 class TypeMapperQueries:
