@@ -167,6 +167,7 @@ def synchronous_machines_query(
     cim_version: int = 15,
     with_sequence_number: bool = False,
     network_analysis: bool = True,
+    u_groups: bool = False,
 ) -> str:
     var_dict = {"sn": "ratedS", "p": "p", "q": "q"}
     var_dict = {k: var_dict[k] for k in sync_vars}
@@ -208,19 +209,23 @@ def synchronous_machines_query(
                 "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
                 "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
                 "?ScheduleResource SN:ScheduleResource.marketCode ?station_group",
+                "?ScheduleResource cim:IdentifiedObject.aliasName ?station_group_name",
             ],
             command="OPTIONAL",
         )
     ]
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
+    if not u_groups:
+        where_list += [
+            f"FILTER (!bound(?station_group_name) || (!regex(?station_group_name, 'U-')))"
+        ]
     if region is not None:
         container = "Substation"
         where_list += [
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
         ] + region_query(region, container)
-
     return combine_statements(select_query, group_query(where_list))
 
 
