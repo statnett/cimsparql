@@ -1,5 +1,5 @@
 import requests
-from typing import Dict
+from typing import Dict, List
 
 
 def service(
@@ -25,7 +25,7 @@ class GraphDbConfig(object):
         except requests.exceptions.ConnectionError:
             self._repos = {}
 
-    def repos(self):
+    def repos(self) -> List[str]:
         return [repo["id"]["value"] for repo in self._repos]
 
 
@@ -39,11 +39,11 @@ class Prefix(object):
         except AttributeError:
             return ""
 
-    def ns(self) -> Dict:
+    def ns(self) -> Dict[str, str]:
         return {name: f"{url}#" for name, url in self.prefix_dict.items()}
 
     def items(self):
         return self.prefix_dict.items()
 
-    def inverse(self) -> Dict:
+    def inverse(self) -> Dict[str, str]:
         return {f"{url}#": name for name, url in self.prefix_dict.items()}

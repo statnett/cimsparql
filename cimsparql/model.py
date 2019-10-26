@@ -5,7 +5,7 @@ from cimsparql.url import Prefix
 from cimsparql.type_mapper import TypeMapper
 
 
-from typing import Dict, List, TypeVar
+from typing import Dict, List, TypeVar, Tuple
 
 CimModelType = TypeVar("CimModelType", bound="CimModel")
 
@@ -37,7 +37,7 @@ class CimModel(Prefix):
     def loads(
         self,
         load_type: List[str],
-        load_vars: List[str] = ["p", "q"],
+        load_vars: Tuple[str] = ("p", "q"),
         region: str = "NO",
         limit: int = None,
         connectivity: str = None,
@@ -56,22 +56,20 @@ class CimModel(Prefix):
 
     def synchronous_machines(
         self,
-        synchronous_vars: List[str] = ["sn", "p", "q"],
+        synchronous_vars: Tuple[str] = ("sn", "p", "q"),
         region: str = "NO",
         limit: int = None,
         connectivity: str = None,
     ) -> pd.DataFrame:
         query = queries.synchronous_machines_query(synchronous_vars, region, connectivity)
-
         float_list = ["maxP", "minP", "allocationMax", "allocationWeight"]
         float_list += synchronous_vars
-
-        columns = {var: float for var in synchronous_vars + float_list}
+        columns = {var: float for var in float_list}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def connections(
         self,
-        rdf_types: List[str] = ["cim:Breaker", "cim:Disconnector"],
+        rdf_types: Tuple[str] = ("cim:Breaker", "cim:Disconnector"),
         region: str = "NO",
         limit: int = None,
         connectivity: bool = True,
@@ -84,13 +82,11 @@ class CimModel(Prefix):
         region: str = "NO",
         limit: int = None,
         connectivity: str = None,
-        rates: List[str] = ["Normal", "Warning", "Overload"],
+        rates: Tuple[str] = queries.ratings,
     ) -> pd.DataFrame:
         query = queries.ac_line_query(self._cim_version, region, connectivity, rates)
-        columns = {
-            var: float
-            for var in ["x", "r", "un", "bch", "length"] + [f"rate{rate}" for rate in rates]
-        }
+        float_list = ["x", "r", "un", "bch", "length"] + [f"rate{rate}" for rate in rates]
+        columns = {var: float for var in float_list}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
     def series_compensators(self, region: str = "NO", limit: int = None, connectivity: str = None):
@@ -103,7 +99,7 @@ class CimModel(Prefix):
         region: str = "NO",
         limit: int = None,
         connectivity: str = None,
-        rates: List[str] = ["Normal", "Warning", "Overload"],
+        rates: Tuple[str] = queries.ratings,
     ) -> pd.DataFrame:
         query = queries.transformer_query(region, connectivity, rates)
         columns = {var: float for var in ["x", "un"] + [f"rate{rate}" for rate in rates]}
@@ -143,12 +139,12 @@ class CimModel(Prefix):
         columns = {"BaseVoltage": float}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def powerflow(self, power: List[str] = ["p", "q"], limit: int = None) -> pd.DataFrame:
+    def powerflow(self, power: Tuple[str] = ("p", "q"), limit: int = None) -> pd.DataFrame:
         query = sv_queries.powerflow(power)
         columns = {x: float for x in power}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def voltage(self, voltage_vars: List[str] = ["v", "angle"], limit: int = None) -> pd.DataFrame:
+    def voltage(self, voltage_vars: Tuple[str] = ("v", "angle"), limit: int = None) -> pd.DataFrame:
         query = sv_queries.voltage(voltage_vars)
         columns = {x: float for x in voltage_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)

@@ -10,6 +10,8 @@ allowed_load_types = ["ConformLoad", "NonConformLoad", "EnergyConsumer"]
 con_mrid_str = "connectivity_mrid"
 connectivity_columns = [f"{con_mrid_str}_{nr}" for nr in [1, 2]]
 
+ratings = ("Normal", "Warning", "Overload")
+
 
 def combine_statements(*args, group: bool = False, split: str = "\n"):
     if group:
@@ -41,7 +43,7 @@ def region_query(region: str, container: str) -> List:
 
 
 def connectivity_mrid(
-    var: str = con_mrid_str, sparql: bool = True, sequence_numbers: List[int] = [1, 2]
+    var: str = con_mrid_str, sparql: bool = True, sequence_numbers: Tuple[int] = (1, 2)
 ) -> [str, List]:
     if sparql:
         return " ".join([f"?{var}_{i}" for i in sequence_numbers])
@@ -81,7 +83,7 @@ bid_market_code_query = [
 
 
 def terminal_sequence_query(
-    cim_version: int, sequence_numbers: List[int] = [1, 2], var: str = con_mrid_str
+    cim_version: int, sequence_numbers: Tuple[int] = (1, 2), var: str = con_mrid_str
 ) -> List:
     query_list = []
     for i in sequence_numbers:
@@ -120,7 +122,7 @@ def bus_data(region: str = "NO") -> str:
 
 def load_query(
     load_type: List[str],
-    load_vars: List[str] = ["p", "q"],
+    load_vars: Tuple[str] = ("p", "q"),
     region: str = "NO",
     connectivity: str = con_mrid_str,
     cim_version: int = 15,
@@ -161,7 +163,7 @@ def load_query(
 
 
 def synchronous_machines_query(
-    sync_vars: List[str] = ("sn",),
+    sync_vars: Tuple[str] = ("sn",),
     region: str = "NO",
     connectivity: str = con_mrid_str,
     cim_version: int = 15,
@@ -268,7 +270,7 @@ def wind_generating_unit_query(network_analysis: bool = True,):
 def transformer_query(
     region: str = "NO",
     connectivity: str = con_mrid_str,
-    rates: List[str] = ["Normal", "Warning", "Overload"],
+    rates: Tuple[str] = ratings,
     network_analysis: bool = True,
 ) -> str:
     container = "Substation"
@@ -346,7 +348,7 @@ def ac_line_query(
     cim_version: int,
     region: str = "NO",
     connectivity: str = con_mrid_str,
-    rates: List[str] = ["Normal", "Warning", "Overload"],
+    rates: Tuple[str] = ratings,
     network_analysis: bool = True,
 ) -> str:
     container = "Line"
