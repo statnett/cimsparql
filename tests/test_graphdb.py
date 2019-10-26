@@ -44,6 +44,11 @@ def test_non_conform_load(gdb_cli):
     assert set(load.columns).issubset(load_columns)
 
 
+def test_series_compensator(gdb_cli):
+    compensators = gdb_cli.series_compensators(region="NO", limit=3)
+    assert len(compensators) == 3
+
+
 def test_conform_and_non_conform_load(gdb_cli):
     load = gdb_cli.loads(load_type=["ConformLoad", "NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples

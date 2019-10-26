@@ -308,6 +308,40 @@ def transformer_query(
     return combine_statements(select_query, group_query(where_list))
 
 
+def series_compensator_query(
+    cim_version: int,
+    region: str = "NO",
+    connectivity: str = con_mrid_str,
+    network_analysis: bool = True,
+):
+    container = "Substation"
+
+    select_query = "Select ?mrid ?x ?un ?name ?t_mrid_1 ?t_mrid_2"
+
+    if connectivity is not None:
+        select_query += f"{connectivity_mrid(connectivity)} "
+
+    where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
+    where_list += [
+        "?mrid rdf:type cim:SeriesCompensator",
+        "?mrid cim:SeriesCompensator.x ?x",
+        "?mrid cim:ConductingEquipment.BaseVoltage ?obase",
+        "?obase cim:BaseVoltage.nominalVoltage ?un",
+        "?mrid cim:IdentifiedObject.name ?name",
+    ]
+    if network_analysis is not None:
+        where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
+
+    if region is not None:
+        where_list += [
+            "?mrid cim:Equipment.EquipmentContainer ?EquipmentContainer",
+            "?EquipmentContainer cim:VoltageLevel.Substation ?Substation",
+        ]
+        where_list += region_query(region, container)
+
+    return combine_statements(select_query, group_query(where_list))
+
+
 def ac_line_query(
     cim_version: int,
     region: str = "NO",

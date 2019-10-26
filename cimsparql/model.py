@@ -93,6 +93,11 @@ class CimModel(Prefix):
         }
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
+    def series_compensators(self, region: str = "NO", limit: int = None, connectivity: str = None):
+        query = queries.series_compensator_query(self._cim_version, region, connectivity)
+        result, data_row = self._get_table(query=query, limit=limit)
+        return self.get_table_and_convert(query, limit=limit)
+
     def transformers(
         self,
         region: str = "NO",
