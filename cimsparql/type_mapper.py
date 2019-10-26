@@ -26,7 +26,7 @@ sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x)}
 
 class TypeMapperQueries:
     @property
-    def generals(self) -> List:
+    def generals(self) -> List[str]:
         """
         For sparql-types that are not sourced from objects of type rdf:property,
         sparql & type are required.
@@ -47,7 +47,7 @@ class TypeMapperQueries:
         ]
 
     @property
-    def prefix_general(self) -> List:
+    def prefix_general(self) -> List[str]:
         """
         Common query used as a base for all prefix_based queries.
         """
@@ -58,7 +58,7 @@ class TypeMapperQueries:
         ]
 
     @property
-    def prefix_based(self) -> Dict:
+    def prefix_based(self) -> Dict[str, List[str]]:
         """
         Each prefix can have different locations of where DataTypes are described.
         Based on a object of type rdf:property & its rdfs:range, one has edit the
@@ -96,7 +96,7 @@ class TypeMapper(TypeMapperQueries):
         custom_additions = custom_additions if custom_additions is not None else {}
         self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
 
-    def have_cim_version(self, cim):
+    def have_cim_version(self, cim) -> bool:
         return cim in set([val.split("#")[0] for val in self.map.keys()])
 
     @staticmethod

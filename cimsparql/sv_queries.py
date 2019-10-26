@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from cimsparql.queries import group_query, combine_statements
 
@@ -10,11 +10,11 @@ def _query_str(var_list: List[str], rdf_type: str, connection: str) -> str:
     return combine_statements(select, group_query(where))
 
 
-def powerflow(power: List[str] = ["p", "q"]) -> str:
+def powerflow(power: Tuple[str] = ("p", "q")) -> str:
     return _query_str(power, "SvPowerFlow", "Terminal")
 
 
-def voltage(voltage_vars: List[str] = ["v", "angle"]) -> str:
+def voltage(voltage_vars: Tuple[str] = ("v", "angle")) -> str:
     return _query_str(voltage_vars, "SvVoltage", "TopologicalNode")
 
 
