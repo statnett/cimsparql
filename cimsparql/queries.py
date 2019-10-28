@@ -377,9 +377,12 @@ def ac_line_query(
         where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
         where_list += region_query(region, container)
 
-    for rate in rates:
-        select_query += f"?rate{rate} "
-        where_list += operational_limit("?mrid", rate)
+    if rates:
+        where_rate = []
+        for rate in rates:
+            select_query += f"?rate{rate} "
+            where_rate += operational_limit("?mrid", rate)
+        where_list += [group_query(where_rate, command="OPTIONAL")]
 
     return combine_statements(select_query, group_query(where_list))
 
