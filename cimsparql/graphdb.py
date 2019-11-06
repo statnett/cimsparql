@@ -49,14 +49,14 @@ class GraphDBClient(CimModel):
                     self.prefix_dict[prefix] = uri.rstrip("#")
 
     @staticmethod
-    def value_getter(d):
+    def value_getter(d) -> str:
         try:
             return d["value"]
         except KeyError:
             pass
 
     @staticmethod
-    def _col_map(data_row) -> Dict:
+    def _col_map(data_row) -> Dict[str, str]:
         return {
             column: data.get("datatype", data.get("type", None))
             for column, data in data_row.items()

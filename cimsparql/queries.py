@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Set
 
 allowed_load_types = ["ConformLoad", "NonConformLoad", "EnergyConsumer"]
 
@@ -20,7 +20,9 @@ def combine_statements(*args, group: bool = False, split: str = "\n"):
         return split.join(args)
 
 
-def group_query(x: List, command: str = "WHERE", split: str = " .\n", group: bool = True) -> str:
+def group_query(
+    x: List[str], command: str = "WHERE", split: str = " .\n", group: bool = True
+) -> str:
     return command + " " + combine_statements(*x, group=group, split=split)
 
 
@@ -30,7 +32,7 @@ def unionize(*args, group: bool = True):
     return "\nUNION\n".join(args)
 
 
-def region_query(region: str, container: str) -> List:
+def region_query(region: str, container: str) -> List[str]:
     if region is None:
         return []
     else:
@@ -44,7 +46,7 @@ def region_query(region: str, container: str) -> List:
 
 def connectivity_mrid(
     var: str = con_mrid_str, sparql: bool = True, sequence_numbers: Tuple[int] = (1, 2)
-) -> [str, List]:
+) -> [str, List[str]]:
     if sparql:
         return " ".join([f"?{var}_{i}" for i in sequence_numbers])
     else:
@@ -60,7 +62,7 @@ def acdc_terminal(cim_version: int) -> str:
 
 def terminal_where_query(
     cim_version: int = None, var: str = con_mrid_str, with_sequence_number: bool = False
-) -> List:
+) -> List[str]:
     out = [
         "?terminal_mrid rdf:type cim:Terminal",
         "?terminal_mrid cim:Terminal.ConductingEquipment ?mrid",
@@ -84,7 +86,7 @@ bid_market_code_query = [
 
 def terminal_sequence_query(
     cim_version: int, sequence_numbers: Tuple[int] = (1, 2), var: str = con_mrid_str
-) -> List:
+) -> List[str]:
     query_list = []
     for i in sequence_numbers:
         mrid = f"?t_mrid_{i} "
@@ -488,5 +490,5 @@ class Islands(nx.Graph):
             values += [ref] * len(group)
         return pd.DataFrame(np.array([keys, values]).transpose(), columns=columns).set_index("mrid")
 
-    def groups(self) -> List:
+    def groups(self) -> List[Set]:
         return copy.deepcopy(self._groups)
