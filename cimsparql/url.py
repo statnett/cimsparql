@@ -4,7 +4,7 @@ from typing import Dict, List
 
 def service(
     server: str = "graphdb.statnett.no",
-    repo: str = "SNMST-Master1Repo-VERSION-LATEST",
+    repo: str = "SNMST-MasterCim15-VERSION-LATEST",
     protocol: str = "https",
 ) -> str:
     url = f"{protocol}://{server}/repositories"

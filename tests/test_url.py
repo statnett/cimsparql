@@ -11,7 +11,7 @@ prefixes = [
     "SN",
     "pti",
     "md",
-    "entsoe",
+    "ENTSOE",
     "entsoe2",
     "wgs",
     "gn",
