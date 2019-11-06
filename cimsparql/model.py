@@ -30,8 +30,10 @@ class CimModel(Prefix):
             q += f" limit {limit}"
         return q
 
-    def bus_data(self, region: str = "NO", limit: int = None) -> pd.DataFrame:
-        query = queries.bus_data(region)
+    def bus_data(
+        self, region: str = "NO", sub_region: bool = False, limit: int = None
+    ) -> pd.DataFrame:
+        query = queries.bus_data(region, sub_region)
         return self.get_table_and_convert(query, index="mrid", limit=limit)
 
     def loads(
@@ -39,11 +41,12 @@ class CimModel(Prefix):
         load_type: List[str],
         load_vars: Tuple[str] = ("p", "q"),
         region: str = "NO",
+        sub_region: bool = False,
         limit: int = None,
         connectivity: str = None,
     ) -> pd.DataFrame:
         query = queries.load_query(
-            load_type, load_vars, region, connectivity, self._network_analysis
+            load_type, load_vars, region, sub_region, connectivity, self._network_analysis
         )
         columns = {var: float for var in load_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -58,10 +61,13 @@ class CimModel(Prefix):
         self,
         synchronous_vars: Tuple[str] = ("sn", "p", "q"),
         region: str = "NO",
+        sub_region: bool = False,
         limit: int = None,
         connectivity: str = None,
     ) -> pd.DataFrame:
-        query = queries.synchronous_machines_query(synchronous_vars, region, connectivity)
+        query = queries.synchronous_machines_query(
+            synchronous_vars, region, sub_region, connectivity
+        )
         float_list = ["maxP", "minP", "allocationMax", "allocationWeight"]
         float_list += synchronous_vars
         columns = {var: float for var in float_list}
@@ -71,37 +77,50 @@ class CimModel(Prefix):
         self,
         rdf_types: Tuple[str] = ("cim:Breaker", "cim:Disconnector"),
         region: str = "NO",
+        sub_region: bool = False,
         limit: int = None,
         connectivity: bool = True,
     ) -> pd.DataFrame:
-        query = queries.connection_query(self._cim_version, rdf_types, region, connectivity)
+        query = queries.connection_query(
+            self._cim_version, rdf_types, region, sub_region, connectivity
+        )
         return self.get_table_and_convert(query, index="mrid", limit=limit)
 
     def ac_lines(
         self,
         region: str = "NO",
+        sub_region: bool = False,
         limit: int = None,
         connectivity: str = None,
         rates: Tuple[str] = queries.ratings,
     ) -> pd.DataFrame:
-        query = queries.ac_line_query(self._cim_version, region, connectivity, rates)
+        query = queries.ac_line_query(self._cim_version, region, sub_region, connectivity, rates)
         float_list = ["x", "r", "un", "bch", "length"] + [f"rate{rate}" for rate in rates]
         columns = {var: float for var in float_list}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
 
-    def series_compensators(self, region: str = "NO", limit: int = None, connectivity: str = None):
-        query = queries.series_compensator_query(self._cim_version, region, connectivity)
+    def series_compensators(
+        self,
+        region: str = "NO",
+        sub_region: bool = False,
+        limit: int = None,
+        connectivity: str = None,
+    ) -> pd.DataFrame:
+        query = queries.series_compensator_query(
+            self._cim_version, region, sub_region, connectivity
+        )
         result, data_row = self._get_table(query=query, limit=limit)
         return self.get_table_and_convert(query, limit=limit)
 
     def transformers(
         self,
         region: str = "NO",
+        sub_region: bool = False,
         limit: int = None,
         connectivity: str = None,
         rates: Tuple[str] = queries.ratings,
     ) -> pd.DataFrame:
-        query = queries.transformer_query(region, connectivity, rates)
+        query = queries.transformer_query(region, sub_region, connectivity, rates)
         columns = {var: float for var in ["x", "un"] + [f"rate{rate}" for rate in rates]}
         columns["endNumber"] = int
         return self.get_table_and_convert(query, limit=limit, columns=columns)
