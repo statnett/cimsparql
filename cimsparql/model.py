@@ -73,7 +73,7 @@ class CimModel(Prefix):
         region: str = "NO",
         limit: int = None,
         connectivity: bool = True,
-    ):
+    ) -> pd.DataFrame:
         query = queries.connection_query(self._cim_version, rdf_types, region, connectivity)
         return self.get_table_and_convert(query, index="mrid", limit=limit)
 
@@ -177,7 +177,7 @@ class CimModel(Prefix):
                     raise
 
     @classmethod
-    def col_map(cls, data_row, columns):
+    def col_map(cls, data_row, columns) -> Tuple[Dict[str, str]]:
         columns = {} if columns is None else columns
         col_map = cls._col_map(data_row)
         return col_map, {col: columns[col] for col in set(columns).difference(col_map)}

@@ -6,56 +6,57 @@ import pandas as pd
 
 
 from cimsparql.queries import windings_to_tx, three_tx_to_windings, Islands
+from cimsparql.graphdb import GraphDBClient
 
 
 n_samples = 40
 
 
 @pytest.fixture(scope="module")
-def breakers(gdb_cli):
+def breakers(gdb_cli: GraphDBClient):
     return gdb_cli.connections(
         rdf_types="cim:Breaker", limit=n_samples, connectivity="connectivity_mrid"
     )
 
 
 @pytest.fixture(scope="module")
-def disconnectors(gdb_cli):
+def disconnectors(gdb_cli: GraphDBClient):
     return gdb_cli.connections(
         rdf_types="cim:Disconnector", limit=n_samples, connectivity="connectivity_mrid"
     )
 
 
-def test_cimversion(gdb_cli):
+def test_cimversion(gdb_cli: GraphDBClient):
     assert gdb_cli._cim_version == 15
 
 
 load_columns = ["connectivity_mrid", "terminal_mrid", "bid_market_code", "p", "q"]
 
 
-def test_conform_load(gdb_cli):
+def test_conform_load(gdb_cli: GraphDBClient):
     load = gdb_cli.loads(load_type=["ConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
 
-def test_non_conform_load(gdb_cli):
+def test_non_conform_load(gdb_cli: GraphDBClient):
     load = gdb_cli.loads(load_type=["NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
 
-def test_series_compensator(gdb_cli):
+def test_series_compensator(gdb_cli: GraphDBClient):
     compensators = gdb_cli.series_compensators(region="NO", limit=3)
     assert len(compensators) == 3
 
 
-def test_conform_and_non_conform_load(gdb_cli):
+def test_conform_and_non_conform_load(gdb_cli: GraphDBClient):
     load = gdb_cli.loads(load_type=["ConformLoad", "NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
 
-def test_synchronous_machines(gdb_cli):
+def test_synchronous_machines(gdb_cli: GraphDBClient):
     synchronous_machines = gdb_cli.synchronous_machines(limit=n_samples)
     assert len(synchronous_machines) == n_samples
     assert (
@@ -79,7 +80,7 @@ def test_synchronous_machines(gdb_cli):
     )
 
 
-def test_wind_generating_units(gdb_cli):
+def test_wind_generating_units(gdb_cli: GraphDBClient):
     wind_units_machines = gdb_cli.wind_generating_units(limit=n_samples)
     assert len(wind_units_machines) == n_samples
     assert (
@@ -99,13 +100,13 @@ def test_wind_generating_units(gdb_cli):
     )
 
 
-def test_branch(gdb_cli):
+def test_branch(gdb_cli: GraphDBClient):
     lines = gdb_cli.ac_lines(limit=n_samples).set_index("mrid")
     assert lines.shape == (n_samples, 11)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
-def test_branch_with_connectivity(gdb_cli):
+def test_branch_with_connectivity(gdb_cli: GraphDBClient):
     lines = gdb_cli.ac_lines(limit=n_samples, connectivity="connectivity_mrid").set_index("mrid")
     assert lines.shape == (n_samples, 13)
     assert all(lines[["x", "un"]].dtypes == np.float)
@@ -127,7 +128,7 @@ def test_transformers_with_connectivity(gdb_cli):
     assert set(dummy_tx.columns).difference(["t_mrid_1", "t_mrid_2", "b", "x", "ckt"]) == set()
 
 
-def test_transformers(gdb_cli):
+def test_transformers(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(limit=n_samples)
 
     two_tx, three_tx = windings_to_tx(windings)
@@ -148,21 +149,21 @@ def test_reference_nodes():
     )
 
 
-def test_breaker_length(breakers):
+def test_breaker_length(breakers: pd.DataFrame):
     assert len(breakers) == n_samples
 
 
-def test_breaker_reference_nodes(breakers):
+def test_breaker_reference_nodes(breakers: pd.DataFrame):
     connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
     node_dict = Islands(breakers[connect_columns]).reference_nodes()
     assert len(node_dict) == len(np.unique(breakers[connect_columns].to_numpy()))
 
 
-def test_connectors_length(disconnectors):
+def test_connectors_length(disconnectors: pd.DataFrame):
     assert len(disconnectors) == n_samples
 
 
-def test_connectors_reference_nodes(disconnectors):
+def test_connectors_reference_nodes(disconnectors: pd.DataFrame):
     connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
     node_dict = Islands(disconnectors[connect_columns]).reference_nodes()
     assert len(node_dict) == len(np.unique(disconnectors[connect_columns].to_numpy()))
