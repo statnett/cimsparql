@@ -6,11 +6,11 @@ from cimsparql import queries
 
 
 def test_region_query_empty():
-    assert queries.region_query(region=None, container="") == []
+    assert queries.region_query(region=None, sub_region=False, container="") == []
 
 
 def test_region_query():
-    assert len(queries.region_query(region="NO", container="")) == 4
+    assert len(queries.region_query(region="NO", sub_region=False, container="")) == 4
 
 
 def test_connectivity_mrid_sparql():

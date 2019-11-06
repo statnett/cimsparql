@@ -112,8 +112,10 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient):
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
-def test_transformers_with_connectivity(gdb_cli):
-    windings = gdb_cli.transformers(limit=n_samples, connectivity="connectivity_mrid")
+def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
+    windings = gdb_cli.transformers(
+        region="NO01", sub_region=True, connectivity="connectivity_mrid"
+    )
 
     two_tx, three_tx = windings_to_tx(windings)
     assert len(two_tx) > 10
@@ -129,7 +131,7 @@ def test_transformers_with_connectivity(gdb_cli):
 
 
 def test_transformers(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(limit=n_samples)
+    windings = gdb_cli.transformers(region="NO01", sub_region=True)
 
     two_tx, three_tx = windings_to_tx(windings)
     assert len(two_tx) > 10

@@ -32,16 +32,23 @@ def unionize(*args, group: bool = True):
     return "\nUNION\n".join(args)
 
 
-def region_query(region: str, container: str) -> List[str]:
+def region_query(region: str, sub_region: bool, container: str) -> List[str]:
     if region is None:
-        return []
+        query = []
     else:
-        return [
-            f"?{container} cim:{container}.Region ?subgeographicalregion",
-            "?subgeographicalregion cim:SubGeographicalRegion.Region ?region",
-            "?region cim:IdentifiedObject.name ?regionname ",
-            f"\tFILTER regex(str(?regionname), '{region}')",
-        ]
+        query = [f"?{container} cim:{container}.Region ?subgeographicalregion"]
+        if sub_region:
+            query += [
+                "?subgeographicalregion SN:IdentifiedObject.shortName ?regionname",
+            ]
+        else:
+            query += [
+                "?subgeographicalregion cim:SubGeographicalRegion.Region ?region",
+                "?region cim:IdentifiedObject.name ?regionname ",
+            ]
+        query += [f"\tFILTER regex(str(?regionname), '{region}')"]
+
+    return query
 
 
 def connectivity_mrid(
@@ -107,7 +114,7 @@ def connectivity_names() -> str:
     return combine_statements(select_query, group_query(where_list))
 
 
-def bus_data(region: str = "NO") -> str:
+def bus_data(region: str = "NO", sub_region: bool = False) -> str:
     container = "Substation"
     select_query = "SELECT ?mrid ?name"
     where_list = ["?mrid rdf:type cim:TopologicalNode", "?mrid cim:IdentifiedObject.name ?name"]
@@ -117,7 +124,7 @@ def bus_data(region: str = "NO") -> str:
             "?mrid cim:TopologicalNode.ConnectivityNodeContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
         ]
-        where_list += region_query(region, container)
+        where_list += region_query(region, sub_region, container)
 
     return combine_statements(select_query, group_query(where_list))
 
@@ -126,6 +133,7 @@ def load_query(
     load_type: List[str],
     load_vars: Tuple[str] = ("p", "q"),
     region: str = "NO",
+    sub_region: bool = False,
     connectivity: str = con_mrid_str,
     cim_version: int = 15,
     with_sequence_number: bool = False,
@@ -159,7 +167,7 @@ def load_query(
         where_list += [
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
-        ] + region_query(region, container)
+        ] + region_query(region, sub_region, container)
 
     return combine_statements(select_query, group_query(where_list))
 
@@ -167,6 +175,7 @@ def load_query(
 def synchronous_machines_query(
     sync_vars: Tuple[str] = ("sn",),
     region: str = "NO",
+    sub_region: bool = False,
     connectivity: str = con_mrid_str,
     cim_version: int = 15,
     with_sequence_number: bool = False,
@@ -229,7 +238,7 @@ def synchronous_machines_query(
         where_list += [
             "?mrid cim:Equipment.EquipmentContainer ?container",
             f"?container cim:VoltageLevel.Substation ?{container}",
-        ] + region_query(region, container)
+        ] + region_query(region, sub_region, container)
     return combine_statements(select_query, group_query(where_list))
 
 
@@ -244,7 +253,7 @@ def operational_limit(mrid: str, rate: str, limitset: str = "operationallimitset
     ]
 
 
-def wind_generating_unit_query(network_analysis: bool = True,):
+def wind_generating_unit_query(network_analysis: bool = True):
 
     select_query = (
         "SELECT ?mrid ?station_group ?market_code ?maxP "
@@ -271,6 +280,7 @@ def wind_generating_unit_query(network_analysis: bool = True,):
 
 def transformer_query(
     region: str = "NO",
+    sub_region: bool = False,
     connectivity: str = con_mrid_str,
     rates: Tuple[str] = ratings,
     network_analysis: bool = True,
@@ -299,7 +309,7 @@ def transformer_query(
 
     if region is not None:
         where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
-        where_list += region_query(region, container)
+        where_list += region_query(region, sub_region, container)
 
     if rates:
         limitset = "operationallimitset"
@@ -315,6 +325,7 @@ def transformer_query(
 def series_compensator_query(
     cim_version: int,
     region: str = "NO",
+    sub_region: bool = False,
     connectivity: str = con_mrid_str,
     network_analysis: bool = True,
 ):
@@ -341,7 +352,7 @@ def series_compensator_query(
             "?mrid cim:Equipment.EquipmentContainer ?EquipmentContainer",
             "?EquipmentContainer cim:VoltageLevel.Substation ?Substation",
         ]
-        where_list += region_query(region, container)
+        where_list += region_query(region, sub_region, container)
 
     return combine_statements(select_query, group_query(where_list))
 
@@ -349,6 +360,7 @@ def series_compensator_query(
 def ac_line_query(
     cim_version: int,
     region: str = "NO",
+    sub_region: bool = False,
     connectivity: str = con_mrid_str,
     rates: Tuple[str] = ratings,
     network_analysis: bool = True,
@@ -377,7 +389,7 @@ def ac_line_query(
 
     if region is not None:
         where_list += [f"?mrid cim:Equipment.EquipmentContainer ?{container}"]
-        where_list += region_query(region, container)
+        where_list += region_query(region, sub_region, container)
 
     if rates:
         where_rate = []
@@ -393,6 +405,7 @@ def connection_query(
     cim_version: int,
     rdf_types: Union[str, List[str]],
     region: str = "NO",
+    sub_region: bool = False,
     connectivity: str = con_mrid_str,
 ) -> str:
 
@@ -412,7 +425,7 @@ def connection_query(
             "?mrid cim:Equipment.EquipmentContainer ?EquipmentContainer",
             "?EquipmentContainer cim:Bay.VoltageLevel ?VoltageLevel",
             "?VoltageLevel cim:VoltageLevel.Substation ?Substation",
-        ] + region_query(region, "Substation")
+        ] + region_query(region, sub_region, "Substation")
 
     where_list += terminal_sequence_query(cim_version=cim_version, var=connectivity)
 
