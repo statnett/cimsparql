@@ -32,6 +32,20 @@ def unionize(*args, group: bool = True):
     return "\nUNION\n".join(args)
 
 
+def regions_query() -> str:
+    select_query = "SELECT ?mrid ?aliasName  ?name ?shortName ?region ?region_name"
+    where_list = [
+        "?mrid rdf:type cim:SubGeographicalRegion",
+        "?mrid cim:IdentifiedObject.aliasName ?aliasName",
+        "?mrid cim:IdentifiedObject.name ?name",
+        "?mrid SN:IdentifiedObject.shortName ?shortName",
+        "?mrid cim:SubGeographicalRegion.Region ?sub_geographical_region",
+        "?sub_geographical_region cim:IdentifiedObject.name ?region",
+        "?sub_geographical_region cim:IdentifiedObject.aliasName ?region_name",
+    ]
+    return combine_statements(select_query, group_query(where_list))
+
+
 def region_query(region: str, sub_region: bool, container: str) -> List[str]:
     if region is None:
         query = []

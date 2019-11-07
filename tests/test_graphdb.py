@@ -100,6 +100,11 @@ def test_wind_generating_units(gdb_cli: GraphDBClient):
     )
 
 
+def test_regions(gdb_cli: GraphDBClient):
+    regions = gdb_cli.regions()
+    assert regions.groupby("region").count()["shortName"]["NO"] > 16
+
+
 def test_branch(gdb_cli: GraphDBClient):
     lines = gdb_cli.ac_lines(limit=n_samples).set_index("mrid")
     assert lines.shape == (n_samples, 11)
