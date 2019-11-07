@@ -173,6 +173,10 @@ class CimModel(Prefix):
         columns = {"position": float}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
+    def regions(self) -> pd.DataFrame:
+        query = queries.regions_query()
+        return self.get_table_and_convert(query, index="mrid")
+
     @property
     def empty(self) -> bool:
         try:
