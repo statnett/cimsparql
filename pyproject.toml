@@ -36,6 +36,7 @@ pytest-cov = "*"
 mock = "*"
 rope = "*"
 yapf = "*"
+pre-commit = "*"
 
 [build-system]
 requires = ["poetry>=0.12"]
