@@ -44,9 +44,16 @@ class CimModel(Prefix):
         sub_region: bool = False,
         limit: int = None,
         connectivity: str = None,
+        station_group: bool = False,
     ) -> pd.DataFrame:
         query = queries.load_query(
-            load_type, load_vars, region, sub_region, connectivity, self._network_analysis
+            load_type,
+            load_vars,
+            region,
+            sub_region,
+            connectivity,
+            self._network_analysis,
+            station_group=station_group,
         )
         columns = {var: float for var in load_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)

@@ -52,9 +52,7 @@ def region_query(region: str, sub_region: bool, container: str) -> List[str]:
     else:
         query = [f"?{container} cim:{container}.Region ?subgeographicalregion"]
         if sub_region:
-            query += [
-                "?subgeographicalregion SN:IdentifiedObject.shortName ?regionname",
-            ]
+            query += ["?subgeographicalregion SN:IdentifiedObject.shortName ?regionname"]
         else:
             query += [
                 "?subgeographicalregion cim:SubGeographicalRegion.Region ?region",
@@ -152,6 +150,7 @@ def load_query(
     cim_version: int = 15,
     with_sequence_number: bool = False,
     network_analysis: bool = True,
+    station_group: bool = False,
 ) -> str:
 
     if not set(load_type).issubset(allowed_load_types) or len(load_type) == 0:
@@ -173,6 +172,17 @@ def load_query(
     ]
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
     where_list += bid_market_code_query
+
+    if station_group:
+        select_query += " ?station_group"
+        where_list += group_query(
+            [
+                "?mrid cim:NonConformLoad.LoadGroup ?lg",
+                "?lg SN:NonConformLoadGroup.ScheduleResource ?sched_res",
+                "?sched_res SN:ScheduleResource.marketCode ?station_group",
+            ],
+            command="OPTIONAL",
+        )
 
     if network_analysis is not None:
         where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
