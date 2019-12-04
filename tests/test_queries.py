@@ -57,6 +57,14 @@ def test_load_query_with_no_region():
     assert "SubGeographicalRegion" not in queries.load_query(load_type=["ConformLoad"], region=None)
 
 
+def test_load_query_with_station_group():
+    assert "station_group" in queries.load_query(load_type=["ConformLoad"], station_group=True)
+
+
+def test_load_query_with_no_station_group():
+    assert "station_group" not in queries.load_query(load_type=["ConformLoad"])
+
+
 def test_load_query_conform(monkeypatch):
     _combine_statements_mock = MagicMock()
     _group_query_mock = MagicMock()
