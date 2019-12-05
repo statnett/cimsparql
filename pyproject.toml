@@ -6,7 +6,7 @@
 # character.
 [tool.poetry]
 name = "cimsparql"
-version = "1.2.8"
+version = "1.2.9"
 description = "CIM query utilities"
 authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
 repository = "https://gitlab.statnett.no/general/cimsparql.git"
