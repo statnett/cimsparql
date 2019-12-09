@@ -175,14 +175,16 @@ def load_query(
 
     if station_group:
         select_query += " ?station_group"
-        where_list += group_query(
-            [
-                "?mrid cim:NonConformLoad.LoadGroup ?lg",
-                "?lg SN:NonConformLoadGroup.ScheduleResource ?sched_res",
-                "?sched_res SN:ScheduleResource.marketCode ?station_group",
-            ],
-            command="OPTIONAL",
-        )
+        where_list += [
+            group_query(
+                [
+                    "?mrid cim:NonConformLoad.LoadGroup ?lg",
+                    "?lg SN:NonConformLoadGroup.ScheduleResource ?sched_res",
+                    "?sched_res SN:ScheduleResource.marketCode ?station_group",
+                ],
+                command="OPTIONAL",
+            )
+        ]
 
     if network_analysis is not None:
         where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
