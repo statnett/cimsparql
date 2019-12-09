@@ -478,7 +478,7 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
     three_tx.rename(columns={"index": "mrid"}, inplace=True)
     windings = pd.concat(winding_list(three_tx), ignore_index=True)
     windings["b"] = 1 / windings["x"]
-    windings["ckt"] = windings["mrid"]
+    windings["ckt"] = windings["t_mrid_1"]
     windings["t_mrid_2"] = windings["mrid"]
     return windings.loc[:, cols]
 
