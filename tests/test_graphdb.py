@@ -62,6 +62,7 @@ def test_synchronous_machines(gdb_cli: GraphDBClient):
     assert (
         set(synchronous_machines.columns).difference(
             [
+                "name",
                 "sn",
                 "terminal_mrid",
                 "p",
