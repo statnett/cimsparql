@@ -29,7 +29,7 @@ def test_connectivity_mrid_list_length_with_sequence_numbers():
     assert len(queries.connectivity_mrid(sparql=False, sequence_numbers=range(10))) == 10
 
 
-def test_load_query_raises_value_error(monkeypatch):
+def test_load_query_raises_value_error():
     with pytest.raises(ValueError):
         queries.load_query(load_type=["non_type"], connectivity=None)
 

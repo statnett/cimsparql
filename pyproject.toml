@@ -14,6 +14,7 @@ repository = "https://gitlab.statnett.no/general/cimsparql.git"
 [[tool.poetry.source]]
 name = "artifactory"
 url = "https://artifactory.statnett.no/artifactory/api/pypi/pypi_statnett_ia_virtual/simple/"
+default = true
 
 [tool.poetry.dependencies]
 python = "^3.6"
@@ -27,7 +28,7 @@ requests = "*"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "*"
-black = { version = "*", allows-prereleases = true }
+black = { version = "*", allow-prereleases = true }
 flake8 = "*"
 ipython = "*"
 jedi = "*"
