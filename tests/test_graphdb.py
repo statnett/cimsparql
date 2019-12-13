@@ -47,7 +47,12 @@ def test_non_conform_load(gdb_cli: GraphDBClient):
 
 def test_series_compensator(gdb_cli: GraphDBClient):
     compensators = gdb_cli.series_compensators(region="NO", limit=3)
-    assert len(compensators) == 3
+    assert compensators.shape == (3, 6)
+
+
+def test_series_compensator_with_market(gdb_cli: GraphDBClient):
+    compensators = gdb_cli.series_compensators(region="NO", limit=3, with_market=True)
+    assert compensators.shape == (3, 8)
 
 
 def test_conform_and_non_conform_load(gdb_cli: GraphDBClient):
@@ -112,6 +117,12 @@ def test_branch(gdb_cli: GraphDBClient):
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
+def test_branch_with_market(gdb_cli: GraphDBClient):
+    lines = gdb_cli.ac_lines(limit=n_samples, with_market=True).set_index("mrid")
+    assert lines.shape == (n_samples, 13)
+    assert all(lines[["x", "un"]].dtypes == np.float)
+
+
 def test_branch_with_connectivity(gdb_cli: GraphDBClient):
     lines = gdb_cli.ac_lines(limit=n_samples, connectivity="connectivity_mrid").set_index("mrid")
     assert lines.shape == (n_samples, 13)
@@ -120,28 +131,38 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient):
 
 def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(
-        region="NO01", sub_region=True, connectivity="connectivity_mrid"
+        region="NO01", sub_region=True, connectivity="connectivity_mrid", with_market=True
     )
-
     two_tx, three_tx = windings_to_tx(windings)
     assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["ckt", "x", "un"])
+    assert set(two_tx.columns).issuperset(["ckt", "x", "un", "market_1", "market_2"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert len(three_tx) > 2
     assert set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
 
-    dummy_tx = three_tx_to_windings(three_tx, ["t_mrid_1", "t_mrid_2", "b", "x", "ckt"])
+    cols = ["t_mrid_1", "t_mrid_2", "b", "x", "ckt", "market"]
+    dummy_tx = three_tx_to_windings(three_tx, cols)
     assert len(dummy_tx) == 3 * len(three_tx)
-    assert set(dummy_tx.columns).difference(["t_mrid_1", "t_mrid_2", "b", "x", "ckt"]) == set()
+    assert set(dummy_tx.columns).difference(cols + ["market_1", "market_2"]) == set()
+
+
+def test_windings(gdb_cli: GraphDBClient):
+    windings = gdb_cli.transformers(region="NO01", sub_region=True)
+    assert windings.shape == (341, 12)
+
+
+def test_windings_with_market(gdb_cli: GraphDBClient):
+    windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
+    assert windings.shape == (341, 13)
 
 
 def test_transformers(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(region="NO01", sub_region=True)
+    windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
 
     two_tx, three_tx = windings_to_tx(windings)
     assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["ckt", "x", "un"])
+    assert set(two_tx.columns).issuperset(["ckt", "x", "un", "market_1", "market_2"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert len(three_tx) > 2

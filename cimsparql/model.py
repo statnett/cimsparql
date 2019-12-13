@@ -100,8 +100,11 @@ class CimModel(Prefix):
         limit: int = None,
         connectivity: str = None,
         rates: Tuple[str] = queries.ratings,
+        with_market: bool = False,
     ) -> pd.DataFrame:
-        query = queries.ac_line_query(self._cim_version, region, sub_region, connectivity, rates)
+        query = queries.ac_line_query(
+            self._cim_version, region, sub_region, connectivity, rates, with_market=with_market
+        )
         float_list = ["x", "r", "un", "bch", "length"] + [f"rate{rate}" for rate in rates]
         columns = {var: float for var in float_list}
         return self.get_table_and_convert(query, limit=limit, columns=columns)
@@ -112,9 +115,10 @@ class CimModel(Prefix):
         sub_region: bool = False,
         limit: int = None,
         connectivity: str = None,
+        with_market: bool = False,
     ) -> pd.DataFrame:
         query = queries.series_compensator_query(
-            self._cim_version, region, sub_region, connectivity
+            self._cim_version, region, sub_region, connectivity, with_market=with_market
         )
         result, data_row = self._get_table(query=query, limit=limit)
         return self.get_table_and_convert(query, limit=limit)
@@ -126,8 +130,11 @@ class CimModel(Prefix):
         limit: int = None,
         connectivity: str = None,
         rates: Tuple[str] = queries.ratings,
+        with_market: bool = False,
     ) -> pd.DataFrame:
-        query = queries.transformer_query(region, sub_region, connectivity, rates)
+        query = queries.transformer_query(
+            region, sub_region, connectivity, rates, with_market=with_market
+        )
         columns = {var: float for var in ["x", "un"] + [f"rate{rate}" for rate in rates]}
         columns["endNumber"] = int
         return self.get_table_and_convert(query, limit=limit, columns=columns)
@@ -282,7 +289,7 @@ class CimModel(Prefix):
     ) -> pd.DataFrame:
 
         result = self.get_table(
-            query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns
+            query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns,
         )
 
         if not self.map_data_types and len(result) > 0:

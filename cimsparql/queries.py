@@ -46,6 +46,21 @@ def regions_query() -> str:
     return combine_statements(select_query, group_query(where_list))
 
 
+def market_code_query(nr: int = None):
+    nr = "" if nr is None else f"_{nr}"
+    return group_query(
+        [
+            f"?t_mrid{nr} cim:Terminal.ConnectivityNode ?con{nr}",
+            f"?con{nr} cim:ConnectivityNode.ConnectivityNodeContainer ?container{nr}",
+            f"?container{nr} cim:VoltageLevel.Substation ?substation{nr}",
+            f"?substation{nr} SN:Substation.MarketDeliveryPoint ?market_delivery_point{nr}",
+            f"?market_delivery_point{nr} SN:MarketDeliveryPoint.BiddingArea ?bidding_area{nr}",
+            f"?bidding_area{nr} SN:BiddingArea.marketCode ?market{nr}",
+        ],
+        command="OPTIONAL",
+    )
+
+
 def region_query(region: str, sub_region: bool, container: str) -> List[str]:
     if region is None:
         query = []
@@ -311,10 +326,11 @@ def transformer_query(
     connectivity: str = con_mrid_str,
     rates: Tuple[str] = ratings,
     network_analysis: bool = True,
+    with_market: bool = False,
 ) -> str:
     container = "Substation"
 
-    select_query = "SELECT ?name ?mrid ?c ?x ?r ?endNumber ?sn ?un ?t_mrid"
+    select_query = "SELECT ?name ?mrid ?c ?x ?r ?endNumber ?sn ?un ?t_mrid "
 
     where_list = [
         "?mrid rdf:type cim:PowerTransformer",
@@ -326,6 +342,10 @@ def transformer_query(
         "?c cim:TransformerEnd.Terminal ?t_mrid",
         "?c cim:IdentifiedObject.name ?name",
     ]
+
+    if with_market:
+        select_query += "?market "
+        where_list += [market_code_query()]
 
     if network_analysis is not None:
         where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
@@ -355,15 +375,21 @@ def series_compensator_query(
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
     network_analysis: bool = True,
+    with_market: bool = False,
 ):
     container = "Substation"
 
-    select_query = "Select ?mrid ?x ?un ?name ?t_mrid_1 ?t_mrid_2"
+    select_query = "Select ?mrid ?x ?un ?name ?t_mrid_1 ?t_mrid_2 "
 
     if connectivity is not None:
         select_query += f"{connectivity_mrid(connectivity)} "
 
     where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
+    if with_market:
+        select_query += "?market_1 ?market_2 "
+        for terminal_nr in [1, 2]:
+            where_list += [market_code_query(terminal_nr)]
+
     where_list += [
         "?mrid rdf:type cim:SeriesCompensator",
         "?mrid cim:SeriesCompensator.x ?x",
@@ -391,6 +417,7 @@ def ac_line_query(
     connectivity: str = con_mrid_str,
     rates: Tuple[str] = ratings,
     network_analysis: bool = True,
+    with_market: bool = True,
 ) -> str:
     container = "Line"
 
@@ -400,6 +427,11 @@ def ac_line_query(
         select_query += f"{connectivity_mrid(connectivity)} "
 
     where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
+    if with_market:
+        select_query += "?market_1 ?market_2 "
+        for terminal_nr in [1, 2]:
+            where_list += [market_code_query(terminal_nr)]
+
     where_list += [
         "?mrid rdf:type cim:ACLineSegment",
         "?mrid cim:ACLineSegment.x ?x",
@@ -483,6 +515,7 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
     windings["b"] = 1 / windings["x"]
     windings["ckt"] = windings["t_mrid_1"]
     windings["t_mrid_2"] = windings["mrid"]
+    windings["market_1"] = windings["market_2"] = windings["market"]
     return windings.loc[:, cols]
 
 
@@ -497,21 +530,30 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
         "x",
         "un",
         "t_mrid",
+        "market",
         con_mrid_str,
         "rateNormal",
         "rateWarning",
         "rateOverload",
     ]
     cols = [col for col in possible_columns if col in windings.columns]
+
+    # Three winding includes endNumber == 3
     three_winding_mrid = windings[windings["endNumber"] == 3]["mrid"]
-    two_tx_group = windings[~windings["mrid"].isin(three_winding_mrid)].groupby("endNumber")
-    two_tx = two_tx_group.get_group(1).set_index("mrid")
-    t_mrid_2 = two_tx_group.get_group(2).set_index("mrid")["t_mrid"]
-    two_tx.loc[t_mrid_2.index, "t_mrid_2"] = t_mrid_2
-    two_tx = two_tx.reset_index().rename(columns={"mrid": "ckt", "t_mrid": "t_mrid_1"})
     three_windings = windings.loc[windings["mrid"].isin(three_winding_mrid), :]
     wd = [windings_set_end(three_windings, i, cols).set_index("mrid") for i in range(1, 4)]
     three_tx = pd.concat(wd, axis=1, sort=False)
+
+    # While two winding transformers don't. Combine first and second winding.
+    two_tx_group = windings[~windings["mrid"].isin(three_winding_mrid)].groupby("endNumber")
+    two_tx = two_tx_group.get_group(1).set_index("mrid")
+    two_tx_2 = two_tx_group.get_group(2).set_index("mrid")
+    for col in ["t_mrid", "market"]:
+        two_tx.loc[two_tx_2.index, f"{col}_2"] = two_tx_2[col]
+    two_tx.loc[two_tx_2.index, "x"] += two_tx_2["x"]
+    two_tx = two_tx.reset_index().rename(
+        columns={"mrid": "ckt", "t_mrid": "t_mrid_1", "market": "market_1"}
+    )
     return two_tx, three_tx
 
 
