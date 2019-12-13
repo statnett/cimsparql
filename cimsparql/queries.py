@@ -212,7 +212,7 @@ def synchronous_machines_query(
     var_dict = {k: var_dict[k] for k in sync_vars}
 
     select_query = (
-        "SELECT ?mrid ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax "
+        "SELECT ?mrid ?name ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax "
         "?allocationWeight ?minP ?bid_market_code" + " ".join([f"?{var}" for var in sync_vars])
     )
     if connectivity is not None:
@@ -220,6 +220,7 @@ def synchronous_machines_query(
 
     where_list = [
         "?mrid rdf:type cim:SynchronousMachine",
+        "?mrid cim:IdentifiedObject.name ?name",
         "?mrid cim:SynchronousMachine.maxQ ?maxQ",
         "?mrid cim:SynchronousMachine.minQ ?minQ",
         group_query(
