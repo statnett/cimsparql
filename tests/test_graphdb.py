@@ -117,7 +117,7 @@ def test_branch(gdb_cli: GraphDBClient):
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
-def test_branch_with_market(gdb_cli: GraphDBClient):
+def test_ac_line_segment_with_market(gdb_cli: GraphDBClient):
     lines = gdb_cli.ac_lines(limit=n_samples, with_market=True).set_index("mrid")
     assert lines.shape == (n_samples, 13)
     assert all(lines[["x", "un"]].dtypes == np.float)
@@ -149,12 +149,12 @@ def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
 
 def test_windings(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="NO01", sub_region=True)
-    assert windings.shape == (341, 12)
+    assert windings.shape[1] == 12
 
 
 def test_windings_with_market(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
-    assert windings.shape == (341, 13)
+    assert windings.shape[1] == 13
 
 
 def test_transformers(gdb_cli: GraphDBClient):
