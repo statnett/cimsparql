@@ -10,7 +10,7 @@ def test_region_query_empty():
 
 
 def test_region_query():
-    assert len(queries.region_query(region="NO", sub_region=False, container="")) == 4
+    assert len(queries.region_query(region="NO", sub_region=False, container="")) == 3
 
 
 def test_connectivity_mrid_sparql():
