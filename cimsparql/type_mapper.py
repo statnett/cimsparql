@@ -92,7 +92,7 @@ class TypeMapperQueries:
 
 class TypeMapper(TypeMapperQueries):
     def __init__(self, client: CimModel, custom_additions: Dict = None):
-        self.prefixes = client.prefix_dict
+        self.prefixes = client.prefixes
         custom_additions = custom_additions if custom_additions is not None else {}
         self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
 

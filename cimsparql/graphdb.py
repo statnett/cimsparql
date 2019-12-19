@@ -38,15 +38,17 @@ class GraphDBClient(CimModel):
         self.sparql.setReturnFormat(JSON)
         self.sparql.addParameter("infer", str(infer))
         self.sparql.addParameter("sameAs", str(sameas))
+        self.prefixes = self._service
 
-    def get_prefix_dict(self, *args, **kwargs):
-        self.prefix_dict = {}
-        response = requests.get(self._service + f"/namespaces")
+    @CimModel.prefixes.setter
+    def prefixes(self, service: str):
+        self._prefixes = {}
+        response = requests.get(service + f"/namespaces")
         if response.ok:
             for line in response.text.split():
                 prefix, uri = line.split(",")
                 if prefix != "prefix":
-                    self.prefix_dict[prefix] = uri.rstrip("#")
+                    self._prefixes[prefix] = uri.rstrip("#")
 
     @staticmethod
     def value_getter(d) -> str:

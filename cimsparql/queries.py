@@ -5,7 +5,7 @@ import pandas as pd
 
 from typing import Tuple, List, Union, Set
 
-allowed_load_types = ["ConformLoad", "NonConformLoad", "EnergyConsumer"]
+allowed_load_types = ("ConformLoad", "NonConformLoad", "EnergyConsumer")
 
 con_mrid_str = "connectivity_mrid"
 connectivity_columns = [f"{con_mrid_str}_{nr}" for nr in [1, 2]]
@@ -328,7 +328,18 @@ def transformer_query(
 ) -> str:
     container = "Substation"
 
-    select_query = "SELECT ?name ?mrid ?c ?x ?r ?endNumber ?sn ?un ?t_mrid "
+    select_query = [
+        "SELECT",
+        "?name",
+        "?mrid",
+        "?c",
+        "?x",
+        "?r",
+        "?endNumber",
+        "?sn",
+        "?un",
+        "?t_mrid",
+    ]
 
     where_list = [
         "?mrid rdf:type cim:PowerTransformer",
@@ -342,14 +353,14 @@ def transformer_query(
     ]
 
     if with_market:
-        select_query += "?market "
+        select_query += ["?market"]
         where_list += [market_code_query()]
 
     if network_analysis is not None:
         where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
 
     if connectivity is not None:
-        select_query += f" ?{connectivity}"
+        select_query += [f"?{connectivity}"]
         where_list += [f"?t_mrid cim:Terminal.ConnectivityNode ?{connectivity}"]
 
     if region is not None:
@@ -361,10 +372,10 @@ def transformer_query(
         where_rate = [f"?{limitset} cim:OperationalLimitSet.Terminal ?t_mrid"]
 
         for rate in rates:
-            select_query += f" ?rate{rate}"
+            select_query += [f"?rate{rate}"]
             where_rate += operational_limit("?mrid", rate, limitset)
         where_list += [group_query(where_rate, command="OPTIONAL")]
-    return combine_statements(select_query, group_query(where_list))
+    return combine_statements(" ".join(select_query), group_query(where_list))
 
 
 def series_compensator_query(
@@ -377,15 +388,16 @@ def series_compensator_query(
 ):
     container = "Substation"
 
-    select_query = "Select ?mrid ?x ?un ?name ?t_mrid_1 ?t_mrid_2 "
+    select_query = ["Select", "?mrid", "?x", "?un", "?name", "?t_mrid_1", "?t_mrid_2"]
 
     if connectivity is not None:
-        select_query += f"{connectivity_mrid(connectivity)} "
+        select_query += [f"{connectivity_mrid(connectivity)}"]
 
     where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
     if with_market:
-        select_query += "?market_1 ?market_2 "
-        for terminal_nr in [1, 2]:
+        terminals = [1, 2]
+        select_query += [f"?market_{nr}" for nr in terminals]
+        for terminal_nr in terminals:
             where_list += [market_code_query(terminal_nr)]
 
     where_list += [
@@ -405,7 +417,7 @@ def series_compensator_query(
         ]
         where_list += region_query(region, sub_region, container)
 
-    return combine_statements(select_query, group_query(where_list))
+    return combine_statements(" ".join(select_query), group_query(where_list))
 
 
 def ac_line_query(
@@ -466,10 +478,10 @@ def connection_query(
     connectivity: str = con_mrid_str,
 ) -> str:
 
-    select_query = "SELECT ?mrid  ?t_mrid_1 ?t_mrid_2"
+    select_query = ["SELECT", "?mrid", "?t_mrid_1", "?t_mrid_2"]
 
     if connectivity is not None:
-        select_query += f" {connectivity_mrid(connectivity)}"
+        select_query += [f"{connectivity_mrid(connectivity)}"]
 
     if isinstance(rdf_types, str):
         rdf_types = [rdf_types]
@@ -486,7 +498,7 @@ def connection_query(
 
     where_list += terminal_sequence_query(cim_version=cim_version, var=connectivity)
 
-    return combine_statements(select_query, group_query(where_list))
+    return combine_statements(" ".join(select_query), group_query(where_list))
 
 
 def winding_from_three_tx(three_tx: pd.DataFrame, i: int) -> pd.DataFrame:

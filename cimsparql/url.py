@@ -30,20 +30,27 @@ class GraphDbConfig(object):
 
 
 class Prefix(object):
-    def set_cim_version(self):
-        self._cim_version = int(self.prefix_dict["cim"].split("CIM-schema-cim")[1])
-
     def header_str(self) -> str:
         try:
-            return "\n".join([f"PREFIX {name}:<{url}#>" for name, url in self.prefix_dict.items()])
+            return "\n".join([f"PREFIX {name}:<{url}#>" for name, url in self.prefixes.items()])
         except AttributeError:
             return ""
 
-    def ns(self) -> Dict[str, str]:
-        return {name: f"{url}#" for name, url in self.prefix_dict.items()}
-
     def items(self):
-        return self.prefix_dict.items()
+        return self.prefixes.items()
 
-    def inverse(self) -> Dict[str, str]:
-        return {f"{url}#": name for name, url in self.prefix_dict.items()}
+    @property
+    def cim_version(self) -> int:
+        return int(self.prefixes["cim"].split("CIM-schema-cim")[1])
+
+    @property
+    def prefixes(self) -> Dict[str, str]:
+        return self._prefixes
+
+    @property
+    def ns(self) -> Dict[str, str]:
+        return {name: f"{url}#" for name, url in self.items()}
+
+    @property
+    def inverse_ns(self) -> Dict[str, str]:
+        return {f"{url}#": name for name, url in self.items()}
