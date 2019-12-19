@@ -51,7 +51,7 @@ class Model(CimModel):
                 name: str(uri).rstrip("#") for name, uri in parser.namespaces_seen().items()
             }
             with open(str(fname.with_suffix(".ns")), "w") as fid:
-                json.dump(self.prefix_dict, fid)
+                json.dump(self.prefixes, fid)
         else:
             # Read namespace from file
             with open(str(fname.with_suffix(".ns")), "r") as fid:

@@ -27,7 +27,7 @@ def disconnectors(gdb_cli: GraphDBClient):
 
 
 def test_cimversion(gdb_cli: GraphDBClient):
-    assert gdb_cli._cim_version == 15
+    assert gdb_cli.cim_version == 15
 
 
 load_columns = ["connectivity_mrid", "terminal_mrid", "bid_market_code", "p", "q"]
@@ -117,15 +117,31 @@ def test_branch(gdb_cli: GraphDBClient):
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
-def test_ac_line_segment_with_market(gdb_cli: GraphDBClient):
-    lines = gdb_cli.ac_lines(limit=n_samples, with_market=True).set_index("mrid")
+def test_branch_with_temperatures(gdb_cli: GraphDBClient):
+    lines = gdb_cli.ac_lines(limit=n_samples, temperatures=range(-30, 30, 10)).set_index("mrid")
+    assert lines.shape == (n_samples, 17)
+    assert all(lines[["x", "un"]].dtypes == np.float)
+
+
+def test_branch_with_two_temperatures(gdb_cli: GraphDBClient):
+    lines = gdb_cli.ac_lines(limit=n_samples, temperatures=range(-20, 0, 10)).set_index("mrid")
     assert lines.shape == (n_samples, 13)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
+def test_ac_line_segment_with_market(gdb_cli: GraphDBClient):
+    lines = gdb_cli.ac_lines(
+        limit=n_samples, with_market=True, temperatures=range(-30, 30, 10)
+    ).set_index("mrid")
+    assert lines.shape == (n_samples, 19)
+    assert all(lines[["x", "un"]].dtypes == np.float)
+
+
 def test_branch_with_connectivity(gdb_cli: GraphDBClient):
-    lines = gdb_cli.ac_lines(limit=n_samples, connectivity="connectivity_mrid").set_index("mrid")
-    assert lines.shape == (n_samples, 13)
+    lines = gdb_cli.ac_lines(
+        limit=n_samples, connectivity="connectivity_mrid", temperatures=range(-30, 30, 10)
+    ).set_index("mrid")
+    assert lines.shape == (n_samples, 19)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
