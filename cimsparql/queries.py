@@ -20,6 +20,36 @@ def combine_statements(*args, group: bool = False, split: str = "\n"):
         return split.join(args)
 
 
+def xsd_type(cim: str, var: str) -> str:
+    return f"^^<{cim}{var}>"
+
+
+def negpos(val: Union[float, int]) -> str:
+    return "neg" if val < 0 else "pos"
+
+
+def temperature_list(temperature: float, xsd: str) -> List[str]:
+    sign = negpos(temperature)
+    mrid = f"?temp_{sign}_{abs(temperature)}"
+    return [
+        f"{mrid} ALG:TemperatureCurveData.Curve ?temp_curve",
+        f"{mrid} ALG:TemperatureCurveData.temperature '{temperature:0.1f}'{xsd}",
+        f"{mrid} ALG:TemperatureCurveData.percent ?factor_{sign}_{abs(temperature)}",
+    ]
+
+
+def temp_correction_factors(mrid: str, cim: str, temperatures: List = range(-30, 30, 10)):
+    where_list = [
+        "?temp_mrid rdf:type ALG:TemperatureCurveDependentLimit",
+        f"?temp_mrid ALG:LimitDependency.Equipment {mrid}",
+        "?temp_mrid ALG:TemperatureCurveDependentLimit.TemperatureCurve ?temp_curve",
+    ]
+    xsd = xsd_type(cim, "Temperature")
+    for temperatures in temperatures:
+        where_list += temperature_list(temperatures, xsd)
+    return where_list
+
+
 def group_query(
     x: List[str], command: str = "WHERE", split: str = " .\n", group: bool = True
 ) -> str:
@@ -422,23 +452,36 @@ def series_compensator_query(
 
 def ac_line_query(
     cim_version: int,
+    cim: str,
     region: str = "NO",
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
     rates: Tuple[str] = ratings,
     network_analysis: bool = True,
     with_market: bool = True,
+    temperatures: List = None,
 ) -> str:
     container = "Line"
 
-    select_query = "SELECT ?name ?mrid ?x ?r ?bch ?length ?un ?t_mrid_1 ?t_mrid_2 "
+    select_query = [
+        "SELECT",
+        "?name",
+        "?mrid",
+        "?x",
+        "?r",
+        "?bch",
+        "?length",
+        "?un",
+        "?t_mrid_1",
+        "?t_mrid_2",
+    ]
 
     if connectivity is not None:
-        select_query += f"{connectivity_mrid(connectivity)} "
+        select_query += [f"{connectivity_mrid(connectivity)}"]
 
     where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
     if with_market:
-        select_query += "?market_1 ?market_2 "
+        select_query += [f"?market_{nr}" for nr in [1, 2]]
         for terminal_nr in [1, 2]:
             where_list += [market_code_query(terminal_nr)]
 
@@ -462,12 +505,20 @@ def ac_line_query(
 
     if rates:
         where_rate = []
+        select_query += [f"?rate{rate}" for rate in rates]
+
         for rate in rates:
-            select_query += f"?rate{rate} "
             where_rate += operational_limit("?mrid", rate)
         where_list += [group_query(where_rate, command="OPTIONAL")]
 
-    return combine_statements(select_query, group_query(where_list))
+        if temperatures is not None:
+            select_query += [
+                f"?factor_{negpos(temperature)}_{abs(temperature)}" for temperature in temperatures
+            ]
+            where_list += [
+                group_query(temp_correction_factors("?mrid", cim, temperatures), command="OPTIONAL")
+            ]
+    return combine_statements(" ".join(select_query), group_query(where_list))
 
 
 def connection_query(

@@ -104,11 +104,24 @@ class CimModel(Prefix):
         connectivity: str = None,
         rates: Tuple[str] = queries.ratings,
         with_market: bool = False,
+        temperatures: List = None,
     ) -> pd.DataFrame:
         query = queries.ac_line_query(
-            self._cim_version, region, sub_region, connectivity, rates, with_market=with_market
+            self.cim_version,
+            self.ns["cim"],
+            region,
+            sub_region,
+            connectivity,
+            rates,
+            with_market=with_market,
+            temperatures=temperatures,
         )
-        return self.get_table_and_convert(query, limit=limit)
+        ac_lines = self.get_table_and_convert(query, limit=limit)
+        if temperatures is not None:
+            for temperature in temperatures:
+                column = f"factor_{queries.negpos(temperature)}_{abs(temperature)}"
+                ac_lines.loc[ac_lines[column].isna(), column] = 1.0
+        return ac_lines
 
     def series_compensators(
         self,
