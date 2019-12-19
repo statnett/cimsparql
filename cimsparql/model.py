@@ -14,15 +14,18 @@ class CimModel(Prefix):
     def __init__(self, mapper: TypeMapper, network_analysis: bool, *args, **kwargs):
         self._network_analysis = network_analysis
         self._load_from_source(*args, **kwargs)
-        self.get_prefix_dict(*args, **kwargs)
-        self._set_mapper(mapper)
-        self.set_cim_version()
+        self.mapper = mapper
 
-    def _set_mapper(self, mapper: TypeMapper = None):
-        if mapper is None and "rdfs" in self.prefix_dict:
-            self.mapper = TypeMapper(self)
+    @property
+    def mapper(self) -> TypeMapper:
+        return self._mapper
+
+    @mapper.setter
+    def mapper(self, mapper: TypeMapper = None):
+        if mapper is None and "rdfs" in self.prefixes:
+            self._mapper = TypeMapper(self)
         else:
-            self.mapper = mapper
+            self._mapper = mapper
 
     def _query_str(self, query: str, limit: int = None) -> str:
         q = f"{self.header_str()}\n\n{query}"
@@ -89,7 +92,7 @@ class CimModel(Prefix):
         connectivity: bool = True,
     ) -> pd.DataFrame:
         query = queries.connection_query(
-            self._cim_version, rdf_types, region, sub_region, connectivity
+            self.cim_version, rdf_types, region, sub_region, connectivity
         )
         return self.get_table_and_convert(query, index="mrid", limit=limit)
 
@@ -105,9 +108,7 @@ class CimModel(Prefix):
         query = queries.ac_line_query(
             self._cim_version, region, sub_region, connectivity, rates, with_market=with_market
         )
-        float_list = ["x", "r", "un", "bch", "length"] + [f"rate{rate}" for rate in rates]
-        columns = {var: float for var in float_list}
-        return self.get_table_and_convert(query, limit=limit, columns=columns)
+        return self.get_table_and_convert(query, limit=limit)
 
     def series_compensators(
         self,
@@ -118,7 +119,7 @@ class CimModel(Prefix):
         with_market: bool = False,
     ) -> pd.DataFrame:
         query = queries.series_compensator_query(
-            self._cim_version, region, sub_region, connectivity, with_market=with_market
+            self.cim_version, region, sub_region, connectivity, with_market=with_market
         )
         result, data_row = self._get_table(query=query, limit=limit)
         return self.get_table_and_convert(query, limit=limit)
@@ -135,12 +136,10 @@ class CimModel(Prefix):
         query = queries.transformer_query(
             region, sub_region, connectivity, rates, with_market=with_market
         )
-        columns = {var: float for var in ["x", "un"] + [f"rate{rate}" for rate in rates]}
-        columns["endNumber"] = int
-        return self.get_table_and_convert(query, limit=limit, columns=columns)
+        return self.get_table_and_convert(query, limit=limit)
 
     def disconnected(self, index: str = None, limit: int = None) -> pd.DataFrame:
-        query = ssh_queries.disconnected(self._cim_version)
+        query = ssh_queries.disconnected(self.cim_version)
         return self.get_table(query, index=index, limit=limit)
 
     def ssh_synchronous_machines(self, limit: int = None) -> pd.DataFrame:
@@ -163,7 +162,7 @@ class CimModel(Prefix):
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def terminal(self, limit: int = None) -> pd.DataFrame:
-        query = tp_queries.terminal(self._cim_version)
+        query = tp_queries.terminal(self.cim_version)
         columns = {"connected": bool}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
@@ -257,7 +256,7 @@ class CimModel(Prefix):
     @property
     def map_data_types(self) -> bool:
         try:
-            return self.mapper.have_cim_version(self.prefix_dict["cim"])
+            return self.mapper.have_cim_version(self.prefixes["cim"])
         except AttributeError:
             return False
 
@@ -284,7 +283,6 @@ class CimModel(Prefix):
         custom_maps: Dict = None,
         columns: Dict = None,
     ) -> pd.DataFrame:
-
         result = self.get_table(
             query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns,
         )

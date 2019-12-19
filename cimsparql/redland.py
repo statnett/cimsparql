@@ -32,17 +32,22 @@ class Model(CimModel):
         )
 
     def _load_from_source(
-        self, query_language: str, new: bool, fname: PosixPath, hash_type: str, **kwargs
+        self,
+        query_language: str,
+        new: bool,
+        fname: PosixPath,
+        hash_type: str,
+        base_uri: str,
+        **kwargs,
     ):
         self._query_language = query_language
         storage = RDF.HashStorage(fname.stem, self._option_string(new, hash_type, fname))
         self._model = RDF.Model(storage)
 
-    def get_prefix_dict(self, new: bool, fname: PosixPath, base_uri: str, **kwargs):
         if new or self.empty:
             parser = RDF.Parser(name=name[fname.suffix])
             parser.parse_into_model(self._model, fname.as_uri(), base_uri)
-            self.prefix_dict = {
+            self._prefixes = {
                 name: str(uri).rstrip("#") for name, uri in parser.namespaces_seen().items()
             }
             with open(str(fname.with_suffix(".ns")), "w") as fid:
@@ -50,7 +55,7 @@ class Model(CimModel):
         else:
             # Read namespace from file
             with open(str(fname.with_suffix(".ns")), "r") as fid:
-                self.prefix_dict = json.load(fid)
+                self._prefixes = json.load(fid)
 
     def _option_string(
         self, new: bool, hash_type: str, fname: PosixPath, with_context: bool = False

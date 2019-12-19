@@ -4,8 +4,8 @@ from cimsparql.model import CimModel
 
 def test_map_data_types(monkeypatch):
     def cim_init(self, *args):
-        self.mapper = MagicMock(have_cim_version=MagicMock(return_value=True))
-        self.prefix_dict = {"cim": None}
+        self._mapper = MagicMock(have_cim_version=MagicMock(return_value=True))
+        self._prefixes = {"cim": None}
 
     monkeypatch.setattr(CimModel, "__init__", cim_init)
     cim_model = CimModel()
@@ -14,8 +14,8 @@ def test_map_data_types(monkeypatch):
 
 def test_not_map_data_types(monkeypatch):
     def cim_init(self, *args):
-        self.mapper = MagicMock(have_cim_version=MagicMock(return_value=False))
-        self.prefix_dict = {"cim": None}
+        self._mapper = MagicMock(have_cim_version=MagicMock(return_value=False))
+        self._prefixes = {"cim": None}
 
     monkeypatch.setattr(CimModel, "__init__", cim_init)
     cim_model = CimModel()
