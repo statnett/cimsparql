@@ -67,14 +67,12 @@ def region_query(region: str, sub_region: bool, container: str) -> List[str]:
     else:
         query = [f"?{container} cim:{container}.Region ?subgeographicalregion"]
         if sub_region:
-            query += ["?subgeographicalregion SN:IdentifiedObject.shortName ?regionname"]
+            query += [f"?subgeographicalregion SN:IdentifiedObject.shortName '{region}'"]
         else:
             query += [
                 "?subgeographicalregion cim:SubGeographicalRegion.Region ?region",
-                "?region cim:IdentifiedObject.name ?regionname ",
+                f"?region cim:IdentifiedObject.name '{region}' ",
             ]
-        query += [f"\tFILTER regex(str(?regionname), '{region}')"]
-
     return query
 
 
@@ -285,13 +283,13 @@ def synchronous_machines_query(
 
 
 def operational_limit(mrid: str, rate: str, limitset: str = "operationallimitset") -> List[str]:
+
     return [
         f"?{limitset} cim:OperationalLimitSet.Equipment {mrid}",
         f"?activepowerlimit{rate} cim:OperationalLimit.OperationalLimitSet ?{limitset}",
         f"?activepowerlimit{rate} rdf:type cim:ActivePowerLimit",
-        f"?activepowerlimit{rate} cim:IdentifiedObject.name ?limitname{rate}",
+        f"?activepowerlimit{rate} cim:IdentifiedObject.name '{rate}@20'",
         f"?activepowerlimit{rate} cim:ActivePowerLimit.value ?rate{rate}",
-        f"filter regex(str(?limitname{rate}), '{rate}')",
     ]
 
 
