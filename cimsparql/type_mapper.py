@@ -54,7 +54,7 @@ class TypeMapperQueries:
         return [
             "?sparql_type rdf:type rdf:Property",
             "?sparql_type rdfs:range ?range",
-            'BIND(STRBEFORE(str(?range), "#") as ?prefix) .',
+            'BIND(STRBEFORE(str(?range), "#") as ?prefix)',
         ]
 
     @property
