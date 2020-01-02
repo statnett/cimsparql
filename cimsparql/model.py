@@ -134,7 +134,6 @@ class CimModel(Prefix):
         query = queries.series_compensator_query(
             self.cim_version, region, sub_region, connectivity, with_market=with_market
         )
-        result, data_row = self._get_table(query=query, limit=limit)
         return self.get_table_and_convert(query, limit=limit)
 
     def transformers(
