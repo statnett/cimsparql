@@ -219,7 +219,9 @@ class CimModel(Prefix):
                 result.loc[:, column] = result.loc[:, column].str.contains("True|true")
             else:
                 result.loc[result[column] == "None", column] = ""
-                result.loc[:, column] = pd.to_numeric(result[column]).astype(column_type)
+                result.loc[:, column] = pd.to_numeric(result[column], errors="coerce").astype(
+                    column_type
+                )
 
     @classmethod
     def col_map(cls, data_row, columns) -> Tuple[Dict[str, str]]:
