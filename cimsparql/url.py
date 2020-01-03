@@ -2,11 +2,7 @@ import requests
 from typing import Dict, List
 
 
-def service(
-    server: str = "graphdb.statnett.no",
-    repo: str = "SNMST-MasterCim15-VERSION-LATEST",
-    protocol: str = "https",
-) -> str:
+def service(repo: str, server: str = "graphdb.statnett.no", protocol: str = "https") -> str:
     url = f"{protocol}://{server}/repositories"
     if repo is not None:
         url += f"/{repo}"
@@ -15,7 +11,7 @@ def service(
 
 class GraphDbConfig(object):
     def __init__(self, server: str = "graphdb.statnett.no", protocol: str = "https"):
-        self._service = service(server, None, protocol)
+        self._service = service(None, server, protocol)
         try:
             repos = requests.get(self._service, headers={"Accept": "application/json"})
             if repos.ok:
