@@ -16,10 +16,7 @@ cim_date = "20190522_070618"
 
 
 def local_server():
-    try:
-        return os.environ["GRAPHDB_LOCAL_TEST_SERVER"]
-    except KeyError:
-        return "127.0.0.1:7200"
+    return os.getenv("GRAPHDB_LOCAL_TEST_SERVER", "127.0.0.1:7200")
 
 
 local_graphdb = GraphDbConfig(local_server(), protocol="http")
