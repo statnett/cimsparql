@@ -1,3 +1,4 @@
+import os
 import requests
 import pandas as pd
 
@@ -30,7 +31,9 @@ class GraphDBClient(CimModel):
 
     def _load_from_source(self, service: str, infer: bool, sameas: bool, **kwargs):
         if service is None:
-            self._service = url.service()
+            self._service = url.service(
+                repo=os.getenv("GRAPHDB_REPO", "SNMST-MasterCim15-VERSION-LATEST")
+            )
         else:
             self._service = service
 

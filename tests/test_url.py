@@ -27,9 +27,9 @@ def test_set_cim_version():
         assert pre.cim_version == nr
 
 
-def test_get_prefixes(monkeypatch):
+def test_get_prefixes(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
-        self.prefixes = service()
+        self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
     gdbc = GraphDBClient()
@@ -49,9 +49,9 @@ def test_header_str():
     assert pre.header_str() == "PREFIX cim:<cim_url#>\nPREFIX sn:<sn_url#>"
 
 
-def test_prefix_ns(monkeypatch):
+def test_prefix_ns(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
-        self.prefixes = service()
+        self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
     gdbc = GraphDBClient()
@@ -60,9 +60,9 @@ def test_prefix_ns(monkeypatch):
     assert ns["cim"] == "http://iec.ch/TC57/2010/CIM-schema-cim15#"
 
 
-def test_prefix_inverse(monkeypatch):
+def test_prefix_inverse(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
-        self.prefixes = service()
+        self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
     gdbc = GraphDBClient()

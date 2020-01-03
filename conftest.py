@@ -69,8 +69,13 @@ def root_dir():
 
 
 @pytest.fixture(scope="session")
-def gdb_cli():
-    return GraphDBClient(service())
+def graphdb_repo():
+    return os.getenv("GRAPHDB_REPO", "SNMST-MasterCim15-VERSION-LATEST")
+
+
+@pytest.fixture(scope="session")
+def gdb_cli(graphdb_repo):
+    return GraphDBClient(service(repo=graphdb_repo))
 
 
 @pytest.fixture
