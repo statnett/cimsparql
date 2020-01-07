@@ -18,8 +18,15 @@ class GraphDBClient(CimModel):
         sameas: bool = True,
         network_analysis: bool = True,
     ):
-        """
-        :param service:
+        """GraphDB client
+
+        :param service: string with url to graphdb repository. If 'None' it will use repo given by
+            environment variable GRAPHDB_REPO if exists or "SNMST-MasterCim15-VERSION-LATEST".
+
+        :param mapper: GraphDBClient with the mapper. If None use self.
+        :param infer:
+        :param sameas:
+        :param network_analysis:
         """
         super().__init__(
             service=service,
