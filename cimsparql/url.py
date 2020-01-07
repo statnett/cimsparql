@@ -3,6 +3,12 @@ from typing import Dict, List
 
 
 def service(repo: str, server: str = "graphdb.statnett.no", protocol: str = "https") -> str:
+    """Returns service url for GraphdDBClient
+
+    :param repo: Repo to use
+    :param server: server name
+    :param protocol:
+    """
     url = f"{protocol}://{server}/repositories"
     if repo is not None:
         url += f"/{repo}"
@@ -11,6 +17,11 @@ def service(repo: str, server: str = "graphdb.statnett.no", protocol: str = "htt
 
 class GraphDbConfig(object):
     def __init__(self, server: str = "graphdb.statnett.no", protocol: str = "https"):
+        """Get repo configuration from GraphDB
+
+        :param server: GraphDB server
+        :param protocol:
+        """
         self._service = service(None, server, protocol)
         try:
             repos = requests.get(self._service, headers={"Accept": "application/json"})
@@ -22,6 +33,7 @@ class GraphDbConfig(object):
             self._repos = {}
 
     def repos(self) -> List[str]:
+        """List available repos on GraphDB server"""
         return [repo["id"]["value"] for repo in self._repos]
 
 
