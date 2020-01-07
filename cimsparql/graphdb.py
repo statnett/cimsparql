@@ -12,7 +12,7 @@ from cimsparql.model import CimModel
 class GraphDBClient(CimModel):
     def __init__(
         self,
-        service: str = None,
+        service: str,
         mapper: CimModel = None,
         infer: bool = False,
         sameas: bool = True,
