@@ -21,7 +21,8 @@ class GraphDBClient(CimModel):
         """GraphDB client
 
         :param service: string with url to graphdb repository. If 'None' it will use repo given by
-            environment variable GRAPHDB_REPO if exists or "SNMST-MasterCim15-VERSION-LATEST".
+            environment variable GRAPHDB_REPO if exists or "SNMST-MasterCim15-VERSION-LATEST". See
+            cimsparql.url.service for how to format this
 
         :param mapper: GraphDBClient with the mapper. If None use self.
         :param infer:

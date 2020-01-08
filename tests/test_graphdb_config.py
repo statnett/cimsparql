@@ -14,7 +14,7 @@ def test_default_graphdb_config_service(config):
 
 
 def test_default_graphdb_repos(config):
-    assert "SNMST-MasterCim15-VERSION-LATEST" in config.repos()
+    assert "SNMST-MasterCim15-VERSION-LATEST" in config.repos
 
 
 def test_local_graphdb_config_service(local_graphdb_config):
@@ -25,4 +25,4 @@ def test_local_graphdb_config_service(local_graphdb_config):
 
 def test_local_graphdb_config_raise_connection_exception():
     graphdb_config = GraphDbConfig(server="127.0.0.1:7200")
-    assert graphdb_config.repos() == []
+    assert graphdb_config.repos == []

@@ -23,15 +23,15 @@ local_graphdb = GraphDbConfig(local_server(), protocol="http")
 
 
 need_local_graphdb_ssh = pytest.mark.skipif(
-    ssh_repo not in local_graphdb.repos(), reason=f"Need {ssh_repo} in local repository"
+    ssh_repo not in local_graphdb.repos, reason=f"Need {ssh_repo} in local repository"
 )
 
 need_local_graphdb_eq = pytest.mark.skipif(
-    eq_repo not in local_graphdb.repos(), reason=f"Need {eq_repo} in local repository"
+    eq_repo not in local_graphdb.repos, reason=f"Need {eq_repo} in local repository"
 )
 
 need_local_graphdb_cim = pytest.mark.skipif(
-    cim_date not in local_graphdb.repos(), reason=f"Need {cim_date} in local repository"
+    cim_date not in local_graphdb.repos, reason=f"Need {cim_date} in local repository"
 )
 
 
