@@ -24,17 +24,21 @@ class GraphDbConfig(object):
         """
         self._service = service(None, server, protocol)
         try:
-            repos = requests.get(self._service, headers={"Accept": "application/json"})
-            if repos.ok:
-                self._repos = repos.json()["results"]["bindings"]
-            else:
-                self._repos = {}
-        except requests.exceptions.ConnectionError:
-            self._repos = {}
+            self.repos = requests.get(self._service, headers={"Accept": "application/json"})
+        except requests.exceptions.RequestException:
+            self.repos = None
 
+    @property
     def repos(self) -> List[str]:
         """List available repos on GraphDB server"""
         return [repo["id"]["value"] for repo in self._repos]
+
+    @repos.setter
+    def repos(self, repos: requests.Response):
+        if repos is not None and repos.ok:
+            self._repos = repos.json()["results"]["bindings"]
+        else:
+            self._repos = {}
 
 
 class Prefix(object):

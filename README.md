@@ -65,9 +65,8 @@ Other predefined queries can be found in `cimsparql.queries`,
 ## List of available repos
 
 ```python
->>> from cimsparql.url import GraphdDBConfig
->>> repos = GraphDbConfig().repos()
->>> print(repos)
+>>> from cimsparql.url import GraphdDbConfig
+>>> print(GraphDbConfig().repos)
 ```
 
 
