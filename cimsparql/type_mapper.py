@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import datetime as dt
 import re
 import warnings
 from typing import TYPE_CHECKING, Dict, List
 
 import pandas as pd
+from dateutil import parser
 
 from cimsparql.queries import combine_statements, unionize
 
@@ -19,7 +19,7 @@ python_type_map = {
     "integer": int,
     "boolean": lambda x: x.lower == "true",
     "float": float,
-    "dateTime": dt.datetime,
+    "dateTime": parser.parse,
 }
 
 uri_snmst = re.compile("^urn:snmst:#_")
