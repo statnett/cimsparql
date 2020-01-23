@@ -1,4 +1,6 @@
 import itertools
+from datetime import datetime
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -22,6 +24,15 @@ def disconnectors(gdb_cli: GraphDBClient):
     return gdb_cli.connections(
         rdf_types="cim:Disconnector", limit=n_samples, connectivity="connectivity_mrid"
     )
+
+
+@patch.object(GraphDBClient, "get_table_and_convert")
+def test_date_version(get_table_mock, gdb_cli: GraphDBClient):
+    t_ref = datetime(2020, 1, 1)
+    get_table_mock.return_value = pd.DataFrame(
+        {"col1": [1], "activationDate": [np.datetime64(t_ref)]}
+    )
+    assert gdb_cli.date_version == t_ref
 
 
 def test_cimversion(gdb_cli: GraphDBClient):

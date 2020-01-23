@@ -39,6 +39,18 @@ def negpos(val: Union[float, int]) -> str:
     return "minus" if val < 0 else "plus"
 
 
+def version_date():
+    select_query = "SELECT ?mrid ?name ?activationDate"
+    where_list = [
+        "?marketDefinitionSet rdf:type SN:MarketDefinitionSet",
+        "?marketDefinitionSet cim:IdentifiedObject.mRID ?mrid",
+        "?marketDefinitionSet cim:IdentifiedObject.name ?name",
+        "?marketDefinitionSet SN:MarketDefinitionSet.activationDate ?activationDate",
+        "FILTER regex(?name, 'ScheduleResource')",
+    ]
+    return combine_statements(select_query, group_query(where_list))
+
+
 def temperature_list(temperature: float, xsd: str) -> List[str]:
     sign = negpos(temperature)
     mrid = f"?temp_{sign}_{abs(temperature)}"

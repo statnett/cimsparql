@@ -1,5 +1,7 @@
+from datetime import datetime
 from typing import Dict, List, Tuple, TypeVar, Union
 
+import numpy as np
 import pandas as pd
 
 from cimsparql import queries, ssh_queries, sv_queries, tp_queries
@@ -16,6 +18,19 @@ class CimModel(Prefix):
     def __init__(self, mapper: TypeMapper, *args, **kwargs):
         self._load_from_source(*args, **kwargs)
         self.mapper = mapper
+
+    @property
+    def date_version(self) -> datetime:
+        """Activation date for this repository
+        """
+        try:
+            date_version = self._date_version
+        except AttributeError:
+            repository_date = self.get_table_and_convert(queries.version_date())
+            date_version = repository_date["activationDate"].values[0]
+            if isinstance(date_version, np.datetime64):
+                date_version = self._date_version = date_version.astype("<M8[s]").astype(datetime)
+        return date_version
 
     @property
     def mapper(self) -> TypeMapper:
@@ -532,7 +547,7 @@ class CimModel(Prefix):
         columns: Dict = None,
     ) -> pd.DataFrame:
         result = self.get_table(
-            query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns,
+            query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns
         )
 
         if not self.map_data_types and len(result) > 0:
