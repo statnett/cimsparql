@@ -1,9 +1,9 @@
 import os
-import requests
-import pandas as pd
+from typing import Dict, Tuple
 
-from SPARQLWrapper import SPARQLWrapper, JSON
-from typing import Tuple, Dict
+import pandas as pd
+import requests
+from SPARQLWrapper import JSON, SPARQLWrapper
 
 from cimsparql import url
 from cimsparql.model import CimModel

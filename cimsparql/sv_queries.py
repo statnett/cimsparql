@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from cimsparql.queries import group_query, combine_statements
+from cimsparql.queries import combine_statements, group_query
 
 
 def _query_str(var_list: List[str], rdf_type: str, connection: str) -> str:

@@ -1,9 +1,9 @@
 import copy
+from typing import List, Set, Tuple, Union
+
 import networkx as nx
 import numpy as np
 import pandas as pd
-
-from typing import Tuple, List, Union, Set
 
 allowed_load_types = ("ConformLoad", "NonConformLoad", "EnergyConsumer")
 

@@ -13,3 +13,11 @@ repos:
     rev: 19.10b0
     hooks:
     -   id: black
+- repo: local
+  hooks:
+    - id: isort
+      name: isort
+      stages: [commit]
+      language: system
+      entry: isort
+      types: [python]

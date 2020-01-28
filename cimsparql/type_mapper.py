@@ -1,11 +1,13 @@
 from __future__ import annotations
-import re
+
 import datetime as dt
-from cimsparql.queries import combine_statements, unionize
+import re
+import warnings
 from typing import TYPE_CHECKING, Dict, List
 
 import pandas as pd
-import warnings
+
+from cimsparql.queries import combine_statements, unionize
 
 if TYPE_CHECKING:
     from cimsparql.model import CimModel

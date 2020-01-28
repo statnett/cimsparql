@@ -1,5 +1,6 @@
-import requests
 from typing import Dict, List
+
+import requests
 
 
 def service(repo: str, server: str = "graphdb.statnett.no", protocol: str = "https") -> str:

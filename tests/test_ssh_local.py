@@ -1,7 +1,6 @@
 from cimsparql import queries, ssh_queries
 from conftest import need_local_graphdb_eq, need_local_graphdb_ssh
 
-
 n_lim = 100
 
 

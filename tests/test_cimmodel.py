@@ -1,4 +1,5 @@
 from mock import MagicMock
+
 from cimsparql.model import CimModel
 
 

@@ -1,6 +1,6 @@
-import pandas as pd
-
 from typing import List
+
+import pandas as pd
 
 from cimsparql.queries import acdc_terminal, combine_statements, group_query
 

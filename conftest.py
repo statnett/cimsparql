@@ -1,11 +1,12 @@
 import os
-import pytest
 import pathlib
+
 import pandas as pd
+import pytest
 
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.redland import Model
-from cimsparql.url import service, GraphDbConfig
+from cimsparql.url import GraphDbConfig, service
 
 this_dir = pathlib.Path(__file__).parent
 
@@ -101,14 +102,19 @@ def type_dataframe_ref():
     ).astype({"int_col": int})
 
 
+def datatypes_url(datatype: str) -> str:
+    return {
+        "Stage.priority": "http://www.alstom.com/grid/CIM-schema-cim15-extension",
+        "PerCent": "http://iec.ch/TC57/2010/CIM-schema-cim15",
+        "AsynchronousMachine.converterFedDrive": "http://entsoe.eu/Secretariat/ProfileExtension/1",
+    }[datatype] + f"#{datatype}"
+
+
 @pytest.fixture
 def sparql_data_types():
     return pd.DataFrame(
         {
-            "sparql_type": [
-                "http://www.alstom.com/grid/CIM-schema-cim15-extension#Stage.priority",
-                "http://iec.ch/TC57/2010/CIM-schema-cim15#PerCent",
-            ],
+            "sparql_type": [f"{datatypes_url(key)}" for key in ["Stage.priority", "PerCent"]],
             "type": ["Integer", "float"],
             "prefix": [None, None],
         }
@@ -119,18 +125,8 @@ def sparql_data_types():
 def data_row():
     return {
         "str_col": {"type": "literal", "value": "a"},
-        "int_col": {
-            "datatype": "http://www.alstom.com/grid/CIM-schema-cim15-extension#Stage.priority",
-            "type": "literal",
-            "value": "1",
-        },
-        "float_col": {
-            "datatype": "http://iec.ch/TC57/2010/CIM-schema-cim15#PerCent",
-            "type": "literal",
-            "value": "2.2",
-        },
+        "int_col": {"datatype": datatypes_url("Stage.priority"), "type": "literal", "value": "1"},
+        "float_col": {"datatype": datatypes_url("PerCent"), "type": "literal", "value": "2.2"},
         "prefixed_col": {"type": "uri", "value": "prefixed_a"},
-        "boolean_col": {
-            "datatype": "http://entsoe.eu/Secretariat/ProfileExtension/1#AsynchronousMachine.converterFedDrive"
-        },
+        "boolean_col": {"datatype": datatypes_url("AsynchronousMachine.converterFedDrive")},
     }

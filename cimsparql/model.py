@@ -1,11 +1,10 @@
+from typing import Dict, List, Tuple, TypeVar
+
 import pandas as pd
 
-from cimsparql import queries, ssh_queries, tp_queries, sv_queries
-from cimsparql.url import Prefix
+from cimsparql import queries, ssh_queries, sv_queries, tp_queries
 from cimsparql.type_mapper import TypeMapper
-
-
-from typing import Dict, List, TypeVar, Tuple
+from cimsparql.url import Prefix
 
 CimModelType = TypeVar("CimModelType", bound="CimModel")
 

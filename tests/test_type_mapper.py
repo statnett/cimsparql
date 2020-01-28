@@ -1,8 +1,10 @@
+import warnings
+
 import pytest
-from cimsparql import type_mapper
 from mock import MagicMock
 from pandas.testing import assert_frame_equal
-import warnings
+
+from cimsparql import type_mapper
 
 
 @pytest.fixture
