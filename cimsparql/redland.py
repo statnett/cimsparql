@@ -1,10 +1,10 @@
-import RDF
 import json
+from pathlib import PosixPath
+from typing import Dict, Tuple
 
 import pandas as pd
 
-from pathlib import PosixPath
-from typing import Dict, Tuple
+import RDF
 from cimsparql.model import CimModel
 
 name = {".n3": "ntriples", ".xml": "rdfxml"}

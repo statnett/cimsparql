@@ -1,5 +1,4 @@
 import pytest
-
 from mock import MagicMock, call
 
 from cimsparql import queries

@@ -1,6 +1,5 @@
-from cimsparql.url import Prefix, service
 from cimsparql.graphdb import GraphDBClient
-
+from cimsparql.url import Prefix, service
 
 prefixes = [
     "rdf",

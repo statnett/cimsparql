@@ -1,13 +1,11 @@
 import itertools
-import pytest
 
 import numpy as np
 import pandas as pd
+import pytest
 
-
-from cimsparql.queries import windings_to_tx, three_tx_to_windings, Islands
 from cimsparql.graphdb import GraphDBClient
-
+from cimsparql.queries import Islands, three_tx_to_windings, windings_to_tx
 
 n_samples = 40
 
