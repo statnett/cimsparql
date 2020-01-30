@@ -11,12 +11,7 @@ from cimsparql.model import CimModel
 
 class GraphDBClient(CimModel):
     def __init__(
-        self,
-        service: str,
-        mapper: CimModel = None,
-        infer: bool = False,
-        sameas: bool = True,
-        network_analysis: bool = True,
+        self, service: str, mapper: CimModel = None, infer: bool = False, sameas: bool = True,
     ):
         """GraphDB client
 
@@ -30,11 +25,7 @@ class GraphDBClient(CimModel):
         :param network_analysis:
         """
         super().__init__(
-            service=service,
-            mapper=mapper,
-            infer=infer,
-            sameas=sameas,
-            network_analysis=network_analysis,
+            service=service, mapper=mapper, infer=infer, sameas=sameas,
         )
 
     def _load_from_source(self, service: str, infer: bool, sameas: bool, **kwargs):
