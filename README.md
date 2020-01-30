@@ -15,6 +15,11 @@ cimsparql` (see [Pip with
 artifactory](https://wiki.statnett.no/display/DATASCIENCE/Setting+up+certificates+and+artifactory)
 ) or using git clone and updating `$PYTHONPATH`.
 
+## Requirements
+
+* Python 3.7 and above (lower versions will not be supported).
+* Use of Redland (only on Linux with Redland libraries installed).
+
 # Usage
 
 
@@ -33,31 +38,40 @@ artifactory](https://wiki.statnett.no/display/DATASCIENCE/Setting+up+certificate
 
 In the example above the client will query repo
 "SNMST-Master1Repo-VERSION-LATEST" in the default server
-[GraphDB](https://graphdb.statnett.no) for AC line values. To see the
-actual sparql used do the following:
+[GraphDB](https://graphdb.statnett.no) for AC line values.
+
+
+## Inspect/view predefined queries
+
+To see the actual sparql use the `dry_run` option:
 ```python
 >>> print(ac_line_query(limit=3, dry_run=True))
 ```
 
-Other predefined queries can be found in `cimsparql.queries`,
-`cimsparql.ssh_queries`, `cimsparql.sv_queries` or
-`cimsparql.tp_queries`. See also other functions of `GraphDBClient`.
+The resulting string contains all the prefix's available in the
+Graphdb repo making it easier to copy and past to graphdb. Note that
+the prefixes are *not* required in the user specified quires described
+below.
 
-## Load data using user spesified queries
+The `dry_run` option is available for all the predefined queries.
+
+## Load data using user specified queries
 
 
 ```python
 >>> query = 'SELECT ?mrid where { ?mrid rdf:type cim:ACLineSegment } limit 2'
+>>> query_result = gdbc.get_table(query)
 >>> print(query_result)
                                    mrid
 0  004b5f05-4420-001f-e050-1e828c94bdc6
 1  006fad7c-ac3c-2dec-e050-1e828c94a0f3
 ```
 
+
 ## List of available repos at the server
 
 ```python
->>> from cimsparql.url import GraphdDbConfig
+>>> from cimsparql.url import GraphDbConfig
 >>> print(GraphDbConfig().repos)
 ```
 
