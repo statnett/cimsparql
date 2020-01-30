@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, TypeVar
+from typing import Dict, List, Tuple, TypeVar, Union
 
 import pandas as pd
 
@@ -10,8 +10,7 @@ CimModelType = TypeVar("CimModelType", bound="CimModel")
 
 
 class CimModel(Prefix):
-    def __init__(self, mapper: TypeMapper, network_analysis: bool, *args, **kwargs):
-        self._network_analysis = network_analysis
+    def __init__(self, mapper: TypeMapper, *args, **kwargs):
         self._load_from_source(*args, **kwargs)
         self.mapper = mapper
 
@@ -44,9 +43,11 @@ class CimModel(Prefix):
         load_vars: Tuple[str] = ("p", "q"),
         region: str = "NO",
         sub_region: bool = False,
-        limit: int = None,
         connectivity: str = None,
         station_group: bool = False,
+        with_sequence_number: bool = False,
+        network_analysis: bool = True,
+        limit: int = None,
     ) -> pd.DataFrame:
         query = queries.load_query(
             load_type,
@@ -54,14 +55,18 @@ class CimModel(Prefix):
             region,
             sub_region,
             connectivity,
-            self._network_analysis,
-            station_group=station_group,
+            with_sequence_number,
+            network_analysis,
+            station_group,
+            self.cim_version,
         )
         columns = {var: float for var in load_vars}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def wind_generating_units(self, limit: int = None) -> pd.DataFrame:
-        query = queries.wind_generating_unit_query(self._network_analysis)
+    def wind_generating_units(
+        self, limit: int = None, network_analysis: bool = True
+    ) -> pd.DataFrame:
+        query = queries.wind_generating_unit_query(network_analysis)
         float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
         columns = {var: float for var in float_list}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -84,7 +89,7 @@ class CimModel(Prefix):
 
     def connections(
         self,
-        rdf_types: Tuple[str] = ("cim:Breaker", "cim:Disconnector"),
+        rdf_types: Union[str, Tuple[str]] = ("cim:Breaker", "cim:Disconnector"),
         region: str = "NO",
         sub_region: bool = False,
         limit: int = None,

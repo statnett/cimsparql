@@ -190,10 +190,10 @@ def load_query(
     region: str = "NO",
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
-    cim_version: int = 15,
     with_sequence_number: bool = False,
     network_analysis: bool = True,
     station_group: bool = False,
+    cim_version: int = 15,
 ) -> str:
 
     if not set(load_type).issubset(allowed_load_types) or len(load_type) == 0:
