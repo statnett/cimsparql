@@ -13,7 +13,18 @@ connectivity_columns = [f"{con_mrid_str}_{nr}" for nr in [1, 2]]
 ratings = ("Normal", "Warning", "Overload")
 
 
-def combine_statements(*args, group: bool = False, split: str = "\n"):
+def combine_statements(*args, group: bool = False, split: str = "\n") -> str:
+    """Join *args
+
+    Args:
+       group: return enclosed by {...}
+       split: join *args by this
+
+    Example:
+       >>> import os
+       >>> where_list = ['?mrid rdf:type cim:ACLineSegment', '?mrid cim:ACLineSegment.r ?r']
+       >>> combine_statements(where_list,group=True, split=' '+ os.sep)
+    """
     if group:
         return "{\n" + split.join(args) + "\n}"
     else:
@@ -25,7 +36,7 @@ def xsd_type(cim: str, var: str) -> str:
 
 
 def negpos(val: Union[float, int]) -> str:
-    return "neg" if val < 0 else "pos"
+    return "minus" if val < 0 else "plus"
 
 
 def temperature_list(temperature: float, xsd: str) -> List[str]:
@@ -53,6 +64,18 @@ def temp_correction_factors(mrid: str, cim: str, temperatures: List = range(-30,
 def group_query(
     x: List[str], command: str = "WHERE", split: str = " .\n", group: bool = True
 ) -> str:
+    """Group Query
+
+    Args:
+       x: List of objects to group
+       command: to operate on group
+       split, group: (see: combine_statements)
+
+    Example:
+       >>> import os
+       >>> where_list = ['?mrid rdf:type cim:ACLineSegment', '?mrid cim:ACLineSegment.r ?r']
+       >>> group_query(where_list, group=True, split= ' .' + os.sep)
+    """
     return command + " " + combine_statements(*x, group=group, split=split)
 
 
@@ -513,7 +536,7 @@ def ac_line_query(
 
         if temperatures is not None:
             select_query += [
-                f"?factor_{negpos(temperature)}_{abs(temperature)}" for temperature in temperatures
+                f"?{negpos(temperature)}_{abs(temperature)}" for temperature in temperatures
             ]
             where_list += [
                 group_query(temp_correction_factors("?mrid", cim, temperatures), command="OPTIONAL")
