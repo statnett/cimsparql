@@ -1,5 +1,5 @@
 image:
-  name: "gitlab-docker.ci.statnett.no/abot/opf:latest"
+  name: "gitlab-registry.statnett.no/abot/opf:latest"
 
 stages:
   - tests
@@ -7,8 +7,6 @@ stages:
 
 run_tests:
   stage: tests
-  tags:
-    - dind
   script:
     - tox -e pytest
   artifacts:
@@ -20,8 +18,6 @@ sonar_update:
   stage: deploy
   image:
     name: "artifactory.statnett.no/datascience-docker-local/sonar-scanner:latest"
-  tags:
-    - dind
   when:
     always
   script:
@@ -29,8 +25,6 @@ sonar_update:
 
 publish_toolbox_to_artifactory:
   stage: deploy
-  tags:
-    - dind
   only:
     - tags
   script:
