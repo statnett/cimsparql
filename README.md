@@ -21,7 +21,8 @@ artifactory](https://wiki.statnett.no/display/DATASCIENCE/Setting+up+certificate
 ## Load data using predefined functions/queries
 ```python
 >>> from cimsparql.graphdb import GraphDBClient
->>> gdbc = GraphDBClient(None)
+>>> from cimsparql.url import service
+>>> gdbc = GraphDBClient(service('SNMST-Master1Repo-VERSION-LATEST'))
 >>> ac_lines = gdbc.ac_lines(limit=3)
 >>> print(ac_lines[['name', 'x', 'r', 'bch']])
          name       x       r       bch
@@ -30,19 +31,12 @@ artifactory](https://wiki.statnett.no/display/DATASCIENCE/Setting+up+certificate
 2  <branch 3>  0.3514  0.1733  0.000198
 ```
 
-In the example above the client will query the default server
-(https://graphdb.statnett.no/repositories/SNMST-Master1Repo-VERSION-LATEST)
-for AC line values. To see the actual sparql used do the following:
+In the example above the client will query repo
+"SNMST-Master1Repo-VERSION-LATEST" in the default server
+[GraphDB](https://graphdb.statnett.no) for AC line values. To see the
+actual sparql used do the following:
 ```python
->>> from cimsparql.queries import ac_line_query
->>> cim_version = 15
->>> print(ac_line_query(cim_version, gdbc.ns['cim']))
-```
-or also inluding prefix (required when copying into graphdb)
-```python
->>> from cimsparql.queries import ac_line_query
->>> gdbc = GraphDBClient(None)
->>> print(gdbc._query_str(ac_line_query(gdbc._cim_version, gdbc.ns['cim'])))
+>>> print(ac_line_query(limit=3, dry_run=True))
 ```
 
 Other predefined queries can be found in `cimsparql.queries`,
@@ -54,12 +48,10 @@ Other predefined queries can be found in `cimsparql.queries`,
 
 ```python
 >>> query = 'SELECT ?mrid where { ?mrid rdf:type cim:ACLineSegment } limit 2'
->>> gdbc = GraphDBClient(None)
->>> query_result = gdbc.get_table(query)
 >>> print(query_result)
 ```
 
-## List of available repos
+## List of available repos at the server
 
 ```python
 >>> from cimsparql.url import GraphdDbConfig
@@ -73,7 +65,6 @@ Available namespace for current graphdb client (`gdbc` in the examples
 above), which can be used in queries (such as `rdf` and `cim`) can by found by
 
 ```python
->>> gdbc = GraphDBClient(None)
 >>> print(gdbc.ns)
 {'wgs': 'http://www.w3.org/2003/01/geo/wgs84_pos#',
  'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',

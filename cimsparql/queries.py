@@ -441,7 +441,7 @@ def series_compensator_query(
 ):
     container = "Substation"
 
-    select_query = ["Select", "?mrid", "?x", "?un", "?name", "?t_mrid_1", "?t_mrid_2"]
+    select_query = ["SELECT", "?mrid", "?x", "?un", "?name", "?t_mrid_1", "?t_mrid_2"]
 
     if connectivity is not None:
         select_query += [f"{connectivity_mrid(connectivity)}"]
