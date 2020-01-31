@@ -10,7 +10,7 @@ run_tests:
   tags:
     - dind
   script:
-    - tox
+    - tox -e pytest
   artifacts:
     paths:
       - coverage.xml
@@ -35,3 +35,13 @@ publish_toolbox_to_artifactory:
     - tags
   script:
     - publish-to-artifactory $CI_PROJECT_NAME
+
+pages:
+  stage: deploy
+  only:
+    - tags
+  script:
+    - tox -e sphinx
+  artifacts:
+    paths:
+      - public
