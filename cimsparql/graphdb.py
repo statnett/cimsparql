@@ -15,14 +15,11 @@ class GraphDBClient(CimModel):
     ):
         """GraphDB client
 
-        :param service: string with url to graphdb repository. If 'None' it will use repo given by
-            environment variable GRAPHDB_REPO if exists or "SNMST-MasterCim15-VERSION-LATEST". See
-            cimsparql.url.service for how to format this
-
-        :param mapper: GraphDBClient with the mapper. If None use self.
-        :param infer:
-        :param sameas:
-        :param network_analysis:
+        Args:
+           service: string with url to graphdb repository. See cimsparql.url.service
+           mapper: GraphDBClient with the mapper (Default to self).
+           infer: deduce further knowledge based on existing RDF data and a formal set of
+           sameas: map same concepts from two or more datasets
         """
         super().__init__(
             service=service, mapper=mapper, infer=infer, sameas=sameas,

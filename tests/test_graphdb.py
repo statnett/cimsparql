@@ -105,8 +105,7 @@ def test_wind_generating_units(gdb_cli: GraphDBClient):
 
 
 def test_regions(gdb_cli: GraphDBClient):
-    regions = gdb_cli.regions()
-    assert regions.groupby("region").count()["shortName"]["NO"] > 16
+    assert gdb_cli.regions.groupby("region").count()["shortName"]["NO"] > 16
 
 
 def test_branch(gdb_cli: GraphDBClient):

@@ -10,12 +10,22 @@ CimModelType = TypeVar("CimModelType", bound="CimModel")
 
 
 class CimModel(Prefix):
+    """Used to query with sparql queries (typically CIM)
+    """
+
     def __init__(self, mapper: TypeMapper, *args, **kwargs):
         self._load_from_source(*args, **kwargs)
         self.mapper = mapper
 
     @property
     def mapper(self) -> TypeMapper:
+        """Mapper used to convert str → type described by ontology in Graphdb
+
+        Getter:
+           Returns a mapper that can be used by self or other instances
+        Setter:
+           Sets mapper for self. Query GraphDB if not provided (None)
+        """
         return self._mapper
 
     @mapper.setter
@@ -34,6 +44,13 @@ class CimModel(Prefix):
     def bus_data(
         self, region: str = "NO", sub_region: bool = False, limit: int = None
     ) -> pd.DataFrame:
+        """Query name of topological nodes (TP query).
+
+        Args:
+           region: Limit to region (use None to get all)
+           sub_region: True - assume sub regions, False - assume region
+           limit: return first 'limit' number of rows
+        """
         query = queries.bus_data(region, sub_region)
         return self.get_table_and_convert(query, index="mrid", limit=limit)
 
@@ -49,6 +66,29 @@ class CimModel(Prefix):
         network_analysis: bool = True,
         limit: int = None,
     ) -> pd.DataFrame:
+        """Query load data
+
+        Args:
+           load_type: List of load types. Allowed: "ConformLoad", "NonConformLoad", "EnergyConsumer"
+           load_vars: List of additional load vars to return. Possible are 'p' and/or 'q'.
+           region: Limit to region
+           sub_region: Assume region is a sub_region
+           connectivity: Include connectivity mrids
+           station_group: return station group mrid (if any)
+           with_sequence_number: Include the sequence numbers in output
+           network_analysis: Include only network analysis enabled components
+           loads: return first 'limit' number of rows
+
+        Returns:
+           DataFrame: with mrid as index and columns ['terminal_mrid', 'bid_marked_code', 'p', 'q',
+           'station_group']
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc.loads(load_type=['ConformLoad', 'NonConformLoad'])
+        """
         query = queries.load_query(
             load_type,
             load_vars,
@@ -66,6 +106,23 @@ class CimModel(Prefix):
     def wind_generating_units(
         self, limit: int = None, network_analysis: bool = True
     ) -> pd.DataFrame:
+        """Query wind generating units
+
+        Args:
+           network_analysis: Include only network analysis enabled components
+           limit: return first 'limit' number of rows
+
+        Returns:.
+           wind_generating_units: with mrid as index and columns ['terminal_mrid', 'bid_marked_code'
+           , 'p', 'q']
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc.wind_generating_units(limit=10)
+
+        """
         query = queries.wind_generating_unit_query(network_analysis)
         float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
         columns = {var: float for var in float_list}
@@ -79,6 +136,21 @@ class CimModel(Prefix):
         limit: int = None,
         connectivity: str = None,
     ) -> pd.DataFrame:
+        """Query synchronous machines
+
+        Args:
+           synchronous_vars: additional vars to include in output
+           region: Limit to region
+           sub_region: Assume region is a sub_region
+           limit: return first 'limit' number of rows
+           connectivity: Include connectivity mrids
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc.synchronous_machines(limit=10)
+        """
         query = queries.synchronous_machines_query(
             synchronous_vars, region, sub_region, connectivity
         )
@@ -95,6 +167,24 @@ class CimModel(Prefix):
         limit: int = None,
         connectivity: bool = True,
     ) -> pd.DataFrame:
+        """Query connectors
+
+        Args:
+           rdf_types: Only cim:breaker and cim:Disconnector allowed
+        Returns:
+
+        Example:
+           region: Limit to region
+           sub_region: Assume region is a sub_region
+           limit: return first 'limit' number of rows
+           connectivity: Include connectivity mrids
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc.connections(limit=10)
+        """
         query = queries.connection_query(
             self.cim_version, rdf_types, region, sub_region, connectivity
         )
@@ -110,6 +200,23 @@ class CimModel(Prefix):
         with_market: bool = False,
         temperatures: List = None,
     ) -> pd.DataFrame:
+        """Query ac line segments
+
+        Args:
+           region: Limit to region
+           sub_region: Assume region is a sub_region
+           limit: return first 'limit' number of rows
+           connectivity: Include connectivity mrids
+           rates: include rates in output (available: "Normal", "Warning", "Overload")
+           with_market: include marked connections in output
+           temperatures: include temperature correction factors in output
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc.ac_lines(limit=10)
+        """
         query = queries.ac_line_query(
             self.cim_version,
             self.ns["cim"],
@@ -123,7 +230,7 @@ class CimModel(Prefix):
         ac_lines = self.get_table_and_convert(query, limit=limit)
         if temperatures is not None:
             for temperature in temperatures:
-                column = f"factor_{queries.negpos(temperature)}_{abs(temperature)}"
+                column = f"{queries.negpos(temperature)}_{abs(temperature)}"
                 ac_lines.loc[ac_lines[column].isna(), column] = 1.0
         return ac_lines
 
@@ -135,6 +242,21 @@ class CimModel(Prefix):
         connectivity: str = None,
         with_market: bool = False,
     ) -> pd.DataFrame:
+        """Query series compensators
+
+        Args:
+           region: Limit to region
+           sub_region: Assume region is a sub_region
+           limit: return first 'limit' number of rows
+           connectivity: Include connectivity mrids
+           with_market: include marked connections in output
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc.series_compensators(limit=10)
+        """
         query = queries.series_compensator_query(
             self.cim_version, region, sub_region, connectivity, with_market=with_market
         )
@@ -149,6 +271,22 @@ class CimModel(Prefix):
         rates: Tuple[str] = queries.ratings,
         with_market: bool = False,
     ) -> pd.DataFrame:
+        """Query transformers
+
+        Args:
+           region: Limit to region
+           sub_region: Assume region is a sub_region
+           limit: return first 'limit' number of rows
+           connectivity: Include connectivity mrids
+           rates: include rates in output (available: "Normal", "Warning", "Overload")
+           with_market: include marked connections in output
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc.transformers(limit=10)
+        """
         query = queries.transformer_query(
             region, sub_region, connectivity, rates, with_market=with_market
         )
@@ -202,7 +340,19 @@ class CimModel(Prefix):
         columns = {"position": float}
         return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
+    @property
     def regions(self) -> pd.DataFrame:
+        """Query regions
+
+        Property:
+           regions: List of regions in database
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc.regions
+        """
         query = queries.regions_query()
         return self.get_table_and_convert(query, index="mrid")
 
@@ -242,21 +392,26 @@ class CimModel(Prefix):
         custom_maps: Dict = None,
         columns: Dict = None,
     ) -> pd.DataFrame:
-        """
-        Gets given table from the configured database.
+        """Gets given table from the configured database.
 
-        :param query: to sparql server
-        :param index: column name to use as index
-        :param limit: limit number of resulting rows
-        :param map_data_types: gets datatypes from the configured graphdb & maps the
-                               types in the result to correct python types
-        :param custom_maps: dictionary of 'sparql_datatype': function
-                            to apply on columns with that type.
-                            Overwrites sparql map for the types specified.
-        :param columns: dictionary of 'column_name': function,
-                        uses pandas astype on the column, or applies function.
-                        Sparql map overwrites columns when available
-        :return: table as DataFrame
+        Args:
+           query: to sparql server
+           index: column name to use as index
+           limit: limit number of resulting rows
+           map_data_types: gets datatypes from the configured graphdb & maps the types in the result
+                  to correct python types
+           custom_maps: dictionary of 'sparql_datatype': function to apply on columns with that
+                  type. Overwrites sparql map for the types specified.
+           columns: dictionary of 'column_name': function,
+                  uses pandas astype on the column, or applies function.
+                  Sparql map overwrites columns when available
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> query = 'select * where { ?subject ?predicate ?object }'
+           >>> gdbc.get_table(query, limit=10)
         """
         try:
             result, data_row = self._get_table(query=query, limit=limit)
