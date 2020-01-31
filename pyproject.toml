@@ -37,12 +37,11 @@ mock = "*"
 pre-commit = "*"
 pytest = "*"
 pytest-cov = "*"
+recommonmark = "*"
 rope = "*"
 yapf = "*"
-
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+sphinx = "*"
+sphinx_rtd_theme = "*"
 
 [tool.isort]
 line_length = 100
@@ -65,3 +64,6 @@ exclude = '''
   | profiling
 )/
 '''
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
