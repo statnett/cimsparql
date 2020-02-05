@@ -348,6 +348,13 @@ class CimModel(Prefix):
     def disconnected(
         self, index: str = None, limit: int = None, dry_run: bool = False
     ) -> pd.DataFrame:
+        """Query disconneced status from ssh profile (not available in GraphDB)
+
+        Args:
+           index: Column to use as index
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+        """
         query = ssh_queries.disconnected(self.cim_version)
         if dry_run:
             return self._query_with_header(query, limit=limit)
@@ -355,6 +362,12 @@ class CimModel(Prefix):
             return self.get_table(query, index=index, limit=limit)
 
     def ssh_synchronous_machines(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
+        """Query synchronous machines from ssh profile (not available in GraphDB)
+
+        Args:
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+        """
         query = ssh_queries.synchronous_machines()
         if dry_run:
             return self._query_with_header(query, limit=limit)
@@ -365,6 +378,14 @@ class CimModel(Prefix):
     def ssh_load(
         self, rdf_types: List[str] = None, limit: int = None, dry_run: bool = False
     ) -> pd.DataFrame:
+        """Query load data from ssh profile (not available in GraphDB)
+
+        Args:
+           rdf_types: allowed ["cim:ConformLoad", "cim:NonConformLoad"]
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+
+        """
         if rdf_types is None:
             rdf_types = ["cim:ConformLoad", "cim:NonConformLoad"]
         query = ssh_queries.load(rdf_types)
@@ -377,6 +398,15 @@ class CimModel(Prefix):
     def ssh_generating_unit(
         self, rdf_types: List[str] = None, limit: int = None, dry_run: bool = False
     ) -> pd.DataFrame:
+        """Query generating units from ssh profile (not available in GraphDB)
+
+        Args:
+           rdf_types: allowed
+               ["cim:HydroGeneratingUnit", "cim:ThermalGeneratingUnit", "cim:WindGeneratingUnit"]
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+
+        """
         if rdf_types is None:
             rdf_types = [f"cim:{unit}GeneratingUnit" for unit in ["Hydro", "Thermal", "Wind"]]
         query = ssh_queries.generating_unit(rdf_types)
@@ -387,6 +417,12 @@ class CimModel(Prefix):
             return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def terminal(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
+        """Query terminals from tp profile (not available in GraphDB)
+
+        Args:
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+        """
         query = tp_queries.terminal(self.cim_version)
         if dry_run:
             return self._query_with_header(query, limit=limit)
@@ -395,6 +431,12 @@ class CimModel(Prefix):
             return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def topological_node(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
+        """Query topological nodes from tp profile (not available in GraphDB)
+
+        Args:
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+        """
         query = tp_queries.topological_node()
         if dry_run:
             return self._query_with_header(query, limit=limit)
@@ -405,6 +447,13 @@ class CimModel(Prefix):
     def powerflow(
         self, power: Tuple[str] = ("p", "q"), limit: int = None, dry_run: bool = False
     ) -> pd.DataFrame:
+        """Query powerflow from sv profile (not available in GraphDB)
+
+        Args:
+           power: Allowed ['p','q']
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+        """
         query = sv_queries.powerflow(power)
         if dry_run:
             return self._query_with_header(query, limit=limit)
@@ -415,6 +464,13 @@ class CimModel(Prefix):
     def voltage(
         self, voltage_vars: Tuple[str] = ("v", "angle"), limit: int = None, dry_run: bool = False
     ) -> pd.DataFrame:
+        """Query voltage from sv profile (not available in GraphDB)
+
+        Args:
+           voltage_vars: allowed ["v", "angle"]
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+        """
         query = sv_queries.voltage(voltage_vars)
         if dry_run:
             return self._query_with_header(query, limit=limit)
@@ -423,6 +479,12 @@ class CimModel(Prefix):
             return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def tapstep(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
+        """Query tapstep from sv profile (not available in GraphDB)
+
+        Args:
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+        """
         query = sv_queries.tapstep()
         if dry_run:
             return self._query_with_header(query, limit=limit)
