@@ -26,7 +26,7 @@ class CimModel(Prefix):
         try:
             date_version = self._date_version
         except AttributeError:
-            repository_date = self.get_table_and_convert(queries.version_date())
+            repository_date = self._get_table_and_convert(queries.version_date())
             date_version = repository_date["activationDate"].values[0]
             if isinstance(date_version, np.datetime64):
                 date_version = self._date_version = date_version.astype("<M8[s]").astype(datetime)
@@ -71,7 +71,7 @@ class CimModel(Prefix):
         if dry_run:
             return self._query_with_header(query, limit=limit)
         else:
-            return self.get_table_and_convert(query, index="mrid", limit=limit)
+            return self._get_table_and_convert(query, index="mrid", limit=limit)
 
     def loads(
         self,
@@ -125,7 +125,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {var: float for var in load_vars}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def wind_generating_units(
         self, limit: int = None, network_analysis: bool = True, dry_run: bool = False
@@ -154,7 +154,7 @@ class CimModel(Prefix):
         else:
             float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
             columns = {var: float for var in float_list}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def synchronous_machines(
         self,
@@ -190,7 +190,7 @@ class CimModel(Prefix):
             float_list = ["maxP", "minP", "allocationMax", "allocationWeight"]
             float_list += synchronous_vars
             columns = {var: float for var in float_list}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def connections(
         self,
@@ -226,7 +226,7 @@ class CimModel(Prefix):
         if dry_run:
             return self._query_with_header(query, limit=limit)
         else:
-            return self.get_table_and_convert(query, index="mrid", limit=limit)
+            return self._get_table_and_convert(query, index="mrid", limit=limit)
 
     def ac_lines(
         self,
@@ -270,7 +270,7 @@ class CimModel(Prefix):
         if dry_run:
             return self._query_with_header(query, limit=limit)
         else:
-            ac_lines = self.get_table_and_convert(query, limit=limit)
+            ac_lines = self._get_table_and_convert(query, limit=limit)
             if temperatures is not None:
                 for temperature in temperatures:
                     column = f"{queries.negpos(temperature)}_{abs(temperature)}"
@@ -308,7 +308,7 @@ class CimModel(Prefix):
         if dry_run:
             return self._query_with_header(query, limit=limit)
         else:
-            return self.get_table_and_convert(query, limit=limit)
+            return self._get_table_and_convert(query, limit=limit)
 
     def transformers(
         self,
@@ -343,7 +343,7 @@ class CimModel(Prefix):
         if dry_run:
             return self._query_with_header(query, limit=limit)
         else:
-            return self.get_table_and_convert(query, limit=limit)
+            return self._get_table_and_convert(query, limit=limit)
 
     def disconnected(
         self, index: str = None, limit: int = None, dry_run: bool = False
@@ -360,7 +360,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {"p": float, "q": float, "controlEnabled": bool}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def ssh_load(
         self, rdf_types: List[str] = None, limit: int = None, dry_run: bool = False
@@ -372,7 +372,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {"p": float, "q": float}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def ssh_generating_unit(
         self, rdf_types: List[str] = None, limit: int = None, dry_run: bool = False
@@ -384,7 +384,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {"normalPF": float}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def terminal(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         query = tp_queries.terminal(self.cim_version)
@@ -392,7 +392,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {"connected": bool}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def topological_node(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         query = tp_queries.topological_node()
@@ -400,7 +400,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {"BaseVoltage": float}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def powerflow(
         self, power: Tuple[str] = ("p", "q"), limit: int = None, dry_run: bool = False
@@ -410,7 +410,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {x: float for x in power}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def voltage(
         self, voltage_vars: Tuple[str] = ("v", "angle"), limit: int = None, dry_run: bool = False
@@ -420,7 +420,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {x: float for x in voltage_vars}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def tapstep(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         query = sv_queries.tapstep()
@@ -428,7 +428,7 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         else:
             columns = {"position": float}
-            return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     @property
     def regions(self) -> pd.DataFrame:
@@ -444,7 +444,7 @@ class CimModel(Prefix):
            >>> gdbc.regions
         """
         query = queries.regions_query()
-        return self.get_table_and_convert(query, index="mrid")
+        return self._get_table_and_convert(query, index="mrid")
 
     @property
     def empty(self) -> bool:
@@ -517,14 +517,14 @@ class CimModel(Prefix):
         return result
 
     @property
-    def map_data_types(self) -> bool:
+    def _map_data_types(self) -> bool:
         try:
             return self.mapper.have_cim_version(self.prefixes["cim"])
         except AttributeError:
             return False
 
     @classmethod
-    def manual_convert_types(
+    def _manual_convert_types(
         cls: CimModelType, df: pd.DataFrame, columns: Dict, index: str
     ) -> pd.DataFrame:
         if columns is None:
@@ -538,7 +538,7 @@ class CimModel(Prefix):
             df.set_index(index, inplace=True)
         return df
 
-    def get_table_and_convert(
+    def _get_table_and_convert(
         self,
         query: str,
         index: str = None,
@@ -550,7 +550,7 @@ class CimModel(Prefix):
             query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns
         )
 
-        if not self.map_data_types and len(result) > 0:
-            result = self.manual_convert_types(result, columns, index)
+        if not self._map_data_types and len(result) > 0:
+            result = self._manual_convert_types(result, columns, index)
 
         return result

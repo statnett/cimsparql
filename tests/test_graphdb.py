@@ -26,7 +26,7 @@ def disconnectors(gdb_cli: GraphDBClient):
     )
 
 
-@patch.object(GraphDBClient, "get_table_and_convert")
+@patch.object(GraphDBClient, "_get_table_and_convert")
 def test_date_version(get_table_mock, gdb_cli: GraphDBClient):
     t_ref = datetime(2020, 1, 1)
     get_table_mock.return_value = pd.DataFrame(
