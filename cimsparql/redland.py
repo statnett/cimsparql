@@ -73,7 +73,9 @@ class Model(CimModel):
     def _get_table(
         self, query: str, index: str = None, limit: int = None
     ) -> Tuple[pd.DataFrame, Dict]:
-        rdf_query = RDF.Query(self._query_str(query, limit), query_language=self._query_language)
+        rdf_query = RDF.Query(
+            self._query_with_header(query, limit), query_language=self._query_language
+        )
         try:
             result = [res for res in rdf_query.execute(self._model)]
         except RDF.RedlandError:
