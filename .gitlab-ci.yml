@@ -18,8 +18,6 @@ sonar_update:
   stage: deploy
   image:
     name: "artifactory.statnett.no/datascience-docker-local/sonar-scanner:latest"
-  when:
-    always
   script:
     - sonar-scanner
 
