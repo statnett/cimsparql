@@ -35,11 +35,11 @@ class CimModel(Prefix):
         else:
             self._mapper = mapper
 
-    def _query_str(self, query: str, limit: int = None) -> str:
-        q = f"{self.header_str()}\n\n{query}"
+    def _query_with_header(self, query: str, limit: int = None) -> str:
+        query = "\n\n".join([self.header_str(), query])
         if limit is not None:
-            q += f" limit {limit}"
-        return q
+            query += f" limit {limit}"
+        return query
 
     def bus_data(
         self, region: str = "NO", sub_region: bool = False, limit: int = None, dry_run: bool = False
@@ -54,7 +54,7 @@ class CimModel(Prefix):
         """
         query = queries.bus_data(region, sub_region)
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             return self.get_table_and_convert(query, index="mrid", limit=limit)
 
@@ -107,7 +107,7 @@ class CimModel(Prefix):
             self.cim_version,
         )
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {var: float for var in load_vars}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -135,7 +135,7 @@ class CimModel(Prefix):
         """
         query = queries.wind_generating_unit_query(network_analysis)
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
             columns = {var: float for var in float_list}
@@ -170,7 +170,7 @@ class CimModel(Prefix):
             synchronous_vars, region, sub_region, connectivity
         )
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             float_list = ["maxP", "minP", "allocationMax", "allocationWeight"]
             float_list += synchronous_vars
@@ -209,7 +209,7 @@ class CimModel(Prefix):
             self.cim_version, rdf_types, region, sub_region, connectivity
         )
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             return self.get_table_and_convert(query, index="mrid", limit=limit)
 
@@ -253,7 +253,7 @@ class CimModel(Prefix):
             temperatures=temperatures,
         )
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             ac_lines = self.get_table_and_convert(query, limit=limit)
             if temperatures is not None:
@@ -291,7 +291,7 @@ class CimModel(Prefix):
             self.cim_version, region, sub_region, connectivity, with_market=with_market
         )
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             return self.get_table_and_convert(query, limit=limit)
 
@@ -326,7 +326,7 @@ class CimModel(Prefix):
             region, sub_region, connectivity, rates, with_market=with_market
         )
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             return self.get_table_and_convert(query, limit=limit)
 
@@ -335,14 +335,14 @@ class CimModel(Prefix):
     ) -> pd.DataFrame:
         query = ssh_queries.disconnected(self.cim_version)
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             return self.get_table(query, index=index, limit=limit)
 
     def ssh_synchronous_machines(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         query = ssh_queries.synchronous_machines()
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {"p": float, "q": float, "controlEnabled": bool}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -354,7 +354,7 @@ class CimModel(Prefix):
             rdf_types = ["cim:ConformLoad", "cim:NonConformLoad"]
         query = ssh_queries.load(rdf_types)
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {"p": float, "q": float}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -366,7 +366,7 @@ class CimModel(Prefix):
             rdf_types = [f"cim:{unit}GeneratingUnit" for unit in ["Hydro", "Thermal", "Wind"]]
         query = ssh_queries.generating_unit(rdf_types)
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {"normalPF": float}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -374,7 +374,7 @@ class CimModel(Prefix):
     def terminal(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         query = tp_queries.terminal(self.cim_version)
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {"connected": bool}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -382,7 +382,7 @@ class CimModel(Prefix):
     def topological_node(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         query = tp_queries.topological_node()
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {"BaseVoltage": float}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -392,7 +392,7 @@ class CimModel(Prefix):
     ) -> pd.DataFrame:
         query = sv_queries.powerflow(power)
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {x: float for x in power}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -402,7 +402,7 @@ class CimModel(Prefix):
     ) -> pd.DataFrame:
         query = sv_queries.voltage(voltage_vars)
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {x: float for x in voltage_vars}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
@@ -410,7 +410,7 @@ class CimModel(Prefix):
     def tapstep(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         query = sv_queries.tapstep()
         if dry_run:
-            return self._query_str(query, limit=limit)
+            return self._query_with_header(query, limit=limit)
         else:
             columns = {"position": float}
             return self.get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
