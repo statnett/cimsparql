@@ -12,7 +12,7 @@ from cimsparql.model import CimModel
 class GraphDBClient(CimModel):
     def __init__(
         self, service: str, mapper: CimModel = None, infer: bool = False, sameas: bool = True,
-    ):
+    ) -> None:
         """GraphDB client
 
         Args:
@@ -25,7 +25,7 @@ class GraphDBClient(CimModel):
             service=service, mapper=mapper, infer=infer, sameas=sameas,
         )
 
-    def _load_from_source(self, service: str, infer: bool, sameas: bool, **kwargs):
+    def _load_from_source(self, service: str, infer: bool, sameas: bool, **kwargs) -> None:
         if service is None:
             self._service = url.service(
                 repo=os.getenv("GRAPHDB_REPO", "SNMST-MasterCim15-VERSION-LATEST")
@@ -50,7 +50,7 @@ class GraphDBClient(CimModel):
                     self._prefixes[prefix] = uri.rstrip("#")
 
     @staticmethod
-    def value_getter(d) -> str:
+    def value_getter(d: Dict[str, str]) -> str:
         try:
             return d["value"]
         except KeyError:

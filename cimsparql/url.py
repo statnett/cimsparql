@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, ItemsView, List
 
 import requests
 
@@ -17,7 +17,7 @@ def service(repo: str, server: str = "graphdb.statnett.no", protocol: str = "htt
 
 
 class GraphDbConfig(object):
-    def __init__(self, server: str = "graphdb.statnett.no", protocol: str = "https"):
+    def __init__(self, server: str = "graphdb.statnett.no", protocol: str = "https") -> None:
         """Get repo configuration from GraphDB
 
         :param server: GraphDB server
@@ -49,7 +49,7 @@ class Prefix(object):
         except AttributeError:
             return ""
 
-    def items(self):
+    def items(self) -> ItemsView[str, str]:
         return self.prefixes.items()
 
     @property

@@ -143,7 +143,7 @@ def region_query(region: str, sub_region: bool, container: str) -> List[str]:
 
 def connectivity_mrid(
     var: str = con_mrid_str, sparql: bool = True, sequence_numbers: Tuple[int] = (1, 2)
-) -> [str, List[str]]:
+) -> Union[str, List[str]]:
     if sparql:
         return " ".join([f"?{var}_{i}" for i in sequence_numbers])
     else:
@@ -659,7 +659,7 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
 
 
 class Islands(nx.Graph):
-    def __init__(self, connections: pd.DataFrame):
+    def __init__(self, connections: pd.DataFrame) -> None:
         super().__init__()
         self.add_edges_from(connections.to_numpy())
         self._groups = list(nx.connected_components(self))
