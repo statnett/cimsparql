@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:md="http://iec.ch/TC57/61970-552/ModelDefinition/1#" xmlns:cim="http://iec.ch/TC57/2010/CIM-schema-cim15#">
+<md:FullModel rdf:ID="_03fadbcd-1a85-4b31-aa44-e4894b0c79a4">
+ <md:FullModel>Case from e-terrasource on: 4019-05-14T10:50:40.608+0200</md:FullModel>
+ <md:FullModel>4019-05-22T07:06:34</md:FullModel>
+ <md:FullModel>http://iec.ch/TC57/61970-456/Topology/2</md:FullModel>
+ <md:FullModel>VALID SOLUTION</md:FullModel>
+</md:FullModel>
+<cim:Terminal rdf:about="#_00000000-0000-0000-0000-000000000000">
+ <cim:Terminal.connected>true</cim:Terminal.connected>
+ <cim:Terminal.TopologicalNode rdf:resource="#_aa8f07b4-80f6-4be3-b060-b21700fdddea"/>
+</cim:Terminal>
+<cim:Terminal rdf:about="#_004b5f05-4421-001f-e050-1e828c94bdc6">
+ <cim:Terminal.connected>true</cim:Terminal.connected>
+ <cim:Terminal.TopologicalNode rdf:resource="#_c6624b55-90cb-422a-8974-f394ce706a0f"/>
+</cim:Terminal>
+<cim:Terminal rdf:about="#_004b5f05-4422-001f-e050-1e828c94bdc6">
+ <cim:Terminal.connected>true</cim:Terminal.connected>
+ <cim:Terminal.TopologicalNode rdf:resource="#_dd9b66a0-6888-46e6-9a2a-b2b57505e44e"/>
+</cim:Terminal>
+<cim:Terminal rdf:about="#_004b5f05-4433-001f-e050-1e828c94bdc6">
+ <cim:Terminal.connected>true</cim:Terminal.connected>
+ <cim:Terminal.TopologicalNode rdf:resource="#_921c3660-ed14-4e4f-8c8d-569d24d1a317"/>
+</cim:Terminal>
+<cim:TopologicalNode rdf:ID="_000e122e-b074-4e8a-b865-77ced6dbb137">
+ <cim:IdentifiedObject.name>GJOVIK 132 B_P1_RX2_RX3</cim:IdentifiedObject.name>
+ <cim:TopologicalNode.ConnectivityNodeContainer rdf:resource="#_9bb00fb3-1b27-831a-e040-1e828c94e833"/>
+ <cim:TopologicalNode.BaseVoltage rdf:resource="#_4bd4054c-5304-4528-9e31-df0770d1c939"/>
+</cim:TopologicalNode>
+<cim:TopologicalNode rdf:ID="_00253904-10e4-4d4d-93e3-358f24e47d00">
+ <cim:IdentifiedObject.name>KLYVE 11 A_B_RX1_RX2</cim:IdentifiedObject.name>
+ <cim:TopologicalNode.ConnectivityNodeContainer rdf:resource="#_9bb00fb3-21d2-831a-e040-1e828c94e833"/>
+ <cim:TopologicalNode.BaseVoltage rdf:resource="#_9dfd4c49-0255-6964-e040-1e828c94e002"/>
+</cim:TopologicalNode>
+<cim:TopologicalNode rdf:ID="_00384272-fb4e-4e64-8059-8e724d8aac28">
+ <cim:IdentifiedObject.name>SISO 11 </cim:IdentifiedObject.name>
+ <cim:TopologicalNode.ConnectivityNodeContainer rdf:resource="#_9bb00fb3-1e18-831a-e040-1e828c94e833"/>
+ <cim:TopologicalNode.BaseVoltage rdf:resource="#_9dfd4c49-0255-6964-e040-1e828c94e002"/>
+</cim:TopologicalNode>
+<cim:TopologicalNode rdf:ID="_006609da-611d-46f3-81ae-ac6657f723e3">
+ <cim:IdentifiedObject.name>SKEIENE 132 D</cim:IdentifiedObject.name>
+ <cim:TopologicalNode.ConnectivityNodeContainer rdf:resource="#_9bb00fb3-242e-831a-e040-1e828c94e833"/>
+ <cim:TopologicalNode.BaseVoltage rdf:resource="#_4bd4054c-5304-4528-9e31-df0770d1c939"/>
+</cim:TopologicalNode>
+</rdf:RDF>
