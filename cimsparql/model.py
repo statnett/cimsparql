@@ -97,7 +97,7 @@ class CimModel(Prefix):
            station_group: return station group mrid (if any)
            with_sequence_number: Include the sequence numbers in output
            network_analysis: Include only network analysis enabled components
-           loads: return first 'limit' number of rows
+           limit: return first 'limit' number of rows
            dry_run: return string with sql query
 
         Returns:
@@ -138,8 +138,8 @@ class CimModel(Prefix):
            dry_run: return string with sql query
 
         Returns:.
-           wind_generating_units: with mrid as index and columns ['terminal_mrid', 'bid_marked_code'
-           , 'p', 'q']
+           wind_generating_units: with mrid as index and columns ['station_group', 'market_code',
+           'maxP', 'allocationMax', 'allocationWeight', 'minP', 'name', 'power_plant_mrid']
 
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
@@ -245,7 +245,7 @@ class CimModel(Prefix):
            region: Limit to region
            sub_region: Assume region is a sub_region
            limit: return first 'limit' number of rows
-           connectivity: Include connectivity mrids
+           connectivity: Include connectivity mrids as column name '{connectivity}_{1|2}'
            rates: include rates in output (available: "Normal", "Warning", "Overload")
            with_market: include marked connections in output
            temperatures: include temperature correction factors in output
@@ -320,7 +320,7 @@ class CimModel(Prefix):
         with_market: bool = False,
         dry_run: bool = False,
     ) -> pd.DataFrame:
-        """Query transformers
+        """Query transformer windings
 
         Args:
            region: Limit to region
