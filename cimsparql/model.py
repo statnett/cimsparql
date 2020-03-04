@@ -273,7 +273,7 @@ class CimModel(Prefix):
             ac_lines = self._get_table_and_convert(query, limit=limit)
             if temperatures is not None:
                 for temperature in temperatures:
-                    column = f"{queries.negpos(temperature)}_{abs(temperature)}"
+                    column = f"{queries.negpos(temperature)}_{abs(temperature)}_factor"
                     ac_lines.loc[ac_lines[column].isna(), column] = 1.0
             return ac_lines
 

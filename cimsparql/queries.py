@@ -57,7 +57,7 @@ def temperature_list(temperature: float, xsd: str) -> List[str]:
     return [
         f"{mrid} ALG:TemperatureCurveData.Curve ?temp_curve",
         f"{mrid} ALG:TemperatureCurveData.temperature '{temperature:0.1f}'{xsd}",
-        f"{mrid} ALG:TemperatureCurveData.percent ?factor_{sign}_{abs(temperature)}",
+        f"{mrid} ALG:TemperatureCurveData.percent ?{sign}_{abs(temperature)}_factor",
     ]
 
 
@@ -548,7 +548,7 @@ def ac_line_query(
 
         if temperatures is not None:
             select_query += [
-                f"?{negpos(temperature)}_{abs(temperature)}" for temperature in temperatures
+                f"?{negpos(temperature)}_{abs(temperature)}_factor" for temperature in temperatures
             ]
             where_list += [
                 group_query(temp_correction_factors("?mrid", cim, temperatures), command="OPTIONAL")
