@@ -235,7 +235,7 @@ def load_query(
         raise ValueError(f"load_type should be any combination of {allowed_load_types}")
 
     container = "Substation"
-
+    load_vars = [] if load_vars is None else load_vars
     select_query = "SELECT ?mrid ?terminal_mrid ?bid_market_code " + " ".join(
         [f"?{p}" for p in load_vars]
     )
