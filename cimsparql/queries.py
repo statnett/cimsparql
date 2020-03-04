@@ -239,6 +239,8 @@ def load_query(
     select_query = "SELECT ?mrid ?terminal_mrid ?bid_market_code " + " ".join(
         [f"?{p}" for p in load_vars]
     )
+    if with_sequence_number:
+        select_query += " ?sequenceNumber"
 
     if connectivity is not None:
         select_query += f" ?{connectivity}"
@@ -295,6 +297,9 @@ def synchronous_machines_query(
     )
     if connectivity is not None:
         select_query += f" ?{connectivity}"
+
+    if with_sequence_number:
+        select_query += " ?sequenceNumber"
 
     where_list = [
         "?mrid rdf:type cim:SynchronousMachine",
