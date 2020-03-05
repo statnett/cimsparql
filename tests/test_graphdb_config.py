@@ -14,7 +14,7 @@ def test_default_graphdb_config_service(config):
 
 
 def test_default_graphdb_repos(config):
-    assert "SNMST-MasterCim15-VERSION-LATEST" in config.repos
+    assert any([repo.startswith("SNMST-MasterCim15-VERSION") for repo in config.repos])
 
 
 def test_local_graphdb_config_service(local_graphdb_config):
