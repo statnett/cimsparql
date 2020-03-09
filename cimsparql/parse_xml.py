@@ -1,8 +1,10 @@
+import collections
 import re
 from pathlib import Path
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, Iterable, List, Tuple, Union
 
 import pandas as pd
+import pendulum
 from lxml.etree import _Element, _ElementTree, parse
 
 
@@ -118,3 +120,113 @@ class SvTpCimXml:
 
     def powerflow(self, *args, **kwargs) -> pd.DataFrame:
         return self._parser["sv"].parse("SvPowerFlow", self._sv_power_flow_data_adder)
+
+
+def parse_cim_file(file_name: str) -> Tuple[pendulum.DateTime, str]:
+    """
+    Parses a cim file-name to pendulum datetime and cim type.
+
+    Args:
+        file_name: cim file-name on format cim_YYYYMMDD_HHMMSS_foo_bar_<sv|tp>.xml
+
+    Returns: date of cim file, and cim type
+
+    """
+    splitted = file_name.split("_")
+    date = pendulum.parse(" ".join(splitted[1:3]), tz="Europe/Oslo")
+    file_type = splitted[-1].split(".")[0]
+    return date, file_type
+
+
+def find_min(
+    date: pendulum.DateTime, dates: List[pendulum.DateTime]
+) -> Tuple[pendulum.DateTime, List[pendulum.DateTime]]:
+    """
+    Finds the closest date to a given date in a list of dates.
+
+    Assumes that the list of dates is sorted to reduce the iterations.
+
+    Args:
+        date: Date that is to be found a closest match to
+        dates: A list of dates
+
+    Returns: A tuple of the date in dates that is closest to the original date and
+    a list containing the unchecked dates.
+
+    """
+    min_date = None
+    dist = None
+    for i, d in enumerate(dates):
+        dist_ = date.diff(d).in_seconds()
+        if (dist is None) or (dist_ <= dist):
+            min_date = d
+            dist = dist_
+        else:
+            break
+    return min_date, dates[i - 1 :]
+
+
+def get_files(path: Path) -> Dict[pendulum.DateTime, Dict[str, Path]]:
+    """
+    Finds all .xml files in given directory and subdirectories, and returns a
+    dictionary with a DateTime representation of the file and the value is a dict
+    of sv & tp identificators with each corresponding value being a full path to the file.
+
+    Args:
+        path: Path to the root directory to search in
+
+    Returns: Dictionary with the resulting file paths
+
+    """
+    file_d = collections.defaultdict(dict)
+    for file in path.glob("**/*.xml"):
+        date, file_type = parse_cim_file(file.stem)
+        file_d[date][f"{file_type}_path"] = path / file
+    return file_d
+
+
+def get_sv_tp(
+    dt: pendulum.DateTime,
+    root_path: Path = None,
+    file_collection: Dict[pendulum.DateTime, Dict[str, Path]] = None,
+) -> Tuple[Dict[str, Path], Dict[pendulum.DateTime, Dict[str, Path]]]:
+    """
+    For a given DateTime and a path to a directory of sv & tp files or a collection of parsed files
+    from :func:`~cimsparql.parse_xml.get_files` finds and returns the sv/tp pair that are closest
+    to the given date.
+
+    Args:
+        dt: DateTime in question
+        root_path: Path to the root directory to search in
+        file_collection:
+
+    Returns: A tuple of a dict of the closest sv/tp pair and a collection of dates not yet parsed.
+
+    """
+    file_collection = get_files(root_path) if file_collection is None else file_collection
+    min_f, rest_dates = find_min(dt, sorted(list(file_collection.keys())))
+    sv_tp = file_collection[min_f]
+    file_collection = {k: file_collection[k] for k in rest_dates}
+    return sv_tp, file_collection
+
+
+def get_cim_files(
+    root_path: Path, date_range: Iterable[pendulum.DateTime]
+) -> Dict[pendulum.DateTime, Dict[str, Path]]:
+    """
+    For a given directory and a list/range of DateTimes, finds the paths to the files that are
+     closest wrt. to the dates in date_range. Assumes date_range is sorted in ascending order
+
+    Args:
+        root_path: Path to the root folder of a directory with sv & tp files
+        date_range: Iterable of pendulum DateRange
+
+    Returns: dictionary with date as key and another dictionary with path to the sv/tp files
+
+    """
+    file_collection = None
+    results = {}
+    for date in date_range:
+        sv_tp, file_collection = get_sv_tp(date, root_path, file_collection)
+        results[date] = sv_tp
+    return results

@@ -25,6 +25,8 @@ tables = "*"
 networkx = "*"
 SPARQLWrapper = "*"
 requests = "*"
+pendulum = {version = "*", optional = true}
+lxml = {version = "*", optional = true}
 
 [tool.poetry.dev-dependencies]
 autopep8 = "*"
@@ -42,6 +44,9 @@ rope = "*"
 yapf = "*"
 sphinx = "*"
 sphinx_rtd_theme = "*"
+
+[tool.poetry.extras]
+parse_xml = ["lxml", "pendulum"]
 
 [tool.isort]
 line_length = 100
