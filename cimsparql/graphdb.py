@@ -25,7 +25,14 @@ class GraphDBClient(CimModel):
             service=service, mapper=mapper, infer=infer, sameas=sameas,
         )
 
-    def _load_from_source(self, service: str, infer: bool, sameas: bool, **kwargs) -> None:
+    def _setup_client(self, service: str, infer: bool, sameas: bool, **kwargs) -> None:
+        """Setup client for querying
+
+        Args:
+           service: string with url to graphdb repository. See cimsparql.url.service
+           infer: deduce further knowledge based on existing RDF data and a formal set of
+           sameas: map same concepts from two or more datasets
+        """
         if service is None:
             self._service = url.service(
                 repo=os.getenv("GRAPHDB_REPO", "SNMST-MasterCim15-VERSION-LATEST")
@@ -51,6 +58,8 @@ class GraphDBClient(CimModel):
 
     @staticmethod
     def value_getter(d: Dict[str, str]) -> str:
+        """Get item of 'value' key if present else None
+        """
         try:
             return d["value"]
         except KeyError:

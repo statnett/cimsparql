@@ -16,7 +16,7 @@ class CimModel(Prefix):
     """
 
     def __init__(self, mapper: TypeMapper, *args, **kwargs):
-        self._load_from_source(*args, **kwargs)
+        self._setup_client(*args, **kwargs)
         self.mapper = mapper
 
     @property

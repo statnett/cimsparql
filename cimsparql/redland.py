@@ -31,7 +31,7 @@ class Model(CimModel):
             network_analysis=network_analysis,
         )
 
-    def _load_from_source(
+    def _setup_client(
         self,
         query_language: str,
         new: bool,
