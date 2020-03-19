@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import pandas as pd
 import requests
@@ -7,6 +7,25 @@ from SPARQLWrapper import JSON, SPARQLWrapper
 
 from cimsparql import url
 from cimsparql.model import CimModel
+
+
+def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
+    """Get a sample row for extraction of data types
+
+    Args:
+       cols: queried columns (optional might return None)
+       rows: 'results'→'bindings' from SPARQLWrapper
+
+    Returns:
+       samples result of all columns in query
+    """
+    full_row = {}
+    for row in rows:
+        if set(cols).difference(full_row):
+            full_row.update(row)
+        else:
+            break
+    return full_row
 
 
 class GraphDBClient(CimModel):
@@ -81,4 +100,4 @@ class GraphDBClient(CimModel):
         data = processed_results["results"]["bindings"]
         out = [{c: self.value_getter(row.get(c, {})) for c in cols} for row in data]
 
-        return pd.DataFrame(out), data[0]
+        return pd.DataFrame(out), data_row(cols, data)

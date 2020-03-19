@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cimsparql.graphdb import GraphDBClient
+from cimsparql.graphdb import GraphDBClient, data_row
 from cimsparql.queries import Islands, three_tx_to_windings, windings_to_tx
 
 n_samples = 40
@@ -220,3 +220,15 @@ def test_connectors_reference_nodes(disconnectors: pd.DataFrame):
     connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
     node_dict = Islands(disconnectors[connect_columns]).reference_nodes()
     assert len(node_dict) == len(np.unique(disconnectors[connect_columns].to_numpy()))
+
+
+def test_data_row():
+    cols = ["a", "b", "c", "d", "e"]
+    rows = [{"a": 1, "b": 2}, {"c": 3, "d": 4}, {"a": 5, "b": 6}, {"e": 7}]
+    assert not set(data_row(cols, rows)).symmetric_difference(cols)
+
+
+def test_data_row_missing_column():
+    cols = ["a", "b", "c", "d", "e"]
+    rows = [{"a": 1, "b": 2}, {"c": 3}, {"a": 5, "b": 6}, {"e": 7}]
+    assert set(data_row(cols, rows).keys()).symmetric_difference(cols) == {"d"}
