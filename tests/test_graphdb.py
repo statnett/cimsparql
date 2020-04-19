@@ -8,6 +8,7 @@ import pytest
 
 from cimsparql.graphdb import GraphDBClient, data_row
 from cimsparql.queries import Islands, three_tx_to_windings, windings_to_tx
+from cimsparql.url import service
 
 n_samples = 40
 
@@ -37,6 +38,11 @@ def test_date_version(get_table_mock, gdb_cli: GraphDBClient):
 
 def test_cimversion(gdb_cli: GraphDBClient):
     assert gdb_cli.cim_version == 15
+
+
+def test_str_rep(gdb_cli: GraphDBClient, graphdb_repo: str):
+    target = f"<GraphDBClient object, service: {service(graphdb_repo)}>"
+    assert str(gdb_cli) == target
 
 
 load_columns = ["connectivity_mrid", "terminal_mrid", "bid_market_code", "p", "q"]

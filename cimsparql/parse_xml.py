@@ -47,8 +47,12 @@ class CimXml:
 
 class SvTpCimXml:
     def __init__(self, sv_path: Path, tp_path: Path):
-        profile_paths = zip(["sv", "tp"], [sv_path, tp_path])
-        self._parser = {profile: CimXml(path) for profile, path in profile_paths if path.exists()}
+        self.paths = {"sv": sv_path, "tp": tp_path}
+        self._parser = {profile: CimXml(path) for profile, path in self.paths.items()}
+
+    def __str__(self):
+        file_desc = ", ".join([f"{profile}: {path.stem}" for profile, path in self.paths.items()])
+        return f"<SvTpCimXml object, {file_desc}>"
 
     @staticmethod
     def _sv_power_flow_data_adder(

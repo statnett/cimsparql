@@ -18,6 +18,11 @@ def sv_tp_cim() -> SvTpCimXml:
     return SvTpCimXml(*paths)
 
 
+def test_str_rep(sv_tp_cim: SvTpCimXml):
+    target = "<SvTpCimXml object, {}>".format(", ".join(["sv: sv", "tp: tp"]))
+    assert str(sv_tp_cim) == target
+
+
 def test_parse_sv_tp_cim_xml_bus_data(sv_tp_cim: SvTpCimXml):
     assert sv_tp_cim.bus_data().shape == (4, 3)
 
@@ -188,4 +193,3 @@ def test_get_cim_files_no_o_disc():
         },
     }
     assert result == target
-
