@@ -44,6 +44,9 @@ class GraphDBClient(CimModel):
             service=service, mapper=mapper, infer=infer, sameas=sameas,
         )
 
+    def __str__(self) -> str:
+        return f"<GraphDBClient object, service: {self._service}>"
+
     def _setup_client(self, service: str, infer: bool, sameas: bool, **kwargs) -> None:
         """Setup client for querying
 
