@@ -12,11 +12,10 @@ Welcome to cimsparql's documentation!
 
    README.md
 
-   modules
+   cimsparql
 
 Indices and tables
 ==================
-
 
 * :ref:`genindex`
 * :ref:`modindex`

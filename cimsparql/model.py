@@ -15,7 +15,7 @@ class CimModel(Prefix):
     """Used to query with sparql queries (typically CIM)
     """
 
-    def __init__(self, mapper: TypeMapper, *args, **kwargs):
+    def __init__(self, mapper: TypeMapper, *args, **kwargs) -> None:
         self._setup_client(*args, **kwargs)
         self.mapper = mapper
 
@@ -44,7 +44,7 @@ class CimModel(Prefix):
         return self._mapper
 
     @mapper.setter
-    def mapper(self, mapper: TypeMapper = None):
+    def mapper(self, mapper: TypeMapper = None) -> None:
         if mapper is None and "rdfs" in self.prefixes:
             self._mapper = TypeMapper(self)
         else:
@@ -574,12 +574,12 @@ class CimModel(Prefix):
             col_map, columns = self.col_map(data_row, columns)
             result = self.mapper.map_data_types(result, col_map, custom_maps, columns)
 
-        if index:
+        if index and not result.empty:
             result.set_index(index, inplace=True)
         return result
 
     @property
-    def _map_data_types(self) -> bool:
+    def map_data_types(self) -> bool:
         try:
             return self.mapper.have_cim_version(self.prefixes["cim"])
         except AttributeError:
@@ -612,7 +612,7 @@ class CimModel(Prefix):
             query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns
         )
 
-        if not self._map_data_types and len(result) > 0:
+        if not self.map_data_types and len(result) > 0:
             result = self._manual_convert_types(result, columns, index)
 
         return result

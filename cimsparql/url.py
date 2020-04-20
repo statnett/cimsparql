@@ -6,9 +6,10 @@ import requests
 def service(repo: str, server: str = "graphdb.statnett.no", protocol: str = "https") -> str:
     """Returns service url for GraphdDBClient
 
-    :param repo: Repo to use
-    :param server: server name
-    :param protocol:
+    Args:
+       repo: Repo on server
+       server: server ip/name
+       protocol: http or https
     """
     url = f"{protocol}://{server}/repositories"
     if repo is not None:
@@ -16,12 +17,14 @@ def service(repo: str, server: str = "graphdb.statnett.no", protocol: str = "htt
     return url
 
 
-class GraphDbConfig(object):
+class GraphDbConfig:
     def __init__(self, server: str = "graphdb.statnett.no", protocol: str = "https") -> None:
         """Get repo configuration from GraphDB
 
-        :param server: GraphDB server
-        :param protocol:
+        Args:
+           server: GraphDB server
+           protocol: http or https
+
         """
         self._service = service(None, server, protocol)
         try:
@@ -31,7 +34,7 @@ class GraphDbConfig(object):
 
     @property
     def repos(self) -> List[str]:
-        """List available repos on GraphDB server"""
+        """List of available repos on GraphDB server"""
         return [repo["id"]["value"] for repo in self._repos]
 
     @repos.setter
@@ -42,8 +45,13 @@ class GraphDbConfig(object):
             self._repos = {}
 
 
-class Prefix(object):
+class Prefix:
     def header_str(self) -> str:
+        """Build header string, for sparql queries, with list of prefixes
+
+        The list of available prefixes should be provided by the source (sourch as GraphDB).
+
+        """
         try:
             return "\n".join([f"PREFIX {name}:<{url}#>" for name, url in self.prefixes.items()])
         except AttributeError:
@@ -54,10 +62,12 @@ class Prefix(object):
 
     @property
     def cim_version(self) -> int:
+        """CIM version on server/repo"""
         return int(self.prefixes["cim"].split("CIM-schema-cim")[1])
 
     @property
     def prefixes(self) -> Dict[str, str]:
+        """Source defined prefixes"""
         return self._prefixes
 
     @property

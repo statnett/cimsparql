@@ -8,7 +8,7 @@ stages:
 run_tests:
   stage: tests
   script:
-    - tox -e pytest
+    - tox
   artifacts:
     paths:
       - coverage.xml
@@ -33,6 +33,7 @@ pages:
   only:
     - tags
   script:
+    - apt-get install -y graphviz
     - tox -e sphinx
   artifacts:
     paths:

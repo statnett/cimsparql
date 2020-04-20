@@ -6,7 +6,7 @@
 # character.
 [tool.poetry]
 name = "cimsparql"
-version = "1.3.5"
+version = "1.3.6"
 description = "CIM query utilities"
 authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
 repository = "https://gitlab.statnett.no/general/cimsparql.git"
@@ -35,15 +35,22 @@ flake8 = "*"
 ipython = "*"
 isort = "*"
 jedi = "*"
+jupyter = "*"
+matplotlib = "*"
 mock = "*"
 pre-commit = "*"
+prospector = "*"
+pylint = "*"
 pytest = "*"
 pytest-cov = "*"
+pytest-profiling = "*"
 recommonmark = "*"
 rope = "*"
-yapf = "*"
+rst2pdf = "*"
 sphinx = "*"
+sphinx_autodoc_typehints = "*"
 sphinx_rtd_theme = "*"
+yapf = "*"
 
 [tool.poetry.extras]
 parse_xml = ["lxml", "pendulum"]

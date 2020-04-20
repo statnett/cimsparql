@@ -145,17 +145,17 @@ def parse_cim_file(file_name: str) -> Tuple[pendulum.DateTime, str]:
 def find_min(
     date: pendulum.DateTime, dates: List[pendulum.DateTime]
 ) -> Tuple[pendulum.DateTime, List[pendulum.DateTime]]:
-    """
-    Finds the closest date to a given date in a list of dates.
+    """Finds the closest date to a given date in a list of dates
 
-    Assumes that the list of dates is sorted to reduce the iterations.
+    Assumes that the list of dates is sorted to reduce the iterations
 
     Args:
         date: Date that is to be found a closest match to
         dates: A list of dates
 
-    Returns: A tuple of the date in dates that is closest to the original date and
-    a list containing the unchecked dates.
+    Returns:
+        A tuple of the date in dates that is closest to the original date and a list containing the
+        unchecked dates
 
     """
     min_date = None
@@ -171,16 +171,15 @@ def find_min(
 
 
 def get_files(path: Path) -> Dict[pendulum.DateTime, Dict[str, Path]]:
-    """
-    Finds all .xml files in given directory and subdirectories, and returns a
-    dictionary with a DateTime representation of the file and the value is a dict
-    of sv & tp identificators with each corresponding value being a full path to the file.
+    """Finds all .xml files in given directory and subdirectories
+
+    Returns a dictionary where the values are dicts of sv & tp identificators with each
+    corresponding value being a full path to the file.
 
     Args:
         path: Path to the root directory to search in
 
-    Returns: Dictionary with the resulting file paths
-
+    Returns: Dictionary with the resulting file paths for all dates
     """
     file_d = collections.defaultdict(dict)
     for file in path.glob("**/*.xml"):
@@ -194,10 +193,9 @@ def get_sv_tp(
     root_path: Path = None,
     file_collection: Dict[pendulum.DateTime, Dict[str, Path]] = None,
 ) -> Tuple[Dict[str, Path], Dict[pendulum.DateTime, Dict[str, Path]]]:
-    """
-    For a given DateTime and a path to a directory of sv & tp files or a collection of parsed files
-    from :func:`~cimsparql.parse_xml.get_files` finds and returns the sv/tp pair that are closest
-    to the given date.
+    """For a given DateTime and a path to a directory of sv & tp files or a collection of parsed files
+    from :func:`~cimsparql.parse_xml.get_files` finds and returns the sv/tp pair that are closest to
+    the given date.
 
     Args:
         dt: DateTime in question
@@ -217,9 +215,8 @@ def get_sv_tp(
 def get_cim_files(
     root_path: Path, date_range: Iterable[pendulum.DateTime]
 ) -> Dict[pendulum.DateTime, Dict[str, Path]]:
-    """
-    For a given directory and a list/range of DateTimes, finds the paths to the files that are
-     closest wrt. to the dates in date_range. Assumes date_range is sorted in ascending order
+    """For a given directory and a list/range of DateTimes, finds the paths to the files that are
+    closest wrt. to the dates in date_range. Assumes date_range is sorted in ascending order
 
     Args:
         root_path: Path to the root folder of a directory with sv & tp files
