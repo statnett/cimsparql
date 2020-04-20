@@ -10,7 +10,7 @@ def test_map_data_types(monkeypatch):
 
     monkeypatch.setattr(CimModel, "__init__", cim_init)
     cim_model = CimModel()
-    assert cim_model._map_data_types
+    assert cim_model.map_data_types
 
 
 def test_not_map_data_types(monkeypatch):
@@ -20,7 +20,7 @@ def test_not_map_data_types(monkeypatch):
 
     monkeypatch.setattr(CimModel, "__init__", cim_init)
     cim_model = CimModel()
-    assert not cim_model._map_data_types
+    assert not cim_model.map_data_types
 
 
 def test_not_map_data_types_on_exception(monkeypatch):
@@ -29,4 +29,4 @@ def test_not_map_data_types_on_exception(monkeypatch):
 
     monkeypatch.setattr(CimModel, "__init__", cim_init)
     cim_model = CimModel()
-    assert not cim_model._map_data_types
+    assert not cim_model.map_data_types

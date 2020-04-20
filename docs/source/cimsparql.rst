@@ -1,86 +1,23 @@
-cimsparql package
+CimSparql package
 =================
 
-Submodules
-----------
+.. inheritance-diagram:: cimsparql.graphdb.GraphDBClient
+                         cimsparql.redland.Model
+   :top-classes: cimsparql.url.Prefix
 
-cimsparql.graphdb module
-------------------------
+.. toctree::
+   :caption: Submodules
 
-.. automodule:: cimsparql.graphdb
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   submodules/model
 
-cimsparql.model module
-----------------------
+   submodules/graphdb
 
-.. automodule:: cimsparql.model
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   submodules/redland
 
-cimsparql.queries module
-------------------------
+   submodules/queries
 
-.. automodule:: cimsparql.queries
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   submodules/type_mapper
 
-cimsparql.redland module
-------------------------
+   submodules/url
 
-.. automodule:: cimsparql.redland
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-cimsparql.ssh\_queries module
------------------------------
-
-.. automodule:: cimsparql.ssh_queries
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-cimsparql.sv\_queries module
-----------------------------
-
-.. automodule:: cimsparql.sv_queries
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-cimsparql.tp\_queries module
-----------------------------
-
-.. automodule:: cimsparql.tp_queries
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-cimsparql.type\_mapper module
------------------------------
-
-.. automodule:: cimsparql.type_mapper
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-cimsparql.url module
---------------------
-
-.. automodule:: cimsparql.url
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: cimsparql
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   submodules/parse_xml
