@@ -27,8 +27,7 @@ def combine_statements(*args, group: bool = False, split: str = "\n") -> str:
     """
     if group:
         return "{\n" + split.join(args) + "\n}"
-    else:
-        return split.join(args)
+    return split.join(args)
 
 
 def xsd_type(cim: str, var: str) -> str:
@@ -68,8 +67,8 @@ def temp_correction_factors(mrid: str, cim: str, temperatures: List = range(-30,
         "?temp_mrid ALG:TemperatureCurveDependentLimit.TemperatureCurve ?temp_curve",
     ]
     xsd = xsd_type(cim, "Temperature")
-    for temperatures in temperatures:
-        where_list += temperature_list(temperatures, xsd)
+    for temperature in temperatures:
+        where_list += temperature_list(temperature, xsd)
     return where_list
 
 
@@ -146,15 +145,13 @@ def connectivity_mrid(
 ) -> Union[str, List[str]]:
     if sparql:
         return " ".join([f"?{var}_{i}" for i in sequence_numbers])
-    else:
-        return [f"{var}_{i}" for i in sequence_numbers]
+    return [f"{var}_{i}" for i in sequence_numbers]
 
 
 def acdc_terminal(cim_version: int) -> str:
     if cim_version > 15:
         return "ACDCTerminal"
-    else:
-        return "Terminal"
+    return "Terminal"
 
 
 def terminal_where_query(
@@ -219,7 +216,7 @@ def bus_data(region: str = "NO", sub_region: bool = False) -> str:
     return combine_statements(select_query, group_query(where_list))
 
 
-def load_query(
+def load_query(  # pylint: disable=too-many-arguments
     load_type: List[str],
     load_vars: Tuple[str] = ("p", "q"),
     region: str = "NO",
@@ -278,7 +275,7 @@ def load_query(
     return combine_statements(select_query, group_query(where_list))
 
 
-def synchronous_machines_query(
+def synchronous_machines_query(  # pylint: disable=too-many-arguments
     sync_vars: Tuple[str] = ("sn",),
     region: str = "NO",
     sub_region: bool = False,
@@ -490,7 +487,7 @@ def series_compensator_query(
     return combine_statements(" ".join(select_query), group_query(where_list))
 
 
-def ac_line_query(
+def ac_line_query(  # pylint: disable=too-many-arguments
     cim_version: int,
     cim: str,
     region: str = "NO",
@@ -664,7 +661,9 @@ class Islands(nx.Graph):
         self.add_edges_from(connections.to_numpy())
         self._groups = list(nx.connected_components(self))
 
-    def reference_nodes(self, columns: List[str] = ["mrid", "ref_node"]) -> pd.DataFrame:
+    def reference_nodes(self, columns: List[str] = None) -> pd.DataFrame:
+        if columns is None:
+            columns = ["mrid", "ref_node"]
         keys = list()
         values = list()
         for group in self.groups():

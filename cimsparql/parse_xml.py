@@ -167,7 +167,7 @@ def find_min(
             dist = dist_
         else:
             break
-    return min_date, dates[i - 1 :]
+    return min_date, dates[i - 1 :]  # pylint: disable=undefined-loop-variable
 
 
 def get_files(path: Path) -> Dict[pendulum.DateTime, Dict[str, Path]]:
