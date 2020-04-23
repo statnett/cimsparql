@@ -11,7 +11,7 @@ name = {".n3": "ntriples", ".xml": "rdfxml"}
 
 
 class Model(CimModel):
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         fname: PosixPath,
         new: bool = False,
@@ -70,13 +70,11 @@ class Model(CimModel):
 
         return option_string + f"hash-type='{hash_type}',dir='{fname.parent}'"
 
-    def _get_table(
-        self, query: str, index: str = None, limit: int = None
-    ) -> Tuple[pd.DataFrame, Dict]:
+    def _get_table(self, query: str, limit: int = None) -> Tuple[pd.DataFrame, Dict]:
         rdf_query = RDF.Query(
             self._query_with_header(query, limit), query_language=self._query_language
         )
-        try:
+        try:  # pylint: disable=unnecessary-comprehension
             result = [res for res in rdf_query.execute(self._model)]
         except RDF.RedlandError:
             return pd.DataFrame([]), {}

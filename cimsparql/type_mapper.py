@@ -99,7 +99,7 @@ class TypeMapper(TypeMapperQueries):
         self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
 
     def have_cim_version(self, cim) -> bool:
-        return cim in set([val.split("#")[0] for val in self.map.keys()])
+        return cim in {val.split("#")[0] for val in self.map.keys()}
 
     @staticmethod
     def type_map(df: pd.DataFrame) -> Dict[str, Any]:
@@ -159,8 +159,7 @@ class TypeMapper(TypeMapperQueries):
             warnings.warn(f"{sparql_type} not found in the sparql -> python type map")
             if missing_return == "identity":
                 return lambda x: x
-            else:
-                return None
+            return None
 
     def convert_dict(
         self, d: Dict, drop_missing: bool = True, custom_maps: Dict = None

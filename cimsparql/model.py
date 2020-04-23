@@ -70,10 +70,9 @@ class CimModel(Prefix):
         query = queries.bus_data(region, sub_region)
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            return self._get_table_and_convert(query, index="mrid", limit=limit)
+        return self._get_table_and_convert(query, index="mrid", limit=limit)
 
-    def loads(
+    def loads(  # pylint: disable=too-many-arguments
         self,
         load_type: List[str],
         load_vars: Tuple[str] = ("p", "q"),
@@ -123,9 +122,8 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {var: float for var in load_vars}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {var: float for var in load_vars}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def wind_generating_units(
         self, limit: int = None, network_analysis: bool = True, dry_run: bool = False
@@ -151,12 +149,11 @@ class CimModel(Prefix):
         query = queries.wind_generating_unit_query(network_analysis)
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
-            columns = {var: float for var in float_list}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
+        columns = {var: float for var in float_list}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def synchronous_machines(
+    def synchronous_machines(  # pylint: disable=too-many-arguments
         self,
         synchronous_vars: Tuple[str] = ("sn", "p", "q"),
         region: str = "NO",
@@ -186,13 +183,12 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            float_list = ["maxP", "minP", "allocationMax", "allocationWeight"]
-            float_list += synchronous_vars
-            columns = {var: float for var in float_list}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        float_list = ["maxP", "minP", "allocationMax", "allocationWeight"]
+        float_list += synchronous_vars
+        columns = {var: float for var in float_list}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
-    def connections(
+    def connections(  # pylint: disable=too-many-arguments
         self,
         rdf_types: Union[str, Tuple[str]] = ("cim:Breaker", "cim:Disconnector"),
         region: str = "NO",
@@ -225,10 +221,9 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            return self._get_table_and_convert(query, index="mrid", limit=limit)
+        return self._get_table_and_convert(query, index="mrid", limit=limit)
 
-    def ac_lines(
+    def ac_lines(  # pylint: disable=too-many-arguments
         self,
         region: str = "NO",
         sub_region: bool = False,
@@ -269,15 +264,14 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            ac_lines = self._get_table_and_convert(query, limit=limit)
-            if temperatures is not None:
-                for temperature in temperatures:
-                    column = f"{queries.negpos(temperature)}_{abs(temperature)}_factor"
-                    ac_lines.loc[ac_lines[column].isna(), column] = 1.0
-            return ac_lines
+        ac_lines = self._get_table_and_convert(query, limit=limit)
+        if temperatures is not None:
+            for temperature in temperatures:
+                column = f"{queries.negpos(temperature)}_{abs(temperature)}_factor"
+                ac_lines.loc[ac_lines[column].isna(), column] = 1.0
+        return ac_lines
 
-    def series_compensators(
+    def series_compensators(  # pylint: disable=too-many-arguments
         self,
         region: str = "NO",
         sub_region: bool = False,
@@ -307,10 +301,9 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            return self._get_table_and_convert(query, limit=limit)
+        return self._get_table_and_convert(query, limit=limit)
 
-    def transformers(
+    def transformers(  # pylint: disable=too-many-arguments
         self,
         region: str = "NO",
         sub_region: bool = False,
@@ -342,8 +335,7 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            return self._get_table_and_convert(query, limit=limit)
+        return self._get_table_and_convert(query, limit=limit)
 
     def disconnected(
         self, index: str = None, limit: int = None, dry_run: bool = False
@@ -358,8 +350,7 @@ class CimModel(Prefix):
         query = ssh_queries.disconnected(self.cim_version)
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            return self.get_table(query, index=index, limit=limit)
+        return self.get_table(query, index=index, limit=limit)
 
     def ssh_synchronous_machines(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         """Query synchronous machines from ssh profile (not available in GraphDB)
@@ -371,9 +362,8 @@ class CimModel(Prefix):
         query = ssh_queries.synchronous_machines()
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {"p": float, "q": float, "controlEnabled": bool}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {"p": float, "q": float, "controlEnabled": bool}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def ssh_load(
         self, rdf_types: List[str] = None, limit: int = None, dry_run: bool = False
@@ -391,9 +381,8 @@ class CimModel(Prefix):
         query = ssh_queries.load(rdf_types)
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {"p": float, "q": float}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {"p": float, "q": float}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def ssh_generating_unit(
         self, rdf_types: List[str] = None, limit: int = None, dry_run: bool = False
@@ -412,9 +401,8 @@ class CimModel(Prefix):
         query = ssh_queries.generating_unit(rdf_types)
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {"normalPF": float}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {"normalPF": float}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def terminal(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         """Query terminals from tp profile (not available in GraphDB)
@@ -426,9 +414,8 @@ class CimModel(Prefix):
         query = tp_queries.terminal(self.cim_version)
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {"connected": bool}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {"connected": bool}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def topological_node(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         """Query topological nodes from tp profile (not available in GraphDB)
@@ -440,9 +427,8 @@ class CimModel(Prefix):
         query = tp_queries.topological_node()
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {"BaseVoltage": float}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {"BaseVoltage": float}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def powerflow(
         self, power: Tuple[str] = ("p", "q"), limit: int = None, dry_run: bool = False
@@ -457,9 +443,8 @@ class CimModel(Prefix):
         query = sv_queries.powerflow(power)
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {x: float for x in power}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {x: float for x in power}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def voltage(
         self, voltage_vars: Tuple[str] = ("v", "angle"), limit: int = None, dry_run: bool = False
@@ -474,9 +459,8 @@ class CimModel(Prefix):
         query = sv_queries.voltage(voltage_vars)
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {x: float for x in voltage_vars}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {x: float for x in voltage_vars}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def tapstep(self, limit: int = None, dry_run: bool = False) -> pd.DataFrame:
         """Query tapstep from sv profile (not available in GraphDB)
@@ -488,9 +472,8 @@ class CimModel(Prefix):
         query = sv_queries.tapstep()
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        else:
-            columns = {"position": float}
-            return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        columns = {"position": float}
+        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     @property
     def regions(self) -> pd.DataFrame:
@@ -511,17 +494,17 @@ class CimModel(Prefix):
     @property
     def empty(self) -> bool:
         try:
-            table, _ = self._get_table("SELECT * \n WHERE { ?s ?p ?o } limit 1")
+            self._get_table("SELECT * \n WHERE { ?s ?p ?o } limit 1")
+            return False
         except IndexError:
             return True
-        return False
 
     @staticmethod
     def _assign_column_types(result, columns):
         for column, column_type in columns.items():
             if column_type is str:
                 continue
-            elif column_type is bool:
+            if column_type is bool:
                 result.loc[:, column] = result.loc[:, column].str.contains("True|true")
             else:
                 result.loc[result[column] == "None", column] = ""
@@ -535,7 +518,7 @@ class CimModel(Prefix):
         col_map = cls._col_map(data_row)
         return col_map, {col: columns[col] for col in set(columns).difference(col_map)}
 
-    def get_table(
+    def get_table(  # pylint: disable=too-many-arguments
         self,
         query: str,
         index: str = None,
