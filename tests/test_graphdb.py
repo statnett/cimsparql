@@ -179,12 +179,12 @@ def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
 
 def test_windings(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="NO01", sub_region=True)
-    assert windings.shape[1] == 12
+    assert windings.shape[1] == 11
 
 
 def test_windings_with_market(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
-    assert windings.shape[1] == 13
+    assert windings.shape[1] == 12
 
 
 def test_transformers(gdb_cli: GraphDBClient):
