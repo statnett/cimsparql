@@ -25,9 +25,7 @@ def combine_statements(*args, group: bool = False, split: str = "\n") -> str:
        >>> where_list = ['?mrid rdf:type cim:ACLineSegment', '?mrid cim:ACLineSegment.r ?r']
        >>> combine_statements(where_list,group=True, split=' '+ os.sep)
     """
-    if group:
-        return "{\n" + split.join(args) + "\n}"
-    return split.join(args)
+    return "{\n" + split.join(args) + "\n}" if group else split.join(args)
 
 
 def xsd_type(cim: str, var: str) -> str:
@@ -149,9 +147,7 @@ def connectivity_mrid(
 
 
 def acdc_terminal(cim_version: int) -> str:
-    if cim_version > 15:
-        return "ACDCTerminal"
-    return "Terminal"
+    return "ACDCTerminal" if cim_version > 15 else "Terminal"
 
 
 def terminal_where_query(
@@ -218,10 +214,11 @@ def bus_data(region: str = "NO", sub_region: bool = False) -> str:
 
 def load_query(  # pylint: disable=too-many-arguments
     load_type: List[str],
-    load_vars: Tuple[str] = ("p", "q"),
+    load_vars: Tuple[str] = None,
     region: str = "NO",
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
+    station_group_optional: bool = True,
     with_sequence_number: bool = False,
     network_analysis: bool = True,
     station_group: bool = False,
@@ -252,16 +249,15 @@ def load_query(  # pylint: disable=too-many-arguments
 
     if station_group:
         select_query += " ?station_group"
-        where_list += [
-            group_query(
-                [
-                    "?mrid cim:NonConformLoad.LoadGroup ?lg",
-                    "?lg SN:NonConformLoadGroup.ScheduleResource ?sched_res",
-                    "?sched_res SN:ScheduleResource.marketCode ?station_group",
-                ],
-                command="OPTIONAL",
-            )
+        station_group_list = [
+            "?mrid cim:NonConformLoad.LoadGroup ?lg",
+            "?lg SN:NonConformLoadGroup.ScheduleResource ?sched_res",
+            "?sched_res SN:ScheduleResource.marketCode ?station_group",
         ]
+        if station_group_optional:
+            where_list += [group_query(station_group_list, command="OPTIONAL")]
+        else:
+            where_list += station_group_list
 
     if network_analysis is not None:
         where_list += [f"?mrid SN:Equipment.networkAnalysisEnable {network_analysis}"]
@@ -280,6 +276,7 @@ def synchronous_machines_query(  # pylint: disable=too-many-arguments
     region: str = "NO",
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
+    station_group_optional: bool = True,
     cim_version: int = 15,
     with_sequence_number: bool = False,
     network_analysis: bool = True,
@@ -318,22 +315,21 @@ def synchronous_machines_query(  # pylint: disable=too-many-arguments
         group_query([f"?mrid cim:RotatingMachine.{var_dict[var]} ?{var}"], command="OPTIONAL")
         for var in sync_vars
     ]
-    where_list += [
-        group_query(
-            [
-                "?mrid cim:SynchronousMachine.GeneratingUnit ?gu",
-                "?gu SN:GeneratingUnit.marketCode ?market_code",
-                "?gu cim:GeneratingUnit.maxOperatingP ?maxP",
-                "?gu cim:GeneratingUnit.minOperatingP ?minP",
-                "?gu SN:GeneratingUnit.groupAllocationMax ?allocationMax",
-                "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
-                "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
-                "?ScheduleResource SN:ScheduleResource.marketCode ?station_group",
-                "?ScheduleResource cim:IdentifiedObject.aliasName ?station_group_name",
-            ],
-            command="OPTIONAL",
-        )
+    station_group = [
+        "?mrid cim:SynchronousMachine.GeneratingUnit ?gu",
+        "?gu SN:GeneratingUnit.marketCode ?market_code",
+        "?gu cim:GeneratingUnit.maxOperatingP ?maxP",
+        "?gu cim:GeneratingUnit.minOperatingP ?minP",
+        "?gu SN:GeneratingUnit.groupAllocationMax ?allocationMax",
+        "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
+        "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
+        "?ScheduleResource SN:ScheduleResource.marketCode ?station_group",
+        "?ScheduleResource cim:IdentifiedObject.aliasName ?station_group_name",
     ]
+    if station_group_optional:
+        where_list += [group_query(station_group, command="OPTIONAL",)]
+    else:
+        where_list += station_group
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
     if not u_groups:
@@ -403,7 +399,6 @@ def transformer_query(
         "?x",
         "?r",
         "?endNumber",
-        "?sn",
         "?un",
         "?t_mrid",
     ]

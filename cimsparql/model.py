@@ -75,10 +75,11 @@ class CimModel(Prefix):
     def loads(  # pylint: disable=too-many-arguments
         self,
         load_type: List[str],
-        load_vars: Tuple[str] = ("p", "q"),
+        load_vars: Tuple[str] = None,
         region: str = "NO",
         sub_region: bool = False,
         connectivity: str = None,
+        station_group_optional: bool = True,
         station_group: bool = False,
         with_sequence_number: bool = False,
         network_analysis: bool = True,
@@ -115,6 +116,7 @@ class CimModel(Prefix):
             region,
             sub_region,
             connectivity,
+            station_group_optional,
             with_sequence_number,
             network_analysis,
             station_group,
@@ -122,7 +124,10 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
-        columns = {var: float for var in load_vars}
+        if load_vars is None:
+            columns = {}
+        else:
+            columns = {var: float for var in load_vars}
         return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
 
     def wind_generating_units(
@@ -161,6 +166,7 @@ class CimModel(Prefix):
         limit: int = None,
         connectivity: str = None,
         dry_run: bool = False,
+        station_group_optional: bool = True,
     ) -> pd.DataFrame:
         """Query synchronous machines
 
@@ -171,6 +177,7 @@ class CimModel(Prefix):
            limit: return first 'limit' number of rows
            connectivity: Include connectivity mrids
            dry_run: return string with sql query
+           station_group_optional: Assume station group is optional
 
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
@@ -179,7 +186,7 @@ class CimModel(Prefix):
            >>> gdbc.synchronous_machines(limit=10)
         """
         query = queries.synchronous_machines_query(
-            synchronous_vars, region, sub_region, connectivity
+            synchronous_vars, region, sub_region, connectivity, station_group_optional,
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
