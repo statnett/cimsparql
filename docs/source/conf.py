@@ -41,9 +41,9 @@ extensions = [
 ]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org", None),
-    "pandas": ("https://pandas.pydata.org/docs", None),
-    "numpy": ("https://docs.scipy.org/doc/numpy", None),
+    "python": ("https://docs.python.org", "python.inv"),
+    "pandas": ("https://pandas.pydata.org/docs", "pandas.inv"),
+    "numpy": ("https://docs.scipy.org/doc/numpy", "numpy.inv"),
 }
 
 autosectionlabel_prefix_document = True
