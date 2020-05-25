@@ -30,10 +30,13 @@ publish_toolbox_to_artifactory:
 
 pages:
   stage: deploy
+  variables:
+    ARTIFACTORY: "https://artifactory.statnett.no/artifactory/datascience-generic-local/sphinx"
+    LIBRARIES: "python numpy pandas"
   only:
     - tags
   script:
-    - apt-get install -y graphviz
+    - for library in ${LIBRARIES}; do wget -nv -O docs/source/${library}.inv ${ARTIFACTORY}/${library}/objects.inv; done
     - tox -e sphinx
   artifacts:
     paths:
