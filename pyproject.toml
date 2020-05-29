@@ -24,6 +24,7 @@ tables = "*"
 networkx = "*"
 SPARQLWrapper = "*"
 requests = "*"
+redland =  {version = "*", optional = true}
 pendulum = {version = "*", optional = true}
 lxml = {version = "*", optional = true}
 
@@ -53,6 +54,7 @@ yapf = "*"
 
 [tool.poetry.extras]
 parse_xml = ["lxml", "pendulum"]
+redland = ["redland"]
 
 [tool.isort]
 line_length = 100
