@@ -4,8 +4,8 @@ from typing import Dict, Tuple
 
 import pandas as pd
 
-import RDF
 from cimsparql.model import CimModel
+from redland import RDF
 
 name = {".n3": "ntriples", ".xml": "rdfxml"}
 

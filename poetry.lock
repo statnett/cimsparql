@@ -1789,6 +1789,19 @@ type = "legacy"
 url = "https://artifactory.statnett.no/artifactory/api/pypi/pypi_statnett_ia_virtual/simple"
 
 [[package]]
+category = "main"
+description = "Redland RDF Application Framework bindings"
+name = "redland"
+optional = true
+python-versions = "^3.7"
+version = "1.0.2.2"
+
+[package.source]
+reference = "artifactory"
+type = "legacy"
+url = "https://artifactory.statnett.no/artifactory/api/pypi/pypi_statnett_ia_virtual/simple"
+
+[[package]]
 category = "dev"
 description = "Alternative regular expression module, to replace re."
 name = "regex"
@@ -2409,9 +2422,10 @@ url = "https://artifactory.statnett.no/artifactory/api/pypi/pypi_statnett_ia_vir
 
 [extras]
 parse_xml = ["lxml", "pendulum"]
+redland = ["redland"]
 
 [metadata]
-content-hash = "0405be06efdda20ff504693319bd1a62b9b699568ba5dbe6ed1577b2097a7e23"
+content-hash = "41e515427e7996fa87c938d3ee4b6e56be2497fdfbcd19d37e5bf184ec6d0df1"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -3100,6 +3114,11 @@ rdflib = [
 recommonmark = [
     {file = "recommonmark-0.6.0-py2.py3-none-any.whl", hash = "sha256:2ec4207a574289355d5b6ae4ae4abb29043346ca12cdd5f07d374dc5987d2852"},
     {file = "recommonmark-0.6.0.tar.gz", hash = "sha256:29cd4faeb6c5268c633634f2d69aef9431e0f4d347f90659fd0aab20e541efeb"},
+]
+redland = [
+    {file = "redland-1.0.2.2-cp37-cp37m-linux_x86_64.whl", hash = "md5:370a999f997d6f2ebfad056df44fe7e1"},
+    {file = "redland-1.0.2.2-cp38-cp38-linux_x86_64.whl", hash = "md5:b280f01d81d975ea0d27f4fc1bd03958"},
+    {file = "redland-1.0.2.2.tar.gz", hash = "md5:db9fbafd002a1a49cc5920cdd96097ef"},
 ]
 regex = [
     {file = "regex-2020.6.8-cp27-cp27m-win32.whl", hash = "sha256:fbff901c54c22425a5b809b914a3bfaf4b9570eee0e5ce8186ac71eb2025191c"},
