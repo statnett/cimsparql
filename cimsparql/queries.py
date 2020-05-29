@@ -1,5 +1,5 @@
 import copy
-from typing import List, Set, Tuple, Union
+from typing import Iterable, List, Set, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -58,7 +58,7 @@ def temperature_list(temperature: float, xsd: str) -> List[str]:
     ]
 
 
-def temp_correction_factors(mrid: str, cim: str, temperatures: List = range(-30, 30, 10)):
+def temp_correction_factors(mrid: str, cim: str, temperatures: List = list(range(-30, 30, 10))):
     where_list = [
         "?temp_mrid rdf:type ALG:TemperatureCurveDependentLimit",
         f"?temp_mrid ALG:LimitDependency.Equipment {mrid}",
@@ -88,9 +88,9 @@ def group_query(
     return command + " " + combine_statements(*x, group=group, split=split)
 
 
-def unionize(*args, group: bool = True):
+def unionize(*args: str, group: bool = True):
     if group:
-        args = [f"{{\n{arg}\n}}" for arg in args]
+        args = tuple(f"{{\n{arg}\n}}" for arg in args)
     return "\nUNION\n".join(args)
 
 
@@ -109,15 +109,15 @@ def regions_query() -> str:
 
 
 def market_code_query(nr: int = None):
-    nr = "" if nr is None else f"_{nr}"
+    nr_s = "" if nr is None else f"_{nr}"
     return group_query(
         [
-            f"?t_mrid{nr} cim:Terminal.ConnectivityNode ?con{nr}",
-            f"?con{nr} cim:ConnectivityNode.ConnectivityNodeContainer ?container{nr}",
-            f"?container{nr} cim:VoltageLevel.Substation ?substation{nr}",
-            f"?substation{nr} SN:Substation.MarketDeliveryPoint ?market_delivery_point{nr}",
-            f"?market_delivery_point{nr} SN:MarketDeliveryPoint.BiddingArea ?bidding_area{nr}",
-            f"?bidding_area{nr} SN:BiddingArea.marketCode ?market{nr}",
+            f"?t_mrid{nr_s} cim:Terminal.ConnectivityNode ?con{nr_s}",
+            f"?con{nr_s} cim:ConnectivityNode.ConnectivityNodeContainer ?container{nr_s}",
+            f"?container{nr_s} cim:VoltageLevel.Substation ?substation{nr_s}",
+            f"?substation{nr_s} SN:Substation.MarketDeliveryPoint ?market_delivery_point{nr_s}",
+            f"?market_delivery_point{nr_s} SN:MarketDeliveryPoint.BiddingArea ?bidding_area{nr_s}",
+            f"?bidding_area{nr_s} SN:BiddingArea.marketCode ?market{nr_s}",
         ],
         command="OPTIONAL",
     )
@@ -139,7 +139,7 @@ def region_query(region: str, sub_region: bool, container: str) -> List[str]:
 
 
 def connectivity_mrid(
-    var: str = con_mrid_str, sparql: bool = True, sequence_numbers: Tuple[int] = (1, 2)
+    var: str = con_mrid_str, sparql: bool = True, sequence_numbers: Iterable[int] = (1, 2)
 ) -> Union[str, List[str]]:
     if sparql:
         return " ".join([f"?{var}_{i}" for i in sequence_numbers])
@@ -151,7 +151,7 @@ def acdc_terminal(cim_version: int) -> str:
 
 
 def terminal_where_query(
-    cim_version: int = None, var: str = con_mrid_str, with_sequence_number: bool = False
+    cim_version: int = 15, var: str = con_mrid_str, with_sequence_number: bool = False
 ) -> List[str]:
     out = [
         "?terminal_mrid rdf:type cim:Terminal",
@@ -175,7 +175,7 @@ bid_market_code_query = [
 
 
 def terminal_sequence_query(
-    cim_version: int, sequence_numbers: Tuple[int] = (1, 2), var: str = con_mrid_str
+    cim_version: int, sequence_numbers: Iterable[int] = (1, 2), var: str = con_mrid_str
 ) -> List[str]:
     query_list = []
     for i in sequence_numbers:
@@ -214,7 +214,7 @@ def bus_data(region: str = "NO", sub_region: bool = False) -> str:
 
 def load_query(  # pylint: disable=too-many-arguments
     load_type: List[str],
-    load_vars: Tuple[str] = None,
+    load_vars: Iterable[str] = None,
     region: str = "NO",
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
@@ -229,9 +229,9 @@ def load_query(  # pylint: disable=too-many-arguments
         raise ValueError(f"load_type should be any combination of {allowed_load_types}")
 
     container = "Substation"
-    load_vars = [] if load_vars is None else load_vars
+    p_vars = [] if load_vars is None else load_vars
     select_query = "SELECT ?mrid ?terminal_mrid ?bid_market_code " + " ".join(
-        [f"?{p}" for p in load_vars]
+        [f"?{p}" for p in p_vars]
     )
     if with_sequence_number:
         select_query += " ?sequenceNumber"
@@ -242,7 +242,7 @@ def load_query(  # pylint: disable=too-many-arguments
     cim_types = [f"?mrid rdf:type cim:{cim_type}" for cim_type in load_type]
     where_list = [combine_statements(*cim_types, group=len(cim_types) > 1, split="\n} UNION \n {")]
     where_list += [
-        group_query([f"?mrid cim:EnergyConsumer.{p} ?{p}" for p in load_vars], command="OPTIONAL")
+        group_query([f"?mrid cim:EnergyConsumer.{p} ?{p}" for p in p_vars], command="OPTIONAL")
     ]
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
     where_list += bid_market_code_query
@@ -272,7 +272,7 @@ def load_query(  # pylint: disable=too-many-arguments
 
 
 def synchronous_machines_query(  # pylint: disable=too-many-arguments
-    sync_vars: Tuple[str] = ("sn",),
+    sync_vars: Iterable[str] = ("sn",),
     region: str = "NO",
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
@@ -385,7 +385,7 @@ def transformer_query(
     region: str = "NO",
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
-    rates: Tuple[str] = ratings,
+    rates: Iterable[str] = ratings,
     network_analysis: bool = True,
     with_market: bool = False,
 ) -> str:
@@ -488,7 +488,7 @@ def ac_line_query(  # pylint: disable=too-many-arguments
     region: str = "NO",
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
-    rates: Tuple[str] = ratings,
+    rates: Iterable[str] = ratings,
     network_analysis: bool = True,
     with_market: bool = True,
     temperatures: List = None,
@@ -605,7 +605,7 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
     three_tx.reset_index(inplace=True)
     three_tx.rename(columns={"index": "mrid"}, inplace=True)
     windings = pd.concat(winding_list(three_tx), ignore_index=True)
-    windings["b"] = 1 / windings["x"]
+    windings["b"] = np.divide(1.0, windings["x"])
     windings["ckt"] = windings["t_mrid_1"]
     windings["t_mrid_2"] = windings["mrid"]
     windings["market_1"] = windings["market_2"] = windings["market"]
@@ -617,7 +617,7 @@ def windings_set_end(windings: pd.DataFrame, i: int, cols: List[str]):
     return windings[windings["endNumber"] == i][["mrid"] + cols].rename(columns=columns)
 
 
-def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame]:
+def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, ...]:
     possible_columns = [
         "name",
         "x",

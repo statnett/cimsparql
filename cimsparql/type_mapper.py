@@ -28,7 +28,7 @@ sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x)}
 
 class TypeMapperQueries:
     @property
-    def generals(self) -> List[str]:
+    def generals(self) -> List[List[str]]:
         """For sparql-types that are not sourced from objects of type rdf:property, sparql & type are
         required
 
