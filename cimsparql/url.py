@@ -1,9 +1,11 @@
-from typing import Dict, ItemsView, List
+from typing import Dict, ItemsView, List, Optional
 
 import requests
 
 
-def service(repo: str, server: str = "graphdb.statnett.no", protocol: str = "https") -> str:
+def service(
+    repo: Optional[str], server: str = "graphdb.statnett.no", protocol: str = "https"
+) -> str:
     """Returns service url for GraphdDBClient
 
     Args:
@@ -28,21 +30,23 @@ class GraphDbConfig:
         """
         self._service = service(None, server, protocol)
         try:
-            self.repos = requests.get(self._service, headers={"Accept": "application/json"})
+            response = requests.get(self._service, headers={"Accept": "application/json"})
+            self._set_repos(response)
         except requests.exceptions.RequestException:
-            self.repos = None
+            self._repos: List[str] = []
+
+    def _set_repos(self, response: requests.Response) -> None:
+        if response is not None and response.ok:
+            self._repos = response.json()["results"]["bindings"]
+        else:
+            self._repos = []
 
     @property
     def repos(self) -> List[str]:
         """List of available repos on GraphDB server"""
-        return [repo["id"]["value"] for repo in self._repos]
-
-    @repos.setter
-    def repos(self, repos: requests.Response):
-        if repos is not None and repos.ok:
-            self._repos = repos.json()["results"]["bindings"]
-        else:
-            self._repos = {}
+        if self._repos:
+            return [repo["id"]["value"] for repo in self._repos]
+        return []
 
 
 class Prefix:

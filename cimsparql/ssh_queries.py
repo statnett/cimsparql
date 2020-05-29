@@ -1,6 +1,4 @@
-from typing import List
-
-import pandas as pd
+from typing import Iterable, List
 
 from cimsparql.queries import acdc_terminal, combine_statements, group_query
 
@@ -37,7 +35,6 @@ def synchronous_machines() -> str:
 
 
 def _load(rdf_type: str) -> str:
-
     return " .\n".join(
         [f"?mrid rdf:type {rdf_type}"] + [f"?mrid cim:EnergyConsumer.{s} ?{s}" for s in ["p", "q"]]
     )
@@ -56,7 +53,7 @@ def _generating_unit(rdf_type: str) -> str:
     )
 
 
-def generating_unit(rdf_types: List[str]) -> pd.DataFrame:
+def generating_unit(rdf_types: Iterable[str]) -> str:
     query = "SELECT ?mrid ?normalPF \n WHERE {{\n"
     query += "\n} UNION {\n".join([_generating_unit(rdf_type) for rdf_type in rdf_types])
     query += "}}\n"
