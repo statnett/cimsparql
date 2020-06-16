@@ -31,6 +31,7 @@ lxml = {version = "*", optional = true}
 [tool.poetry.dev-dependencies]
 autopep8 = "*"
 black = { version = "*", allow-prereleases = true }
+coverage = { version = "*", extras = ['toml'] }
 flake8 = "*"
 ipython = "*"
 isort = "*"
@@ -77,6 +78,24 @@ exclude = '''
   | profiling
 )/
 '''
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+              "pragma: no cover",
+              "raise AssertionError",
+              "raise NotImplementedError",
+              "if verbose:",
+              "if 0:",
+              "if False:",
+              ]
+
+[tool.coverage.run]
+branch = true
+source = ["cimsparql"]
+omit = ["tests/*"]
+
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
