@@ -1,7 +1,13 @@
 image:
   name: "gitlab-registry.statnett.no/abot/opf:latest"
 
+include:
+  - project: stas/gitlab-ci/markdown-lint
+    ref: v0
+    file: lint.yml
+
 stages:
+  - validate
   - tests
   - deploy
 

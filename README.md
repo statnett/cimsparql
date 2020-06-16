@@ -8,22 +8,22 @@ The package provides a set of predefined functions/queries to load CIM
 data such generator or branch data, though the user can easiliy extend
 or define their own queries.
 
-# Installing
+## Installing
 
 The module is available through artifactory using `pip install
 cimsparql` (see [Pip with
 artifactory](https://wiki.statnett.no/display/DATASCIENCE/Setting+up+certificates+and+artifactory)
 ) or using git clone and updating `$PYTHONPATH`.
 
-## Requirements
+### Requirements
 
 * Python 3.7 and above (lower versions will not be supported).
 * Use of Redland (only on Linux with Redland libraries installed).
 
-# Usage
+## Usage
 
+### Load data using predefined functions/queries
 
-## Load data using predefined functions/queries
 ```python
 >>> from cimsparql.graphdb import GraphDBClient
 >>> from cimsparql.url import service
@@ -40,10 +40,10 @@ In the example above the client will query repo
 "SNMST-Master1Repo-VERSION-LATEST" in the default server
 [GraphDB](https://graphdb.statnett.no) for AC line values.
 
-
-## Inspect/view predefined queries
+### Inspect/view predefined queries
 
 To see the actual sparql use the `dry_run` option:
+
 ```python
 >>> print(ac_line_query(limit=3, dry_run=True))
 ```
@@ -55,8 +55,7 @@ below.
 
 The `dry_run` option is available for all the predefined queries.
 
-## Load data using user specified queries
-
+### Load data using user specified queries
 
 ```python
 >>> query = 'SELECT ?mrid where { ?mrid rdf:type cim:ACLineSegment } limit 2'
@@ -67,16 +66,14 @@ The `dry_run` option is available for all the predefined queries.
 1  006fad7c-ac3c-2dec-e050-1e828c94a0f3
 ```
 
-
-## List of available repos at the server
+### List of available repos at the server
 
 ```python
 >>> from cimsparql.url import GraphDbConfig
 >>> print(GraphDbConfig().repos)
 ```
 
-
-## Prefix and namespace
+### Prefix and namespace
 
 Available namespace for current graphdb client (`gdbc` in the examples
 above), which can be used in queries (such as `rdf` and `cim`) can by found by
