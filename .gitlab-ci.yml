@@ -1,49 +1,11 @@
-image:
-  name: "gitlab-registry.statnett.no/abot/opf:latest"
+---
 
 include:
-  - project: stas/gitlab-ci/markdown-lint
+  - project: 'stas/gitlab-ci/python-build'
     ref: v0
-    file: lint.yml
+    file: 'publish-python.yml'
 
-stages:
-  - validate
-  - tests
-  - deploy
-
-run_tests:
-  stage: tests
-  script:
-    - tox
-  artifacts:
-    paths:
-      - coverage.xml
-    expire_in: 1 day
-
-sonar_update:
-  stage: deploy
-  image:
-    name: "artifactory.statnett.no/datascience-docker-local/sonar-scanner:latest"
-  script:
-    - sonar-scanner
-
-publish_toolbox_to_artifactory:
-  stage: deploy
-  only:
-    - tags
-  script:
-    - publish-to-artifactory $CI_PROJECT_NAME
-
-pages:
-  stage: deploy
-  variables:
-    ARTIFACTORY: "https://artifactory.statnett.no/artifactory/datascience-generic-local/sphinx"
-    LIBRARIES: "python numpy pandas"
-  only:
-    - tags
-  script:
-    - for library in ${LIBRARIES}; do wget -nv -O docs/source/${library}.inv ${ARTIFACTORY}/${library}/objects.inv; done
-    - tox -e sphinx
-  artifacts:
-    paths:
-      - public
+variables:
+  PYTHON_VERSIONS: "/(3.7)|(3.8)/"
+  PYTHON_PUBLISH_VERSION: "3.8"
+  PKG_NAME: "cimsparql"
