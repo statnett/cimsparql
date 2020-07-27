@@ -543,13 +543,13 @@ def ac_line_query(  # pylint: disable=too-many-arguments
             where_rate += operational_limit("?mrid", rate)
         where_list += [group_query(where_rate, command="OPTIONAL")]
 
-        if temperatures is not None:
-            select_query += [
-                f"?{negpos(temperature)}_{abs(temperature)}_factor" for temperature in temperatures
-            ]
-            where_list += [
-                group_query(temp_correction_factors("?mrid", cim, temperatures), command="OPTIONAL")
-            ]
+    if temperatures is not None:
+        select_query += [
+            f"?{negpos(temperature)}_{abs(temperature)}_factor" for temperature in temperatures
+        ]
+        where_list += [
+            group_query(temp_correction_factors("?mrid", cim, temperatures), command="OPTIONAL")
+        ]
     return combine_statements(" ".join(select_query), group_query(where_list))
 
 

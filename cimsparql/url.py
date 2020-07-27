@@ -13,9 +13,12 @@ def service(
        server: server ip/name
        protocol: http or https
     """
-    url = f"{protocol}://{server}/repositories"
-    if repo is not None:
-        url += f"/{repo}"
+    if repo == "LATEST":
+        url = "https://api.statnett.no/services/pgm/equipment/repositories/LATEST"
+    else:
+        url = f"{protocol}://{server}/repositories"
+        if repo is not None:
+            url += f"/{repo}"
     return url
 
 

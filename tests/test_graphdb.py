@@ -132,8 +132,10 @@ def test_branch(gdb_cli: GraphDBClient):
 
 
 def test_branch_with_temperatures(gdb_cli: GraphDBClient):
-    lines = gdb_cli.ac_lines(limit=n_samples, temperatures=range(-30, 30, 10)).set_index("mrid")
-    assert lines.shape == (n_samples, 17)
+    lines = gdb_cli.ac_lines(
+        limit=n_samples, rates=None, temperatures=range(-30, 30, 10)
+    ).set_index("mrid")
+    assert lines.shape == (n_samples, 14)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
@@ -145,17 +147,17 @@ def test_branch_with_two_temperatures(gdb_cli: GraphDBClient):
 
 def test_ac_line_segment_with_market(gdb_cli: GraphDBClient):
     lines = gdb_cli.ac_lines(
-        limit=n_samples, with_market=True, temperatures=range(-30, 30, 10)
+        limit=n_samples, with_market=True, rates=None, temperatures=range(-0, 30, 10)
     ).set_index("mrid")
-    assert lines.shape == (n_samples, 19)
+    assert lines.shape == (n_samples, 13)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 
 def test_branch_with_connectivity(gdb_cli: GraphDBClient):
     lines = gdb_cli.ac_lines(
-        limit=n_samples, connectivity="connectivity_mrid", temperatures=range(-30, 30, 10)
+        limit=n_samples, connectivity="connectivity_mrid", temperatures=range(0, 10, 10)
     ).set_index("mrid")
-    assert lines.shape == (n_samples, 19)
+    assert lines.shape == (n_samples, 14)
     assert all(lines[["x", "un"]].dtypes == np.float)
 
 

@@ -107,7 +107,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.loads(load_type=['ConformLoad', 'NonConformLoad'])
         """
         query = queries.load_query(
@@ -147,7 +147,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.wind_generating_units(limit=10)
 
         """
@@ -182,7 +182,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.synchronous_machines(limit=10)
         """
         query = queries.synchronous_machines_query(
@@ -220,7 +220,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.connections(limit=10)
         """
         query = queries.connection_query(
@@ -256,7 +256,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.ac_lines(limit=10)
         """
         query = queries.ac_line_query(
@@ -300,7 +300,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.series_compensators(limit=10)
         """
         query = queries.series_compensator_query(
@@ -334,7 +334,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.transformers(limit=10)
         """
         query = queries.transformer_query(
@@ -492,7 +492,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.regions
         """
         query = queries.regions_query()
@@ -551,7 +551,7 @@ class CimModel(Prefix):
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('SNMST-MasterCim15-VERSION-LATEST'))
+           >>> gdbc = GraphDBClient(service('LATEST'))
            >>> query = 'select * where { ?subject ?predicate ?object }'
            >>> gdbc.get_table(query, limit=10)
         """

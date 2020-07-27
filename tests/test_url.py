@@ -4,6 +4,8 @@ from cimsparql.url import Prefix, service
 prefixes = [
     "rdf",
     "alg",
+    "fn",
+    "sesame",
     "ALG",
     "owl",
     "cim",

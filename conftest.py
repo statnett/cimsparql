@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 
 from cimsparql.graphdb import GraphDBClient
-from cimsparql.redland import Model
 from cimsparql.url import GraphDbConfig, service
 
 this_dir = pathlib.Path(__file__).parent
@@ -57,18 +56,13 @@ def gcli_cim():
 
 
 @pytest.fixture(scope="session")
-def ieee118():
-    return Model(pathlib.Path(this_dir / "data" / f"IEEE118.xml"), base_uri="ieee118_case")
-
-
-@pytest.fixture(scope="session")
 def root_dir():
     return this_dir
 
 
 @pytest.fixture(scope="session")
 def graphdb_repo():
-    return os.getenv("GRAPHDB_REPO", "SNMST-MasterCim15-VERSION-LATEST")
+    return os.getenv("GRAPHDB_REPO", "LATEST")
 
 
 @pytest.fixture(scope="session")
