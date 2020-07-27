@@ -56,9 +56,7 @@ class GraphDBClient(CimModel):
            sameas: map same concepts from two or more datasets
         """
         if service is None:
-            self._service = url.service(
-                repo=os.getenv("GRAPHDB_REPO", "SNMST-MasterCim15-VERSION-LATEST")
-            )
+            self._service = url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
         else:
             self._service = service
 
