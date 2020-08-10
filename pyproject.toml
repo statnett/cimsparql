@@ -42,7 +42,7 @@ mock = "*"
 pre-commit = "*"
 prospector = "*"
 pylint = "*"
-pytest = "*"
+pytest = ">= 6"
 pytest-cov = "*"
 pytest-profiling = "*"
 recommonmark = "*"
@@ -103,6 +103,16 @@ exclude_lines = [
 branch = true
 source = ["cimsparql"]
 omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+norecursedirs = "_build tmp*  __pycache__ src prof wheel_files"
+markers = [
+  "integration: Mark test as an integration test",
+]
+filterwarnings = [
+  "ignore:PyArray_GetNumericOps.*",
+  "ignore:PyArray_SetNumericOps.*",
+]
 
 
 [build-system]
