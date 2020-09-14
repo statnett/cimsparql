@@ -12,8 +12,7 @@ CimModelType = TypeVar("CimModelType", bound="CimModel")
 
 
 class CimModel(Prefix):
-    """Used to query with sparql queries (typically CIM)
-    """
+    """Used to query with sparql queries (typically CIM)"""
 
     def __init__(self, mapper: TypeMapper, *args, **kwargs) -> None:
         self._setup_client(*args, **kwargs)
@@ -21,8 +20,7 @@ class CimModel(Prefix):
 
     @property
     def date_version(self) -> datetime:
-        """Activation date for this repository
-        """
+        """Activation date for this repository"""
         try:
             date_version = self._date_version
         except AttributeError:
@@ -186,7 +184,7 @@ class CimModel(Prefix):
            >>> gdbc.synchronous_machines(limit=10)
         """
         query = queries.synchronous_machines_query(
-            synchronous_vars, region, sub_region, connectivity, station_group_optional,
+            synchronous_vars, region, sub_region, connectivity, station_group_optional
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
