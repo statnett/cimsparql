@@ -3,8 +3,17 @@ from typing import Dict, ItemsView, List, Optional
 import requests
 
 
+def _get_server(server: str, production: bool, repo: str) -> str:
+    if repo == "LATEST":
+        return ("." if production else "-test.").join(["api", "statnett.no"])
+    return server
+
+
 def service(
-    repo: Optional[str], server: str = "graphdb.statnett.no", protocol: str = "https"
+    repo: Optional[str] = None,
+    server: str = "graphdb.statnett.no",
+    protocol: str = "https",
+    production: bool = False,
 ) -> str:
     """Returns service url for GraphdDBClient
 
@@ -13,12 +22,10 @@ def service(
        server: server ip/name
        protocol: http or https
     """
-    if repo == "LATEST":
-        url = "https://api.statnett.no/services/pgm/equipment/repositories/LATEST"
-    else:
-        url = f"{protocol}://{server}/repositories"
-        if repo is not None:
-            url += f"/{repo}"
+    path = "services/pgm/equipment/" if repo == "LATEST" else ""
+    url = f"{protocol}://{_get_server(server, production, repo)}/{path}repositories"
+    if repo is not None:
+        url += f"/{repo}"
     return url
 
 
