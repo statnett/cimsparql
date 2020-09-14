@@ -30,7 +30,7 @@ def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
 
 class GraphDBClient(CimModel):
     def __init__(
-        self, service: str, mapper: CimModel = None, infer: bool = False, sameas: bool = True,
+        self, service: str, mapper: CimModel = None, infer: bool = False, sameas: bool = True
     ) -> None:
         """GraphDB client
 
@@ -40,9 +40,7 @@ class GraphDBClient(CimModel):
            infer: deduce further knowledge based on existing RDF data and a formal set of
            sameas: map same concepts from two or more datasets
         """
-        super().__init__(
-            service=service, mapper=mapper, infer=infer, sameas=sameas,
-        )
+        super().__init__(service=service, mapper=mapper, infer=infer, sameas=sameas)
 
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self._service}>"
@@ -69,7 +67,7 @@ class GraphDBClient(CimModel):
     @CimModel.prefixes.setter
     def prefixes(self, service: str):
         self._prefixes = {}
-        response = requests.get(service + f"/namespaces")
+        response = requests.get(service + "/namespaces")
         if response.ok:
             for line in response.text.split():
                 prefix, uri = line.split(",")
@@ -78,8 +76,7 @@ class GraphDBClient(CimModel):
 
     @staticmethod
     def value_getter(d: Dict[str, str]) -> str:
-        """Get item of 'value' key if present else None
-        """
+        """Get item of 'value' key if present else None"""
         try:
             return d["value"]
         except KeyError:

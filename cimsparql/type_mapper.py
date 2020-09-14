@@ -49,9 +49,7 @@ class TypeMapperQueries:
 
     @property
     def prefix_general(self) -> List[str]:
-        """Common query used as a base for all prefix_based queries.
-
-        """
+        """Common query used as a base for all prefix_based queries."""
         return [
             "?sparql_type rdf:type rdf:Property",
             "?sparql_type rdfs:range ?range",
