@@ -63,9 +63,6 @@ vcs = "git"
 style = "semver"
 pattern = "^(?P<base>\\d+\\.\\d+\\.\\d+)(-?((?P<stage>[a-zA-Z]+)\\.?(?P<revision>\\d+)?))?$"
 
-[tool.poetry-dynamic-versioning.substitution]
-patterns = ["(^__version__\\s*=\\s*['\"])[^'\"]*(['\"])", "(^VERSION\\s*=\\s*['\"])[^'\"]*(['\"])"]
-
 [tool.isort]
 line_length = 100
 multi_line_output = 3
