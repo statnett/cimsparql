@@ -16,8 +16,8 @@ RUN python -m pip install --upgrade --index-url https://artifactory.statnett.no/
     && pip config set global.index https://artifactory.statnett.no/api/pypi/pypi_statnett_ia_virtual/simple \
     && pip config set global.index-url https://artifactory.statnett.no/api/pypi/pypi_statnett_ia_virtual/simple
 
-RUN  sed -i 's http://deb.debian.org http://x1-a-utvtartfp1.statnett.no:8081/artifactory/debian_remote/ g' /etc/apt/sources.list \
-     && sed -i 's http://security.debian.org http://x1-a-utvtartfp1.statnett.no:8081/artifactory/debian_security_remote/ g' /etc/apt/sources.list \
+RUN  sed -i 's http://deb.debian.org https://artifactory.statnett.no:8081/artifactory/debian_remote/ g' /etc/apt/sources.list \
+     && sed -i 's http://security.debian.org https://artifactory.statnett.no:8081/artifactory/debian_security_remote/ g' /etc/apt/sources.list \
      && apt-get clean && apt-get update
 
 RUN apt-get update && apt-get install -y librdf0
