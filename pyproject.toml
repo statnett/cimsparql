@@ -33,20 +33,23 @@ autopep8 = "*"
 black = { version = "*", allow-prereleases = true }
 coverage = { version = "*", extras = ['toml'] }
 flake8 = "*"
+flake8-bugbear = "*"
 ipython = "*"
 isort = "*"
 jedi = "*"
 jupyter = "*"
+lxml = "*"
 matplotlib = "*"
 mock = "*"
+pendulum = "*"
 pre-commit = "*"
-prospector = "*"
 pylint = "*"
 pytest = ">= 6"
 pytest-cov = "*"
 pytest-integration = "*"
 pytest-profiling = "*"
 recommonmark = "*"
+redland = "*"
 rope = "*"
 rst2pdf = "*"
 sphinx = "*"
@@ -65,9 +68,8 @@ style = "semver"
 pattern = "^(?P<base>\\d+\\.\\d+\\.\\d+)(-?((?P<stage>[a-zA-Z]+)\\.?(?P<revision>\\d+)?))?$"
 
 [tool.isort]
+profile = "black"
 line_length = 100
-multi_line_output = 3
-include_trailing_comma = true
 
 [tool.black]
 line-length = 100

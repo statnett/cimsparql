@@ -3,9 +3,9 @@ from pathlib import PosixPath
 from typing import Dict, Tuple
 
 import pandas as pd
+from redland import RDF
 
 from cimsparql.model import CimModel
-from redland import RDF
 
 name = {".n3": "ntriples", ".xml": "rdfxml"}
 

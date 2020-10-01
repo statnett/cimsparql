@@ -58,7 +58,7 @@ def temperature_list(temperature: float, xsd: str) -> List[str]:
     ]
 
 
-def temp_correction_factors(mrid: str, cim: str, temperatures: List = list(range(-30, 30, 10))):
+def temp_correction_factors(mrid: str, cim: str, temperatures: List = tuple(range(-30, 30, 10))):
     where_list = [
         "?temp_mrid rdf:type ALG:TemperatureCurveDependentLimit",
         f"?temp_mrid ALG:LimitDependency.Equipment {mrid}",
@@ -182,7 +182,7 @@ def terminal_sequence_query(
         mrid = f"?t_mrid_{i} "
         query_list += [
             mrid + "rdf:type cim:Terminal",
-            mrid + f"cim:Terminal.ConductingEquipment ?mrid",
+            mrid + "cim:Terminal.ConductingEquipment ?mrid",
             mrid + f"cim:{acdc_terminal(cim_version)}.sequenceNumber {i}",
         ]
         if var is not None:
@@ -327,14 +327,14 @@ def synchronous_machines_query(  # pylint: disable=too-many-arguments
         "?ScheduleResource cim:IdentifiedObject.aliasName ?station_group_name",
     ]
     if station_group_optional:
-        where_list += [group_query(station_group, command="OPTIONAL",)]
+        where_list += [group_query(station_group, command="OPTIONAL")]
     else:
         where_list += station_group
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
     if not u_groups:
         where_list += [
-            f"FILTER (!bound(?station_group_name) || (!regex(?station_group_name, 'U-')))"
+            "FILTER (!bound(?station_group_name) || (!regex(?station_group_name, 'U-')))"
         ]
     if region is not None:
         container = "Substation"
