@@ -160,14 +160,14 @@ def find_min(
     """
     min_date = None
     dist = None
-    for i, d in enumerate(dates):
+    for _i, d in enumerate(dates):
         dist_ = date.diff(d).in_seconds()
         if (dist is None) or (dist_ <= dist):
             min_date = d
             dist = dist_
         else:
             break
-    return min_date, dates[i - 1 :]  # pylint: disable=undefined-loop-variable
+    return min_date, dates[_i - 1 :]  # pylint: disable=undefined-loop-variable
 
 
 def get_files(path: Path) -> Dict[pendulum.DateTime, Dict[str, Path]]:

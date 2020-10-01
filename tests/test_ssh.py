@@ -3,16 +3,13 @@ import pathlib
 import numpy as np
 import pytest
 
+from cimsparql.redland import Model
 from conftest import need_local_graphdb_ssh, this_dir
-
-pytest.importorskip("redland")
 
 
 @pytest.fixture()
 def ieee118():
-    from cimsparql.redland import Model
-
-    return Model(pathlib.Path(this_dir / "data" / f"IEEE118.xml"), base_uri="ieee118_case")
+    return Model(pathlib.Path(this_dir / "data" / "IEEE118.xml"), base_uri="ieee118_case")
 
 
 def test_ieee118_ssh_synchronous_machines(ieee118):
