@@ -35,25 +35,6 @@ class CimXml:
     def findall(self, path: str) -> List[_Element]:
         return self.root.findall(path, self.nsmap)
 
-    def parse(
-        self,
-        path: str,
-        data_adder: Callable[[_Element, Dict[str, str]], Dict[str, str]],
-        index: str = "mrid",
-    ) -> pd.DataFrame:
-        data = [data_adder(node, self.nsmap) for node in self.findall(f"cim:{path}")]
-        return pd.DataFrame([item for item in data if item is not None]).set_index(index)
-
-
-class SvTpCimXml:
-    def __init__(self, sv_path: Path, tp_path: Path):
-        self.paths = {"sv": sv_path, "tp": tp_path}
-        self._parser = {profile: CimXml(path) for profile, path in self.paths.items()}
-
-    def __str__(self):
-        file_desc = ", ".join([f"{profile}: {path.stem}" for profile, path in self.paths.items()])
-        return f"<SvTpCimXml object, {file_desc}>"
-
     @staticmethod
     def _sv_power_flow_data_adder(
         node: _Element, nsmap: Dict[str, str]
@@ -108,22 +89,48 @@ class SvTpCimXml:
             "mrid": attrib(node, "about", rdf),
         }
 
+    def _adder(self, profile: str) -> Callable:
+        try:
+            return {
+                "SvVoltage": self._sv_voltage_data_adder,
+                "SvTapStep": self._sv_tap_step_data_adder,
+                "TopologicalNode": self._topological_node_data_adder,
+                "Terminal": self._terminal_data_adder,
+                "SvPowerFlow": self._sv_power_flow_data_adder,
+            }[profile]
+        except KeyError:
+            raise NotImplementedError(f"Not implememted adder for {profile}")
+
+    def parse(self, profile: str, index: str = "mrid") -> pd.DataFrame:
+        data = [self._adder(profile)(node, self.nsmap) for node in self.findall(f"cim:{profile}")]
+        return pd.DataFrame([item for item in data if item is not None]).set_index(index)
+
+
+class SvTpCimXml:
+    def __init__(self, sv_path: Path, tp_path: Path):
+        self.paths = {"sv": sv_path, "tp": tp_path}
+        self._parser = {profile: CimXml(path) for profile, path in self.paths.items()}
+
+    def __str__(self):
+        file_desc = ", ".join([f"{profile}: {path.stem}" for profile, path in self.paths.items()])
+        return f"<SvTpCimXml object, {file_desc}>"
+
     @property
     def voltage(self):
-        return self._parser["sv"].parse("SvVoltage", self._sv_voltage_data_adder)
+        return self._parser["sv"].parse("SvVoltage")
 
     @property
     def tap_steps(self):
-        return self._parser["sv"].parse("SvTapStep", self._sv_tap_step_data_adder)
+        return self._parser["sv"].parse("SvTapStep")
 
     def bus_data(self, *args, **kwargs) -> pd.DataFrame:
-        return self._parser["tp"].parse("TopologicalNode", self._topological_node_data_adder)
+        return self._parser["tp"].parse("TopologicalNode")
 
     def terminal(self, *args, **kwargs) -> pd.DataFrame:
-        return self._parser["tp"].parse("Terminal", self._terminal_data_adder)
+        return self._parser["tp"].parse("Terminal")
 
     def powerflow(self, *args, **kwargs) -> pd.DataFrame:
-        return self._parser["sv"].parse("SvPowerFlow", self._sv_power_flow_data_adder)
+        return self._parser["sv"].parse("SvPowerFlow")
 
 
 def parse_cim_file(file_name: str) -> Tuple[pendulum.DateTime, str]:
@@ -167,7 +174,7 @@ def find_min(
             dist = dist_
         else:
             break
-    return min_date, dates[_i - 1 :]  # pylint: disable=undefined-loop-variable
+    return min_date, dates[_i - 1 :]
 
 
 def get_files(path: Path) -> Dict[pendulum.DateTime, Dict[str, Path]]:
