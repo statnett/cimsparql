@@ -9,3 +9,4 @@ variables:
   PYTHON_VERSIONS: "/(3.7)|(3.8)/"
   PYTHON_PUBLISH_VERSION: "3.8"
   PKG_NAME: "cimsparql"
+  APT_INSTALL_PACKAGES: "librdf0"
