@@ -98,6 +98,9 @@ exclude_lines = [
               "if 0:",
               "if False:",
               ]
+skip_covered = true
+show_missing = true
+precision = 2
 
 [tool.coverage.run]
 branch = true
