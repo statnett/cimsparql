@@ -5,32 +5,20 @@ from typing import Callable, Dict, Iterable, List, Tuple, Union
 
 import pandas as pd
 import pendulum
-from lxml.etree import _Element, _ElementTree, parse
+from lxml.etree import _Element, _ElementTree, fromstring, parse
 
 
 def attrib(node: _Element, key: str, prefix: str) -> str:
     return re.sub("^[#]?_", "", node.attrib[f"{{{prefix}}}{key}"])
 
 
-class CimXml:
-    def __init__(self, fname: Path):
-        self.fname = fname
+class CimXmlBase:
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     @property
     def nsmap(self) -> Dict[str, str]:
         return self.root.nsmap
-
-    @property
-    def root(self) -> _ElementTree:
-        if not hasattr(self, "_root"):
-            self._root = parse(self.fname.absolute().as_posix()).getroot()
-        return self._root
-
-    def __getstate__(self) -> Path:
-        return self.fname
-
-    def __setstate__(self, fname: Path):
-        self.fname = fname
 
     def findall(self, path: str) -> List[_Element]:
         return self.root.findall(path, self.nsmap)
@@ -104,6 +92,36 @@ class CimXml:
     def parse(self, profile: str, index: str = "mrid") -> pd.DataFrame:
         data = [self._adder(profile)(node, self.nsmap) for node in self.findall(f"cim:{profile}")]
         return pd.DataFrame([item for item in data if item is not None]).set_index(index)
+
+
+class CimXml(CimXmlBase):
+    def __init__(self, fname: Path, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.fname = fname
+
+    @property
+    def root(self) -> _ElementTree:
+        if not hasattr(self, "_root"):
+            self._root = parse(self.fname.absolute().as_posix()).getroot()
+        return self._root
+
+    def __getstate__(self) -> Path:  # pragma: no cover
+        return self.fname
+
+    def __setstate__(self, fname: Path):  # pragma: no cover
+        self.fname = fname
+
+
+class CimXmlStr(CimXmlBase):
+    def __init__(self, text: str, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._text = text
+
+    @property
+    def root(self) -> _ElementTree:
+        if not hasattr(self, "_root"):
+            self._root = fromstring(self._text)
+        return self._root
 
 
 class SvTpCimXml:

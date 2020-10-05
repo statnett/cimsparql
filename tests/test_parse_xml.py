@@ -3,11 +3,12 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pendulum
 import pytest
 
 from cimsparql import parse_xml
-from cimsparql.parse_xml import SvTpCimXml
+from cimsparql.parse_xml import CimXmlStr, SvTpCimXml
 
 root = Path(__file__).parent.parent
 
@@ -18,13 +19,28 @@ def sv_tp_cim() -> SvTpCimXml:
     return SvTpCimXml(*paths)
 
 
+@pytest.fixture(scope="module")
+def bus_data(sv_tp_cim) -> pd.DataFrame:
+    return sv_tp_cim.bus_data()
+
+
+@pytest.fixture(scope="module")
+def tp_cim() -> str:
+    with open(root / "data" / "tp.xml", "r") as fid:
+        return CimXmlStr(bytes(fid.read(), "utf-8"))
+
+
+def test_tp_cim(bus_data: pd.DataFrame, tp_cim: CimXmlStr):
+    pd.testing.assert_frame_equal(bus_data, tp_cim.parse("TopologicalNode"))
+
+
 def test_str_rep(sv_tp_cim: SvTpCimXml):
     target = "<SvTpCimXml object, {}>".format(", ".join(["sv: sv", "tp: tp"]))
     assert str(sv_tp_cim) == target
 
 
-def test_parse_sv_tp_cim_xml_bus_data(sv_tp_cim: SvTpCimXml):
-    assert sv_tp_cim.bus_data().shape == (4, 3)
+def test_parse_sv_tp_cim_xml_bus_data(bus_data: pd.DataFrame):
+    assert bus_data.shape == (4, 3)
 
 
 def test_parse_sv_tp_cim_xml_terminal(sv_tp_cim: SvTpCimXml):
