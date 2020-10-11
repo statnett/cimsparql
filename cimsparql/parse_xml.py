@@ -95,21 +95,21 @@ class CimXmlBase:
 
 
 class CimXml(CimXmlBase):
-    def __init__(self, fname: Path, *args, **kwargs) -> None:
+    def __init__(self, file_path: Path, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.fname = fname
+        self.file_path = file_path
 
     @property
     def root(self) -> _ElementTree:
         if not hasattr(self, "_root"):
-            self._root = parse(self.fname.absolute().as_posix()).getroot()
+            self._root = parse(self.file_path.absolute().as_posix()).getroot()
         return self._root
 
     def __getstate__(self) -> Path:  # pragma: no cover
-        return self.fname
+        return self.file_path
 
-    def __setstate__(self, fname: Path):  # pragma: no cover
-        self.fname = fname
+    def __setstate__(self, file_path: Path):  # pragma: no cover
+        self.file_path = file_path
 
 
 class CimXmlStr(CimXmlBase):
