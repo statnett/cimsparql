@@ -9,7 +9,7 @@ from dateutil import parser
 
 from cimsparql.queries import combine_statements, unionize
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from cimsparql.model import CimModel
 
 as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
@@ -17,7 +17,7 @@ as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
 python_type_map = {
     "string": str,
     "integer": int,
-    "boolean": lambda x: x.lower == "true",
+    "boolean": lambda x: x.lower() == "true",
     "float": float,
     "dateTime": parser.parse,
 }
@@ -181,7 +181,7 @@ class TypeMapper(TypeMapperQueries):
             for column, data_type in d.items()
         }
         if drop_missing:
-            return {k: v for k, v in base.items() if v is not None}
+            return {key: value for key, value in base.items() if value is not None}
         return base
 
     @staticmethod

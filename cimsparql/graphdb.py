@@ -53,7 +53,7 @@ class GraphDBClient(CimModel):
            infer: deduce further knowledge based on existing RDF data and a formal set of
            sameas: map same concepts from two or more datasets
         """
-        if service is None:
+        if service is None:  # pragma: no cover
             self._service = url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
         else:
             self._service = service

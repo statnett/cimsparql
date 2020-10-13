@@ -86,7 +86,7 @@ class CimXmlBase:
                 "Terminal": self._terminal_data_adder,
                 "SvPowerFlow": self._sv_power_flow_data_adder,
             }[profile]
-        except KeyError:
+        except KeyError:  # pragma: no cover
             raise NotImplementedError(f"Not implememted adder for {profile}")
 
     def parse(self, profile: str, index: str = "mrid") -> pd.DataFrame:
