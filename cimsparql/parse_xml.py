@@ -89,9 +89,9 @@ class CimXmlBase:
         except KeyError:  # pragma: no cover
             raise NotImplementedError(f"Not implememted adder for {profile}")
 
-    def parse(self, profile: str, index: str = "mrid") -> pd.DataFrame:
+    def parse(self, profile: str) -> pd.DataFrame:
         data = [self._adder(profile)(node, self.nsmap) for node in self.findall(f"cim:{profile}")]
-        return pd.DataFrame([item for item in data if item is not None]).set_index(index)
+        return pd.DataFrame([item for item in data if item is not None])
 
 
 class CimXml(CimXmlBase):
@@ -135,20 +135,20 @@ class SvTpCimXml:
 
     @property
     def voltage(self):
-        return self._parser["sv"].parse("SvVoltage")
+        return self._parser["sv"].parse("SvVoltage").set_index("mrid")
 
     @property
     def tap_steps(self):
-        return self._parser["sv"].parse("SvTapStep")
+        return self._parser["sv"].parse("SvTapStep").set_index("mrid")
 
     def bus_data(self, *args, **kwargs) -> pd.DataFrame:
-        return self._parser["tp"].parse("TopologicalNode")
+        return self._parser["tp"].parse("TopologicalNode").set_index("mrid")
 
     def terminal(self, *args, **kwargs) -> pd.DataFrame:
-        return self._parser["tp"].parse("Terminal")
+        return self._parser["tp"].parse("Terminal").set_index("mrid")
 
     def powerflow(self, *args, **kwargs) -> pd.DataFrame:
-        return self._parser["sv"].parse("SvPowerFlow")
+        return self._parser["sv"].parse("SvPowerFlow").set_index("mrid")
 
 
 def parse_cim_file(file_name: str) -> Tuple[pendulum.DateTime, str]:

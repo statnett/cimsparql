@@ -31,7 +31,7 @@ def tp_cim() -> str:
 
 
 def test_tp_cim(bus_data: pd.DataFrame, tp_cim: CimXmlStr):
-    pd.testing.assert_frame_equal(bus_data, tp_cim.parse("TopologicalNode"))
+    pd.testing.assert_frame_equal(bus_data, tp_cim.parse("TopologicalNode").set_index("mrid"))
 
 
 def test_str_rep(sv_tp_cim: SvTpCimXml):
