@@ -45,7 +45,7 @@ def test_str_rep(gdb_cli: GraphDBClient, graphdb_repo: str):
     assert str(gdb_cli) == target
 
 
-load_columns = ["connectivity_mrid", "terminal_mrid", "bid_market_code", "p", "q"]
+load_columns = ["connectivity_mrid", "terminal_mrid", "bidzone", "p", "q"]
 
 
 def test_conform_load(gdb_cli: GraphDBClient):
@@ -89,12 +89,11 @@ def test_synchronous_machines(gdb_cli: GraphDBClient):
                 "q",
                 "station_group",
                 "market_code",
-                "bid_market_code",
+                "bidzone",
                 "maxP",
                 "allocationMax",
                 "allocationWeight",
                 "minP",
-                "bid_market_code",
             ]
         )
         == set()
@@ -167,16 +166,16 @@ def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
     )
     two_tx, three_tx = windings_to_tx(windings)
     assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["ckt", "x", "un", "market_1", "market_2"])
+    assert set(two_tx.columns).issuperset(["ckt", "x", "un", "bidzone_1", "bidzone_2"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert len(three_tx) > 2
     assert set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
 
-    cols = ["t_mrid_1", "t_mrid_2", "b", "x", "ckt", "market"]
+    cols = ["t_mrid_1", "t_mrid_2", "b", "x", "ckt", "bidzone"]
     dummy_tx = three_tx_to_windings(three_tx, cols)
     assert len(dummy_tx) == 3 * len(three_tx)
-    assert set(dummy_tx.columns).difference(cols + ["market_1", "market_2"]) == set()
+    assert set(dummy_tx.columns).difference(cols + ["bidzone_1", "bidzone_2"]) == set()
 
 
 def test_windings(gdb_cli: GraphDBClient):
@@ -194,7 +193,7 @@ def test_transformers(gdb_cli: GraphDBClient):
 
     two_tx, three_tx = windings_to_tx(windings)
     assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["ckt", "x", "un", "market_1", "market_2"])
+    assert set(two_tx.columns).issuperset(["ckt", "x", "un", "bidzone_1", "bidzone_2"])
 
     cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
     assert len(three_tx) > 2
