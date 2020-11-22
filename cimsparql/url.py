@@ -41,15 +41,10 @@ class GraphDbConfig:
         self._service = service(None, server, protocol)
         try:
             response = requests.get(self._service, headers={"Accept": "application/json"})
-            self._set_repos(response)
-        except requests.exceptions.RequestException:
-            self._repos: List[str] = []
-
-    def _set_repos(self, response: requests.Response) -> None:
-        if response is not None and response.ok:
+            response.raise_for_status()
             self._repos = response.json()["results"]["bindings"]
-        else:
-            self._repos = []
+        except (requests.exceptions.RequestException, KeyError):
+            self._repos: List[Dict[str, Dict[str, str]]] = []
 
     @property
     def repos(self) -> List[str]:

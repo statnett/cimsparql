@@ -1,3 +1,4 @@
+import contextlib
 import os
 from typing import Dict, List, Tuple
 
@@ -77,10 +78,8 @@ class GraphDBClient(CimModel):
     @staticmethod
     def value_getter(d: Dict[str, str]) -> str:
         """Get item of 'value' key if present else None"""
-        try:
+        with contextlib.suppress(KeyError):
             return d["value"]
-        except KeyError:
-            pass
 
     @staticmethod
     def _col_map(data_row) -> Dict[str, str]:

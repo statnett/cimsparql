@@ -58,7 +58,9 @@ def temperature_list(temperature: float, xsd: str) -> List[str]:
     ]
 
 
-def temp_correction_factors(mrid: str, cim: str, temperatures: List = tuple(range(-30, 30, 10))):
+def temp_correction_factors(
+    mrid: str, cim: str, temperatures: Iterable = tuple(range(-30, 30, 10))
+):
     where_list = [
         "?temp_mrid rdf:type ALG:TemperatureCurveDependentLimit",
         f"?temp_mrid ALG:LimitDependency.Equipment {mrid}",
@@ -659,8 +661,8 @@ class Islands(nx.Graph):
     def reference_nodes(self, columns: List[str] = None) -> pd.DataFrame:
         if columns is None:
             columns = ["mrid", "ref_node"]
-        keys = list()
-        values = list()
+        keys = []
+        values = []
         for group in self.groups():
             ref = list(group)[0]
             keys += list(group)
