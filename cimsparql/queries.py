@@ -119,7 +119,7 @@ def market_code_query(nr: int = None):
             f"?container{nr_s} cim:VoltageLevel.Substation ?substation{nr_s}",
             f"?substation{nr_s} SN:Substation.MarketDeliveryPoint ?market_delivery_point{nr_s}",
             f"?market_delivery_point{nr_s} SN:MarketDeliveryPoint.BiddingArea ?bidding_area{nr_s}",
-            f"?bidding_area{nr_s} SN:BiddingArea.marketCode ?market{nr_s}",
+            f"?bidding_area{nr_s} SN:BiddingArea.marketCode ?bidzone{nr_s}",
         ],
         command="OPTIONAL",
     )
@@ -172,7 +172,7 @@ bid_market_code_query = [
     "?eq_container cim:VoltageLevel.Substation ?substation",
     "?substation SN:Substation.MarketDeliveryPoint ?market_delivery_point",
     "?market_delivery_point SN:MarketDeliveryPoint.BiddingArea ?bidding_area",
-    "?bidding_area SN:BiddingArea.marketCode ?bid_market_code",
+    "?bidding_area SN:BiddingArea.marketCode ?bidzone",
 ]
 
 
@@ -232,9 +232,7 @@ def load_query(  # pylint: disable=too-many-arguments
 
     container = "Substation"
     p_vars = [] if load_vars is None else load_vars
-    select_query = "SELECT ?mrid ?terminal_mrid ?bid_market_code " + " ".join(
-        [f"?{p}" for p in p_vars]
-    )
+    select_query = "SELECT ?mrid ?terminal_mrid ?bidzone " + " ".join([f"?{p}" for p in p_vars])
     if with_sequence_number:
         select_query += " ?sequenceNumber"
 
@@ -289,7 +287,7 @@ def synchronous_machines_query(  # pylint: disable=too-many-arguments
 
     select_query = (
         "SELECT ?mrid ?name ?terminal_mrid ?station_group ?market_code ?maxP ?allocationMax "
-        "?allocationWeight ?minP ?bid_market_code" + " ".join([f"?{var}" for var in sync_vars])
+        "?allocationWeight ?minP ?bidzone" + " ".join([f"?{var}" for var in sync_vars])
     )
     if connectivity is not None:
         select_query += f" ?{connectivity}"
@@ -417,7 +415,7 @@ def transformer_query(
     ]
 
     if with_market:
-        select_query += ["?market"]
+        select_query += ["?bidzone"]
         where_list += [market_code_query()]
 
     if network_analysis is not None:
@@ -460,7 +458,7 @@ def series_compensator_query(
     where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
     if with_market:
         terminals = [1, 2]
-        select_query += [f"?market_{nr}" for nr in terminals]
+        select_query += [f"?bidzone_{nr}" for nr in terminals]
         for terminal_nr in terminals:
             where_list += [market_code_query(terminal_nr)]
 
@@ -515,7 +513,7 @@ def ac_line_query(  # pylint: disable=too-many-arguments
 
     where_list = terminal_sequence_query(cim_version=cim_version, var=connectivity)
     if with_market:
-        select_query += [f"?market_{nr}" for nr in [1, 2]]
+        select_query += [f"?bidzone_{nr}" for nr in [1, 2]]
         for terminal_nr in [1, 2]:
             where_list += [market_code_query(terminal_nr)]
 
@@ -610,7 +608,7 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
     windings["b"] = np.divide(1.0, windings["x"])
     windings["ckt"] = windings["t_mrid_1"]
     windings["t_mrid_2"] = windings["mrid"]
-    windings["market_1"] = windings["market_2"] = windings["market"]
+    windings["bidzone_1"] = windings["bidzone_2"] = windings["bidzone"]
     return windings.loc[:, cols]
 
 
@@ -625,7 +623,7 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, ...]:
         "x",
         "un",
         "t_mrid",
-        "market",
+        "bidzone",
         con_mrid_str,
         "rateNormal",
         "rateWarning",
@@ -643,11 +641,11 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, ...]:
     two_tx_group = windings[~windings["mrid"].isin(three_winding_mrid)].groupby("endNumber")
     two_tx = two_tx_group.get_group(1).set_index("mrid")
     two_tx_2 = two_tx_group.get_group(2).set_index("mrid")
-    for col in ["t_mrid", "market"]:
+    for col in ["t_mrid", "bidzone"]:
         two_tx.loc[two_tx_2.index, f"{col}_2"] = two_tx_2[col]
     two_tx.loc[two_tx_2.index, "x"] += two_tx_2["x"]
     two_tx = two_tx.reset_index().rename(
-        columns={"mrid": "ckt", "t_mrid": "t_mrid_1", "market": "market_1"}
+        columns={"mrid": "ckt", "t_mrid": "t_mrid_1", "bidzone": "bidzone_1"}
     )
     return two_tx, three_tx
 
