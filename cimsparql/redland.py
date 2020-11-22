@@ -1,6 +1,6 @@
 import json
 from pathlib import PosixPath
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 import pandas as pd
 from redland import RDF
@@ -39,7 +39,7 @@ class Model(CimModel):
         hash_type: str,
         base_uri: str,
         **kwargs,
-    ):
+    ) -> None:
         self._query_language = query_language
         storage = RDF.HashStorage(fname.stem, self._option_string(new, hash_type, fname))
         self._model = RDF.Model(storage)
@@ -59,11 +59,8 @@ class Model(CimModel):
 
     def _option_string(
         self, new: bool, hash_type: str, fname: PosixPath, with_context: bool = False
-    ):
-        if new:
-            option_string = "new='yes',"
-        else:
-            option_string = ""
+    ) -> str:
+        option_string = "new='yes'," if new else ""
 
         if with_context:
             option_string += "context='yes'"
@@ -81,7 +78,7 @@ class Model(CimModel):
         return pd.DataFrame(result), result[0]
 
     @staticmethod
-    def _col_map(data_row, columns) -> Dict:
+    def _col_map(data_row, columns) -> Dict[str, Any]:  # pragma: no cover
         raise NotImplementedError(
             f"cim xml file contains {data_row} and {columns}. This is not currently handled by "
             "cimsparql. Report this error to DataScience <datascience.drift@statnett.no>"

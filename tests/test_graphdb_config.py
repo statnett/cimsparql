@@ -1,4 +1,5 @@
 import pytest
+import requests
 from mock import MagicMock, patch
 
 from cimsparql.url import GraphDbConfig, service
@@ -14,17 +15,17 @@ def test_default_graphdb_config_service(config):
     assert config._service == service(repo=None)
 
 
-@patch("cimsparql.url.GraphDbConfig.__init__", new=MagicMock(return_value=None))
-def test_set_repos_response_is_none():
+@patch("cimsparql.url.requests.get")
+def test_set_repos_with_response_but_key_error(get_mock):
+    get_mock.return_value = MagicMock(json=MagicMock(side_effect=KeyError()))
     config = GraphDbConfig()
-    config._set_repos(None)
     assert config.repos == []
 
 
-@patch("cimsparql.url.GraphDbConfig.__init__", new=MagicMock(return_value=None))
-def test_set_repos_no_response():
+@patch("cimsparql.url.requests.get")
+def test_set_repos_no_response(get_mock):
+    get_mock.side_effect = requests.exceptions.RequestException()
     config = GraphDbConfig()
-    config._set_repos(MagicMock(ok=False))
     assert config.repos == []
 
 

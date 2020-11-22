@@ -97,7 +97,7 @@ class TypeMapper(TypeMapperQueries):
         self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
 
     def have_cim_version(self, cim) -> bool:
-        return cim in {val.split("#")[0] for val in self.map.keys()}
+        return cim in (val.split("#")[0] for val in self.map.keys())
 
     @staticmethod
     def type_map(df: pd.DataFrame) -> Dict[str, Any]:
