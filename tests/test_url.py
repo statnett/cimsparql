@@ -30,6 +30,8 @@ def test_set_cim_version():
 
 def test_get_prefixes(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
+        self.user = None
+        self.passwd = None
         self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
@@ -52,6 +54,8 @@ def test_header_str():
 
 def test_prefix_ns(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
+        self.user = None
+        self.passwd = None
         self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
@@ -63,6 +67,8 @@ def test_prefix_ns(graphdb_repo, monkeypatch):
 
 def test_prefix_inverse(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
+        self.user = None
+        self.passwd = None
         self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)

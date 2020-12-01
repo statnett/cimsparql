@@ -31,7 +31,13 @@ def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
 
 class GraphDBClient(CimModel):
     def __init__(
-        self, service: str, mapper: CimModel = None, infer: bool = False, sameas: bool = True
+        self,
+        service: str,
+        mapper: CimModel = None,
+        infer: bool = False,
+        sameas: bool = True,
+        user: str = None,
+        passwd: str = None,
     ) -> None:
         """GraphDB client
 
@@ -40,35 +46,68 @@ class GraphDBClient(CimModel):
            mapper: GraphDBClient with the mapper (Default to self).
            infer: deduce further knowledge based on existing RDF data and a formal set of
            sameas: map same concepts from two or more datasets
+           user:
+           passwd:
         """
-        super().__init__(service=service, mapper=mapper, infer=infer, sameas=sameas)
+        super().__init__(mapper, service, infer, sameas, user, passwd)
 
     def __str__(self) -> str:
-        return f"<GraphDBClient object, service: {self._service}>"
+        return f"<GraphDBClient object, service: {self.service}>"
 
-    def _setup_client(self, service: str, infer: bool, sameas: bool, **kwargs) -> None:
+    def _setup_client(
+        self, service: str, infer: bool, sameas: bool, user: str, passwd: str, **kwargs
+    ) -> None:
         """Setup client for querying
 
         Args:
            service: string with url to graphdb repository. See cimsparql.url.service
            infer: deduce further knowledge based on existing RDF data and a formal set of
            sameas: map same concepts from two or more datasets
+           user:
+           passwd:
         """
-        if service is None:  # pragma: no cover
-            self._service = url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
-        else:
-            self._service = service
-
-        self.sparql = SPARQLWrapper(self._service)
+        self.user = user
+        self.passwd = passwd
+        self.service = service
+        self.sparql = SPARQLWrapper(self.service)
         self.sparql.setReturnFormat(JSON)
+        self.sparql.setCredentials(self.user, self.passwd)
         self.sparql.addParameter("infer", str(infer))
         self.sparql.addParameter("sameAs", str(sameas))
         self.prefixes = self._service
 
+    @property
+    def service(self):
+        return self._service
+
+    @service.setter
+    def service(self, service: str):
+        if service is None:
+            self._service = url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
+        else:
+            self._service = service
+
+    @property
+    def user(self) -> str:
+        return self._user
+
+    @user.setter
+    def user(self, user: str) -> None:
+        self._user = os.getenv("GDB_USER") if user is None else user
+
+    @property
+    def passwd(self) -> str:
+        return self._passwd
+
+    @passwd.setter
+    def passwd(self, passwd: str) -> None:
+        self._passwd = os.getenv("GDB_USER_PASSWD") if passwd is None else passwd
+
     @CimModel.prefixes.setter
     def prefixes(self, service: str):
         self._prefixes = {}
-        response = requests.get(service + "/namespaces")
+        auth = requests.auth.HTTPBasicAuth(self.user, self.passwd)
+        response = requests.get(service + "/namespaces", auth=auth)
         if response.ok:
             for line in response.text.split():
                 prefix, uri = line.split(",")
