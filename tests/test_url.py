@@ -1,6 +1,10 @@
+import logging
+import os
+
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.url import Prefix, service
 
+logger = logging.getLogger(__name__)
 prefixes = [
     "rdf",
     "alg",
@@ -30,13 +34,14 @@ def test_set_cim_version():
 
 def test_get_prefixes(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
-        self.user = None
-        self.passwd = None
+        self.user = os.getenv("GRAPHDB_USER")
+        self.passwd = os.getenv("GRAPHDB_USER_PASSWD")
         self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
     gdbc = GraphDBClient()
 
+    logger.info(gdbc.prefixes)
     for prefix in ["rdf", "cim", "SN"]:
         assert prefix in gdbc.prefixes
 
@@ -54,8 +59,8 @@ def test_header_str():
 
 def test_prefix_ns(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
-        self.user = None
-        self.passwd = None
+        self.user = os.getenv("GRAPHDB_USER")
+        self.passwd = os.getenv("GRAPHDB_USER_PASSWD")
         self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
@@ -67,8 +72,8 @@ def test_prefix_ns(graphdb_repo, monkeypatch):
 
 def test_prefix_inverse(graphdb_repo, monkeypatch):
     def init(self, *args, **kwargs):
-        self.user = None
-        self.passwd = None
+        self.user = os.getenv("GRAPHDB_USER")
+        self.passwd = os.getenv("GRAPHDB_USER_PASSWD")
         self.prefixes = service(repo=graphdb_repo)
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)

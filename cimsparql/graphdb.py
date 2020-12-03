@@ -31,13 +31,7 @@ def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
 
 class GraphDBClient(CimModel):
     def __init__(
-        self,
-        service: str,
-        mapper: CimModel = None,
-        infer: bool = False,
-        sameas: bool = True,
-        user: str = None,
-        passwd: str = None,
+        self, service: str, mapper: CimModel = None, infer: bool = False, sameas: bool = True
     ) -> None:
         """GraphDB client
 
@@ -49,25 +43,21 @@ class GraphDBClient(CimModel):
            user:
            passwd:
         """
-        super().__init__(mapper, service, infer, sameas, user, passwd)
+        super().__init__(mapper, service, infer, sameas)
 
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service}>"
 
-    def _setup_client(
-        self, service: str, infer: bool, sameas: bool, user: str, passwd: str, **kwargs
-    ) -> None:
+    def _setup_client(self, service: str, infer: bool, sameas: bool, **kwargs) -> None:
         """Setup client for querying
 
         Args:
            service: string with url to graphdb repository. See cimsparql.url.service
            infer: deduce further knowledge based on existing RDF data and a formal set of
            sameas: map same concepts from two or more datasets
-           user:
-           passwd:
         """
-        self.user = user
-        self.passwd = passwd
+        self.user = os.getenv("GRAPHDB_USER")
+        self.passwd = os.getenv("GRAPHDB_USER_PASSWD")
         self.service = service
         self.sparql = SPARQLWrapper(self.service)
         self.sparql.setReturnFormat(JSON)
@@ -86,22 +76,6 @@ class GraphDBClient(CimModel):
             self._service = url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
         else:
             self._service = service
-
-    @property
-    def user(self) -> str:
-        return self._user
-
-    @user.setter
-    def user(self, user: str) -> None:
-        self._user = os.getenv("GDB_USER") if user is None else user
-
-    @property
-    def passwd(self) -> str:
-        return self._passwd
-
-    @passwd.setter
-    def passwd(self, passwd: str) -> None:
-        self._passwd = os.getenv("GDB_USER_PASSWD") if passwd is None else passwd
 
     @CimModel.prefixes.setter
     def prefixes(self, service: str):

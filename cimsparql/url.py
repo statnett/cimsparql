@@ -46,7 +46,9 @@ class GraphDbConfig:
         """
         self._service = service(None, server, protocol)
         if auth is None:
-            auth = requests.auth.HTTPBasicAuth(os.getenv("GDB_USER"), os.getenv("GDB_USER_PASSWD"))
+            auth = requests.auth.HTTPBasicAuth(
+                os.getenv("GRAPHDB_USER"), os.getenv("GRAPHDB_USER_PASSWD")
+            )
         try:
             response = requests.get(
                 self._service, headers={"Accept": "application/json"}, auth=auth
