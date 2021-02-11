@@ -395,7 +395,7 @@ def transformer_query(
         "SELECT",
         "?name",
         "?mrid",
-        "?c",
+        "?w_mrid",
         "?x",
         "?r",
         "?endNumber",
@@ -405,13 +405,13 @@ def transformer_query(
 
     where_list = [
         "?mrid rdf:type cim:PowerTransformer",
-        "?c cim:PowerTransformerEnd.PowerTransformer ?mrid",
-        "?c cim:PowerTransformerEnd.x ?x",
-        "?c cim:PowerTransformerEnd.r ?r",
-        "?c cim:PowerTransformerEnd.ratedU ?un",
-        "?c cim:TransformerEnd.endNumber ?endNumber",
-        "?c cim:TransformerEnd.Terminal ?t_mrid",
-        "?c cim:IdentifiedObject.name ?name",
+        "?w_mrid cim:PowerTransformerEnd.PowerTransformer ?mrid",
+        "?w_mrid cim:PowerTransformerEnd.x ?x",
+        "?w_mrid cim:PowerTransformerEnd.r ?r",
+        "?w_mrid cim:PowerTransformerEnd.ratedU ?un",
+        "?w_mrid cim:TransformerEnd.endNumber ?endNumber",
+        "?w_mrid cim:TransformerEnd.Terminal ?t_mrid",
+        "?w_mrid cim:IdentifiedObject.name ?name",
     ]
 
     if with_market:
@@ -606,7 +606,7 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
     three_tx.rename(columns={"index": "mrid"}, inplace=True)
     windings = pd.concat(winding_list(three_tx), ignore_index=True)
     windings["b"] = np.divide(1.0, windings["x"])
-    windings["ckt"] = windings["t_mrid_1"]
+    windings["ckt"] = windings["w_mrid"]
     windings["t_mrid_2"] = windings["mrid"]
     windings["bidzone_1"] = windings["bidzone_2"] = windings["bidzone"]
     return windings.loc[:, cols]
@@ -623,6 +623,7 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, ...]:
         "x",
         "un",
         "t_mrid",
+        "w_mrid",
         "bidzone",
         con_mrid_str,
         "rateNormal",
@@ -645,7 +646,7 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, ...]:
         two_tx.loc[two_tx_2.index, f"{col}_2"] = two_tx_2[col]
     two_tx.loc[two_tx_2.index, "x"] += two_tx_2["x"]
     two_tx = two_tx.reset_index().rename(
-        columns={"mrid": "ckt", "t_mrid": "t_mrid_1", "bidzone": "bidzone_1"}
+        columns={"w_mrid": "ckt", "t_mrid": "t_mrid_1", "bidzone": "bidzone_1"}
     )
     return two_tx, three_tx
 
