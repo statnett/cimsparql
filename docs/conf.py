@@ -6,6 +6,8 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import os
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -19,7 +21,11 @@ copyright = "2020, Statnett"
 author = "Statnett DataScience <Datascience.Drift@Statnett.no>"
 
 # The full version, including alpha/beta/rc tags
-release = cimsparql.VERSION
+release = cimsparql.__version__
+artifactory = os.getenv(
+    "ARTIFACTORY_SPHINX_INV",
+    "https://artifactory.statnett.no/artifactory/datascience-generic-local/sphinx",
+)
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,9 +47,9 @@ extensions = [
 ]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org", "python.inv"),
-    "pandas": ("https://pandas.pydata.org/docs", "pandas.inv"),
-    "numpy": ("https://docs.scipy.org/doc/numpy", "numpy.inv"),
+    "python": ("https://docs.python.org", f"{artifactory}/python/objects.inv"),
+    "pandas": ("https://pandas.pydata.org/pandas-docs", f"{artifactory}/pandas/objects.inv"),
+    "numpy": ("https://docs.scipy.org/doc/numpy", f"{artifactory}/pandas/objects.inv"),
 }
 
 autosectionlabel_prefix_document = True
