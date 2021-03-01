@@ -2,7 +2,6 @@ import os
 import tempfile
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pendulum
 import pytest
@@ -50,19 +49,19 @@ def test_parse_sv_tp_cim_xml_terminal(sv_tp_cim: SvTpCimXml):
 def test_parse_sv_tp_cim_xml_powerflow(sv_tp_cim: SvTpCimXml):
     powerflow = sv_tp_cim.powerflow()
     assert powerflow.shape == (4, 2)
-    assert (powerflow.dtypes == np.float64).all()
+    assert (powerflow.dtypes == float).all()
 
 
 def test_parse_sv_tp_cim_xml_voltage(sv_tp_cim: SvTpCimXml):
     voltage = sv_tp_cim.voltage
     assert voltage.shape == (4, 2)
-    assert (voltage.dtypes == np.float64).all()
+    assert (voltage.dtypes == float).all()
 
 
 def test_parse_sv_tp_cim_xml_tap_step(sv_tp_cim: SvTpCimXml):
     tap_steps = sv_tp_cim.tap_steps
     assert tap_steps.shape == (4, 1)
-    assert (tap_steps.dtypes == np.int).all()
+    assert (tap_steps.dtypes == int).all()
 
 
 def test_parse_cim_file():

@@ -1,5 +1,6 @@
 import itertools
 from datetime import datetime
+from typing import List
 from unittest.mock import patch
 
 import numpy as np
@@ -76,48 +77,39 @@ def test_conform_and_non_conform_load(gdb_cli: GraphDBClient):
     assert set(load.columns).issubset(load_columns)
 
 
-def test_synchronous_machines(gdb_cli: GraphDBClient):
+@pytest.fixture()
+def gen_columns() -> List[str]:
+    return [
+        "allocationMax",
+        "allocationWeight",
+        "market_code",
+        "maxP",
+        "minP",
+        "name",
+        "station_group",
+    ]
+
+
+@pytest.fixture()
+def synchronous_machines_columns(gen_columns: List[str]) -> List[str]:
+    return gen_columns + ["bidzone", "p", "q", "sn", "terminal_mrid"]
+
+
+@pytest.fixture()
+def wind_units_machines_columns(gen_columns: List[str]) -> List[str]:
+    return gen_columns + ["power_plant_mrid"]
+
+
+def test_synchronous_machines(gdb_cli: GraphDBClient, synchronous_machines_columns: List[str]):
     synchronous_machines = gdb_cli.synchronous_machines(limit=n_samples)
     assert len(synchronous_machines) == n_samples
-    assert (
-        set(synchronous_machines.columns).difference(
-            [
-                "name",
-                "sn",
-                "terminal_mrid",
-                "p",
-                "q",
-                "station_group",
-                "market_code",
-                "bidzone",
-                "maxP",
-                "allocationMax",
-                "allocationWeight",
-                "minP",
-            ]
-        )
-        == set()
-    )
+    assert set(synchronous_machines.columns).difference(synchronous_machines_columns) == set()
 
 
-def test_wind_generating_units(gdb_cli: GraphDBClient):
+def test_wind_generating_units(gdb_cli: GraphDBClient, wind_units_machines_columns: List[str]):
     wind_units_machines = gdb_cli.wind_generating_units(limit=n_samples)
     assert len(wind_units_machines) == n_samples
-    assert (
-        set(wind_units_machines.columns).difference(
-            [
-                "station_group",
-                "market_code",
-                "maxP",
-                "allocationMax",
-                "allocationWeight",
-                "minP",
-                "name",
-                "power_plant_mrid",
-            ]
-        )
-        == set()
-    )
+    assert set(wind_units_machines.columns).difference(wind_units_machines_columns) == set()
 
 
 def test_regions(gdb_cli: GraphDBClient):
@@ -125,39 +117,35 @@ def test_regions(gdb_cli: GraphDBClient):
 
 
 def test_branch(gdb_cli: GraphDBClient):
-    lines = gdb_cli.ac_lines(limit=n_samples).set_index("mrid")
-    assert lines.shape == (n_samples, 11)
-    assert all(lines[["x", "un"]].dtypes == np.float)
+    lines = gdb_cli.ac_lines(limit=n_samples)
+    assert lines.shape == (n_samples, 12)
+    assert all(lines[["x", "un"]].dtypes == float)
 
 
 def test_branch_with_temperatures(gdb_cli: GraphDBClient):
-    lines = gdb_cli.ac_lines(
-        limit=n_samples, rates=None, temperatures=range(-30, 30, 10)
-    ).set_index("mrid")
-    assert lines.shape == (n_samples, 14)
-    assert all(lines[["x", "un"]].dtypes == np.float)
+    lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-30, 30, 10))
+    assert lines.shape == (n_samples, 15)
+    assert all(lines[["x", "un"]].dtypes == float)
 
 
 def test_branch_with_two_temperatures(gdb_cli: GraphDBClient):
-    lines = gdb_cli.ac_lines(limit=n_samples, temperatures=range(-20, 0, 10)).set_index("mrid")
-    assert lines.shape == (n_samples, 13)
-    assert all(lines[["x", "un"]].dtypes == np.float)
+    lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-20, 0, 10))
+    assert lines.shape == (n_samples, 11)
+    assert all(lines[["x", "un"]].dtypes == float)
 
 
 def test_ac_line_segment_with_market(gdb_cli: GraphDBClient):
-    lines = gdb_cli.ac_lines(
-        limit=n_samples, with_market=True, rates=None, temperatures=range(-0, 30, 10)
-    ).set_index("mrid")
-    assert lines.shape == (n_samples, 13)
-    assert all(lines[["x", "un"]].dtypes == np.float)
+    lines = gdb_cli.ac_lines(limit=n_samples, with_market=True, rates=None, temperatures=None)
+    assert lines.shape == (n_samples, 11)
+    assert all(lines[["x", "un"]].dtypes == float)
 
 
 def test_branch_with_connectivity(gdb_cli: GraphDBClient):
     lines = gdb_cli.ac_lines(
         limit=n_samples, connectivity="connectivity_mrid", temperatures=range(0, 10, 10)
-    ).set_index("mrid")
-    assert lines.shape == (n_samples, 14)
-    assert all(lines[["x", "un"]].dtypes == np.float)
+    )
+    assert lines.shape == (n_samples, 15)
+    assert all(lines[["x", "un"]].dtypes == float)
 
 
 def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
