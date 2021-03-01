@@ -130,10 +130,7 @@ norecursedirs = "_build tmp*  __pycache__ src prof wheel_files"
 markers = [
   "integration: Mark test as an integration test",
 ]
-filterwarnings = [
-  "ignore:PyArray_GetNumericOps.*",
-  "ignore:PyArray_SetNumericOps.*",
-]
+filterwarnings = []
 
 
 [build-system]
