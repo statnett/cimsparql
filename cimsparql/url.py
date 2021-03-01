@@ -1,3 +1,9 @@
+"""Functions used to configure GraphDB client
+
+Will handle authenticated instances of GraphDB where user and password is given in environment
+variables ("GRAPHDB_USER" & "GRAPHDB_USER_PASSWD").
+
+"""
 import os
 from typing import Dict, ItemsView, List, Optional
 
@@ -79,6 +85,7 @@ class Prefix:
             return ""
 
     def items(self) -> ItemsView[str, str]:
+        """Get an itemsview of prefixes in graphdb instance"""
         return self.prefixes.items()
 
     @property
@@ -93,8 +100,10 @@ class Prefix:
 
     @property
     def ns(self) -> Dict[str, str]:
+        """Return namespace as dict"""
         return {name: f"{url}#" for name, url in self.items()}
 
     @property
     def inverse_ns(self) -> Dict[str, str]:
+        """Return inverse namespace as dict"""
         return {f"{url}#": name for name, url in self.items()}

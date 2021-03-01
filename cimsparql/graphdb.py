@@ -1,3 +1,4 @@
+"""Graphdb CIM sparql client"""
 import contextlib
 import os
 from typing import Dict, List, Tuple
@@ -40,8 +41,6 @@ class GraphDBClient(CimModel):
            mapper: GraphDBClient with the mapper (Default to self).
            infer: deduce further knowledge based on existing RDF data and a formal set of
            sameas: map same concepts from two or more datasets
-           user:
-           passwd:
         """
         super().__init__(mapper, service, infer, sameas)
 

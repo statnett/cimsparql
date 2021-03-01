@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import pandas as pd
 from dateutil import parser
@@ -91,7 +91,7 @@ class TypeMapperQueries:
 
 
 class TypeMapper(TypeMapperQueries):
-    def __init__(self, client: CimModel, custom_additions: Dict = None) -> None:
+    def __init__(self, client: CimModel, custom_additions: Optional[Dict[str, Any]] = None) -> None:
         self.prefixes = client.prefixes
         custom_additions = custom_additions if custom_additions is not None else {}
         self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
@@ -134,7 +134,12 @@ class TypeMapper(TypeMapperQueries):
         }
         return {**type_map, **prefix_map, **xsd_map}
 
-    def get_type(self, sparql_type, missing_return="identity", custom_maps: Dict = None):
+    def get_type(
+        self,
+        sparql_type: str,
+        missing_return: str = "identity",
+        custom_maps: Optional[Dict[str, Any]] = None,
+    ):
         """Gets the python type/function to apply on columns of the sparql_type
 
         Args:
@@ -160,7 +165,7 @@ class TypeMapper(TypeMapperQueries):
             return None
 
     def convert_dict(
-        self, d: Dict, drop_missing: bool = True, custom_maps: Dict = None
+        self, d: Dict, drop_missing: bool = True, custom_maps: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Converts a col_name -> sparql_datatype map to a col_name -> python_type map
 
