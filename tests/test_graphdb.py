@@ -71,6 +71,11 @@ def test_series_compensator_with_market(gdb_cli: GraphDBClient):
     assert compensators.shape == (3, 8)
 
 
+def test_phase_tap_changer(gdb_cli: GraphDBClient):
+    tap_changers = gdb_cli.phase_tap_changers(region=None)
+    assert tap_changers.shape == (1, 9)
+
+
 def test_conform_and_non_conform_load(gdb_cli: GraphDBClient):
     load = gdb_cli.loads(load_type=["ConformLoad", "NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples

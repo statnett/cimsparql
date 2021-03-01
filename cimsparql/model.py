@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Tuple, TypeVar, Union
+from typing import Dict, Iterable, List, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -66,6 +66,23 @@ class CimModel(Prefix):
            dry_run: return string with sql query
         """
         query = queries.bus_data(region, sub_region)
+        if dry_run:
+            return self._query_with_header(query, limit=limit)
+        return self._get_table_and_convert(query, index="mrid", limit=limit)
+
+    def phase_tap_changers(
+        self,
+        region: str = "NO",
+        sub_region: bool = False,
+        with_tap_changer_values: bool = True,
+        impedance: Iterable[str] = ("r", "x"),
+        limit: int = None,
+        dry_run: bool = False,
+    ) -> pd.DataFrame:
+        """Get list of phase tap changers"""
+        query = queries.phase_tap_changer_query(
+            region, sub_region, with_tap_changer_values, impedance
+        )
         if dry_run:
             return self._query_with_header(query, limit=limit)
         return self._get_table_and_convert(query, index="mrid", limit=limit)
