@@ -176,6 +176,48 @@ bid_market_code_query = [
 ]
 
 
+def phase_tap_changer_query(
+    region: str, sub_region: bool, with_tap_changer_values: bool, impedance: List[str]
+) -> str:
+    select_query = "SELECT ?mrid"
+
+    where_list = [
+        "?mrid rdf:type cim:PowerTransformerEnd",
+        "?mrid cim:TransformerEnd.PhaseTapChanger ?tap",
+        "?mrid cim:PowerTransformerEnd.PowerTransformer ?pt",
+    ]
+
+    if with_tap_changer_values:
+        select_query += " ?tap ?low ?high ?neutral ?phase_incr"
+        where_list += [
+            "?tap cim:TapChanger.highStep ?high",
+            "?tap cim:TapChanger.lowStep ?low",
+            "?tap cim:TapChanger.neutralStep ?neutral",
+            "?tap cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_incr",
+        ]
+
+    if impedance is not None:
+        for imp in impedance:
+            select_query += f" ?{imp}"
+            where_list += [f"?pte_1 cim:PowerTransformerEnd.{imp} ?{imp}"]
+
+    if region is not None:
+        where_list += [f"?mrid cim:Equipment.EquipmentContainer ?Substation"]
+        where_list += region_query(region, sub_region, "Substation")
+
+    for i in [1, 2]:
+        select_query += f" ?t_mrid_{i}"
+        where_list += [
+            f"?pte_{i} cim:PowerTransformerEnd.PowerTransformer ?pt",
+            f"?pte_{i} cim:TransformerEnd.Terminal ?term_{i}",
+            f"?term_{i} rdf:type cim:Terminal",
+            f'?term_{i} cim:Terminal.sequenceNumber "{i}"^^xsd:integer',
+            f"?term_{i} cim:IdentifiedObject.mRID ?t_mrid_{i}",
+        ]
+
+    return combine_statements(select_query, group_query(where_list))
+
+
 def terminal_sequence_query(
     cim_version: int, sequence_numbers: Iterable[int] = (1, 2), var: str = con_mrid_str
 ) -> List[str]:
