@@ -131,20 +131,20 @@ class CimXmlStr(CimXmlBase):
 
 
 class SvTpCimXml:
-    def __init__(self, sv_path: Path, tp_path: Path):
+    def __init__(self, sv_path: Path, tp_path: Path) -> None:
         self.paths = {"sv": sv_path, "tp": tp_path}
         self._parser = {profile: CimXml(path) for profile, path in self.paths.items()}
 
-    def __str__(self):
+    def __str__(self) -> str:
         file_desc = ", ".join([f"{profile}: {path.stem}" for profile, path in self.paths.items()])
         return f"<SvTpCimXml object, {file_desc}>"
 
     @property
-    def voltage(self):
+    def voltage(self) -> pd.DataFrame:
         return self._parser["sv"].parse("SvVoltage").set_index("mrid")
 
     @property
-    def tap_steps(self):
+    def tap_steps(self) -> pd.DataFrame:
         return self._parser["sv"].parse("SvTapStep").set_index("mrid")
 
     def bus_data(self, *args, **kwargs) -> pd.DataFrame:

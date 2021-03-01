@@ -1,10 +1,8 @@
-import logging
 import os
 
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.url import Prefix, service
 
-logger = logging.getLogger(__name__)
 prefixes = [
     "rdf",
     "alg",
@@ -41,7 +39,6 @@ def test_get_prefixes(graphdb_repo, monkeypatch):
     monkeypatch.setattr(GraphDBClient, "__init__", init)
     gdbc = GraphDBClient()
 
-    logger.info(gdbc.prefixes)
     for prefix in ["rdf", "cim", "SN"]:
         assert prefix in gdbc.prefixes
 

@@ -1,5 +1,5 @@
 import copy
-from typing import Iterable, List, Set, Tuple, Union
+from typing import Iterable, List, Optional, Set, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -142,7 +142,7 @@ def region_query(region: Union[str, List[str]], sub_region: bool, container: str
         query = [f"?{container} cim:{container}.Region {sub_geographical_region}"]
         if isinstance(region, str):
             query += _region_name_query(f"'{region}'", sub_region, sub_geographical_region)
-        elif isinstance(region, List):
+        elif isinstance(region, list):
             query += _region_name_query("?r_na", sub_region, sub_geographical_region)
             query += ["FILTER regex(?r_na, '" + "|".join(region) + "')"]
         else:
@@ -187,7 +187,10 @@ bid_market_code_query = [
 
 
 def phase_tap_changer_query(
-    region: str, sub_region: bool, with_tap_changer_values: bool, impedance: List[str]
+    region: Union[str, List[str]],
+    sub_region: bool,
+    with_tap_changer_values: bool,
+    impedance: Iterable[str],
 ) -> str:
     select_query = "SELECT ?mrid"
 
@@ -266,7 +269,7 @@ def bus_data(region: Union[str, List[str]], sub_region: bool = False) -> str:
     return combine_statements(select_query, group_query(where_list))
 
 
-def load_query(  # pylint: disable=too-many-arguments
+def load_query(
     load_type: List[str],
     load_vars: Iterable[str],
     region: Union[str, List[str]],
@@ -323,7 +326,7 @@ def load_query(  # pylint: disable=too-many-arguments
     return combine_statements(select_query, group_query(where_list))
 
 
-def synchronous_machines_query(  # pylint: disable=too-many-arguments
+def synchronous_machines_query(
     sync_vars: Iterable[str],
     region: Union[str, List[str]],
     sub_region: bool = False,
@@ -496,7 +499,7 @@ def series_compensator_query(
     connectivity: str = con_mrid_str,
     network_analysis: bool = True,
     with_market: bool = False,
-):
+) -> str:
     container = "Substation"
 
     select_query = ["SELECT", "?mrid", "?x", "?un", "?name", "?t_mrid_1", "?t_mrid_2"]
@@ -597,7 +600,7 @@ def borders_query(
     return combine_statements(" ".join(select_query), group_query(where_list))
 
 
-def ac_line_query(  # pylint: disable=too-many-arguments
+def ac_line_query(
     cim_version: int,
     cim: str,
     region: Union[str, List[str]],
@@ -606,7 +609,7 @@ def ac_line_query(  # pylint: disable=too-many-arguments
     rates: Iterable[str] = ratings,
     network_analysis: bool = True,
     with_market: bool = True,
-    temperatures: List = None,
+    temperatures: Optional[List[int]] = None,
 ) -> str:
     container = "Line"
 

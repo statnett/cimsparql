@@ -1,3 +1,4 @@
+"""Redland CIM sparql client"""
 import json
 from pathlib import PosixPath
 from typing import Any, Dict, Tuple
@@ -11,7 +12,7 @@ name = {".n3": "ntriples", ".xml": "rdfxml"}
 
 
 class Model(CimModel):
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         fname: PosixPath,
         new: bool = False,

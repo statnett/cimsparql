@@ -15,7 +15,7 @@ eq_repo = "20190521T0030Z"
 cim_date = "20190522_070618"
 
 
-def local_server():
+def local_server() -> str:
     return os.getenv("GRAPHDB_LOCAL_TEST_SERVER", "127.0.0.1:7200")
 
 
