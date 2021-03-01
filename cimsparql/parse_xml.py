@@ -90,8 +90,14 @@ class CimXmlBase:
             raise NotImplementedError(f"Not implememted adder for {profile}")
 
     def parse(self, profile: str) -> pd.DataFrame:
+        """Parse SVTP xml str
+
+        Args:
+            profile: What data to extract. Can be one of:
+                     'SvVoltage'|'SvTapStep'|'TopologicalNode'|'Terminal'|'SvPowerFlow'
+        """
         data = [self._adder(profile)(node, self.nsmap) for node in self.findall(f"cim:{profile}")]
-        return pd.DataFrame([item for item in data if item is not None])
+        return pd.DataFrame([item for item in data if item is not None]).drop_duplicates()
 
 
 class CimXml(CimXmlBase):
