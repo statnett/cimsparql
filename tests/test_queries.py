@@ -30,38 +30,48 @@ def test_connectivity_mrid_list_length_with_sequence_numbers():
 
 def test_load_query_raises_value_error():
     with pytest.raises(ValueError):
-        queries.load_query(load_type=["non_type"], connectivity=None)
+        queries.load_query(load_type=["non_type"], load_vars=None, connectivity=None, region="NO")
 
 
 def test_load_query_raises_value_error_empty_list(monkeypatch):
     with pytest.raises(ValueError):
-        queries.load_query(load_type=[], connectivity=None)
+        queries.load_query(load_type=[], load_vars=None, connectivity=None, region="NO")
 
 
 def test_load_query_no_connectivity():
     assert "connectivity_mrid" not in queries.load_query(
-        load_type=["ConformLoad"], connectivity=None
+        load_type=["ConformLoad"], load_vars=None, connectivity=None, region="NO"
     )
 
 
 def test_load_query_with_connectivity():
-    assert "connectivity_mrid" in queries.load_query(load_type=["ConformLoad"])
+    assert "connectivity_mrid" in queries.load_query(
+        load_type=["ConformLoad"], load_vars=None, region="NO"
+    )
 
 
 def test_load_query_with_region():
-    assert "SubGeographicalRegion" in queries.load_query(load_type=["ConformLoad"])
+    assert "SubGeographicalRegion" in queries.load_query(
+        load_type=["ConformLoad"], load_vars=None, region="NO"
+    )
 
 
 def test_load_query_with_no_region():
-    assert "SubGeographicalRegion" not in queries.load_query(load_type=["ConformLoad"], region=None)
+    assert "SubGeographicalRegion" not in queries.load_query(
+        load_type=["ConformLoad"], load_vars=None, region=None
+    )
 
 
 def test_load_query_with_station_group():
-    assert "station_group" in queries.load_query(load_type=["ConformLoad"], station_group=True)
+    assert "station_group" in queries.load_query(
+        load_type=["ConformLoad"], load_vars=None, region="NO", station_group=True
+    )
 
 
 def test_load_query_with_no_station_group():
-    assert "station_group" not in queries.load_query(load_type=["ConformLoad"])
+    assert "station_group" not in queries.load_query(
+        load_type=["ConformLoad"], load_vars=None, region="NO"
+    )
 
 
 def test_load_query_conform(monkeypatch):
@@ -71,7 +81,7 @@ def test_load_query_conform(monkeypatch):
     monkeypatch.setattr(queries, "combine_statements", _combine_statements_mock)
     monkeypatch.setattr(queries, "group_query", _group_query_mock)
 
-    queries.load_query(load_type=["ConformLoad"], connectivity=None)
+    queries.load_query(load_type=["ConformLoad"], load_vars=None, region="NO", connectivity=None)
     assert _combine_statements_mock.call_args_list[0] == call(
         "?mrid rdf:type cim:ConformLoad", group=False, split="\n} UNION \n {"
     )
@@ -84,7 +94,9 @@ def test_load_query_combined(monkeypatch):
     monkeypatch.setattr(queries, "combine_statements", _combine_statements_mock)
     monkeypatch.setattr(queries, "group_query", _group_query_mock)
 
-    queries.load_query(load_type=["ConformLoad", "NonConformLoad"], connectivity=None)
+    queries.load_query(
+        load_type=["ConformLoad", "NonConformLoad"], load_vars=None, region="NO", connectivity=None
+    )
     assert _combine_statements_mock.call_args_list[0] == call(
         "?mrid rdf:type cim:ConformLoad",
         "?mrid rdf:type cim:NonConformLoad",
@@ -105,8 +117,8 @@ def test_terminal_where_query_no_var_with_sequence():
     assert len(queries.terminal_where_query(cim_version=15, var=None, with_sequence_number=1)) == 3
 
 
-def test_bus_data_default():
-    assert "Substation" in queries.bus_data()
+def test_bus_data_with_region():
+    assert "Substation" in queries.bus_data(region="NO")
 
 
 def test_bus_data_no_region():
