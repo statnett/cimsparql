@@ -659,7 +659,20 @@ def windings_set_end(windings: pd.DataFrame, i: int, cols: List[str]):
     return windings[windings["endNumber"] == i][["mrid"] + cols].rename(columns=columns)
 
 
-def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, ...]:
+def windings_to_tx(
+    windings: pd.DataFrame, phase_tap_changers: pd.DataFrame
+) -> Tuple[pd.DataFrame, ...]:
+    """Split windings two-windings and three-windings
+
+    Will also update provided phase_tap_changers dataframe with columne winding end one of
+    transformer if not empty.
+
+    Args:
+        winding: All transformerends (windings)
+        phase_tap_changers:
+
+    Returns: Both two-winding and three-winding transformers (as three two-winding transformers).
+    """
     possible_columns = [
         "name",
         "x",
@@ -683,10 +696,16 @@ def windings_to_tx(windings: pd.DataFrame) -> Tuple[pd.DataFrame, ...]:
     # While two winding transformers don't. Combine first and second winding.
     two_tx_group = windings[~windings["mrid"].isin(three_winding_mrid)].groupby("endNumber")
     two_tx = two_tx_group.get_group(1).set_index("mrid")
-    two_tx_2 = two_tx_group.get_group(2).set_index("mrid")
+    two_tx_2 = two_tx_group.get_group(2).set_index("w_mrid")
     for col in ["t_mrid", "bidzone"]:
-        two_tx.loc[two_tx_2.index, f"{col}_2"] = two_tx_2[col]
-    two_tx.loc[two_tx_2.index, "x"] += two_tx_2["x"]
+        two_tx.loc[two_tx_2["mrid"], f"{col}_2"] = two_tx_2[col].values
+    two_tx.loc[two_tx_2["mrid"], "x"] += two_tx_2["x"].values
+
+    if not phase_tap_changers.empty:
+        phase_tap_changers["w_mrid_1"] = two_tx.loc[
+            two_tx_2.loc[phase_tap_changers.index, "mrid"], "w_mrid"
+        ].values
+
     two_tx = two_tx.reset_index().rename(
         columns={"w_mrid": "ckt", "t_mrid": "t_mrid_1", "bidzone": "bidzone_1"}
     )
