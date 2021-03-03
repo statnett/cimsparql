@@ -157,7 +157,7 @@ def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(
         region="NO01", sub_region=True, connectivity="connectivity_mrid", with_market=True
     )
-    two_tx, three_tx = windings_to_tx(windings)
+    two_tx, three_tx = windings_to_tx(windings, pd.DataFrame())
     assert len(two_tx) > 10
     assert set(two_tx.columns).issuperset(["ckt", "x", "un", "bidzone_1", "bidzone_2"])
 
@@ -169,6 +169,15 @@ def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
     dummy_tx = three_tx_to_windings(three_tx, cols)
     assert len(dummy_tx) == 3 * len(three_tx)
     assert set(dummy_tx.columns).difference(cols + ["bidzone_1", "bidzone_2"]) == set()
+
+
+def test_transformers_with_faseshift(gdb_cli: GraphDBClient):
+    windings = gdb_cli.transformers(region="SE", connectivity="connectivity_mrid", with_market=True)
+    tap_changers = gdb_cli.phase_tap_changers(region="SE")
+    columns = set(tap_changers.columns)
+    assert "w_mrid_1" not in tap_changers.columns
+    windings_to_tx(windings, tap_changers)
+    assert "w_mrid_1" in tap_changers.columns
 
 
 def test_windings(gdb_cli: GraphDBClient):
@@ -184,7 +193,7 @@ def test_windings_with_market(gdb_cli: GraphDBClient):
 def test_transformers(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
 
-    two_tx, three_tx = windings_to_tx(windings)
+    two_tx, three_tx = windings_to_tx(windings, pd.DataFrame())
     assert len(two_tx) > 10
     assert set(two_tx.columns).issuperset(["ckt", "x", "un", "bidzone_1", "bidzone_2"])
 
