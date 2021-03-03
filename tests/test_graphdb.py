@@ -171,6 +171,12 @@ def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
     assert set(dummy_tx.columns).difference(cols + ["bidzone_1", "bidzone_2"]) == set()
 
 
+def test_transformers_with_multiple_sub_regions(gdb_cli: GraphDBClient):
+    windings = gdb_cli.transformers(region=[f"NO0{no}" for no in [1, 2, 3]], sub_region=True)
+    assert windings.shape[0] > 2
+    assert windings.shape[1] == 11
+
+
 def test_transformers_with_faseshift(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="SE", connectivity="connectivity_mrid", with_market=True)
     tap_changers = gdb_cli.phase_tap_changers(region="SE")
