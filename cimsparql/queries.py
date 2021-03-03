@@ -241,7 +241,7 @@ def connectivity_names() -> str:
     return combine_statements(select_query, group_query(where_list))
 
 
-def bus_data(region: str = "NO", sub_region: bool = False) -> str:
+def bus_data(region: Union[str, List[str]], sub_region: bool = False) -> str:
     container = "Substation"
     select_query = "SELECT ?mrid ?name"
     where_list = ["?mrid rdf:type cim:TopologicalNode", "?mrid cim:IdentifiedObject.name ?name"]
@@ -258,8 +258,8 @@ def bus_data(region: str = "NO", sub_region: bool = False) -> str:
 
 def load_query(  # pylint: disable=too-many-arguments
     load_type: List[str],
-    load_vars: Iterable[str] = None,
-    region: str = "NO",
+    load_vars: Iterable[str],
+    region: Union[str, List[str]],
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
     station_group_optional: bool = True,
@@ -314,8 +314,8 @@ def load_query(  # pylint: disable=too-many-arguments
 
 
 def synchronous_machines_query(  # pylint: disable=too-many-arguments
-    sync_vars: Iterable[str] = ("sn",),
-    region: str = "NO",
+    sync_vars: Iterable[str],
+    region: Union[str, List[str]],
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
     station_group_optional: bool = True,
@@ -424,7 +424,7 @@ def wind_generating_unit_query(network_analysis: bool = True):
 
 
 def transformer_query(
-    region: str = "NO",
+    region: Union[str, List[str]],
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
     rates: Iterable[str] = ratings,
@@ -484,7 +484,7 @@ def transformer_query(
 
 def series_compensator_query(
     cim_version: int,
-    region: str = "NO",
+    region: Union[str, List[str]],
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
     network_analysis: bool = True,
@@ -527,7 +527,7 @@ def series_compensator_query(
 def ac_line_query(  # pylint: disable=too-many-arguments
     cim_version: int,
     cim: str,
-    region: str = "NO",
+    region: Union[str, List[str]],
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
     rates: Iterable[str] = ratings,
@@ -598,7 +598,7 @@ def ac_line_query(  # pylint: disable=too-many-arguments
 def connection_query(
     cim_version: int,
     rdf_types: Union[str, List[str]],
-    region: str = "NO",
+    region: Union[str, List[str]],
     sub_region: bool = False,
     connectivity: str = con_mrid_str,
 ) -> str:
