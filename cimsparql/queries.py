@@ -50,9 +50,9 @@ def version_date():
 
 def temperature_list(temperature: float, xsd: str) -> List[str]:
     sign = negpos(temperature)
-    mrid = f"?temp_{sign}_{abs(temperature)}"
+    mrid = f"?t{sign}_{abs(temperature)}"
     return [
-        f"{mrid} ALG:TemperatureCurveData.Curve ?temp_curve",
+        f"{mrid} ALG:TemperatureCurveData.Curve ?tcur",
         f"{mrid} ALG:TemperatureCurveData.temperature '{temperature:0.1f}'{xsd}",
         f"{mrid} ALG:TemperatureCurveData.percent ?{sign}_{abs(temperature)}_factor",
     ]
@@ -64,7 +64,7 @@ def temp_correction_factors(
     where_list = [
         "?temp_mrid rdf:type ALG:TemperatureCurveDependentLimit",
         f"?temp_mrid ALG:LimitDependency.Equipment {mrid}",
-        "?temp_mrid ALG:TemperatureCurveDependentLimit.TemperatureCurve ?temp_curve",
+        "?temp_mrid ALG:TemperatureCurveDependentLimit.TemperatureCurve ?tcur",
     ]
     xsd = xsd_type(cim, "Temperature")
     for temperature in temperatures:
@@ -117,9 +117,9 @@ def market_code_query(nr: int = None):
             f"?t_mrid{nr_s} cim:Terminal.ConnectivityNode ?con{nr_s}",
             f"?con{nr_s} cim:ConnectivityNode.ConnectivityNodeContainer ?container{nr_s}",
             f"?container{nr_s} cim:VoltageLevel.Substation ?substation{nr_s}",
-            f"?substation{nr_s} SN:Substation.MarketDeliveryPoint ?market_delivery_point{nr_s}",
-            f"?market_delivery_point{nr_s} SN:MarketDeliveryPoint.BiddingArea ?bidding_area{nr_s}",
-            f"?bidding_area{nr_s} SN:BiddingArea.marketCode ?bidzone{nr_s}",
+            f"?substation{nr_s} SN:Substation.MarketDeliveryPoint ?m_d_p{nr_s}",
+            f"?m_d_p{nr_s} SN:MarketDeliveryPoint.BiddingArea ?barea{nr_s}",
+            f"?barea{nr_s} SN:BiddingArea.marketCode ?bidzone{nr_s}",
         ],
         command="OPTIONAL",
     )
@@ -170,9 +170,9 @@ def terminal_where_query(
 bid_market_code_query = [
     "?mrid cim:Equipment.EquipmentContainer ?eq_container",
     "?eq_container cim:VoltageLevel.Substation ?substation",
-    "?substation SN:Substation.MarketDeliveryPoint ?market_delivery_point",
-    "?market_delivery_point SN:MarketDeliveryPoint.BiddingArea ?bidding_area",
-    "?bidding_area SN:BiddingArea.marketCode ?bidzone",
+    "?substation SN:Substation.MarketDeliveryPoint ?m_d_p",
+    "?m_d_p SN:MarketDeliveryPoint.BiddingArea ?barea",
+    "?barea SN:BiddingArea.marketCode ?bidzone",
 ]
 
 
@@ -293,8 +293,8 @@ def load_query(  # pylint: disable=too-many-arguments
         select_query += " ?station_group"
         station_group_list = [
             "?mrid cim:NonConformLoad.LoadGroup ?lg",
-            "?lg SN:NonConformLoadGroup.ScheduleResource ?sched_res",
-            "?sched_res SN:ScheduleResource.marketCode ?station_group",
+            "?lg SN:NonConformLoadGroup.ScheduleResource ?sc_res",
+            "?sc_res SN:ScheduleResource.marketCode ?station_group",
         ]
         if station_group_optional:
             where_list += [group_query(station_group_list, command="OPTIONAL")]
@@ -366,7 +366,7 @@ def synchronous_machines_query(  # pylint: disable=too-many-arguments
         "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
         "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
         "?ScheduleResource SN:ScheduleResource.marketCode ?station_group",
-        "?ScheduleResource cim:IdentifiedObject.aliasName ?station_group_name",
+        "?ScheduleResource cim:IdentifiedObject.aliasName ?st_gr_n",
     ]
     if station_group_optional:
         where_list += [group_query(station_group, command="OPTIONAL")]
@@ -375,9 +375,7 @@ def synchronous_machines_query(  # pylint: disable=too-many-arguments
     where_list += terminal_where_query(cim_version, connectivity, with_sequence_number)
 
     if not u_groups:
-        where_list += [
-            "FILTER (!bound(?station_group_name) || (!regex(?station_group_name, 'U-')))"
-        ]
+        where_list += ["FILTER (!bound(?st_gr_n) || (!regex(?st_gr_n, 'U-')))"]
     if region is not None:
         container = "Substation"
         where_list += [
@@ -387,8 +385,7 @@ def synchronous_machines_query(  # pylint: disable=too-many-arguments
     return combine_statements(select_query, group_query(where_list))
 
 
-def operational_limit(mrid: str, rate: str, limitset: str = "operationallimitset") -> List[str]:
-
+def operational_limit(mrid: str, rate: str, limitset: str = "oplimset") -> List[str]:
     return [
         f"?{limitset} cim:OperationalLimitSet.Equipment {mrid}",
         f"?activepowerlimit{rate} cim:OperationalLimit.OperationalLimitSet ?{limitset}",
