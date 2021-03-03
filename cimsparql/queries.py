@@ -202,7 +202,7 @@ def phase_tap_changer_query(
             where_list += [f"?pte_1 cim:PowerTransformerEnd.{imp} ?{imp}"]
 
     if region is not None:
-        where_list += [f"?mrid cim:Equipment.EquipmentContainer ?Substation"]
+        where_list += [f"?pt cim:Equipment.EquipmentContainer ?Substation"]
         where_list += region_query(region, sub_region, "Substation")
 
     for i in [1, 2]:
