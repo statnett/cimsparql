@@ -65,8 +65,8 @@ class TypeMapperQueries:
 
         """
         return {
-            "http://www.w3.org/2001/XMLSchema": ["?range rdfs:label ?type"],
-            "http://iec.ch/TC57/2010/CIM-schema-cim15": [
+            "https://www.w3.org/2001/XMLSchema": ["?range rdfs:label ?type"],
+            "https://iec.ch/TC57/2010/CIM-schema-cim15": [
                 "?range owl:equivalentClass ?class",
                 "?class rdfs:label ?type",
             ],
