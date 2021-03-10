@@ -119,8 +119,7 @@ precision = 2
 
 [tool.coverage.run]
 branch = true
-source = ["cimsparql"]
-omit = ["tests/*"]
+source = ["cimsparql",  "conftest", "tests"]
 
 [tool.pytest.ini_options]
 log_file = "pytest.log"
