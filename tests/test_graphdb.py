@@ -180,7 +180,6 @@ def test_transformers_with_multiple_sub_regions(gdb_cli: GraphDBClient):
 def test_transformers_with_faseshift(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="SE", connectivity="connectivity_mrid", with_market=True)
     tap_changers = gdb_cli.phase_tap_changers(region="SE")
-    columns = set(tap_changers.columns)
     assert "w_mrid_1" not in tap_changers.columns
     windings_to_tx(windings, tap_changers)
     assert "w_mrid_1" in tap_changers.columns

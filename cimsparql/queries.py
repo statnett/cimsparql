@@ -36,7 +36,7 @@ def negpos(val: Union[float, int]) -> str:
     return "minus" if val < 0 else "plus"
 
 
-def version_date():
+def version_date() -> str:
     select_query = "SELECT ?mrid ?name ?activationDate"
     where_list = [
         "?marketDefinitionSet rdf:type SN:MarketDefinitionSet",
