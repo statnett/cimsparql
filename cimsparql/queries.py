@@ -125,11 +125,11 @@ def market_code_query(nr: int = None):
     )
 
 
-def _region_name_query(region: str, sub_region: bool) -> List[str]:
+def _region_name_query(region: str, sub_region: bool, sub_geographical_region: str) -> List[str]:
     if sub_region:
-        return [f"?subgeoreg SN:IdentifiedObject.shortName {region}"]
+        return [f"{sub_geographical_region} SN:IdentifiedObject.shortName {region}"]
     return [
-        "?subgeoreg cim:SubGeographicalRegion.Region ?region",
+        f"{sub_geographical_region} cim:SubGeographicalRegion.Region ?region",
         f"?region cim:IdentifiedObject.name {region}",
     ]
 
@@ -138,11 +138,12 @@ def region_query(region: Union[str, List[str]], sub_region: bool, container: str
     if region is None:
         query = []
     else:
-        query = [f"?{container} cim:{container}.Region ?subgeoreg"]
+        sub_geographical_region = "?subgeoreg"
+        query = [f"?{container} cim:{container}.Region {sub_geographical_region}"]
         if isinstance(region, str):
-            query += _region_name_query(f"'{region}'", sub_region)
+            query += _region_name_query(f"'{region}'", sub_region, sub_geographical_region)
         elif isinstance(region, List):
-            query += _region_name_query("?r_na", sub_region)
+            query += _region_name_query("?r_na", sub_region, sub_geographical_region)
             query += ["FILTER regex(?r_na, '" + "|".join(region) + "')"]
         else:
             raise NotImplementedError("region must be either str or List")
