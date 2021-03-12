@@ -531,6 +531,50 @@ def series_compensator_query(
     return combine_statements(" ".join(select_query), group_query(where_list))
 
 
+def borders_query(
+    cim_version: int,
+    region: Union[str, List[str]],
+    sub_region: bool,
+    ignore_hvdc: bool,
+    with_market_code: bool,
+    market_optional: bool,
+) -> str:
+    select_query = ["SELECT", "?name", "?mrid"]
+    where_list = terminal_sequence_query(cim_version=cim_version, var="con")
+    where_list += ["?mrid cim:IdentifiedObject.name ?name", "?mrid rdf:type cim:ACLineSegment"]
+    for nr in [1, 2]:
+        select_query += [f"?t_mrid_{nr}", f"?area_{nr}"]
+        where_list += [
+            f"?con_{nr} cim:ConnectivityNode.ConnectivityNodeContainer ?cont_{nr}",
+            f"?cont_{nr} cim:VoltageLevel.Substation ?subs_{nr}",
+            f"?subs_{nr} cim:Substation.Region ?reg_{nr}",
+            f"?reg_{nr} cim:SubGeographicalRegion.Region ?sreg_{nr}",
+            f"?sreg_{nr} cim:IdentifiedObject.name ?area_{nr}",
+        ]
+    if with_market_code:
+        select_query += [f"?market_code"]
+        where_marked = [
+            "?mrid cim:Equipment.EquipmentContainer ?line_cont",
+            "?line_cont SN:Line.marketCode ?market_code",
+        ]
+        where_list += [group_query(where_marked, command="OPTIONAL" if market_optional else "")]
+
+    regions = "|".join(region) if isinstance(region, list) else region
+    filters = [
+        combine_statements(
+            f"FILTER (regex(?area_1, '{regions}'))", f"FILTER (!regex(?area_2, '{regions}'))"
+        ),
+        combine_statements(
+            f"FILTER (regex(?area_2, '{regions}'))", f"FILTER (!regex(?area_1, '{regions}'))"
+        ),
+    ]
+    where_list += [combine_statements(*filters, group=True, split="\n} UNION\n{\n")]
+    if ignore_hvdc:
+        where_list += ["{FILTER (!regex(?name, 'HVDC'))}"]
+
+    return combine_statements(" ".join(select_query), group_query(where_list))
+
+
 def ac_line_query(  # pylint: disable=too-many-arguments
     cim_version: int,
     cim: str,

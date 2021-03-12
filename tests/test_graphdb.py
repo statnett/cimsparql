@@ -236,6 +236,26 @@ def test_connectors_reference_nodes(disconnectors: pd.DataFrame):
     assert len(node_dict) == len(np.unique(disconnectors[connect_columns].to_numpy()))
 
 
+@pytest.fixture()
+def corridor_columns() -> List[str]:
+    return ["name", "t_mrid_1", "t_mrid_2", "area_1", "area_2"]
+
+
+def test_borders_no(gdb_cli: GraphDBClient, corridor_columns: List[str]):
+    borders = gdb_cli.borders(region="NO", limit=10)
+    assert set(borders.columns).difference(corridor_columns) == set()
+    assert len(borders) == 10
+    assert (borders[["area_1", "area_2"]] == "NO").any(axis=1).all()
+    assert (borders["area_1"] != borders["area_2"]).all()
+
+
+def test_borders_no_se(gdb_cli: GraphDBClient, corridor_columns: List[str]):
+    borders = gdb_cli.borders(region=["NO", "SE"])
+    assert set(borders.columns).difference(corridor_columns) == set()
+    assert (borders[["area_1", "area_2"]].isin(["NO", "SE"])).any(axis=1).all()
+    assert (borders["area_1"] != borders["area_2"]).all()
+
+
 def test_data_row():
     cols = ["a", "b", "c", "d", "e"]
     rows = [{"a": 1, "b": 2}, {"c": 3, "d": 4}, {"a": 5, "b": 6}, {"e": 7}]
