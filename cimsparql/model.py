@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Iterable, List, Tuple, TypeVar, Union
+from typing import Dict, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -240,6 +240,35 @@ class CimModel(Prefix):
         """
         query = queries.connection_query(
             self.cim_version, rdf_types, region, sub_region, connectivity
+        )
+        if dry_run:
+            return self._query_with_header(query, limit=limit)
+        return self._get_table_and_convert(query, index="mrid", limit=limit)
+
+    def borders(
+        self,
+        region: str = None,
+        sub_region: bool = False,
+        ignore_hvdc: bool = True,
+        with_market_code: bool = False,
+        market_optional: bool = False,
+        limit: Optional[int] = None,
+        dry_run: bool = False,
+    ) -> pd.DataFrame:
+        """Retrieve ACLineSegments where one terminal is inside and the other is outside the region
+
+        Args:
+            region: Inside area
+            sub_region: regions is sub areas
+            ignore_hvdc: ignore ac lines with HVDC in name
+            with_marked_code: include SN:Line.marketCode
+            market_optional: include lines without market code if with_marked_code set
+            limit: return first 'limit' number of rows
+            dry_run: return string with sql query
+
+        """
+        query = queries.borders_query(
+            self.cim_version, region, sub_region, ignore_hvdc, with_market_code, market_optional
         )
         if dry_run:
             return self._query_with_header(query, limit=limit)
