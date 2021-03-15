@@ -531,6 +531,28 @@ def series_compensator_query(
     return combine_statements(" ".join(select_query), group_query(where_list))
 
 
+def transformers_connected_to_converter(
+    region: str, sub_region: bool, converter_types: List[str]
+) -> str:
+    select_query = "select ?mrid ?t_mrid ?name"
+    where_list = [
+        "?mrid rdf:type cim:PowerTransformer",
+        "?mrid cim:IdentifiedObject.aliasName ?name",
+        "?t_mrid cim:Terminal.ConductingEquipment ?mrid",
+        "?t_mrid cim:Terminal.ConnectivityNode ?con",
+        "?t_tvolt cim:Terminal.ConductingEquipment ?volt",
+        "?t_tvolt cim:Terminal.ConnectivityNode ?con",
+    ]
+    converters = [f"?volt rdf:type ALG:{converter}Converter" for converter in converter_types]
+    where_list += [
+        combine_statements(*converters, group=len(converters) > 1, split="\n} UNION \n {")
+    ]
+    if region is not None:
+        where_list += [f"?mrid cim:Equipment.EquipmentContainer ?Substation"]
+        where_list += region_query(region, sub_region, "Substation")
+    return combine_statements(select_query, group_query(where_list))
+
+
 def borders_query(
     cim_version: int,
     region: Union[str, List[str]],
