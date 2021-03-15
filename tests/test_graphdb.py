@@ -241,6 +241,26 @@ def corridor_columns() -> List[str]:
     return ["name", "t_mrid_1", "t_mrid_2", "area_1", "area_2"]
 
 
+def test_transformer_connected_to_voltage_source_converters(gdb_cli: GraphDBClient):
+    transformers = gdb_cli.transformers_connected_to_converter(
+        region="NO", converter_types=["VoltageSource"]
+    )
+    assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
+    assert len(transformers) == 10
+
+
+def test_transformer_connected_to_dc_converters(gdb_cli: GraphDBClient):
+    transformers = gdb_cli.transformers_connected_to_converter(region="NO", converter_types=["DC"])
+    assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
+    assert len(transformers) == 16
+
+
+def test_transformer_connected_to_converters(gdb_cli: GraphDBClient):
+    transformers = gdb_cli.transformers_connected_to_converter(region="NO")
+    assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
+    assert len(transformers) == 26
+
+
 def test_borders_no(gdb_cli: GraphDBClient, corridor_columns: List[str]):
     borders = gdb_cli.borders(region="NO", limit=10)
     assert set(borders.columns).difference(corridor_columns) == set()

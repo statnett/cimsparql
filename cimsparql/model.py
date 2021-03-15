@@ -274,6 +274,27 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit=limit)
         return self._get_table_and_convert(query, index="mrid", limit=limit)
 
+    def transformers_connected_to_converter(
+        self,
+        region: str = None,
+        sub_region: bool = False,
+        converter_types: List[str] = ("VoltageSource", "DC"),
+        dry_run: bool = False,
+    ) -> pd.DataFrame:
+        """Query list of transformer connected at a converter (Voltage source or DC)
+
+        Args:
+           region: Limit to region
+           sub_region: Assume region is a sub_region
+           converter_types: VoltageSource or DC (ALG:VoltageSourceConverter or ALG:DCConverter)
+           dry_run: return string with sql query
+
+        """
+        query = queries.transformers_connected_to_converter(region, sub_region, converter_types)
+        if dry_run:
+            return self._query_with_header(query)
+        return self._get_table_and_convert(query, index="mrid")
+
     def ac_lines(  # pylint: disable=too-many-arguments
         self,
         region: str = "NO",
