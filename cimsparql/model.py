@@ -2,6 +2,7 @@
 redland.Model with function get_table as well as a set of predefined CIM queries.
 """
 
+import re
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional, Tuple, TypeVar, Union
 
@@ -596,12 +597,10 @@ class CimModel(Prefix):
             if column_type is str:
                 continue
             if column_type is bool:
-                result.loc[:, column] = result.loc[:, column].str.contains("True|true")
+                result[column] = result[column].str.contains("true", flags=re.IGNORECASE)
             else:
                 result.loc[result[column] == "None", column] = ""
-                result.loc[:, column] = pd.to_numeric(result[column], errors="coerce").astype(
-                    column_type
-                )
+                result[column] = pd.to_numeric(result[column], errors="coerce").astype(column_type)
 
     @classmethod
     def col_map(cls, data_row, columns) -> Tuple[Dict[str, str]]:
