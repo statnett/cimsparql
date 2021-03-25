@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from cimsparql.graphdb import GraphDBClient
+from cimsparql.queries import con_mrid_str
 from cimsparql.url import GraphDbConfig, service
 
 this_dir = pathlib.Path(__file__).parent
@@ -33,6 +34,11 @@ need_local_graphdb_eq = pytest.mark.skipif(
 need_local_graphdb_cim = pytest.mark.skipif(
     cim_date not in local_graphdb.repos, reason=f"Need {cim_date} in local repository"
 )
+
+
+@pytest.fixture(scope="session")
+def n_samples() -> int:
+    return 40
 
 
 @pytest.fixture(scope="session")
@@ -124,3 +130,15 @@ def data_row():
         "prefixed_col": {"type": "uri", "value": "prefixed_a"},
         "boolean_col": {"datatype": datatypes_url("AsynchronousMachine.converterFedDrive")},
     }
+
+
+@pytest.fixture(scope="session")
+def disconnectors(gdb_cli: GraphDBClient, n_samples: int):
+    return gdb_cli.connections(
+        rdf_types="cim:Disconnector", limit=n_samples, connectivity=con_mrid_str
+    )
+
+
+@pytest.fixture(scope="module")
+def breakers(gdb_cli: GraphDBClient, n_samples: int):
+    return gdb_cli.connections(rdf_types="cim:Breaker", limit=n_samples, connectivity=con_mrid_str)
