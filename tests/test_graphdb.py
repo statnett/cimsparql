@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient, data_row
 from cimsparql.queries import Islands, three_tx_to_windings, windings_to_tx
 from cimsparql.url import service
@@ -30,7 +31,7 @@ def test_str_rep(gdb_cli: GraphDBClient, graphdb_repo: str):
     assert str(gdb_cli) == target
 
 
-load_columns = ["connectivity_mrid", "terminal_mrid", "bidzone", "p", "q"]
+load_columns = [con_mrid_str, "terminal_mrid", "bidzone", "p", "q"]
 
 
 def test_conform_load(gdb_cli: GraphDBClient, n_samples: int):
@@ -135,7 +136,7 @@ def test_ac_line_segment_with_market(gdb_cli: GraphDBClient, n_samples: int):
 
 def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(
-        limit=n_samples, connectivity="connectivity_mrid", temperatures=range(0, 10, 10)
+        limit=n_samples, connectivity=con_mrid_str, temperatures=range(0, 10, 10)
     )
     assert lines.shape == (n_samples, 15)
     assert all(lines[["x", "un"]].dtypes == float)
@@ -143,13 +144,13 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
 
 def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(
-        region="NO01", sub_region=True, connectivity="connectivity_mrid", with_market=True
+        region="NO01", sub_region=True, connectivity=con_mrid_str, with_market=True
     )
     two_tx, three_tx = windings_to_tx(windings, pd.DataFrame())
     assert len(two_tx) > 10
     assert set(two_tx.columns).issuperset(["ckt", "x", "un", "bidzone_1", "bidzone_2"])
 
-    cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
+    cols = [[f"x_{nr}", f"un_{nr}", f"{con_mrid_str}_{nr}"] for nr in range(1, 4)]
     assert len(three_tx) > 2
     assert set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
 
@@ -190,7 +191,7 @@ def test_transformers(gdb_cli: GraphDBClient):
     assert len(two_tx) > 10
     assert set(two_tx.columns).issuperset(["ckt", "x", "un", "bidzone_1", "bidzone_2"])
 
-    cols = [[f"x_{i}", f"un_{i}", f"connectivity_mrid_{i}"] for i in range(1, 4)]
+    cols = [[f"x_{nr}", f"un_{nr}", f"{con_mrid_str}_{nr}"] for nr in range(1, 4)]
     assert len(three_tx) > 2
     assert not set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
 
