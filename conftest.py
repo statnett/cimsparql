@@ -67,13 +67,28 @@ def root_dir():
 
 
 @pytest.fixture(scope="session")
-def graphdb_repo():
+def server():
+    return os.getenv("GRAPHDB_API", "api-test.statnett.no")
+
+
+@pytest.fixture(scope="session")
+def graphdb_repo() -> str:
     return os.getenv("GRAPHDB_REPO", "LATEST")
 
 
 @pytest.fixture(scope="session")
-def gdb_cli(graphdb_repo):
-    return GraphDBClient(service(repo=graphdb_repo))
+def graphdb_path(graphdb_repo) -> str:
+    return "services/pgm/equipment/" if graphdb_repo == "LATEST" else ""
+
+
+@pytest.fixture(scope="session")
+def graphdb_service(server, graphdb_repo, graphdb_path) -> str:
+    return service(graphdb_repo, server, "https", graphdb_path)
+
+
+@pytest.fixture(scope="session")
+def gdb_cli(graphdb_service) -> GraphDBClient:
+    return GraphDBClient(graphdb_service)
 
 
 @pytest.fixture

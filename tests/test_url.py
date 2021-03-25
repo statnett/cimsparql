@@ -1,7 +1,7 @@
 import os
 
 from cimsparql.graphdb import GraphDBClient
-from cimsparql.url import Prefix, service
+from cimsparql.url import Prefix
 
 prefixes = [
     "rdf",
@@ -30,11 +30,11 @@ def test_set_cim_version():
         assert pre.cim_version == nr
 
 
-def test_get_prefixes(graphdb_repo, monkeypatch):
+def test_get_prefixes(graphdb_service, monkeypatch):
     def init(self, *args, **kwargs):
         self.user = os.getenv("GRAPHDB_USER")
         self.passwd = os.getenv("GRAPHDB_USER_PASSWD")
-        self.prefixes = service(repo=graphdb_repo)
+        self.prefixes = graphdb_service
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
     gdbc = GraphDBClient()
@@ -54,11 +54,11 @@ def test_header_str():
     assert pre.header_str() == "PREFIX cim:<cim_url#>\nPREFIX sn:<sn_url#>"
 
 
-def test_prefix_ns(graphdb_repo, monkeypatch):
+def test_prefix_ns(graphdb_service, monkeypatch):
     def init(self, *args, **kwargs):
         self.user = os.getenv("GRAPHDB_USER")
         self.passwd = os.getenv("GRAPHDB_USER_PASSWD")
-        self.prefixes = service(repo=graphdb_repo)
+        self.prefixes = graphdb_service
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
     gdbc = GraphDBClient()
@@ -67,11 +67,11 @@ def test_prefix_ns(graphdb_repo, monkeypatch):
     assert ns["cim"] == "http://iec.ch/TC57/2010/CIM-schema-cim15#"
 
 
-def test_prefix_inverse(graphdb_repo, monkeypatch):
+def test_prefix_inverse(graphdb_service, monkeypatch):
     def init(self, *args, **kwargs):
         self.user = os.getenv("GRAPHDB_USER")
         self.passwd = os.getenv("GRAPHDB_USER_PASSWD")
-        self.prefixes = service(repo=graphdb_repo)
+        self.prefixes = graphdb_service
 
     monkeypatch.setattr(GraphDBClient, "__init__", init)
     gdbc = GraphDBClient()
