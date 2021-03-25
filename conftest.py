@@ -4,8 +4,8 @@ import pathlib
 import pandas as pd
 import pytest
 
+from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient
-from cimsparql.queries import con_mrid_str
 from cimsparql.url import GraphDbConfig, service
 
 this_dir = pathlib.Path(__file__).parent
