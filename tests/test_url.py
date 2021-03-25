@@ -45,13 +45,14 @@ def test_get_prefixes(graphdb_service, monkeypatch):
 
 def test_header_str_missing_prefixes():
     pre = Prefix()
-    assert pre.header_str() == ""
+    assert pre.header_str("") == ""
 
 
 def test_header_str():
     pre = Prefix()
-    pre._prefixes = {"cim": "cim_url", "sn": "sn_url"}
-    assert pre.header_str() == "PREFIX cim:<cim_url#>\nPREFIX sn:<sn_url#>"
+    pre._prefixes = {"cim": "cim_url", "sn": "sn_url", "ALG": "alg_url"}
+    ref_prefix = ["PREFIX cim:<cim_url#>", "PREFIX sn:<sn_url#>"]
+    assert set(pre.header_str("cim:Var sn:Var").split("\n")).difference(ref_prefix) == set()
 
 
 def test_prefix_ns(graphdb_service, monkeypatch):
