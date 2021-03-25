@@ -10,7 +10,6 @@ import pytest
 from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient, data_row
 from cimsparql.queries import Islands, three_tx_to_windings, windings_to_tx
-from cimsparql.url import service
 
 
 @patch.object(GraphDBClient, "_get_table_and_convert")
@@ -26,8 +25,8 @@ def test_cimversion(gdb_cli: GraphDBClient):
     assert gdb_cli.cim_version == 15
 
 
-def test_str_rep(gdb_cli: GraphDBClient, graphdb_repo: str):
-    target = f"<GraphDBClient object, service: {service(graphdb_repo)}>"
+def test_str_rep(gdb_cli: GraphDBClient, graphdb_service: str):
+    target = f"<GraphDBClient object, service: {graphdb_service}>"
     assert str(gdb_cli) == target
 
 
