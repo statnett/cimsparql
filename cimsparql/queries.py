@@ -28,7 +28,7 @@ def combine_statements(*args, group: bool = False, split: str = "\n") -> str:
     return "{\n" + split.join(args) + "\n}" if group else split.join(args)
 
 
-def xsd_type(cim: str, var: str) -> str:
+def _xsd_type(cim: str, var: str) -> str:
     return f"^^<{cim}{var}>"
 
 
@@ -66,7 +66,7 @@ def temp_correction_factors(
         f"?temp_mrid ALG:LimitDependency.Equipment {mrid}",
         "?temp_mrid ALG:TemperatureCurveDependentLimit.TemperatureCurve ?tcur",
     ]
-    xsd = xsd_type(cim, "Temperature")
+    xsd = _xsd_type(cim, "Temperature")
     for temperature in temperatures:
         where_list += temperature_list(temperature, xsd)
     return where_list
