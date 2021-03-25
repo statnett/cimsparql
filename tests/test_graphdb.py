@@ -11,22 +11,6 @@ from cimsparql.graphdb import GraphDBClient, data_row
 from cimsparql.queries import Islands, three_tx_to_windings, windings_to_tx
 from cimsparql.url import service
 
-n_samples = 40
-
-
-@pytest.fixture(scope="module")
-def breakers(gdb_cli: GraphDBClient):
-    return gdb_cli.connections(
-        rdf_types="cim:Breaker", limit=n_samples, connectivity="connectivity_mrid"
-    )
-
-
-@pytest.fixture(scope="module")
-def disconnectors(gdb_cli: GraphDBClient):
-    return gdb_cli.connections(
-        rdf_types="cim:Disconnector", limit=n_samples, connectivity="connectivity_mrid"
-    )
-
 
 @patch.object(GraphDBClient, "_get_table_and_convert")
 def test_date_version(get_table_mock, gdb_cli: GraphDBClient):
@@ -49,13 +33,13 @@ def test_str_rep(gdb_cli: GraphDBClient, graphdb_repo: str):
 load_columns = ["connectivity_mrid", "terminal_mrid", "bidzone", "p", "q"]
 
 
-def test_conform_load(gdb_cli: GraphDBClient):
+def test_conform_load(gdb_cli: GraphDBClient, n_samples: int):
     load = gdb_cli.loads(load_type=["ConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
 
-def test_non_conform_load(gdb_cli: GraphDBClient):
+def test_non_conform_load(gdb_cli: GraphDBClient, n_samples: int):
     load = gdb_cli.loads(load_type=["NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
@@ -76,7 +60,7 @@ def test_phase_tap_changer(gdb_cli: GraphDBClient):
     assert tap_changers.shape == (1, 9)
 
 
-def test_conform_and_non_conform_load(gdb_cli: GraphDBClient):
+def test_conform_and_non_conform_load(gdb_cli: GraphDBClient, n_samples: int):
     load = gdb_cli.loads(load_type=["ConformLoad", "NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
@@ -105,13 +89,17 @@ def wind_units_machines_columns(gen_columns: List[str]) -> List[str]:
     return gen_columns + ["power_plant_mrid"]
 
 
-def test_synchronous_machines(gdb_cli: GraphDBClient, synchronous_machines_columns: List[str]):
+def test_synchronous_machines(
+    gdb_cli: GraphDBClient, synchronous_machines_columns: List[str], n_samples: int
+):
     synchronous_machines = gdb_cli.synchronous_machines(limit=n_samples)
     assert len(synchronous_machines) == n_samples
     assert set(synchronous_machines.columns).difference(synchronous_machines_columns) == set()
 
 
-def test_wind_generating_units(gdb_cli: GraphDBClient, wind_units_machines_columns: List[str]):
+def test_wind_generating_units(
+    gdb_cli: GraphDBClient, wind_units_machines_columns: List[str], n_samples: int
+):
     wind_units_machines = gdb_cli.wind_generating_units(limit=n_samples)
     assert len(wind_units_machines) == n_samples
     assert set(wind_units_machines.columns).difference(wind_units_machines_columns) == set()
@@ -121,31 +109,31 @@ def test_regions(gdb_cli: GraphDBClient):
     assert gdb_cli.regions.groupby("region").count()["shortName"]["NO"] > 16
 
 
-def test_branch(gdb_cli: GraphDBClient):
+def test_branch(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples)
     assert lines.shape == (n_samples, 12)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
-def test_branch_with_temperatures(gdb_cli: GraphDBClient):
+def test_branch_with_temperatures(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-30, 30, 10))
     assert lines.shape == (n_samples, 15)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
-def test_branch_with_two_temperatures(gdb_cli: GraphDBClient):
+def test_branch_with_two_temperatures(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-20, 0, 10))
     assert lines.shape == (n_samples, 11)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
-def test_ac_line_segment_with_market(gdb_cli: GraphDBClient):
+def test_ac_line_segment_with_market(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, with_market=True, rates=None, temperatures=None)
     assert lines.shape == (n_samples, 11)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
-def test_branch_with_connectivity(gdb_cli: GraphDBClient):
+def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(
         limit=n_samples, connectivity="connectivity_mrid", temperatures=range(0, 10, 10)
     )
@@ -216,7 +204,7 @@ def test_reference_nodes():
     )
 
 
-def test_breaker_length(breakers: pd.DataFrame):
+def test_breaker_length(breakers: pd.DataFrame, n_samples: int):
     assert len(breakers) == n_samples
 
 
@@ -226,7 +214,7 @@ def test_breaker_reference_nodes(breakers: pd.DataFrame):
     assert len(node_dict) == len(np.unique(breakers[connect_columns].to_numpy()))
 
 
-def test_connectors_length(disconnectors: pd.DataFrame):
+def test_connectors_length(disconnectors: pd.DataFrame, n_samples: int):
     assert len(disconnectors) == n_samples
 
 
