@@ -5,6 +5,7 @@ variables ("GRAPHDB_USER" & "GRAPHDB_USER_PASSWD").
 
 """
 import os
+import re
 from typing import Dict, ItemsView, List, Optional
 
 import requests
@@ -66,14 +67,15 @@ class GraphDbConfig:
 
 
 class Prefix:
-    def header_str(self) -> str:
+    def header_str(self, query: str) -> str:
         """Build header string, for sparql queries, with list of prefixes
 
         The list of available prefixes should be provided by the source (sourch as GraphDB).
 
         """
         try:
-            return "\n".join([f"PREFIX {name}:<{url}#>" for name, url in self.prefixes.items()])
+            prefixes = set(re.findall(r"(\w+):\w+", query))
+            return "\n".join([f"PREFIX {name}:<{self.prefixes[name]}#>" for name in prefixes])
         except AttributeError:
             return ""
 

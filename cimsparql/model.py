@@ -54,7 +54,7 @@ class CimModel(Prefix):
             self._mapper = mapper
 
     def _query_with_header(self, query: str, limit: Optional[int] = None) -> str:
-        query = "\n\n".join([self.header_str(), query])
+        query = "\n".join([self.header_str(query), query])
         if limit is not None:
             query += f" limit {limit}"
         return query
