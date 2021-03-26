@@ -30,7 +30,7 @@ def test_str_rep(gdb_cli: GraphDBClient, graphdb_service: str):
     assert str(gdb_cli) == target
 
 
-load_columns = [con_mrid_str, "terminal_mrid", "bidzone", "p", "q"]
+load_columns = [con_mrid_str, "t_mrid", "bidzone", "p", "q"]
 
 
 def test_conform_load(gdb_cli: GraphDBClient, n_samples: int):
@@ -81,12 +81,12 @@ def gen_columns() -> List[str]:
 
 @pytest.fixture()
 def synchronous_machines_columns(gen_columns: List[str]) -> List[str]:
-    return gen_columns + ["bidzone", "p", "q", "sn", "terminal_mrid"]
+    return gen_columns + ["bidzone", "p", "q", "sn", "t_mrid"]
 
 
 @pytest.fixture()
 def wind_units_machines_columns(gen_columns: List[str]) -> List[str]:
-    return gen_columns + ["power_plant_mrid"]
+    return gen_columns + ["plant_mrid"]
 
 
 def test_synchronous_machines(
@@ -111,25 +111,25 @@ def test_regions(gdb_cli: GraphDBClient):
 
 def test_branch(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples)
-    assert lines.shape == (n_samples, 12)
+    assert lines.shape == (n_samples, 11)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 def test_branch_with_temperatures(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-30, 30, 10))
-    assert lines.shape == (n_samples, 15)
+    assert lines.shape == (n_samples, 14)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 def test_branch_with_two_temperatures(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-20, 0, 10))
-    assert lines.shape == (n_samples, 11)
+    assert lines.shape == (n_samples, 10)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 def test_ac_line_segment_with_market(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, with_market=True, rates=None, temperatures=None)
-    assert lines.shape == (n_samples, 11)
+    assert lines.shape == (n_samples, 10)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
@@ -137,7 +137,7 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(
         limit=n_samples, connectivity=con_mrid_str, temperatures=range(0, 10, 10)
     )
-    assert lines.shape == (n_samples, 15)
+    assert lines.shape == (n_samples, 14)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
@@ -166,7 +166,7 @@ def test_transformers_with_multiple_sub_regions(gdb_cli: GraphDBClient):
 
 
 def test_transformers_with_faseshift(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(region="SE", connectivity="connectivity_mrid", with_market=True)
+    windings = gdb_cli.transformers(region="SE", connectivity=con_mrid_str, with_market=True)
     tap_changers = gdb_cli.phase_tap_changers(region="SE")
     assert "w_mrid_1" not in tap_changers.columns
     windings_to_tx(windings, tap_changers)

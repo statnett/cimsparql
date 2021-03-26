@@ -6,7 +6,9 @@ n_lim = 100
 
 @need_local_graphdb_eq
 def test_connectivity_names(gcli_eq):
-    connectivity_names = gcli_eq.get_table(queries.connectivity_names(), index="mrid", limit=n_lim)
+    connectivity_names = gcli_eq.get_table(
+        queries.connectivity_names("?mrid"), index="mrid", limit=n_lim
+    )
     assert connectivity_names.shape == (n_lim, 1)
 
 

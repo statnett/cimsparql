@@ -31,7 +31,7 @@ def three_tx_to_windings(three_tx: pd.DataFrame, cols: List[str]) -> pd.DataFram
     windings["ckt"] = windings["w_mrid"]
     windings["t_mrid_2"] = windings["mrid"]
     windings["bidzone_1"] = windings["bidzone_2"] = windings["bidzone"]
-    return windings.loc[:, cols]
+    return windings[cols]
 
 
 def windings_set_end(windings: pd.DataFrame, i: int, cols: List[str]):
@@ -59,7 +59,7 @@ def windings_to_tx(
 
     # Three winding includes endNumber == 3
     three_winding_mrid = windings[windings["endNumber"] == 3]["mrid"]
-    three_windings = windings.loc[windings["mrid"].isin(three_winding_mrid), :]
+    three_windings = windings.loc[windings["mrid"].isin(three_winding_mrid)]
     wd = [windings_set_end(three_windings, i, cols).set_index("mrid") for i in range(1, 4)]
     three_tx = pd.concat(wd, axis=1, sort=False)
 
