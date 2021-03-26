@@ -9,7 +9,10 @@ from typing import Dict, Iterable, List, Optional, Tuple, TypeVar, Union
 import numpy as np
 import pandas as pd
 
-from cimsparql import queries, ssh_queries, sv_queries, tp_queries
+from cimsparql import queries
+from cimsparql import query_support as sup
+from cimsparql import ssh_queries, sv_queries, tp_queries
+from cimsparql.constants import generating_types, impedance_variables, mrid_variable, ratings
 from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import Prefix
 
@@ -61,10 +64,12 @@ class CimModel(Prefix):
 
     def bus_data(
         self,
-        region: Union[str, List[str]] = "NO",
+        region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         limit: Optional[int] = None,
         dry_run: bool = False,
+        mrid: str = mrid_variable,
+        name: str = "?name",
     ) -> pd.DataFrame:
         """Query name of topological nodes (TP query).
 
@@ -74,39 +79,42 @@ class CimModel(Prefix):
            limit: return first 'limit' number of rows
            dry_run: return string with sql query
         """
-        query = queries.bus_data(region, sub_region)
+        query = queries.bus_data(region, sub_region, mrid, name)
         if dry_run:
-            return self._query_with_header(query, limit=limit)
-        return self._get_table_and_convert(query, index="mrid", limit=limit)
+            return self._query_with_header(query, limit)
+        return self._get_table_and_convert(query, limit, index=mrid[1:])
 
     def phase_tap_changers(
         self,
-        region: Union[str, List[str]] = "NO",
+        region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         with_tap_changer_values: bool = True,
-        impedance: Iterable[str] = ("r", "x"),
+        impedance: Iterable[str] = impedance_variables,
+        tap_changer_objects: Iterable[str] = ("high", "low", "neutral"),
+        mrid: str = mrid_variable,
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> pd.DataFrame:
         """Get list of phase tap changers"""
         query = queries.phase_tap_changer_query(
-            region, sub_region, with_tap_changer_values, impedance
+            region, sub_region, with_tap_changer_values, impedance, tap_changer_objects, mrid
         )
         if dry_run:
-            return self._query_with_header(query, limit=limit)
-        return self._get_table_and_convert(query, index="mrid", limit=limit)
+            return self._query_with_header(query, limit)
+        return self._get_table_and_convert(query, limit, index=mrid[1:])
 
     def loads(
         self,
         load_type: List[str],
         load_vars: Optional[Tuple[str]] = None,
-        region: Union[str, List[str]] = "NO",
+        region: Union[str, List[str]] = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
         station_group_optional: bool = True,
         station_group: bool = False,
         with_sequence_number: bool = False,
         network_analysis: bool = True,
+        mrid: str = mrid_variable,
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> pd.DataFrame:
@@ -145,17 +153,21 @@ class CimModel(Prefix):
             network_analysis,
             station_group,
             self.cim_version,
+            mrid,
         )
         if dry_run:
-            return self._query_with_header(query, limit=limit)
-        if load_vars is None:
-            columns = {}
-        else:
-            columns = {var: float for var in load_vars}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+            return self._query_with_header(query, limit)
+
+        columns = {} if load_vars is None else {var: float for var in load_vars}
+        return self._get_table_and_convert(query, limit, index=mrid[1:], columns=columns)
 
     def wind_generating_units(
-        self, limit: Optional[int] = None, network_analysis: bool = True, dry_run: bool = False
+        self,
+        limit: Optional[int] = None,
+        network_analysis: bool = True,
+        mrid: str = mrid_variable,
+        name: str = "?name",
+        dry_run: bool = False,
     ) -> pd.DataFrame:
         """Query wind generating units
 
@@ -175,22 +187,27 @@ class CimModel(Prefix):
            >>> gdbc.wind_generating_units(limit=10)
 
         """
-        query = queries.wind_generating_unit_query(network_analysis)
+        query = queries.wind_generating_unit_query(network_analysis, mrid, name)
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
         columns = {var: float for var in float_list}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid[1:], columns=columns)
 
     def synchronous_machines(
         self,
-        synchronous_vars: Tuple[str] = ("sn", "p", "q"),
-        region: Union[str, List[str]] = "NO",
+        sync_vars: Tuple[str] = ("sn", "p", "q"),
+        region: Union[str, List[str]] = None,
         sub_region: bool = False,
-        limit: Optional[int] = None,
         connectivity: Optional[str] = None,
-        dry_run: bool = False,
         station_group_optional: bool = True,
+        with_sequence_number: bool = False,
+        network_analysis: bool = True,
+        u_groups: bool = False,
+        mrid: str = mrid_variable,
+        name: str = "?name",
+        limit: Optional[int] = None,
+        dry_run: bool = False,
     ) -> pd.DataFrame:
         """Query synchronous machines
 
@@ -198,10 +215,13 @@ class CimModel(Prefix):
            synchronous_vars: additional vars to include in output
            region: Limit to region
            sub_region: Assume region is a sub_region
-           limit: return first 'limit' number of rows
            connectivity: Include connectivity mrids
-           dry_run: return string with sql query
            station_group_optional: Assume station group is optional
+           with_sequence_number: add this numbers
+           network_analysis: query SN:Equipment.networkAnalysisEnable
+           u_groups: Filter out station groups where name starts with 'U-'
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
 
         Example:
            >>> from cimsparql.graphdb import GraphDBClient
@@ -209,23 +229,36 @@ class CimModel(Prefix):
            >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.synchronous_machines(limit=10)
         """
+        terminal_mrid: str = "?t_mrid"
+
         query = queries.synchronous_machines_query(
-            synchronous_vars, region, sub_region, connectivity, station_group_optional
+            sync_vars,
+            region,
+            sub_region,
+            connectivity,
+            station_group_optional,
+            self.cim_version,
+            with_sequence_number,
+            network_analysis,
+            u_groups,
+            terminal_mrid,
+            mrid,
+            name,
         )
         if dry_run:
-            return self._query_with_header(query, limit=limit)
-        float_list = ["maxP", "minP", "allocationMax", "allocationWeight"]
-        float_list += list(synchronous_vars)
+            return self._query_with_header(query, limit)
+        float_list = ["maxP", "minP", "allocationMax", "allocationWeight", *sync_vars]
         columns = {var: float for var in float_list}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid[1:], columns=columns)
 
     def connections(
         self,
         rdf_types: Union[str, Tuple[str]] = ("cim:Breaker", "cim:Disconnector"),
-        region: Union[str, List[str]] = "NO",
+        region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
+        connectivity: Optional[str] = None,
+        mrid: str = mrid_variable,
         limit: Optional[int] = None,
-        connectivity: bool = True,
         dry_run: bool = False,
     ) -> pd.DataFrame:
         """Query connectors
@@ -248,19 +281,21 @@ class CimModel(Prefix):
            >>> gdbc.connections(limit=10)
         """
         query = queries.connection_query(
-            self.cim_version, rdf_types, region, sub_region, connectivity
+            self.cim_version, rdf_types, region, sub_region, connectivity, mrid
         )
         if dry_run:
-            return self._query_with_header(query, limit=limit)
-        return self._get_table_and_convert(query, index="mrid", limit=limit)
+            return self._query_with_header(query, limit)
+        return self._get_table_and_convert(query, limit, index=mrid[1:])
 
     def borders(
         self,
-        region: Union[str, List[str]] = "NO",
+        region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         ignore_hvdc: bool = True,
         with_market_code: bool = False,
         market_optional: bool = False,
+        mrid: str = mrid_variable,
+        name: str = "?name",
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> pd.DataFrame:
@@ -277,17 +312,26 @@ class CimModel(Prefix):
 
         """
         query = queries.borders_query(
-            self.cim_version, region, sub_region, ignore_hvdc, with_market_code, market_optional
+            self.cim_version,
+            region,
+            sub_region,
+            ignore_hvdc,
+            with_market_code,
+            market_optional,
+            mrid,
+            name,
         )
         if dry_run:
-            return self._query_with_header(query, limit=limit)
-        return self._get_table_and_convert(query, index="mrid", limit=limit)
+            return self._query_with_header(query, limit)
+        return self._get_table_and_convert(query, limit, index=mrid[1:])
 
     def transformers_connected_to_converter(
         self,
-        region: Union[str, List[str]] = "NO",
+        region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         converter_types: List[str] = ("VoltageSource", "DC"),
+        mrid: str = mrid_variable,
+        name: str = "?name",
         dry_run: bool = False,
     ) -> pd.DataFrame:
         """Query list of transformer connected at a converter (Voltage source or DC)
@@ -299,20 +343,26 @@ class CimModel(Prefix):
            dry_run: return string with sql query
 
         """
-        query = queries.transformers_connected_to_converter(region, sub_region, converter_types)
+        query = queries.transformers_connected_to_converter(
+            region, sub_region, converter_types, mrid, name
+        )
         if dry_run:
             return self._query_with_header(query)
-        return self._get_table_and_convert(query, index="mrid")
+        return self._get_table_and_convert(query, index=mrid[1:])
 
     def ac_lines(
         self,
-        region: Union[str, List[str]] = "NO",
+        region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         limit: Optional[int] = None,
         connectivity: Optional[str] = None,
-        rates: Tuple[str] = queries.ratings,
+        rates: Tuple[str] = ratings,
+        network_analysis: bool = True,
         with_market: bool = False,
         temperatures: Optional[List[int]] = None,
+        impedance: Iterable[str] = impedance_variables,
+        mrid: str = mrid_variable,
+        name: str = "?name",
         dry_run: bool = False,
     ) -> pd.DataFrame:
         """Query ac line segments
@@ -340,25 +390,32 @@ class CimModel(Prefix):
             sub_region,
             connectivity,
             rates,
-            with_market=with_market,
-            temperatures=temperatures,
+            network_analysis,
+            with_market,
+            temperatures,
+            impedance,
+            mrid,
+            name,
         )
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         ac_lines = self._get_table_and_convert(query, limit=limit)
         if temperatures is not None:
             for temperature in temperatures:
-                column = f"{queries.negpos(temperature)}_{abs(temperature)}_factor"
+                column = f"{sup.negpos(temperature)}_{abs(temperature)}_factor"
                 ac_lines.loc[ac_lines[column].isna(), column] = 1.0
         return ac_lines
 
     def series_compensators(
         self,
-        region: Union[str, List[str]] = "NO",
+        region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
-        limit: Optional[int] = None,
         connectivity: Optional[str] = None,
+        network_analysis: bool = True,
         with_market: bool = False,
+        mrid: str = mrid_variable,
+        name: str = "?name",
+        limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> pd.DataFrame:
         """Query series compensators
@@ -368,6 +425,7 @@ class CimModel(Prefix):
            sub_region: Assume region is a sub_region
            limit: return first 'limit' number of rows
            connectivity: Include connectivity mrids
+           network_analysis: query SN:Equipment.networkAnalysisEnable
            with_market: include marked connections in output
            dry_run: return string with sql query
 
@@ -378,20 +436,31 @@ class CimModel(Prefix):
            >>> gdbc.series_compensators(limit=10)
         """
         query = queries.series_compensator_query(
-            self.cim_version, region, sub_region, connectivity, with_market=with_market
+            self.cim_version,
+            region,
+            sub_region,
+            connectivity,
+            network_analysis,
+            with_market,
+            mrid,
+            name,
         )
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         return self._get_table_and_convert(query, limit=limit)
 
     def transformers(
         self,
-        region: Union[str, List[str]] = "NO",
+        region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
-        limit: Optional[int] = None,
         connectivity: Optional[str] = None,
-        rates: Tuple[str] = queries.ratings,
+        rates: Tuple[str] = ratings,
+        network_analysis: bool = True,
         with_market: bool = False,
+        impedance: Iterable[str] = impedance_variables,
+        mrid: str = mrid_variable,
+        name: str = "?name",
+        limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> pd.DataFrame:
         """Query transformer windings
@@ -399,10 +468,12 @@ class CimModel(Prefix):
         Args:
            region: Limit to region
            sub_region: Assume region is a sub_region
-           limit: return first 'limit' number of rows
            connectivity: Include connectivity mrids
            rates: include rates in output (available: "Normal", "Warning", "Overload")
+           network_analysis: query SN:Equipment.networkAnalysisEnable
            with_market: include marked connections in output
+           impedance: values returned
+           limit: return first 'limit' number of rows
            dry_run: return string with sql query
 
         Example:
@@ -412,10 +483,18 @@ class CimModel(Prefix):
            >>> gdbc.transformers(limit=10)
         """
         query = queries.transformer_query(
-            region, sub_region, connectivity, rates, with_market=with_market
+            region,
+            sub_region,
+            connectivity,
+            rates,
+            network_analysis,
+            with_market,
+            mrid,
+            name,
+            impedance,
         )
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         return self._get_table_and_convert(query, limit=limit)
 
     def disconnected(
@@ -430,7 +509,7 @@ class CimModel(Prefix):
         """
         query = ssh_queries.disconnected(self.cim_version)
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         return self.get_table(query, index=index, limit=limit)
 
     def ssh_synchronous_machines(
@@ -444,9 +523,9 @@ class CimModel(Prefix):
         """
         query = ssh_queries.synchronous_machines()
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         columns = {"p": float, "q": float, "controlEnabled": bool}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
 
     def ssh_load(
         self,
@@ -466,9 +545,9 @@ class CimModel(Prefix):
             rdf_types = ["cim:ConformLoad", "cim:NonConformLoad"]
         query = ssh_queries.load(rdf_types)
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         columns = {"p": float, "q": float}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
 
     def ssh_generating_unit(
         self, rdf_types: List[str] = None, limit: Optional[int] = None, dry_run: bool = False
@@ -483,12 +562,12 @@ class CimModel(Prefix):
 
         """
         if rdf_types is None:
-            rdf_types = [f"cim:{unit}GeneratingUnit" for unit in ["Hydro", "Thermal", "Wind"]]
+            rdf_types = [f"cim:{unit}GeneratingUnit" for unit in generating_types]
         query = ssh_queries.generating_unit(rdf_types)
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         columns = {"normalPF": float}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
 
     def terminal(self, limit: Optional[int] = None, dry_run: bool = False) -> pd.DataFrame:
         """Query terminals from tp profile (not available in GraphDB)
@@ -499,9 +578,9 @@ class CimModel(Prefix):
         """
         query = tp_queries.terminal(self.cim_version)
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         columns = {"connected": bool}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
 
     def topological_node(self, limit: Optional[int] = None, dry_run: bool = False) -> pd.DataFrame:
         """Query topological nodes from tp profile (not available in GraphDB)
@@ -512,9 +591,9 @@ class CimModel(Prefix):
         """
         query = tp_queries.topological_node()
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         columns = {"BaseVoltage": float}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
 
     def powerflow(
         self, power: Tuple[str] = ("p", "q"), limit: Optional[int] = None, dry_run: bool = False
@@ -528,13 +607,13 @@ class CimModel(Prefix):
         """
         query = sv_queries.powerflow(power)
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         columns = {x: float for x in power}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
 
     def voltage(
         self,
-        voltage_vars: Tuple[str] = ("v", "angle"),
+        voltage_vars: Iterable[str] = ("v", "angle"),
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> pd.DataFrame:
@@ -547,9 +626,9 @@ class CimModel(Prefix):
         """
         query = sv_queries.voltage(voltage_vars)
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         columns = {x: float for x in voltage_vars}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
 
     def tapstep(self, limit: Optional[int] = None, dry_run: bool = False) -> pd.DataFrame:
         """Query tapstep from sv profile (not available in GraphDB)
@@ -560,9 +639,9 @@ class CimModel(Prefix):
         """
         query = sv_queries.tapstep()
         if dry_run:
-            return self._query_with_header(query, limit=limit)
+            return self._query_with_header(query, limit)
         columns = {"position": float}
-        return self._get_table_and_convert(query, index="mrid", limit=limit, columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
 
     @property
     def regions(self) -> pd.DataFrame:
@@ -577,14 +656,14 @@ class CimModel(Prefix):
            >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.regions
         """
-        query = queries.regions_query()
-        return self._get_table_and_convert(query, index="mrid")
+        query = queries.regions_query(mrid_variable)
+        return self._get_table_and_convert(query, limit=None, index=mrid_variable[1:])
 
     @property
     def empty(self) -> bool:
         """Identify empty GraphDB repo"""
         try:
-            self._get_table("SELECT * \n WHERE { ?s ?p ?o } limit 1")
+            self._get_table("SELECT * \n WHERE { ?s ?p ?o }", limit=1)
             return False
         except IndexError:
             return True
@@ -639,7 +718,7 @@ class CimModel(Prefix):
            >>> gdbc.get_table(query, limit=10)
         """
         try:
-            result, data_row = self._get_table(query=query, limit=limit)
+            result, data_row = self._get_table(query, limit)
         except IndexError:
             return pd.DataFrame([])
 
@@ -676,8 +755,8 @@ class CimModel(Prefix):
     def _get_table_and_convert(
         self,
         query: str,
-        index: Optional[str] = None,
         limit: Optional[int] = None,
+        index: Optional[str] = None,
         custom_maps: Optional[Dict] = None,
         columns: Optional[Dict] = None,
     ) -> pd.DataFrame:

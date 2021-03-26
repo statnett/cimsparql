@@ -1,6 +1,6 @@
 from typing import Iterable, List
 
-from cimsparql.queries import acdc_terminal, combine_statements, group_query
+from cimsparql.query_support import acdc_terminal, combine_statements, group_query
 
 
 def disconnected(cim_version: int) -> str:

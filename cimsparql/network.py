@@ -13,8 +13,7 @@ class Islands(nx.Graph):
         self._groups = list(nx.connected_components(self))
 
     def reference_nodes(self, columns: List[str] = None) -> pd.DataFrame:
-        if columns is None:
-            columns = ["mrid", "ref_node"]
+        columns = ["mrid", "ref_node"] if columns is None else columns
         keys = []
         values = []
         for group in self.groups():

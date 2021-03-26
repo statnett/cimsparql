@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import pandas as pd
 from dateutil import parser
 
-from cimsparql.queries import combine_statements, unionize
+from cimsparql.query_support import combine_statements, unionize
 
 if TYPE_CHECKING:  # pragma: no cover
     from cimsparql.model import CimModel
