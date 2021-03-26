@@ -212,7 +212,7 @@ def phase_tap_changer_query(
             where_list += [f"?pte_1 cim:PowerTransformerEnd.{imp} ?{imp}"]
 
     if region is not None:
-        where_list += [f"?pt cim:Equipment.EquipmentContainer ?Substation"]
+        where_list += ["?pt cim:Equipment.EquipmentContainer ?Substation"]
         where_list += region_query(region, sub_region, "Substation")
 
     for i in [1, 2]:
@@ -548,7 +548,7 @@ def transformers_connected_to_converter(
         combine_statements(*converters, group=len(converters) > 1, split="\n} UNION \n {")
     ]
     if region is not None:
-        where_list += [f"?mrid cim:Equipment.EquipmentContainer ?Substation"]
+        where_list += ["?mrid cim:Equipment.EquipmentContainer ?Substation"]
         where_list += region_query(region, sub_region, "Substation")
     return combine_statements(select_query, group_query(where_list))
 
@@ -574,7 +574,7 @@ def borders_query(
             f"?sreg_{nr} cim:IdentifiedObject.name ?area_{nr}",
         ]
     if with_market_code:
-        select_query += [f"?market_code"]
+        select_query += ["?market_code"]
         where_marked = [
             "?mrid cim:Equipment.EquipmentContainer ?line_cont",
             "?line_cont SN:Line.marketCode ?market_code",
