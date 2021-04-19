@@ -10,5 +10,4 @@ variables:
   PYTHON_PUBLISH_VERSION: "3.8"
   PKG_NAME: "cimsparql"
   PROJECT_NAME: "cimsparql"
-  APT_INSTALL_PACKAGES: "librdf0"
   BUILD_DOCS: "true"

@@ -11,11 +11,6 @@ description = "CIM query utilities"
 authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
 repository = "https://gitlab.statnett.no/general/cimsparql.git"
 
-[[tool.poetry.source]]
-name = "artifactory"
-url = "https://artifactory.statnett.no/artifactory/api/pypi/pypi_statnett_ia_virtual/simple/"
-default = true
-
 [tool.poetry.dependencies]
 python = "^3.7"
 numpy = "*"
@@ -24,7 +19,6 @@ tables = "*"
 networkx = "*"
 SPARQLWrapper = "*"
 requests = "*"
-redland =  {version = "*", optional = true}
 pendulum = {version = "*", optional = true}
 lxml = {version = "*", optional = true}
 
@@ -34,9 +28,7 @@ black = { version = "*", allow-prereleases = true }
 coverage = { version = "*", extras = ['toml'] }
 flake8 = "*"
 flake8-bugbear = "*"
-ipython = "*"
 isort = "*"
-jedi = "*"
 lxml = "*"
 mock = "*"
 pendulum = "*"
@@ -46,9 +38,6 @@ pytest = ">= 6"
 pytest-cov = "*"
 pytest-integration = "*"
 pytest-profiling = "*"
-redland = "*"
-rope = "*"
-yapf = "*"
 
 [tool.flakehell]
 format = "colored"
@@ -67,7 +56,7 @@ flake8-debugger = ["+*"]
 
 [tool.poetry.extras]
 parse_xml = ["lxml", "pendulum"]
-redland = ["redland"]
+
 
 [tool.poetry-dynamic-versioning]
 enable = true
