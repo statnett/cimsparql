@@ -111,3 +111,21 @@ class GraphDBClient(CimModel):
         out = [{c: self.value_getter(row.get(c, {})) for c in cols} for row in data]
 
         return pd.DataFrame(out), data_row(cols, data)
+
+
+def get_graphdb_client(
+    server: str,
+    graphdb_repo: str,
+    graphdb_path: str = "services/pgm/equipment/",
+    protocol: str = "https",
+) -> GraphDBClient:
+    """Get GraphDB client
+
+    Args:
+        server: graphdb server
+        graphdb_repo: query this repo
+        graphdb_path: Prepend with this path when graphdb_repo is LATEST
+        protocol: https or http
+    """
+    graphdb_path = graphdb_path if graphdb_repo == "LATEST" else ""
+    return GraphDBClient(url.service(graphdb_repo, server, protocol, graphdb_path))
