@@ -6,10 +6,10 @@
 # character.
 [tool.poetry]
 name = "cimsparql"
-version = "0.0.0"
+version = "1.7.0"
 description = "CIM query utilities"
 authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
-repository = "https://gitlab.statnett.no/general/cimsparql.git"
+repository = "https://github.com/statnett/cimsparql.git"
 
 [tool.poetry.dependencies]
 python = "^3.7"
