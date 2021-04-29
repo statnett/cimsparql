@@ -1,3 +1,10 @@
+[![PyPI version](https://img.shields.io/pypi/v/cimsparql)](https://pypi.org/project/cimsparql/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/cimsparql)](https://pypi.org/project/cimsparql/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![](https://github.com/statnett/data_cache/workflows/Tests/badge.svg)](https://github.com/statnett/cimsparql/actions?query=workflow%3ATests)
+[![codecov](https://codecov.io/gh/statnett/cimsparql/branch/master/graph/badge.svg)](https://codecov.io/gh/statnett/cimsparql)
+
 # CIMSPARQL Query CIM data using sparql
 
 This Python package provides functionality for reading/parsing cim data from
@@ -14,7 +21,7 @@ their own queries.
 ```python
 >>> from cimsparql.graphdb import GraphDBClient
 >>> from cimsparql.url import service
->>> gdbc = GraphDBClient(service('<repo>))
+>>> gdbc = GraphDBClient(service(repo='<repo>', server=127.0.0.1:7200))
 >>> ac_lines = gdbc.ac_lines(limit=3)
 >>> print(ac_lines[['name', 'x', 'r', 'bch']])
          name       x       r       bch
