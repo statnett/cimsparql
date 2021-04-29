@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.url import Prefix
 
@@ -30,6 +32,7 @@ def test_set_cim_version():
         assert pre.cim_version == nr
 
 
+@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_get_prefixes(graphdb_service, monkeypatch):
     def init(self, *args, **kwargs):
         self.user = os.getenv("GRAPHDB_USER")
@@ -55,6 +58,7 @@ def test_header_str():
     assert set(pre.header_str("cim:Var sn:Var").split("\n")).difference(ref_prefix) == set()
 
 
+@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_prefix_ns(graphdb_service, monkeypatch):
     def init(self, *args, **kwargs):
         self.user = os.getenv("GRAPHDB_USER")
@@ -68,6 +72,7 @@ def test_prefix_ns(graphdb_service, monkeypatch):
     assert ns["cim"] == "http://iec.ch/TC57/2010/CIM-schema-cim15#"
 
 
+@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_prefix_inverse(graphdb_service, monkeypatch):
     def init(self, *args, **kwargs):
         self.user = os.getenv("GRAPHDB_USER")

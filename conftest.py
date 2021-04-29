@@ -68,7 +68,7 @@ def root_dir():
 
 @pytest.fixture(scope="session")
 def server():
-    return os.getenv("GRAPHDB_API", "api-test.statnett.no")
+    return os.getenv("GRAPHDB_API", None)
 
 
 @pytest.fixture(scope="session")
