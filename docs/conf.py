@@ -22,11 +22,6 @@ author = "Statnett DataScience <Datascience.Drift@Statnett.no>"
 
 # The full version, including alpha/beta/rc tags
 release = cimsparql.__version__
-artifactory = os.getenv(
-    "ARTIFACTORY_SPHINX_INV",
-    "https://artifactory.statnett.no/artifactory/datascience-generic-local/sphinx",
-)
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -41,15 +36,15 @@ extensions = [
     "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
     "sphinx.ext.graphviz",
+    "sphinx.ext.githubpages",
     "recommonmark",
     "sphinx.ext.imgmath",
-    "rst2pdf.pdfbuilder",
 ]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org", f"{artifactory}/python/objects.inv"),
-    "pandas": ("https://pandas.pydata.org/pandas-docs", f"{artifactory}/pandas/objects.inv"),
-    "numpy": ("https://docs.scipy.org/doc/numpy", f"{artifactory}/pandas/objects.inv"),
+    "python": ("https://docs.python.org", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy", None),
 }
 
 autosectionlabel_prefix_document = True

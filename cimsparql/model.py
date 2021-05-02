@@ -1,5 +1,5 @@
-"""The cimsparql.model module contains the base class CimModel for both graphdb.GraphDBClient and
-redland.Model with function get_table as well as a set of predefined CIM queries.
+"""The cimsparql.model module contains the base class CimModel for both graphdb.GraphDBClient with
+function get_table as well as a set of predefined CIM queries.
 """
 
 import re

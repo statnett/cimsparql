@@ -2,7 +2,6 @@ CimSparql package
 =================
 
 .. inheritance-diagram:: cimsparql.graphdb.GraphDBClient
-                         cimsparql.redland.Model
    :top-classes: cimsparql.url.Prefix
 
 .. toctree::
@@ -11,8 +10,6 @@ CimSparql package
    submodules/model
 
    submodules/graphdb
-
-   submodules/redland
 
    submodules/queries
 

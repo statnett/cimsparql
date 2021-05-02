@@ -1,0 +1,38 @@
+name: Pages
+on: [release]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: 1.1.6
+
+      - name: Make requirements
+        run: poetry export -f requirements.txt --dev --output docs/requirements.txt --without-hashes
+
+      - name: Build
+        uses: ammaraskar/sphinx-action@master
+        env:
+          PYTHONPATH: ../
+        with:
+          build-command: "sphinx-build -b html . _build"
+          docs-folder: "docs/"
+
+      - name: Deploy to GitHub Pages
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          target_branch: gh-pages
+          build_dir: docs/_build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

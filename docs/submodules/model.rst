@@ -6,8 +6,8 @@ Model
 
 
 The cimsparql.model module contains the base class CimModel for both
-:doc:`graphdb.GraphDBClient <graphdb>` and :doc:`redland.Model
-<redland>` Model get_table as well as a set of predefined CIM queries.
+:doc:`graphdb.GraphDBClient <graphdb>` get_table as well as a set of
+predefined CIM queries.
 
 .. automodule:: cimsparql.model
    :members:

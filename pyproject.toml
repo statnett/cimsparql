@@ -8,6 +8,7 @@
 name = "cimsparql"
 version = "1.7.1"
 description = "CIM query utilities"
+readme = "REAMDE.md"
 authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
 repository = "https://github.com/statnett/cimsparql.git"
 
@@ -38,6 +39,9 @@ pytest = ">= 6"
 pytest-cov = "*"
 pytest-integration = "*"
 pytest-profiling = "*"
+sphinx_autodoc_typehints = ["*"]
+sphinx_rtd_theme = ["*"]
+recommonmark = ["*"]
 
 [tool.flakehell]
 format = "colored"
