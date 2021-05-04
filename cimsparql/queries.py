@@ -243,6 +243,8 @@ def synchronous_machines_query(
     station_group = [
         f"{mrid} cim:SynchronousMachine.GeneratingUnit ?gu",
         "?gu SN:GeneratingUnit.marketCode ?market_code",
+        "?gu cim:GeneratingUnit.maxOperatingP ?maxP",
+        "?gu cim:GeneratingUnit.minOperatingP ?minP",
         "?gu SN:GeneratingUnit.groupAllocationMax ?allocationMax",
         "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
         "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
