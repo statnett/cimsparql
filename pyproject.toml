@@ -44,6 +44,15 @@ pytest-integration = "*"
 pytest-profiling = "*"
 pytest-httpserver = "*"
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^5.2.3"
+sphinx_autodoc_typehints = "^1.23.0"
+recommonmark = "^0.7.1"
+sphinx_rtd_theme = "^0.5.1"
+
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
