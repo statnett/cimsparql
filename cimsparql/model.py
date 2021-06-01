@@ -458,7 +458,7 @@ class CimModel(Prefix):
         network_analysis: bool = True,
         with_market: bool = False,
         impedance: Iterable[str] = impedance_variables,
-        mrid: str = mrid_variable,
+        mrid: str = "?p_mrid",
         name: str = "?name",
         limit: Optional[int] = None,
         dry_run: bool = False,

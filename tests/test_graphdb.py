@@ -162,17 +162,17 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(
-        region="NO01", sub_region=True, connectivity=con_mrid_str, with_market=True
+        region="NO01", sub_region=True, connectivity=con_mrid_str, with_market=True, mrid="?p_mrid"
     )
     two_tx, three_tx = windings_to_tx(windings, pd.DataFrame())
     assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["ckt", "x", "un", "bidzone_1", "bidzone_2"])
+    assert set(two_tx.columns).issuperset(["mrid", "x", "un", "bidzone_1", "bidzone_2"])
 
     cols = [[f"x_{nr}", f"un_{nr}", f"{con_mrid_str}_{nr}"] for nr in range(1, 4)]
     assert len(three_tx) > 2
     assert set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
 
-    cols = ["t_mrid_1", "t_mrid_2", "b", "x", "ckt", "bidzone"]
+    cols = ["t_mrid_1", "t_mrid_2", "b", "x", "mrid", "bidzone"]
     dummy_tx = three_tx_to_windings(three_tx, cols)
     assert len(dummy_tx) == 3 * len(three_tx)
     assert set(dummy_tx.columns).difference(cols + ["bidzone_1", "bidzone_2"]) == set()
@@ -212,7 +212,7 @@ def test_transformers(gdb_cli: GraphDBClient):
 
     two_tx, three_tx = windings_to_tx(windings, pd.DataFrame())
     assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["ckt", "x", "un", "bidzone_1", "bidzone_2"])
+    assert set(two_tx.columns).issuperset(["mrid", "x", "un", "bidzone_1", "bidzone_2"])
 
     cols = [[f"x_{nr}", f"un_{nr}", f"{con_mrid_str}_{nr}"] for nr in range(1, 4)]
     assert len(three_tx) > 2
