@@ -1,0 +1,449 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Type mapper &mdash; cimsparql 1.8.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Miscellaneous" href="url.html" />
+    <link rel="prev" title="Queries" href="queries.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> cimsparql
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../README.html">CIMSPARQL Query CIM data using sparql</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../cimsparql.html">CimSparql package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="graphdb.html">GraphDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries.html">Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries.html#module-cimsparql.ssh_queries">SSH_Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries.html#module-cimsparql.sv_queries">SV_Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="queries.html#module-cimsparql.tp_queries">TP_Queries</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Type mapper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="url.html">Miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parse_xml.html">Parse CIM xml files using lxml</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">cimsparql</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../cimsparql.html">CimSparql package</a> &raquo;</li>
+        
+      <li>Type mapper</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/submodules/type_mapper.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <section id="module-cimsparql.type_mapper">
+<span id="type-mapper"></span><h1>Type mapper<a class="headerlink" href="#module-cimsparql.type_mapper" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="cimsparql.type_mapper.TypeMapper">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cimsparql.type_mapper.</span></code><code class="sig-name descname"><span class="pre">TypeMapper</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_additions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#cimsparql.type_mapper.TypeMapperQueries" title="cimsparql.type_mapper.TypeMapperQueries"><code class="xref py py-class docutils literal notranslate"><span class="pre">cimsparql.type_mapper.TypeMapperQueries</span></code></a></p>
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.convert_dict">
+<code class="sig-name descname"><span class="pre">convert_dict</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_missing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_maps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.convert_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a col_name -&gt; sparql_datatype map to a col_name -&gt; python_type map</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>) – dictionary with {‘column_name’: ‘sparql type/DataType’}</p></li>
+<li><p><strong>drop_missing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – drops columns where no corresponding python type could be found</p></li>
+<li><p><strong>custom_maps</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]) – dictionary on the form {‘sparql_data_type’: function/datatype} overwrites
+the default types gained from the graphdb. Applies the function/datatype on all
+columns in the DataFrame that are of the sparql_data_type.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>col_name -&gt; python_type/function map</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.get_map">
+<code class="sig-name descname"><span class="pre">get_map</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.get_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads all metadata from the sparql backend &amp; creates a sparql-type -&gt; python type map</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>client</strong> (<a class="reference internal" href="model.html#cimsparql.model.CimModel" title="cimsparql.model.CimModel"><em>CimModel</em></a>) – initialized CimModel</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)">str</a>, Any]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>sparql-type -&gt; python type map</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.get_type">
+<code class="sig-name descname"><span class="pre">get_type</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sparql_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">missing_return</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'identity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_maps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the python type/function to apply on columns of the sparql_type</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sparql_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – </p></li>
+<li><p><strong>missing_return</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – returns the identity-function if python- type/function is not found,
+else returns None</p></li>
+<li><p><strong>custom_maps</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]) – dictionary on the form {‘sparql_data_type’: function/datatype} overwrites
+the default types gained from the graphdb. Applies the function/datatype on all
+columns in the DataFrame that are of the sparql_data_type</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>python datatype or function to apply on DataFrame columns</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.have_cim_version">
+<code class="sig-name descname"><span class="pre">have_cim_version</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.have_cim_version" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.map_base_types">
+<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">map_base_types</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_map</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.map_base_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the datatypes in type_map which can be used with the df.astype function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>) – </p></li>
+<li><p><strong>type_map</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>) – {‘column_name’: type/function} map of functions/types to apply on the columns</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>mapped DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.map_data_types">
+<code class="sig-name descname"><span class="pre">map_data_types</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_maps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.map_data_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the dtypes of a DataFrame to the python-corresponding types of the sparql-types from the
+source data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>) – DataFrame with columns to be converted</p></li>
+<li><p><strong>data_row</strong> – a complete row with data from the source data of which the DataFrame is
+constructed from</p></li>
+<li><p><strong>custom_maps</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>]) – dictionary on the form {‘sparql_data_type’: function/datatype} overwrites
+the default types gained from the graphdb. Applies the function/datatype on all
+columns in the DataFrame that are of the sparql_data_type.</p></li>
+<li><p><strong>columns</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>]) – dictionary on the form {‘DataFrame_column_name: function/datatype} overwrites
+the default types gained from the graphdb.  Applies the function/datatype on the
+column.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>mapped DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.map_exceptions">
+<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">map_exceptions</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_map</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.map_exceptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the functions/datatypes in type_map which cant be done with the df.astype function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>) – </p></li>
+<li><p><strong>type_map</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>) – {‘column_name’: type/function} map of functions/types to apply on the columns</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>mapped DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.prefix_map">
+<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">prefix_map</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.prefix_map" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapper.type_map">
+<em class="property"><span class="pre">static</span> </em><code class="sig-name descname"><span class="pre">type_map</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cimsparql.type_mapper.TypeMapper.type_map" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.9)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cimsparql.type_mapper.TypeMapperQueries">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cimsparql.type_mapper.</span></code><code class="sig-name descname"><span class="pre">TypeMapperQueries</span></code><a class="headerlink" href="#cimsparql.type_mapper.TypeMapperQueries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapperQueries.generals">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">generals</span></code><a class="headerlink" href="#cimsparql.type_mapper.TypeMapperQueries.generals" title="Permalink to this definition">¶</a></dt>
+<dd><p>property, sparql &amp; type are
+required</p>
+<p>Sparql values should be like: <a class="reference external" href="http://iec.ch/TC57/2010/CIM-schema-cim15#PerCent">http://iec.ch/TC57/2010/CIM-schema-cim15#PerCent</a> this is how
+type or DataType usually looks like for each data point in the converted query result from
+SPARQLWrapper.</p>
+<p>type can be anything as long as it is represented in the python_type_map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>For sparql-types that are not sourced from objects of type rdf</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapperQueries.prefix_based">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">prefix_based</span></code><a class="headerlink" href="#cimsparql.type_mapper.TypeMapperQueries.prefix_based" title="Permalink to this definition">¶</a></dt>
+<dd><p>Each prefix can have different locations of where DataTypes are described.</p>
+<p>Based on a object of type rdf:property &amp; its rdfs:range, one has edit the query such that
+one ends up with the DataType.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapperQueries.prefix_general">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">prefix_general</span></code><a class="headerlink" href="#cimsparql.type_mapper.TypeMapperQueries.prefix_general" title="Permalink to this definition">¶</a></dt>
+<dd><p>Common query used as a base for all prefix_based queries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cimsparql.type_mapper.TypeMapperQueries.query">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">query</span></code><a class="headerlink" href="#cimsparql.type_mapper.TypeMapperQueries.query" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="url.html" class="btn btn-neutral float-right" title="Miscellaneous" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="queries.html" class="btn btn-neutral float-left" title="Queries" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020, Statnett.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

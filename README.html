@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>CIMSPARQL Query CIM data using sparql &mdash; cimsparql 1.8.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="CimSparql package" href="cimsparql.html" />
+    <link rel="prev" title="Welcome to cimsparql’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> cimsparql
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CIMSPARQL Query CIM data using sparql</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#load-data-using-predefined-functions-queries">Load data using predefined functions/queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inspect-view-predefined-queries">Inspect/view predefined queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#load-data-using-user-specified-queries">Load data using user specified queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#list-of-available-repos-at-the-server">List of available repos at the server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#prefix-and-namespace">Prefix and namespace</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cimsparql.html">CimSparql package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">cimsparql</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>CIMSPARQL Query CIM data using sparql</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/README.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p><a class="reference external" href="https://pypi.org/project/cimsparql/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/cimsparql" /></a>
+<a class="reference external" href="https://pypi.org/project/cimsparql/"><img alt="Python Versions" src="https://img.shields.io/pypi/pyversions/cimsparql" /></a>
+<a class="reference external" href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
+<a class="reference external" href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
+<a class="reference external" href="https://github.com/statnett/cimsparql/actions?query=workflow%3ATests"><img alt="https://github.com/statnett/data_cache/workflows/Tests/badge.svg" src="https://github.com/statnett/data_cache/workflows/Tests/badge.svg" /></a>
+<a class="reference external" href="https://codecov.io/gh/statnett/cimsparql"><img alt="codecov" src="https://codecov.io/gh/statnett/cimsparql/branch/master/graph/badge.svg" /></a></p>
+<section id="cimsparql-query-cim-data-using-sparql">
+<h1>CIMSPARQL Query CIM data using sparql<a class="headerlink" href="#cimsparql-query-cim-data-using-sparql" title="Permalink to this headline">¶</a></h1>
+<p>This Python package provides functionality for reading/parsing cim data from
+either xml files or GraphDB into Python memory as pandas dataframes.</p>
+<p>The package provides a set of predefined functions/queries to load CIM data
+such generator or branch data, though the user can easiliy extend or define
+their own queries.</p>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<section id="load-data-using-predefined-functions-queries">
+<h3>Load data using predefined functions/queries<a class="headerlink" href="#load-data-using-predefined-functions-queries" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cimsparql.graphdb</span> <span class="kn">import</span> <span class="n">GraphDBClient</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cimsparql.url</span> <span class="kn">import</span> <span class="n">service</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gdbc</span> <span class="o">=</span> <span class="n">GraphDBClient</span><span class="p">(</span><span class="n">service</span><span class="p">(</span><span class="n">repo</span><span class="o">=</span><span class="s1">&#39;&lt;repo&gt;&#39;</span><span class="p">,</span> <span class="n">server</span><span class="o">=</span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">7200</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac_lines</span> <span class="o">=</span> <span class="n">gdbc</span><span class="o">.</span><span class="n">ac_lines</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ac_lines</span><span class="p">[[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;bch&#39;</span><span class="p">]])</span>
+<span class="go">         name       x       r       bch</span>
+<span class="go">0  &lt;branch 1&gt;  1.9900  0.8800  0.000010</span>
+<span class="go">1  &lt;branch 2&gt;  1.9900  0.8800  0.000010</span>
+<span class="go">2  &lt;branch 3&gt;  0.3514  0.1733  0.000198</span>
+</pre></div>
+</div>
+<p>In the example above the client will query repo “<repo>” in the default server
+<a class="reference external" href="https://graphdb.ontotext.com">GraphDB</a> for AC line values.</p>
+</section>
+<section id="inspect-view-predefined-queries">
+<h3>Inspect/view predefined queries<a class="headerlink" href="#inspect-view-predefined-queries" title="Permalink to this headline">¶</a></h3>
+<p>To see the actual sparql use the <code class="docutils literal notranslate"><span class="pre">dry_run</span></code> option:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cimsparql.queries</span> <span class="kn">import</span> <span class="n">ac_line_query</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ac_line_query</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The resulting string contains all the prefix’s available in the Graphdb repo
+making it easier to copy and past to graphdb. Note that the prefixes are <em>not</em>
+required in the user specified quires described below.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">dry_run</span></code> option is available for all the predefined queries.</p>
+</section>
+<section id="load-data-using-user-specified-queries">
+<h3>Load data using user specified queries<a class="headerlink" href="#load-data-using-user-specified-queries" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT ?mrid where { ?mrid rdf:type cim:ACLineSegment } limit 2&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">query_result</span> <span class="o">=</span> <span class="n">gdbc</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">query_result</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="list-of-available-repos-at-the-server">
+<h3>List of available repos at the server<a class="headerlink" href="#list-of-available-repos-at-the-server" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cimsparql.url</span> <span class="kn">import</span> <span class="n">GraphDbConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">GraphDbConfig</span><span class="p">()</span><span class="o">.</span><span class="n">repos</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="prefix-and-namespace">
+<h3>Prefix and namespace<a class="headerlink" href="#prefix-and-namespace" title="Permalink to this headline">¶</a></h3>
+<p>Available namespace for current graphdb client (<code class="docutils literal notranslate"><span class="pre">gdbc</span></code> in the examples above),
+which can be used in queries (such as <code class="docutils literal notranslate"><span class="pre">rdf</span></code> and <code class="docutils literal notranslate"><span class="pre">cim</span></code>) can by found by</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">gdbc</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>
+<span class="go">{&#39;wgs&#39;: &#39;http://www.w3.org/2003/01/geo/wgs84_pos#&#39;,</span>
+<span class="go"> &#39;rdf&#39;: &#39;http://www.w3.org/1999/02/22-rdf-syntax-ns#&#39;,</span>
+<span class="go"> &#39;owl&#39;: &#39;http://www.w3.org/2002/07/owl#&#39;,</span>
+<span class="go"> &#39;cim&#39;: &#39;http://iec.ch/TC57/2010/CIM-schema-cim15#&#39;,</span>
+<span class="go"> &#39;gn&#39;: &#39;http://www.geonames.org/ontology#&#39;,</span>
+<span class="go"> &#39;xsd&#39;: &#39;http://www.w3.org/2001/XMLSchema#&#39;,</span>
+<span class="go"> &#39;rdfs&#39;: &#39;http://www.w3.org/2000/01/rdf-schema#&#39;,</span>
+<span class="go"> &#39;SN&#39;: &#39;http://www.statnett.no/CIM-schema-cim15-extension#&#39;,</span>
+<span class="go"> &#39;ALG&#39;: &#39;http://www.alstom.com/grid/CIM-schema-cim15-extension#&#39;}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="cimsparql.html" class="btn btn-neutral float-right" title="CimSparql package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to cimsparql’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2020, Statnett.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
