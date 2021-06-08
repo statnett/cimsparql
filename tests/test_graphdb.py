@@ -65,8 +65,8 @@ def test_series_compensator_with_market(gdb_cli: GraphDBClient):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_phase_tap_changer(gdb_cli: GraphDBClient):
-    tap_changers = gdb_cli.phase_tap_changers(region=None)
-    assert tap_changers.shape == (1, 9)
+    tap_changers = gdb_cli.phase_tap_changers(region=None, dry_run=False)
+    assert tap_changers.shape == (1, 11)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
@@ -189,8 +189,6 @@ def test_transformers_with_multiple_sub_regions(gdb_cli: GraphDBClient):
 def test_transformers_with_faseshift(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="SE", connectivity=con_mrid_str, with_market=True)
     tap_changers = gdb_cli.phase_tap_changers(region="SE")
-    assert "w_mrid_1" not in tap_changers.columns
-    windings_to_tx(windings, tap_changers)
     assert "w_mrid_1" in tap_changers.columns
 
 

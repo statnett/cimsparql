@@ -53,7 +53,7 @@ def phase_tap_changer_query(
     tap_changer_objects: Iterable[str],
     mrid: str,
 ) -> str:
-    variables = [mrid]
+    variables = [mrid, "?w_mrid_1", "?w_mrid_2", "?t_mrid_1", "?t_mrid_2"]
     tap = "?tap"
     where_list = [
         sup.rdf_type_tripler(mrid, TR_WINDING),
@@ -73,19 +73,18 @@ def phase_tap_changer_query(
 
     if impedance is not None:
         variables.extend(sup.to_variables(impedance))
-        where_list.extend([f"?pte_1 {TR_WINDING}.{imp} ?{imp}" for imp in impedance])
+        where_list.extend([f"?w_mrid_1 {TR_WINDING}.{imp} ?{imp}" for imp in impedance])
 
     if region is not None:
         where_list.extend([f"?pt {EQUIP_CONTAINER} ?Substation"])
         where_list.extend(sup.region_query(region, sub_region, "Substation", "?subgeoreg"))
 
     for i in sequence_numbers:
-        variables.append(f"?t_mrid_{i}")
         where_list.extend(
             [
                 sup.rdf_type_tripler(f"?term_{i}", "cim:Terminal"),
-                f"?pte_{i} {TR_WINDING}.PowerTransformer ?pt",
-                f"?pte_{i} cim:TransformerEnd.Terminal ?term_{i}",
+                f"?w_mrid_{i} {TR_WINDING}.PowerTransformer ?pt",
+                f"?w_mrid_{i} cim:TransformerEnd.Terminal ?term_{i}",
                 f'?term_{i} cim:Terminal.sequenceNumber "{i}"^^xsd:integer',
                 f"?term_{i} {ID_OBJ}.mRID ?t_mrid_{i}",
             ]
