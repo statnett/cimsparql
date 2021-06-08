@@ -10,7 +10,6 @@ import pytest
 
 from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient, data_row
-from cimsparql.transformer_windings import three_tx_to_windings, windings_to_tx
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
@@ -160,25 +159,6 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_transformers_with_connectivity(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(
-        region="NO01", sub_region=True, connectivity=con_mrid_str, with_market=True, mrid="?p_mrid"
-    )
-    two_tx, three_tx = windings_to_tx(windings, pd.DataFrame())
-    assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["mrid", "x", "un", "bidzone_1", "bidzone_2"])
-
-    cols = [[f"x_{nr}", f"un_{nr}", f"{con_mrid_str}_{nr}"] for nr in range(1, 4)]
-    assert len(three_tx) > 2
-    assert set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
-
-    cols = ["t_mrid_1", "t_mrid_2", "b", "x", "mrid", "bidzone"]
-    dummy_tx = three_tx_to_windings(three_tx, cols)
-    assert len(dummy_tx) == 3 * len(three_tx)
-    assert set(dummy_tx.columns).difference(cols + ["bidzone_1", "bidzone_2"]) == set()
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_transformers_with_multiple_sub_regions(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region=[f"NO0{no}" for no in [1, 2, 3]], sub_region=True)
     assert windings.shape[0] > 2
@@ -202,19 +182,6 @@ def test_windings(gdb_cli: GraphDBClient):
 def test_windings_with_market(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
     assert windings.shape[1] == 12
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_transformers(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
-
-    two_tx, three_tx = windings_to_tx(windings, pd.DataFrame())
-    assert len(two_tx) > 10
-    assert set(two_tx.columns).issuperset(["mrid", "x", "un", "bidzone_1", "bidzone_2"])
-
-    cols = [[f"x_{nr}", f"un_{nr}", f"{con_mrid_str}_{nr}"] for nr in range(1, 4)]
-    assert len(three_tx) > 2
-    assert not set(three_tx.columns).issuperset(itertools.chain.from_iterable(cols))
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")

@@ -14,6 +14,7 @@ from cimsparql.cim import (
     TR_WINDING,
 )
 from cimsparql.constants import allowed_load_types, mrid_variable, sequence_numbers, union_split
+from cimsparql.transformer_windings import number_of_windings, terminal, transformer_common
 
 
 def version_date() -> str:
@@ -298,6 +299,62 @@ def wind_generating_unit_query(network_analysis: bool, mrid: str, name: str):
     if network_analysis is not None:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
+def two_winding_transformer_query(
+    region: Union[str, List[str]],
+    sub_region: bool,
+    rates: Iterable[str],
+    network_analysis: bool,
+    with_market: bool,
+    mrid: str,
+    name: str,
+    impedance: Iterable[str],
+) -> str:
+    variables = ["?t_mrid_1", "?t_mrid_2"]
+    where_list = [*terminal(mrid, 1), *terminal(mrid, 2)]
+    transformer_common(
+        2,
+        mrid,
+        name,
+        impedance,
+        variables,
+        where_list,
+        with_market,
+        region,
+        sub_region,
+        rates,
+        network_analysis,
+    )
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
+def three_winding_transformer_query(
+    region: Union[str, List[str]],
+    sub_region: bool,
+    rates: Iterable[str],
+    network_analysis: bool,
+    with_market: bool,
+    mrid: str,
+    name: str,
+    impedance: Iterable[str],
+) -> str:
+    variables = ["?t_mrid_1", f"({mrid} as ?t_mrid_2)"]
+    where_list = [*terminal(mrid, 1, lock_end_number=False)]
+    transformer_common(
+        3,
+        mrid,
+        name,
+        impedance,
+        variables,
+        where_list,
+        with_market,
+        region,
+        sub_region,
+        rates,
+        network_analysis,
+    )
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 

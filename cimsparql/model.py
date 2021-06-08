@@ -497,6 +497,82 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit)
         return self._get_table_and_convert(query, limit=limit)
 
+    def two_winding_transformers(
+        self,
+        region: Optional[Union[str, List[str]]] = None,
+        sub_region: bool = False,
+        rates: Tuple[str] = ratings,
+        network_analysis: bool = True,
+        with_market: bool = False,
+        impedance: Iterable[str] = impedance_variables,
+        mrid: str = "?p_mrid",
+        name: str = "?name",
+        limit: Optional[int] = None,
+        dry_run: bool = False,
+    ) -> pd.DataFrame:
+        """Query two-winding transformer
+
+        Args:
+           region: Limit to region
+           sub_region: Assume region is a sub_region
+           rates: include rates in output (available: "Normal", "Warning", "Overload")
+           network_analysis: query SN:Equipment.networkAnalysisEnable
+           with_market: include marked connections in output
+           impedance: values returned
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('LATEST'))
+           >>> gdbc.two_winding_transformers(limit=10)
+        """
+        query = queries.two_winding_transformer_query(
+            region, sub_region, rates, network_analysis, with_market, mrid, name, impedance
+        )
+        if dry_run:
+            return self._query_with_header(query, limit)
+        return self._get_table_and_convert(query, limit=limit)
+
+    def three_winding_transformers(
+        self,
+        region: Optional[Union[str, List[str]]] = None,
+        sub_region: bool = False,
+        rates: Tuple[str] = ratings,
+        network_analysis: bool = True,
+        with_market: bool = False,
+        impedance: Iterable[str] = impedance_variables,
+        mrid: str = "?p_mrid",
+        name: str = "?name",
+        limit: Optional[int] = None,
+        dry_run: bool = False,
+    ) -> pd.DataFrame:
+        """Query three-winding transformer. Return as three two-winding transformers.
+
+        Args:
+           region: Limit to region
+           sub_region: Assume region is a sub_regionb
+           rates: include rates in output (available: "Normal", "Warning", "Overload")
+           network_analysis: query SN:Equipment.networkAnalysisEnable
+           with_market: include marked connections in output
+           impedance: values returned
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('LATEST'))
+           >>> gdbc.two_winding_transformers(limit=10)
+        """
+        query = queries.three_winding_transformer_query(
+            region, sub_region, rates, network_analysis, with_market, mrid, name, impedance
+        )
+        if dry_run:
+            return self._query_with_header(query, limit)
+        return self._get_table_and_convert(query, limit=limit)
+
     def disconnected(
         self, index: Optional[str] = None, limit: Optional[int] = None, dry_run: bool = False
     ) -> pd.DataFrame:
