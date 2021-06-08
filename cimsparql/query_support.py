@@ -179,7 +179,7 @@ def combine_statements(*args, group: bool = False, split: str = "\n") -> str:
     Example:
        >>> import os
        >>> where_list = ['?mrid rdf:type cim:ACLineSegment', '?mrid cim:ACLineSegment.r ?r']
-       >>> combine_statements(where_list,group=True, split=' '+ os.sep)
+       >>> combine_statements(where_list,group=True, split='\n')
     """
     return "{\n" + split.join(args) + "\n}" if group else split.join(args)
 
@@ -196,7 +196,7 @@ def select_statement(variables: Optional[List[str]] = None) -> str:
 
 
 def group_query(
-    x: List[str], command: str = "WHERE", split: str = " .\n", group: bool = True
+    x: List[str], command: str = "WHERE", split: str = ".\n", group: bool = True
 ) -> str:
     """Group Query
 
@@ -208,7 +208,7 @@ def group_query(
     Example:
        >>> import os
        >>> where_list = ['?mrid rdf:type cim:ACLineSegment', '?mrid cim:ACLineSegment.r ?r']
-       >>> group_query(where_list, group=True, split= ' .' + os.sep)
+       >>> group_query(where_list, group=True, split= '.\n')
     """
     return command + " " + combine_statements(*x, group=group, split=split)
 
