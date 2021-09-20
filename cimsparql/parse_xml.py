@@ -247,7 +247,10 @@ class CimXmlBase(ABC):
             "authority": node.find("md:Model.modelingAuthoritySet", nsmap).text,
         }
 
-    def _adder(self, profile: str) -> Callable:
+    def _adder(
+        self,
+        profile: Literal["SvVoltage", "SvTapStep", "TopologicalNode", "Terminal", "SvPowerFlow"],
+    ) -> Callable:
         try:
             return {
                 "ACDCConverterDCTerminal": self._terminal_adder,
@@ -280,10 +283,14 @@ class CimXmlBase(ABC):
                 "VsConverter": self._converter_adder,
                 "WindGeneratingUnit": self._generating_unit_adder,
             }[profile]
-        except KeyError:
-            raise NotImplementedError(f"Not implememted adder for {profile}")
+        except KeyError as exc:
+            raise NotImplementedError(f"Not implememted adder for {profile}") from exc
 
-    def parse(self, profile: str, ns: Optional[str] = None) -> pd.DataFrame:
+    def parse(
+        self,
+        profile: Literal["SvVoltage", "SvTapStep", "TopologicalNode", "Terminal", "SvPowerFlow"],
+        ns: Optional[str] = None,
+    ) -> pd.DataFrame:
         """Parse SVTP xml str
 
         Args:

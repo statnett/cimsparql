@@ -54,7 +54,7 @@ def root_dir():
 
 
 @pytest.fixture(scope="session")
-def server():
+def server() -> str:
     return os.getenv("GRAPHDB_API", None)
 
 
@@ -69,7 +69,7 @@ def graphdb_path(graphdb_repo: str) -> str:
 
 
 @pytest.fixture(scope="session")
-def graphdb_service(server, graphdb_repo, graphdb_path) -> str:
+def graphdb_service(server: str, graphdb_repo: str, graphdb_path: str) -> str:
     return service(graphdb_repo, server, "https", graphdb_path)
 
 

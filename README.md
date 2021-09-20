@@ -39,7 +39,27 @@ To see the actual sparql use the `dry_run` option:
 
 ```python
 >>> from cimsparql.queries import ac_line_query
->>> print(ac_line_query(limit=3, dry_run=True))
+>>> print(gdbc.ac_line(limit=3, dry_run=True))
+```
+
+This can also be accomplished calling the query function directly. Note that
+default values are *not* provided for the query functions.
+
+```python
+>>> query = queries.ac_line_query(
+        15,
+        "cim",
+        region='NO',
+        sub_region=False,
+        connectivity=None,
+        rates=['normal'],
+        network_analysis=True,
+        with_market=True,
+        temperatures=None,
+        impedance=['r', 'x'],
+        mrid='?mrid',
+        name='?name',
+    )
 ```
 
 The resulting string contains all the prefix's available in the Graphdb repo
