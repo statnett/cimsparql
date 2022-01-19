@@ -29,19 +29,26 @@ black = { version = "*", allow-prereleases = true }
 coverage = { version = "*", extras = ['toml'] }
 flake8 = "*"
 flake8-bugbear = "*"
-isort = "*"
+flake8-builtins = "*"
+flake8-comprehensions = "*"
+flake8-debugger = "*"
+flake8-eradicate = "*"
+flake8-mutable = "*"
+flake8-simplify = "*"
+ipython = "*"
+isort = ">= 5"
 lxml = "*"
 mock = "*"
+mypy-ls = "*"
 pendulum = "*"
 pre-commit = "*"
 pylint = "*"
+pyls-flake8 = "*"
+pyls-memestra = "*"
 pytest = ">= 6"
 pytest-cov = "*"
 pytest-integration = "*"
 pytest-profiling = "*"
-sphinx_autodoc_typehints = ["*"]
-sphinx_rtd_theme = ["*"]
-recommonmark = ["*"]
 
 [tool.flakehell]
 format = "colored"
