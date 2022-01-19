@@ -1,7 +1,8 @@
 import collections
+import gzip
 import re
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Literal, Tuple, Union
 from zipfile import ZipFile
 
 import pandas as pd
@@ -73,22 +74,176 @@ class CimXmlBase:
     def _terminal_data_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[bool, str]]:
         rdf = nsmap["rdf"]
         connected = node.find("cim:Terminal.connected", nsmap)
+        topological_node = node.find("cim:Terminal.TopologicalNode", nsmap)
+        tp_node = None if topological_node is None else attrib(topological_node, "resource", rdf)
         return {
             "connected": True if connected is None else connected.text == "true",
-            "tp_node": attrib(node.find("cim:Terminal.TopologicalNode", nsmap), "resource", rdf),
+            "tp_node": tp_node,
             "mrid": attrib(node, "about", rdf),
+        }
+
+    @staticmethod
+    def _synchrounous_machine_adder(
+        node: _Element, nsmap: Dict[str, str]
+    ) -> Dict[str, Union[bool, str, float]]:
+        control_enabled = node.find("cim:RegulatingCondEq.controlEnabled", nsmap).text == "true"
+        mode = attrib(
+            node.find("cim:SynchronousMachine.operatingMode", nsmap), "resource", nsmap["rdf"]
+        )
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "control_enabled": control_enabled,
+            "priority": int(node.find("cim:SynchronousMachine.referencePriority", nsmap).text),
+            "mode": mode,
+            "p": float(node.find("cim:RotatingMachine.p", nsmap).text),
+            "q": float(node.find("cim:RotatingMachine.q", nsmap).text),
+        }
+
+    @staticmethod
+    def _generating_unit_adder(
+        node: _Element, nsmap: Dict[str, str]
+    ) -> Dict[str, Union[str, float]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "pf": float(node.find("cim:GeneratingUnit.normalPF", nsmap).text),
+        }
+
+    @staticmethod
+    def _regulating_control_adder(
+        node: _Element, nsmap: Dict[str, str]
+    ) -> Dict[str, Union[bool, str, float]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "discrete": node.find("cim:RegulatingControl.discrete", nsmap).text == "true",
+            "enabled": node.find("cim:RegulatingControl.enabled", nsmap).text == "true",
+            "deadband": float(node.find("cim:RegulatingControl.targetDeadband", nsmap).text),
+            "value": float(node.find("cim:RegulatingControl.targetValue", nsmap).text),
+            "multiplier": attrib(
+                node.find("cim:RegulatingControl.targetValueUnitMultiplier", nsmap),
+                "resource",
+                nsmap["rdf"],
+            ),
+        }
+
+    @staticmethod
+    def _tap_changer_adder(
+        node: _Element, nsmap: Dict[str, str]
+    ) -> Dict[str, Union[str, bool, int]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "enabled": node.find("cim:TapChanger.controlEnabled", nsmap).text == "true",
+            "step": int(node.find("cim:TapChanger.step", nsmap).text),
+        }
+
+    @staticmethod
+    def _linear_shunt_compensator_adder(
+        node: _Element, nsmap: Dict[str, str]
+    ) -> Dict[str, Union[str, bool, int]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "enabled": node.find("cim:RegulatingCondEq.controlEnabled", nsmap).text == "true",
+            "sections": int(node.find("cim:ShuntCompensator.sections", nsmap).text),
+        }
+
+    @staticmethod
+    def _load_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[str, float]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "p": float(node.find("cim:EnergyConsumer.p", nsmap).text),
+            "q": float(node.find("cim:EnergyConsumer.q", nsmap).text),
+        }
+
+    @staticmethod
+    def _static_var_compensator_adder(
+        node: _Element, nsmap: Dict[str, str]
+    ) -> Dict[str, Union[str, bool, float]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "enabled": node.find("cim:RegulatingCondEq.controlEnabled", nsmap).text == "true",
+            "sections": float(node.find("cim:StaticVarCompensator.q", nsmap).text),
+        }
+
+    @staticmethod
+    def _control_area_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[str, float]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "interchange": float(node.find("cim:ControlArea.netInterchange", nsmap).text),
+        }
+
+    @staticmethod
+    def _converter_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[str, float]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "p": float(node.find("cim:ACDCConverter.p", nsmap).text),
+            "q": float(node.find("cim:ACDCConverter.q", nsmap).text),
+        }
+
+    @staticmethod
+    def _terminal_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[str, bool]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "connected": node.find("cim:ACDCTerminal.connected", nsmap).text == "true",
+        }
+
+    @staticmethod
+    def _switch_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[str, bool]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "open": node.find("cim:Switch.open", nsmap).text == "true",
+        }
+
+    @staticmethod
+    def _power_limit_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[str, bool]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "limit": float(node.find("cim:ApparentPowerLimit.value", nsmap).text),
+        }
+
+    @staticmethod
+    def _full_model_adder(
+        node: _Element, nsmap: Dict[str, str]
+    ) -> Dict[str, Union[str, pendulum.DateTime]]:
+        return {
+            "time": pendulum.parse(node.find("md:Model.scenarioTime", nsmap).text),
+            "created": pendulum.parse(node.find("md:Model.created", nsmap).text),
+            "description": node.find("md:Model.description", nsmap).text,
+            "version": node.find("md:Model.version", nsmap).text,
+            "profile": node.find("md:Model.profile", nsmap).text,
+            "authority": node.find("md:Model.modelingAuthoritySet", nsmap).text,
         }
 
     def _adder(self, profile: str) -> Callable:
         try:
             return {
-                "SvVoltage": self._sv_voltage_data_adder,
-                "SvTapStep": self._sv_tap_step_data_adder,
-                "TopologicalNode": self._topological_node_data_adder,
-                "Terminal": self._terminal_data_adder,
+                "ACDCConverterDCTerminal": self._terminal_adder,
+                "ApparentPowerLimit": self._power_limit_adder,
+                "Breaker": self._switch_adder,
+                "ConformLoad": self._load_adder,
+                "ControlArea": self._control_area_adder,
+                "CsConverter": self._converter_adder,
+                "CurrentLimit": self._power_limit_adder,
+                "DCTerminal": self._terminal_adder,
+                "Disconnector": self._switch_adder,
+                "FullModel": self._full_model_adder,
+                "HydroGeneratingUnit": self._generating_unit_adder,
+                "LinearShuntCompensator": self._linear_shunt_compensator_adder,
+                "TapChangerControl": self._regulating_control_adder,
+                "NonConformLoad": self._load_adder,
+                "PhaseTapChangerLinear": self._tap_changer_adder,
+                "RatioTapChanger": self._tap_changer_adder,
+                "RegulatingControl": self._regulating_control_adder,
+                "StaticVarCompensator": self._static_var_compensator_adder,
                 "SvPowerFlow": self._sv_power_flow_data_adder,
+                "SvTapStep": self._sv_tap_step_data_adder,
+                "SvVoltage": self._sv_voltage_data_adder,
+                "SynchronousMachine": self._synchrounous_machine_adder,
+                "Terminal": self._terminal_data_adder,
+                "ThermalGeneratingUnit": self._generating_unit_adder,
+                "TopologicalNode": self._topological_node_data_adder,
+                "VsConverter": self._converter_adder,
+                "WindGeneratingUnit": self._generating_unit_adder,
             }[profile]
-        except KeyError:  # pragma: no cover
+        except KeyError:
             raise NotImplementedError(f"Not implememted adder for {profile}")
 
     def parse(self, profile: str) -> pd.DataFrame:
@@ -98,7 +253,8 @@ class CimXmlBase:
             profile: What data to extract. Can be one of:
                      'SvVoltage'|'SvTapStep'|'TopologicalNode'|'Terminal'|'SvPowerFlow'
         """
-        data = [self._adder(profile)(node, self.nsmap) for node in self.findall(f"cim:{profile}")]
+        ns = "md" if profile.endswith("FullModel") else "cim"
+        data = [self._adder(profile)(node, self.nsmap) for node in self.findall(f"{ns}:{profile}")]
         return pd.DataFrame([item for item in data if item is not None]).drop_duplicates()
 
 
@@ -113,7 +269,8 @@ class CimXml(CimXmlBase):
                 with cimzip.open(self.file_path.stem + ".xml") as fid:
                     self._root = parse(fid).getroot()
         else:
-            with open(self.file_path.absolute().as_posix(), "r") as fid:
+            open_function = gzip.open if self.file_path.suffix == ".gz" else open
+            with open_function(self.file_path.absolute().as_posix(), "r") as fid:
                 self._root = parse(fid).getroot()
 
     @property
