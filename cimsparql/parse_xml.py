@@ -72,8 +72,9 @@ class CimXmlBase:
     @staticmethod
     def _terminal_data_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[bool, str]]:
         rdf = nsmap["rdf"]
+        connected = node.find("cim:Terminal.connected", nsmap)
         return {
-            "connected": node.find("cim:Terminal.connected", nsmap).text == "true",
+            "connected": True if connected is None else connected.text == "true",
             "tp_node": attrib(node.find("cim:Terminal.TopologicalNode", nsmap), "resource", rdf),
             "mrid": attrib(node, "about", rdf),
         }
