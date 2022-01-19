@@ -2,6 +2,7 @@ import collections
 import re
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Tuple, Union
+from zipfile import ZipFile
 
 import pandas as pd
 import pendulum
@@ -105,10 +106,19 @@ class CimXml(CimXmlBase):
         super().__init__(*args, **kwargs)
         self.file_path = file_path
 
+    def _parse(self) -> None:
+        if self.file_path.suffix == ".zip":
+            with ZipFile(self.file_path) as cimzip:
+                with cimzip.open(self.file_path.stem + ".xml") as fid:
+                    self._root = parse(fid).getroot()
+        else:
+            with open(self.file_path.absolute().as_posix(), "r") as fid:
+                self._root = parse(fid).getroot()
+
     @property
     def root(self) -> _ElementTree:
         if not hasattr(self, "_root"):
-            self._root = parse(self.file_path.absolute().as_posix()).getroot()
+            self._parse()
         return self._root
 
     def __getstate__(self) -> Path:  # pragma: no cover
