@@ -6,14 +6,14 @@
 # character.
 [tool.poetry]
 name = "cimsparql"
-version = "1.8.0"
+version = "1.8.1"
 description = "CIM query utilities"
 readme = "README.md"
 authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
 repository = "https://github.com/statnett/cimsparql.git"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 numpy = "*"
 pandas = "*"
 tables = "*"
@@ -35,7 +35,6 @@ flake8-debugger = "*"
 flake8-eradicate = "*"
 flake8-mutable = "*"
 flake8-simplify = "*"
-ipython = "*"
 isort = ">= 5"
 lxml = "*"
 mock = "*"
