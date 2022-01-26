@@ -48,7 +48,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ ubuntu-latest ]
-        python-version: [ 3.6, 3.7, 3.8, 3.9]
+        python-version: [ 3.9]
         poetry-version: [ 1.1.6 ]
 
     runs-on: ${{ matrix.os }}
@@ -61,7 +61,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v2.0.0
+        uses: abatilo/actions-poetry@v2.1.4
         with:
           poetry-version: ${{ matrix.poetry-version }}
 
@@ -85,15 +85,15 @@ jobs:
         run: poetry install --no-interaction --no-root
 
       - name: Run pytest
-        if: ${{ ( runner.os != 'Linux' ) || ( matrix.python-version  != '3.8' ) }}
+        if: ${{ ( runner.os != 'Linux' ) || ( matrix.python-version  != '3.9' ) }}
         run: poetry run pytest -q tests
 
       - name: Run pytest with coverage
-        if: ${{ ( runner.os == 'Linux' ) && ( matrix.python-version  == '3.8' ) }}
+        if: ${{ ( runner.os == 'Linux' ) && ( matrix.python-version  == '3.9' ) }}
         run: poetry run pytest -q --cov=cimsparql --cov-report=xml tests
 
       - name: Upload coverage
-        if: ${{ ( runner.os == 'Linux' ) && ( matrix.python-version  == '3.8' ) }}
+        if: ${{ ( runner.os == 'Linux' ) && ( matrix.python-version  == '3.9' ) }}
         uses: codecov/codecov-action@v1
         with:
           file: ./coverage.xml

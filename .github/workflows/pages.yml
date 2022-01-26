@@ -7,15 +7,15 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: Set up Python 3.8
+      - name: Set up Python 3.9
         uses: actions/setup-python@v1
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Install poetry
-        uses: abatilo/actions-poetry@v2.0.0
+        uses: abatilo/actions-poetry@v2.1.4
         with:
-          poetry-version: 1.1.6
+          poetry-version: 1.1.11
 
       - name: Make requirements
         run: poetry export -f requirements.txt --dev --output docs/requirements.txt --without-hashes

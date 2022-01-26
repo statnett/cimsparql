@@ -11,10 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Python 3.8
+      - name: Set up Python 3.9
         uses: actions/setup-python@v1
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Get full python version
         id: full-python-version
@@ -22,9 +22,9 @@ jobs:
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
       - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v2.0.0
+        uses: abatilo/actions-poetry@v2.1.4
         with:
-          poetry-version: 1.1.6
+          poetry-version: 1.1.11
 
       - name: Install dependencies
         shell: bash
