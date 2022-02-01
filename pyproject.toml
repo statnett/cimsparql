@@ -67,7 +67,6 @@ flake8-debugger = ["+*"]
 [tool.poetry.extras]
 parse_xml = ["lxml", "pendulum"]
 
-
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
@@ -104,6 +103,7 @@ exclude_lines = [
               "if verbose:",
               "if 0:",
               "if False:",
+              "if TYPE_CHECKING:",
               ]
 skip_covered = true
 show_missing = true

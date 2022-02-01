@@ -9,7 +9,7 @@ from dateutil import parser
 
 from cimsparql.query_support import combine_statements, unionize
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from cimsparql.model import CimModel
 
 as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
