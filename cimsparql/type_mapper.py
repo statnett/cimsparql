@@ -22,8 +22,8 @@ python_type_map = {
     "dateTime": parser.parse,
 }
 
-uri_snmst = re.compile("^urn:snmst:#_")
-sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x)}
+uri_snmst = re.compile("[^\\#]*(.\\#\\_)")
+sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x) if x is not None else ""}
 
 
 class TypeMapperQueries:
