@@ -325,11 +325,28 @@ class CimModel(Prefix):
             return self._query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index=mrid[1:])
 
+    def converters(
+        self,
+        region: Optional[Union[str, List[str]]] = None,
+        sub_region: bool = False,
+        converter_types: Iterable[str] = ("VoltageSource", "DC"),
+        mrid: str = mrid_variable,
+        name: str = "?name",
+        sequence_numbers: Optional[List[int]] = None,
+        dry_run: bool = False,
+    ) -> pd.DataFrame:
+        query = queries.converters(
+            region, sub_region, converter_types, mrid, name, sequence_numbers
+        )
+        if dry_run:
+            return self._query_with_header(query)
+        return self._get_table_and_convert(query, index=mrid[1:])
+
     def transformers_connected_to_converter(
         self,
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
-        converter_types: List[str] = ("VoltageSource", "DC"),
+        converter_types: Iterable[str] = ("VoltageSource", "DC"),
         mrid: str = mrid_variable,
         name: str = "?name",
         dry_run: bool = False,

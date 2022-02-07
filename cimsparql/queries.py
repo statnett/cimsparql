@@ -443,7 +443,7 @@ def series_compensator_query(
 
 
 def transformers_connected_to_converter(
-    region: str, sub_region: bool, converter_types: List[str], mrid: str, name: str
+    region: str, sub_region: bool, converter_types: Iterable[str], mrid: str, name: str
 ) -> str:
     variables = [mrid, "?t_mrid", name]
     converters = [
@@ -461,6 +461,42 @@ def transformers_connected_to_converter(
     if region is not None:
         where_list.append(f"{mrid} {EQUIP_CONTAINER} ?Substation")
         where_list.extend(sup.region_query(region, sub_region, "Substation", "?subgeoreg"))
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
+def converters(
+    region: str,
+    sub_region: bool,
+    converter_types: Iterable[str],
+    mrid: str,
+    name: str,
+    sequence_numbers: Optional[List[int]],
+) -> str:
+    variables = [mrid, name]
+    converters = [
+        sup.rdf_type_tripler(mrid, f"ALG:{converter}Converter") for converter in converter_types
+    ]
+    where_list = [
+        sup.get_name(mrid, name, alias=True),
+        sup.combine_statements(*converters, group=len(converters) > 1, split=union_split),
+    ]
+    if sequence_numbers is not None:
+        for sequence_number in sequence_numbers:
+            variables += [f"?t_mrid_{sequence_number}"]
+            where_list += [
+                f"?t_{sequence_number} cim:Terminal.ConductingEquipment {mrid}",
+                f'?t_{sequence_number} cim:Terminal.sequenceNumber "{sequence_number}"^^xsd:integer',
+                f"?t_{sequence_number} cim:IdentifiedObject.mRID ?t_mrid_{sequence_number}",
+            ]
+    if region is not None:
+        vc = f"{mrid} {EQUIP_CONTAINER} ?cont.\n?cont {SUBSTATION} ?Substation."
+        dc = f"{mrid} ALG:DCConverter.DCPole ?pole.\n?pole {EQUIP_CONTAINER} ?Substation."
+        where_list.extend(
+            [
+                sup.combine_statements(vc, dc, group=True, split=union_split),
+                *sup.region_query(region, sub_region, "Substation", "?subgeoreg"),
+            ]
+        )
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 

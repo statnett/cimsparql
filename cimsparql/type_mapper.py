@@ -103,7 +103,7 @@ class TypeMapper(TypeMapperQueries):
     def type_map(df: pd.DataFrame) -> Dict[str, Any]:
         df["type"] = df["type"].str.lower()
         d = df.set_index("sparql_type").to_dict("index")
-        return {k: python_type_map.get(v.get("type", "String")) for k, v in d.items()}
+        return {k: python_type_map.get(v.get("type", "string")) for k, v in d.items()}
 
     @staticmethod
     def prefix_map(df: pd.DataFrame) -> Dict[str, Any]:
@@ -111,7 +111,7 @@ class TypeMapper(TypeMapperQueries):
         df["comb"] = df["prefix"] + "#" + df["type"]
         df = df.drop_duplicates("comb")
         d2 = df.set_index("comb").to_dict("index")
-        return {k: python_type_map.get(v.get("type", "String")) for k, v in d2.items()}
+        return {k: python_type_map.get(v.get("type", "string")) for k, v in d2.items()}
 
     def get_map(self, client: CimModel) -> Dict[str, Any]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
