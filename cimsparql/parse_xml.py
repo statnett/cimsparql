@@ -2,7 +2,7 @@ import collections
 import gzip
 import re
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Literal, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 from zipfile import ZipFile
 
 import pandas as pd
@@ -200,6 +200,13 @@ class CimXmlBase:
         }
 
     @staticmethod
+    def _current_limit_adder(node: _Element, nsmap: Dict[str, str]) -> Dict[str, Union[str, bool]]:
+        return {
+            "mrid": attrib(node, "about", nsmap["rdf"]),
+            "limit": float(node.find("cim:CurrentLimit.value", nsmap).text),
+        }
+
+    @staticmethod
     def _full_model_adder(
         node: _Element, nsmap: Dict[str, str]
     ) -> Dict[str, Union[str, pendulum.DateTime]]:
@@ -221,7 +228,7 @@ class CimXmlBase:
                 "ConformLoad": self._load_adder,
                 "ControlArea": self._control_area_adder,
                 "CsConverter": self._converter_adder,
-                "CurrentLimit": self._power_limit_adder,
+                "CurrentLimit": self._current_limit_adder,
                 "DCTerminal": self._terminal_adder,
                 "Disconnector": self._switch_adder,
                 "FullModel": self._full_model_adder,
@@ -246,14 +253,19 @@ class CimXmlBase:
         except KeyError:
             raise NotImplementedError(f"Not implememted adder for {profile}")
 
-    def parse(self, profile: str) -> pd.DataFrame:
+    def parse(self, profile: str, ns: Optional[str] = None) -> pd.DataFrame:
         """Parse SVTP xml str
 
         Args:
             profile: What data to extract. Can be one of:
                      'SvVoltage'|'SvTapStep'|'TopologicalNode'|'Terminal'|'SvPowerFlow'
+            for SSH file acceptable values for profile:
+                     'ConformLoad'|'PhaseTapChangerLinear'|'RegulatingControl'|
+                     'SynchronousMachine'|'ConformLoad'|'TapChangerControl'
         """
-        ns = "md" if profile.endswith("FullModel") else "cim"
+        if ns is None:
+            ns = "cim"
+        ns = "md" if profile.endswith("FullModel") else ns
         data = [self._adder(profile)(node, self.nsmap) for node in self.findall(f"{ns}:{profile}")]
         return pd.DataFrame([item for item in data if item is not None]).drop_duplicates()
 
