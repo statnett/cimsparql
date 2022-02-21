@@ -1,6 +1,7 @@
 import collections
 import gzip
 import re
+from functools import cached_property
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 from zipfile import ZipFile
@@ -319,20 +320,23 @@ class SvTpCimXml:
         file_desc = ", ".join([f"{profile}: {path.stem}" for profile, path in self.paths.items()])
         return f"<SvTpCimXml object, {file_desc}>"
 
-    @property
+    @cached_property
     def voltage(self) -> pd.DataFrame:
         return self._parser["sv"].parse("SvVoltage").set_index("mrid")
 
-    @property
+    @cached_property
     def tap_steps(self) -> pd.DataFrame:
         return self._parser["sv"].parse("SvTapStep").set_index("mrid")
 
+    @cached_property
     def bus_data(self, *args, **kwargs) -> pd.DataFrame:
         return self._parser["tp"].parse("TopologicalNode").set_index("mrid")
 
+    @cached_property
     def terminal(self, *args, **kwargs) -> pd.DataFrame:
         return self._parser["tp"].parse("Terminal").set_index("mrid")
 
+    @cached_property
     def powerflow(self, *args, **kwargs) -> pd.DataFrame:
         return self._parser["sv"].parse("SvPowerFlow").set_index("mrid")
 
