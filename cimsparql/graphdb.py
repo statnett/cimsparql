@@ -63,7 +63,7 @@ class GraphDBClient(CimModel):
         self.sparql.setCredentials(self.user, self.passwd)
         self.sparql.addParameter("infer", str(infer))
         self.sparql.addParameter("sameAs", str(sameas))
-        self.prefixes = self._service
+        self._prefixes = None
 
     @property
     def service(self):
@@ -75,6 +75,12 @@ class GraphDBClient(CimModel):
             self._service = url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
         else:
             self._service = service
+
+    @CimModel.prefixes.getter
+    def prefixes(self):
+        if self._prefixes is None:
+            self.prefixes = self._service
+        return self._prefixes
 
     @CimModel.prefixes.setter
     def prefixes(self, service: str):
