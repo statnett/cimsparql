@@ -54,7 +54,7 @@ class CimXmlBase:
     @staticmethod
     def _sv_tap_step_data_adder(node: RestrictedElement, nsmap: Dict[str, str]):
         return {
-            "position": int(node.find("cim:SvTapStep.position", nsmap).text),
+            "position": int(float(node.find("cim:SvTapStep.position", nsmap).text)),
             "mrid": attrib(node.find("cim:SvTapStep.TapChanger", nsmap), "resource", nsmap["rdf"]),
         }
 

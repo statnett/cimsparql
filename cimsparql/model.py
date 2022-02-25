@@ -18,6 +18,7 @@ from cimsparql.constants import (
     impedance_variables,
     mrid_variable,
     ratings,
+    sequence_numbers,
 )
 from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import Prefix
@@ -26,11 +27,14 @@ CimModelType = TypeVar("CimModelType", bound="CimModel")
 
 
 class CimModel(Prefix):
-    """Used to query with sparql queries (typically CIM)"""
+    """Used to query with sparql queries (typically CIM)."""
 
     def __init__(self, mapper: TypeMapper, *args, **kwargs) -> None:
         self._setup_client(*args, **kwargs)
         self.mapper = mapper
+
+    def _setup_client(self, *args, **kwargs):
+        pass
 
     @property
     def date_version(self) -> datetime:
@@ -107,7 +111,9 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid[1:])
+        float_list = ["phase_incr", "high", "low", "neutral", "r", "x"]
+        columns = {var: float for (var) in float_list}
+        return self._get_table_and_convert(query, limit, columns=columns)
 
     def loads(
         self,
@@ -254,7 +260,7 @@ class CimModel(Prefix):
         if dry_run:
             return self._query_with_header(query, limit)
         float_list = ["maxP", "minP", "allocationMax", "allocationWeight", *sync_vars]
-        columns = {var: float for var in float_list}
+        columns = {var: float for (var) in float_list}
         return self._get_table_and_convert(query, limit, index=mrid[1:], columns=columns)
 
     def connections(
@@ -355,6 +361,7 @@ class CimModel(Prefix):
         converter_types: Iterable[str] = converter_types,
         mrid: str = mrid_variable,
         name: str = "?name",
+        limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> pd.DataFrame:
         """Query list of transformer connected at a converter (Voltage source or DC)
@@ -370,8 +377,8 @@ class CimModel(Prefix):
             region, sub_region, converter_types, mrid, name
         )
         if dry_run:
-            return self._query_with_header(query)
-        return self._get_table_and_convert(query, index=mrid[1:])
+            return self._query_with_header(query, limit)
+        return self._get_table_and_convert(query, limit, index=mrid[1:])
 
     def ac_lines(
         self,
@@ -380,6 +387,7 @@ class CimModel(Prefix):
         limit: Optional[int] = None,
         connectivity: Optional[str] = None,
         rates: Tuple[str] = ratings,
+        external: bool = False,
         network_analysis: bool = True,
         with_market: bool = False,
         temperatures: Optional[List[int]] = None,
@@ -396,6 +404,7 @@ class CimModel(Prefix):
            limit: return first 'limit' number of rows
            connectivity: Include connectivity mrids as column name '{connectivity}_{1|2}'
            rates: include rates in output (available: "Normal", "Warning", "Overload")
+                  include rates in output (available for Svk: "High1", "High2", "High3")
            with_market: include marked connections in output
            temperatures: include temperature correction factors in output
            dry_run: return string with sql query
@@ -413,6 +422,7 @@ class CimModel(Prefix):
             sub_region,
             connectivity,
             rates,
+            external,
             network_analysis,
             with_market,
             temperatures,
@@ -422,7 +432,11 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        ac_lines = self._get_table_and_convert(query, limit=limit)
+        float_list = ["un", "length", "r", "x"]
+        for nr in sequence_numbers:
+            float_list.extend([f"rate{rate}_t{nr}" for rate in rates])
+        columns = {var: float for var in float_list}
+        ac_lines = self._get_table_and_convert(query, limit=limit, columns=columns)
         if temperatures is not None:
             for temperature in temperatures:
                 column = f"{sup.negpos(temperature)}_{abs(temperature)}_factor"
@@ -470,7 +484,9 @@ class CimModel(Prefix):
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit=limit)
+        float_list = ["un", "x"]
+        columns = {var: float for var in float_list}
+        return self._get_table_and_convert(query, limit=limit, columns=columns)
 
     def transformers(
         self,
@@ -478,7 +494,7 @@ class CimModel(Prefix):
         sub_region: bool = False,
         connectivity: Optional[str] = None,
         rates: Tuple[str] = ratings,
-        network_analysis: bool = True,
+        network_analysis: bool = False,
         with_market: bool = False,
         impedance: Iterable[str] = impedance_variables,
         mrid: str = "?p_mrid",
@@ -525,6 +541,7 @@ class CimModel(Prefix):
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         rates: Tuple[str] = ratings,
+        end_count: int = 2,
         network_analysis: bool = True,
         with_market: bool = False,
         impedance: Iterable[str] = impedance_variables,
@@ -539,6 +556,8 @@ class CimModel(Prefix):
            region: Limit to region
            sub_region: Assume region is a sub_region
            rates: include rates in output (available: "Normal", "Warning", "Overload")
+                  for Svk (available: "High1", "High2", "High3")
+           end_count: for Svk readings collected from both terminals, cim:TransformerEnd.Terminal
            network_analysis: query SN:Equipment.networkAnalysisEnable
            with_market: include marked connections in output
            impedance: values returned
@@ -552,17 +571,30 @@ class CimModel(Prefix):
            >>> gdbc.two_winding_transformers(limit=10)
         """
         query = queries.two_winding_transformer_query(
-            region, sub_region, rates, network_analysis, with_market, mrid, name, impedance
+            region,
+            sub_region,
+            rates,
+            end_count,
+            network_analysis,
+            with_market,
+            mrid,
+            name,
+            impedance,
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit=limit)
+        float_list = ["r", "x", "un"]
+        for nr in list(range(1, end_count + 1)):
+            float_list.extend([f"rate{rate}_t{nr}" for rate in rates])
+        columns = {var: float for var in float_list}
+        return self._get_table_and_convert(query, limit=limit, columns=columns)
 
     def three_winding_transformers(
         self,
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         rates: Tuple[str] = ratings,
+        end_count: int = 1,
         network_analysis: bool = True,
         with_market: bool = False,
         impedance: Iterable[str] = impedance_variables,
@@ -587,14 +619,25 @@ class CimModel(Prefix):
            >>> from cimsparql.graphdb import GraphDBClient
            >>> from cimsparql.url import service
            >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.two_winding_transformers(limit=10)
+           >>> gdbc.three_winding_transformers(limit=10)
         """
         query = queries.three_winding_transformer_query(
-            region, sub_region, rates, network_analysis, with_market, mrid, name, impedance
+            region,
+            sub_region,
+            rates,
+            end_count,
+            network_analysis,
+            with_market,
+            mrid,
+            name,
+            impedance,
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit=limit)
+        float_list = ["r", "x", "un"]
+        float_list.extend([f"rate{rate}_t1" for rate in rates])
+        columns = {var: float for var in float_list}
+        return self._get_table_and_convert(query, limit=limit, columns=columns)
 
     def disconnected(
         self, index: Optional[str] = None, limit: Optional[int] = None, dry_run: bool = False

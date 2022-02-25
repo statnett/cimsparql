@@ -9,6 +9,7 @@ from cimsparql.cim import (
     EQUIP_CONTAINER,
     GEO_REG,
     ID_OBJ,
+    PHASE_CHANGER,
     SUBSTATION,
     SYNC_MACH,
     TR_WINDING,
@@ -41,7 +42,7 @@ def regions_query(mrid: str) -> str:
     names = {mrid: ["?name", "?alias_name"], region_variable: ["?region", "?region_name"]}
     for name_mrid, (name, alias_name) in names.items():
         where_list.append(sup.get_name(name_mrid, name))
-        where_list.append(sup.get_name(name_mrid, alias_name, alias=True))
+        where_list.append(sup.get_name(name_mrid, alias_name, alias=False))
         variables.extend([name, alias_name])
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
@@ -57,39 +58,46 @@ def phase_tap_changer_query(
     variables = [mrid, "?w_mrid_1", "?w_mrid_2", "?t_mrid_1", "?t_mrid_2"]
     tap = "?tap"
     where_list = [
-        sup.rdf_type_tripler(mrid, TR_WINDING),
-        f"{mrid} cim:TransformerEnd.PhaseTapChanger {tap}",
-        f"{mrid} {TR_WINDING}.PowerTransformer ?pt",
+        sup.rdf_type_tripler(mrid, PHASE_CHANGER),
+        f"{mrid} cim:TapChanger.TapChangerControl {tap}",
+        f"{mrid} cim:PhaseTapChanger.TransformerEnd ?pt",
     ]
 
     if with_tap_changer_values:
-        variables.extend([tap, "?phase_incr"] + sup.to_variables(tap_changer_objects))
+        variables.extend([mrid, "?phase_incr"] + sup.to_variables(tap_changer_objects))
         properties = {f"{obj}Step": f"?{obj}" for obj in tap_changer_objects}
         where_list.extend(
             [
-                *sup.predicate_list(tap, "cim:TapChanger", properties),
-                "?tap cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_incr",
+                *sup.predicate_list(mrid, "cim:TapChanger", properties),
+                "?mrid cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_incr",
             ]
         )
 
+    pt = "?pt"
+    where_list.extend(
+        [
+            sup.rdf_type_tripler(pt, TR_WINDING),
+            f"{pt} cim:TransformerEnd.Terminal ?term_1",
+            f"{pt} cim:TransformerEnd.endNumber ?endNumber",
+        ]
+    )
+
     if impedance is not None:
         variables.extend(sup.to_variables(impedance))
-        where_list.extend([f"?w_mrid_1 {TR_WINDING}.{imp} ?{imp}" for imp in impedance])
+        where_list.extend([f"{pt} {TR_WINDING}.{imp} ?{imp}" for imp in impedance])
+
+    where_list.extend(
+        [
+            "bind(?pt as ?w_mrid_1)",
+            "bind(?pt as ?w_mrid_2)",
+            "bind(?term_1 as ?t_mrid_1)",
+            "bind(?term_1 as ?t_mrid_2)",
+        ]
+    )
 
     if region is not None:
         where_list.extend([f"?pt {EQUIP_CONTAINER} ?Substation"])
         where_list.extend(sup.region_query(region, sub_region, "Substation", "?subgeoreg"))
-
-    for i in sequence_numbers:
-        where_list.extend(
-            [
-                sup.rdf_type_tripler(f"?term_{i}", "cim:Terminal"),
-                f"?w_mrid_{i} {TR_WINDING}.PowerTransformer ?pt",
-                f"?w_mrid_{i} cim:TransformerEnd.Terminal ?term_{i}",
-                f'?term_{i} cim:Terminal.sequenceNumber "{i}"^^xsd:integer',
-                f"?term_{i} {ID_OBJ}.mRID ?t_mrid_{i}",
-            ]
-        )
 
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
@@ -148,14 +156,14 @@ def load_query(
     where_list = [
         sup.combine_statements(*cim_types, group=len(cim_types) > 1, split=union_split),
         *sup.terminal_where_query(cim_version, connectivity, with_sequence_number),
-        *sup.bid_market_code_query(),
+        *sup.bid_market_code_query_sv(),
     ]
 
     if load_vars is not None:
         variables.extend([f"?{load}" for load in load_vars])
         where_list.append(
             sup.group_query(
-                [f"{mrid} cim:EnergyConsumer.{load} ?{load}" for load in load_vars],
+                [f"{mrid} cim:EnergyConsumer.pfixed ?{load}" for load in load_vars],
                 command="OPTIONAL",
             )
         )
@@ -164,8 +172,7 @@ def load_query(
         variables.append("?station_group")
         station_group_list = [
             f"{mrid} cim:NonConformLoad.LoadGroup ?lg",
-            "?lg SN:NonConformLoadGroup.ScheduleResource ?sc_res",
-            "?sc_res SN:ScheduleResource.marketCode ?station_group",
+            "?lg svk:IdentifiedObject.aristoID ?station_group",
         ]
         if station_group_optional:
             where_list.append(sup.group_query(station_group_list, command="OPTIONAL"))
@@ -226,7 +233,7 @@ def synchronous_machines_query(
     where_list = [
         sup.rdf_type_tripler(mrid, SYNC_MACH),
         sup.get_name(mrid, name),
-        *sup.bid_market_code_query(),
+        *sup.bid_market_code_query_sv(),
         *sup.terminal_where_query(cim_version, connectivity, with_sequence_number, terminal_mrid),
         *[f"{mrid} {SYNC_MACH}.{lim} ?{lim}" for lim in ["maxQ", "minQ"] if lim in variables],
         *[
@@ -241,15 +248,13 @@ def synchronous_machines_query(
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     station_group = [
-        f"{mrid} cim:SynchronousMachine.GeneratingUnit ?gu",
-        "?gu SN:GeneratingUnit.marketCode ?market_code",
+        f"{mrid} cim:RotatingMachine.GeneratingUnit ?gu",
+        f"{mrid} svk:IdentifiedObject.aristoID ?market_code",
         "?gu cim:GeneratingUnit.maxOperatingP ?maxP",
         "?gu cim:GeneratingUnit.minOperatingP ?minP",
-        "?gu SN:GeneratingUnit.groupAllocationMax ?allocationMax",
-        "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
-        "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
-        "?ScheduleResource SN:ScheduleResource.marketCode ?station_group",
-        sup.get_name("?ScheduleResource", "?st_gr_n", alias=True),
+        f"{mrid} cim:IdentifiedObject.name ?station_group",
+        "bind('100.0' as ?allocationMax)",
+        "bind('1.0' as ?allocationWeight)",
     ]
 
     if station_group_optional:
@@ -306,6 +311,7 @@ def two_winding_transformer_query(
     region: Union[str, List[str]],
     sub_region: bool,
     rates: Iterable[str],
+    end_count: int,
     network_analysis: bool,
     with_market: bool,
     mrid: str,
@@ -325,6 +331,7 @@ def two_winding_transformer_query(
         region,
         sub_region,
         rates,
+        end_count,
         network_analysis,
     )
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
@@ -334,6 +341,7 @@ def three_winding_transformer_query(
     region: Union[str, List[str]],
     sub_region: bool,
     rates: Iterable[str],
+    end_count: int,
     network_analysis: bool,
     with_market: bool,
     mrid: str,
@@ -353,6 +361,7 @@ def three_winding_transformer_query(
         region,
         sub_region,
         rates,
+        end_count,
         network_analysis,
     )
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
@@ -382,7 +391,7 @@ def transformer_query(
     ]
     if with_market:
         variables.append("?bidzone")
-        where_list.append(sup.market_code_query())
+        where_list.append(sup.market_code_query_sv())
 
     if network_analysis is not None:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
@@ -427,7 +436,7 @@ def series_compensator_query(
         "?obase cim:BaseVoltage.nominalVoltage ?un",
         sup.get_name(mrid, name),
     ]
-    sup.include_market(with_market, variables, where_list)
+    sup.include_market_sv(with_market, variables, where_list)
 
     if network_analysis is not None:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
@@ -447,19 +456,38 @@ def transformers_connected_to_converter(
 ) -> str:
     variables = [mrid, "?t_mrid", name]
     converters = [sup.rdf_type_tripler("?volt", converter) for converter in converter_types]
-    where_list = [
+    where_sub_list = [
         sup.rdf_type_tripler(mrid, "cim:PowerTransformer"),
-        sup.get_name(mrid, name, alias=True),
+        sup.get_name(mrid, name, alias=False),
+        f"?tt_mrid cim:Terminal.ConductingEquipment {mrid}",
+        "?tt_mrid cim:Terminal.ConnectivityNode ?con",
+        "?t_tvolt cim:Terminal.ConductingEquipment ?volt",
+        "?t_tvolt cim:Terminal.ConnectivityNode ?con",
+        sup.rdf_type_tripler("?volt", "cim:CsConverter"),
+        "?t_mrid cim:Terminal.ConductingEquipment ?volt",
+    ]
+    sub_statement = sup.combine_statements(
+        sup.select_statement(variables), sup.group_query(where_sub_list), group=True
+    )
+    where_list_to_add = [
+        sup.rdf_type_tripler(mrid, "cim:PowerTransformer"),
+        sup.get_name(mrid, name, alias=False),
         f"?t_mrid cim:Terminal.ConductingEquipment {mrid}",
         "?t_mrid cim:Terminal.ConnectivityNode ?con",
         "?t_tvolt cim:Terminal.ConductingEquipment ?volt",
         "?t_tvolt cim:Terminal.ConnectivityNode ?con",
         sup.combine_statements(*converters, group=len(converters) > 1, split=union_split),
     ]
+
     if region is not None:
-        where_list.append(f"{mrid} {EQUIP_CONTAINER} ?Substation")
-        where_list.extend(sup.region_query(region, sub_region, "Substation", "?subgeoreg"))
-    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+        where_list_to_add.append(f"{mrid} {EQUIP_CONTAINER} ?Substation")
+        where_list_to_add.extend(sup.region_query(region, sub_region, "Substation", "?subgeoreg"))
+
+    where_list_combined = (
+        "WHERE {{\n" + ".\n".join(where_list_to_add) + "\n}\n" + "UNION " + sub_statement + "\n}\n"
+    )
+
+    return sup.combine_statements(sup.select_statement(variables), where_list_combined)
 
 
 def converters(
@@ -508,7 +536,7 @@ def borders_query(
 ) -> str:
     areas = sup.sequence_variables("area")
     variables = [name, mrid, *sup.sequence_variables("t_mrid"), *areas]
-    border_filter = sup.border_filter(region, *areas)
+    border_filter = sup.border_filter_sv(region, *areas)
     where_list = [
         sup.get_name(mrid, name),
         sup.rdf_type_tripler(mrid, ACLINE),
@@ -528,8 +556,7 @@ def borders_query(
     if with_market_code:
         variables.append("?market_code")
         where_market = [
-            f"{mrid} {EQUIP_CONTAINER} ?line_cont",
-            "?line_cont SN:Line.marketCode ?market_code",
+            f"{mrid} svk:IdentifiedObject.aristoID ?market_code",
         ]
         where_list.append(
             sup.group_query(where_market, command="OPTIONAL" if market_optional else "")
@@ -548,6 +575,7 @@ def ac_line_query(
     sub_region: bool,
     connectivity: str,
     rates: Iterable[str],
+    external: bool,
     network_analysis: bool,
     with_market: bool,
     temperatures: Optional[List[int]],
@@ -568,7 +596,6 @@ def ac_line_query(
 
     where_list = [
         sup.rdf_type_tripler(mrid, ACLINE),
-        f"{mrid} cim:Conductor.length ?length",
         sup.get_name(mrid, name),
         *sup.base_voltage(mrid, "?un"),
         *sup.terminal_sequence_query(cim_version=cim_version, var=connectivity),
@@ -578,7 +605,7 @@ def ac_line_query(
     if connectivity is not None:
         variables.extend(sup.sequence_variables(connectivity))
 
-    sup.include_market(with_market, variables, where_list)
+    sup.include_market_sv(with_market, variables, where_list)
 
     if network_analysis is not None:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
@@ -592,11 +619,24 @@ def ac_line_query(
         )
 
     if rates:
-        variables.extend([f"?rate{rate}" for rate in rates])
-        where_rate: List[str] = reduce(
-            iconcat, [sup.operational_limit(mrid, rate) for rate in rates], []
-        )
-        where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
+        if external is True:
+            for nr in sequence_numbers:
+                variables.extend([f"?rate{rate}_t{nr}" for rate in rates])
+                variables.extend([f"?lim{nr}_mrid"])
+                where_rate: List[str] = reduce(
+                    iconcat,
+                    [sup.operational_limit_sv_external(rate, end_count=nr) for rate in rates],
+                    [],
+                )
+                where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
+        else:
+            for nr in sequence_numbers:
+                variables.extend([f"?rate{rate}_t{nr}" for rate in rates])
+                variables.extend([f"?lim{nr}_mrid"])
+                where_rate: List[str] = reduce(
+                    iconcat, [sup.operational_limit_sv(rate, end_count=nr) for rate in rates], []
+                )
+                where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
 
     if temperatures is not None:
         variables.extend(

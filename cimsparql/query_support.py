@@ -26,7 +26,7 @@ def terminal_sequence_query(cim_version: int, var: str, t_mrid: str = "?t_mrid")
             [
                 rdf_type_tripler(t_sequence_mrid, "cim:Terminal"),
                 f"{t_sequence_mrid} cim:Terminal.ConductingEquipment ?mrid",
-                f"{t_sequence_mrid} cim:{acdc_terminal(cim_version)}.sequenceNumber {nr}",
+                f"{t_sequence_mrid} cim:{acdc_terminal(cim_version)}.sequenceNumber '{nr}'",
             ]
         )
         if var is not None:
@@ -41,6 +41,41 @@ def operational_limit(mrid: str, rate: str, limitset: str = "oplimset") -> List[
         rdf_type_tripler(f"?p_lim{rate}", "cim:ActivePowerLimit"),
         f"?p_lim{rate} {ID_OBJ}.name '{rate}@20'",
         f"?p_lim{rate} cim:ActivePowerLimit.value ?rate{rate}",
+    ]
+
+
+def operational_limit_sv(rate: str, end_count: int = 1, limitset: str = "oplimset") -> List[str]:
+    return [
+        f"?{limitset}{end_count} cim:OperationalLimitSet.Terminal ?t_mrid_{end_count}",
+        f"?lim{end_count}_mrid cim:OperationalLimit.OperationalLimitSet ?{limitset}{end_count}",
+        f"?lim{end_count}_mrid cim:OperationalLimit.OperationalLimitType ?LimType",
+        f"?LimType cim:IdentifiedObject.name '{rate}'",
+        f"?lim{end_count}_mrid cim:CurrentLimit.value ?rate{rate}_t{end_count}",
+    ]
+
+
+def operational_limit_sv_external(
+    rate: str, end_count: int = 1, limitset: str = "oplimset"
+) -> List[str]:
+    return [
+        f"?{limitset}{end_count} cim:OperationalLimitSet.Terminal ?t_mrid_{end_count}",
+        f"?lim{end_count}_mrid cim:OperationalLimit.OperationalLimitSet ?{limitset}{end_count}",
+        f"?lim{end_count}_mrid cim:OperationalLimit.OperationalLimitType ?LimType",
+        f"?LimType cim:IdentifiedObject.name '{rate}'",
+        f"?lim{end_count}_mrid cim:ApparentPowerLimit.value ?rate{rate}_t{end_count}",
+    ]
+
+
+def operational_limit_sv_transf(
+    rate: str, end_count: int = 1, limitset: str = "oplimset"
+) -> List[str]:
+    return [
+        f"?{limitset}{end_count} cim:OperationalLimitSet.Terminal ?t_mrid_{end_count}",
+        rdf_type_tripler(f"?lim{end_count}_mrid", "cim:ApparentPowerLimit"),
+        f"?lim{end_count}_mrid cim:OperationalLimit.OperationalLimitSet ?{limitset}{end_count}",
+        f"?lim{end_count}_mrid cim:IdentifiedObject.name ?lim{end_count}_name",
+        f"filter(regex(str(?lim{end_count}_name), '{rate}'))",
+        f"?lim{end_count}_mrid cim:ApparentPowerLimit.value ?rate{rate}_t{end_count}",
     ]
 
 
@@ -97,6 +132,12 @@ def include_market(with_market: bool, variables: List[str], where_list: List[str
         where_list.extend([market_code_query(terminal_nr) for terminal_nr in sequence_numbers])
 
 
+def include_market_sv(with_market: bool, variables: List[str], where_list: List[str]) -> None:
+    if with_market:
+        variables.extend(sequence_variables("bidzone"))
+        where_list.extend([market_code_query_sv(terminal_nr) for terminal_nr in sequence_numbers])
+
+
 def market_code_query(nr: int = None):
     nr_s = "" if nr is None else f"_{nr}"
     return group_query(
@@ -107,6 +148,20 @@ def market_code_query(nr: int = None):
             f"?substation{nr_s} {DELIVERYPOINT} ?m_d_p{nr_s}",
             f"?m_d_p{nr_s} SN:MarketDeliveryPoint.BiddingArea ?barea{nr_s}",
             f"?barea{nr_s} SN:BiddingArea.marketCode ?bidzone{nr_s}",
+        ],
+        command="OPTIONAL",
+    )
+
+
+def market_code_query_sv(nr: int = None):
+    nr_s = "" if nr is None else f"_{nr}"
+    return group_query(
+        [
+            f"?t_mrid{nr_s} cim:Terminal.ConnectivityNode ?con{nr_s}",
+            f"?con{nr_s} {CNODE_CONTAINER} ?container{nr_s}",
+            f"?container{nr_s} {SUBSTATION} ?substation{nr_s}",
+            f"?substation{nr_s} {DELIVERYPOINT} ?m_d_p{nr_s}",
+            f"?m_d_p{nr_s} cim:IdentifiedObject.name ?bidzone{nr_s}",
         ],
         command="OPTIONAL",
     )
@@ -165,6 +220,15 @@ def bid_market_code_query() -> List[str]:
     ]
 
 
+def bid_market_code_query_sv() -> List[str]:
+    return [
+        f"?mrid {EQUIP_CONTAINER} ?eq_container",
+        "?eq_container cim:VoltageLevel.Substation ?substation",
+        f"?substation {DELIVERYPOINT} ?m_d_p",
+        "?m_d_p cim:IdentifiedObject.name ?bidzone",
+    ]
+
+
 def to_variables(vars: Iterable[str]) -> List[str]:
     return [f"?{var}" for var in vars]
 
@@ -213,7 +277,7 @@ def group_query(
     return command + " " + combine_statements(*x, group=group, split=split)
 
 
-def unionize(*args: str, group: bool = True):
+def unionize(*args: str, group: bool = True) -> str:
     if group:
         args = tuple(f"{{\n{arg}\n}}" for arg in args)
     return "\nUNION\n".join(args)
@@ -234,5 +298,18 @@ def border_filter(region: Union[str, List[str]], area1: str, area2: str) -> List
     regions = "|".join(region) if isinstance(region, list) else region
     return [
         combine_statements(*_in_first(area1, area2, regions)),
+        combine_statements(*_in_first(area2, area1, regions)),
+    ]
+
+
+def border_filter_sv(region: Union[str, List[str]], area1: str, area2: str) -> List[str]:
+    """Border filter where one area is in and the other is out"""
+
+    def _in_first(var1: str, var2: str, regions: str) -> List[str]:
+        """Return filter for inclusion of first variable and not second"""
+        return [f"FILTER ({var1} != {var2})"]
+
+    regions = "|".join(region) if isinstance(region, list) else region
+    return [
         combine_statements(*_in_first(area2, area1, regions)),
     ]
