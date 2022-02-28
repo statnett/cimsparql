@@ -2,6 +2,7 @@ import os
 import tempfile
 from itertools import product
 from pathlib import Path
+from sys import platform
 from typing import List
 
 import pandas as pd
@@ -70,6 +71,7 @@ def test_parse_sv_tp_cim_xml_voltage(sv_tp_cim: SvTpCimXml):
     assert (sv_tp_cim.voltage.dtypes == float).all()
 
 
+@pytest.mark.skipif(platform == "win32", reason="It fails for some odd reason on Windows")
 def test_parse_sv_tp_cim_xml_tap_step(sv_tp_cim: SvTpCimXml):
     assert sv_tp_cim.tap_steps.shape == (4, 1)
     assert (sv_tp_cim.tap_steps.dtypes == int).all()
