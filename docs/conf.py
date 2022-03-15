@@ -6,7 +6,6 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import os
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -77,7 +76,7 @@ autodoc_default_options = {"special-members": "__call__"}
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = "alabaster"
+
 html_theme = "sphinx_rtd_theme"
 
 autoclass_content = "both"

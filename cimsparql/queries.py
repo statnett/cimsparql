@@ -14,7 +14,7 @@ from cimsparql.cim import (
     TR_WINDING,
 )
 from cimsparql.constants import allowed_load_types, mrid_variable, sequence_numbers, union_split
-from cimsparql.transformer_windings import number_of_windings, terminal, transformer_common
+from cimsparql.transformer_windings import terminal, transformer_common
 
 
 def version_date() -> str:
@@ -481,12 +481,12 @@ def converters(
         sup.combine_statements(*converters, group=len(converters) > 1, split=union_split),
     ]
     if sequence_numbers is not None:
-        for sequence_number in sequence_numbers:
-            variables += [f"?t_mrid_{sequence_number}"]
+        for num in sequence_numbers:
+            variables += [f"?t_mrid_{num}"]
             where_list += [
-                f"?t_{sequence_number} cim:Terminal.ConductingEquipment {mrid}",
-                f'?t_{sequence_number} cim:Terminal.sequenceNumber "{sequence_number}"^^xsd:integer',
-                f"?t_{sequence_number} cim:IdentifiedObject.mRID ?t_mrid_{sequence_number}",
+                f"?t_{num} cim:Terminal.ConductingEquipment {mrid}",
+                f'?t_{num} cim:Terminal.sequenceNumber "{num}"^^xsd:integer',
+                f"?t_{num} cim:IdentifiedObject.mRID ?t_mrid_{num}",
             ]
     if region is not None:
         vc = f"{mrid} {EQUIP_CONTAINER} ?cont.\n?cont {SUBSTATION} ?Substation."

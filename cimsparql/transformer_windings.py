@@ -1,12 +1,7 @@
-from itertools import chain
-from typing import Iterable, List, Tuple, Union
-
-import numpy as np
-import pandas as pd
+from typing import Iterable, List, Union
 
 import cimsparql.query_support as sup
 from cimsparql.cim import EQUIP_CONTAINER, ID_OBJ, TR_WINDING
-from cimsparql.constants import con_mrid_str, ratings
 
 
 def end_number(nr: int, lock_end_number: bool) -> List[str]:

@@ -1,4 +1,3 @@
-import itertools
 import os
 from datetime import datetime
 from typing import List
@@ -167,7 +166,6 @@ def test_transformers_with_multiple_sub_regions(gdb_cli: GraphDBClient):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_transformers_with_faseshift(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(region="SE", connectivity=con_mrid_str, with_market=True)
     tap_changers = gdb_cli.phase_tap_changers(region="SE")
     assert "w_mrid_1" in tap_changers.columns
 
