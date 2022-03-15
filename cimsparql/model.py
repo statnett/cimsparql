@@ -25,24 +25,10 @@ from cimsparql.url import Prefix
 CimModelType = TypeVar("CimModelType", bound="CimModel")
 
 
-class CimModel(Prefix):
-    """Used to query with sparql queries (typically CIM)"""
-
+class Model(Prefix):
     def __init__(self, mapper: TypeMapper, *args, **kwargs) -> None:
         self._setup_client(*args, **kwargs)
         self.mapper = mapper
-
-    @property
-    def date_version(self) -> datetime:
-        """Activation date for this repository"""
-        try:
-            date_version = self._date_version
-        except AttributeError:
-            repository_date = self._get_table_and_convert(queries.version_date())
-            date_version = repository_date["activationDate"].values[0]
-            if isinstance(date_version, np.datetime64):
-                date_version = self._date_version = date_version.astype("<M8[s]").astype(datetime)
-        return date_version
 
     @property
     def mapper(self) -> TypeMapper:
@@ -67,6 +53,132 @@ class CimModel(Prefix):
         if limit is not None:
             query += f" limit {limit}"
         return query
+
+    @property
+    def empty(self) -> bool:
+        """Identify empty GraphDB repo"""
+        try:
+            self._get_table("SELECT * \n WHERE { ?s ?p ?o }", limit=1)
+            return False
+        except IndexError:
+            return True
+
+    @staticmethod
+    def _assign_column_types(
+        result: pd.DataFrame, columns: Dict[str, Union[bool, str, float, int]]
+    ) -> None:
+        for column, column_type in columns.items():
+            if column_type is str:
+                continue
+            if column_type is bool:
+                result[column] = result[column].str.contains("true", flags=re.IGNORECASE)
+            else:
+                result.loc[result[column] == "None", column] = ""
+                result[column] = pd.to_numeric(result[column], errors="coerce").astype(column_type)
+
+    @classmethod
+    def col_map(cls, data_row, columns) -> Tuple[Dict[str, str]]:
+        columns = {} if columns is None else columns
+        col_map = cls._col_map(data_row)
+        return col_map, {col: columns[col] for col in set(columns).difference(col_map)}
+
+    def get_table(
+        self,
+        query: str,
+        index: Optional[str] = None,
+        limit: Optional[int] = None,
+        map_data_types: bool = True,
+        custom_maps: Optional[Dict] = None,
+        columns: Optional[Dict] = None,
+    ) -> pd.DataFrame:
+        """Gets given table from the configured database.
+
+        Args:
+           query: to sparql server
+           index: column name to use as index
+           limit: limit number of resulting rows
+           map_data_types: gets datatypes from the configured graphdb & maps the types in the result
+                  to correct python types
+           custom_maps: dictionary of 'sparql_datatype': function to apply on columns with that
+                  type. Overwrites sparql map for the types specified.
+           columns: dictionary of 'column_name': function,
+                  uses pandas astype on the column, or applies function.
+                  Sparql map overwrites columns when available
+
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('LATEST'))
+           >>> query = 'select * where { ?subject ?predicate ?object }'
+           >>> gdbc.get_table(query, limit=10)
+        """
+        try:
+            result, data_row = self._get_table(query, limit)
+        except IndexError:
+            return pd.DataFrame([])
+
+        if map_data_types and self.mapper is not None:
+            col_map, columns = self.col_map(data_row, columns)
+            result = self.mapper.map_data_types(result, col_map, custom_maps, columns)
+
+        if index and not result.empty:
+            result.set_index(index, inplace=True)
+        return result
+
+    @property
+    def map_data_types(self) -> bool:
+        try:
+            return self.mapper.have_cim_version(self.prefixes["cim"])
+        except AttributeError:
+            return False
+
+    @classmethod
+    def _manual_convert_types(
+        cls: CimModelType, df: pd.DataFrame, columns: Dict, index: str
+    ) -> pd.DataFrame:
+        if columns is None:
+            columns = {}
+        reset_index = index is not None
+        if reset_index:
+            df.reset_index(inplace=True)
+        df = df.astype(str)
+        cls._assign_column_types(df, columns)
+        if reset_index:
+            df.set_index(index, inplace=True)
+        return df
+
+    def _get_table_and_convert(
+        self,
+        query: str,
+        limit: Optional[int] = None,
+        index: Optional[str] = None,
+        custom_maps: Optional[Dict] = None,
+        columns: Optional[Dict] = None,
+    ) -> pd.DataFrame:
+        result = self.get_table(
+            query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns
+        )
+
+        if not self.map_data_types and len(result) > 0:
+            result = self._manual_convert_types(result, columns, index)
+
+        return result
+
+
+class CimModel(Model):
+    """Used to query with sparql queries (typically CIM)"""
+
+    @property
+    def date_version(self) -> datetime:
+        """Activation date for this repository"""
+        try:
+            date_version = self._date_version
+        except AttributeError:
+            repository_date = self._get_table_and_convert(queries.version_date())
+            date_version = repository_date["activationDate"].values[0]
+            if isinstance(date_version, np.datetime64):
+                date_version = self._date_version = date_version.astype("<M8[s]").astype(datetime)
+        return date_version
 
     def bus_data(
         self,
@@ -757,113 +869,3 @@ class CimModel(Prefix):
         """
         query = queries.regions_query(mrid_variable)
         return self._get_table_and_convert(query, limit=None, index=mrid_variable[1:])
-
-    @property
-    def empty(self) -> bool:
-        """Identify empty GraphDB repo"""
-        try:
-            self._get_table("SELECT * \n WHERE { ?s ?p ?o }", limit=1)
-            return False
-        except IndexError:
-            return True
-
-    @staticmethod
-    def _assign_column_types(
-        result: pd.DataFrame, columns: Dict[str, Union[bool, str, float, int]]
-    ) -> None:
-        for column, column_type in columns.items():
-            if column_type is str:
-                continue
-            if column_type is bool:
-                result[column] = result[column].str.contains("true", flags=re.IGNORECASE)
-            else:
-                result.loc[result[column] == "None", column] = ""
-                result[column] = pd.to_numeric(result[column], errors="coerce").astype(column_type)
-
-    @classmethod
-    def col_map(cls, data_row, columns) -> Tuple[Dict[str, str]]:
-        columns = {} if columns is None else columns
-        col_map = cls._col_map(data_row)
-        return col_map, {col: columns[col] for col in set(columns).difference(col_map)}
-
-    def get_table(
-        self,
-        query: str,
-        index: Optional[str] = None,
-        limit: Optional[int] = None,
-        map_data_types: bool = True,
-        custom_maps: Optional[Dict] = None,
-        columns: Optional[Dict] = None,
-    ) -> pd.DataFrame:
-        """Gets given table from the configured database.
-
-        Args:
-           query: to sparql server
-           index: column name to use as index
-           limit: limit number of resulting rows
-           map_data_types: gets datatypes from the configured graphdb & maps the types in the result
-                  to correct python types
-           custom_maps: dictionary of 'sparql_datatype': function to apply on columns with that
-                  type. Overwrites sparql map for the types specified.
-           columns: dictionary of 'column_name': function,
-                  uses pandas astype on the column, or applies function.
-                  Sparql map overwrites columns when available
-
-        Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> query = 'select * where { ?subject ?predicate ?object }'
-           >>> gdbc.get_table(query, limit=10)
-        """
-        try:
-            result, data_row = self._get_table(query, limit)
-        except IndexError:
-            return pd.DataFrame([])
-
-        if map_data_types and self.mapper is not None:
-            col_map, columns = self.col_map(data_row, columns)
-            result = self.mapper.map_data_types(result, col_map, custom_maps, columns)
-
-        if index and not result.empty:
-            result.set_index(index, inplace=True)
-        return result
-
-    @property
-    def map_data_types(self) -> bool:
-        try:
-            return self.mapper.have_cim_version(self.prefixes["cim"])
-        except AttributeError:
-            return False
-
-    @classmethod
-    def _manual_convert_types(
-        cls: CimModelType, df: pd.DataFrame, columns: Dict, index: str
-    ) -> pd.DataFrame:
-        if columns is None:
-            columns = {}
-        reset_index = index is not None
-        if reset_index:
-            df.reset_index(inplace=True)
-        df = df.astype(str)
-        cls._assign_column_types(df, columns)
-        if reset_index:
-            df.set_index(index, inplace=True)
-        return df
-
-    def _get_table_and_convert(
-        self,
-        query: str,
-        limit: Optional[int] = None,
-        index: Optional[str] = None,
-        custom_maps: Optional[Dict] = None,
-        columns: Optional[Dict] = None,
-    ) -> pd.DataFrame:
-        result = self.get_table(
-            query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns
-        )
-
-        if not self.map_data_types and len(result) > 0:
-            result = self._manual_convert_types(result, columns, index)
-
-        return result
