@@ -2,22 +2,25 @@ from __future__ import annotations
 
 import re
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 import pandas as pd
 from dateutil import parser
 
-from cimsparql.query_support import combine_statements, unionize
+from cimsparql.constants import union_split
+from cimsparql.query_support import combine_statements, group_query, select_statement
 
 if TYPE_CHECKING:
-    from cimsparql.model import CimModel
+    from cimsparql.model import Model
 
-as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
 
-python_type_map = {
+as_type_able = [int, float, str, "int16", "int32", "int64", "Int16", "Int32", "Int64"]
+
+python_type_map: Dict[str, Callable] = {
     "string": str,
     "integer": int,
     "boolean": lambda x: x.lower() == "true",
+    "decimal": float,
     "float": float,
     "dateTime": parser.parse,
 }
@@ -28,7 +31,7 @@ sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x) if x is
 
 class TypeMapperQueries:
     @property
-    def generals(self) -> List[List[str]]:
+    def generals(self) -> str:
         """For sparql-types that are not sourced from objects of type rdf:property, sparql & type are
         required
 
@@ -38,107 +41,81 @@ class TypeMapperQueries:
 
         type can be anything as long as it is represented in the python_type_map.
         """
-        return [
-            [
+        return combine_statements(
+            *[
                 "?sparql_type rdf:type rdfs:Datatype",
                 "?sparql_type owl:equivalentClass ?range",
-                'BIND(STRBEFORE(str(?range), "#") as ?prefix)',
-                'BIND(STRAFTER(str(?range), "#") as ?type)',
-            ]
-        ]
-
-    @property
-    def prefix_general(self) -> List[str]:
-        """Common query used as a base for all prefix_based queries."""
-        return [
-            "?sparql_type rdf:type rdf:Property",
-            "?sparql_type rdfs:range ?range",
-            'BIND(STRBEFORE(str(?range), "#") as ?prefix)',
-        ]
-
-    @property
-    def prefix_based(self) -> Dict[str, List[str]]:
-        """Each prefix can have different locations of where DataTypes are described.
-
-        Based on a object of type rdf:property & its rdfs:range, one has edit the query such that
-        one ends up with the DataType.
-
-        """
-        return {
-            "https://www.w3.org/2001/XMLSchema": ["?range rdfs:label ?type"],
-            "https://iec.ch/TC57/2010/CIM-schema-cim15": [
-                "?range owl:equivalentClass ?class",
-                "?class rdfs:label ?type",
+                'bind(lcase(strafter(str(?range), "#")) as ?type)',
             ],
-        }
+            split=" .\n",
+        )
 
     @property
-    def query(self) -> str:
-        select_query = "SELECT ?sparql_type ?type ?prefix"
-
-        grouped_generals = [combine_statements(*g, split=" .\n") for g in self.generals]
-        grouped_prefixes = [
-            combine_statements(*v, f'FILTER (?prefix = "{k}")', split=" .\n")
-            for k, v in self.prefix_based.items()
-        ]
-        grouped_prefix_general = combine_statements(*self.prefix_general, split=" .\n")
-        unionized_generals = unionize(*grouped_generals)
-        unionized_prefixes = unionize(*grouped_prefixes)
-
-        full_prefixes = combine_statements(grouped_prefix_general, unionized_prefixes, group=True)
-        full_union = unionize(unionized_generals, full_prefixes, group=False)
-        return f"{select_query}\nWHERE\n{{\n{full_union}\n}}"
+    def prefix_general(self) -> str:
+        """Common query used as a base for all prefix_based queries."""
+        equiv = "?range owl:equivalentClass ?equiv"
+        return combine_statements(
+            *[
+                "?sparql_type rdf:type rdf:Property",
+                "?sparql_type rdfs:range ?range",
+                group_query([equiv], command="optional"),
+                f"bind(if(exists {{{equiv}}}, ?equiv, ?range) as ?t)",
+                'bind(lcase(strafter(str(?t), "#")) as ?type)',
+            ],
+            split=" .\n",
+        )
 
 
 class TypeMapper(TypeMapperQueries):
-    def __init__(self, client: CimModel, custom_additions: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, client: Model, custom: Optional[Dict[str, Callable]] = None) -> None:
         self.prefixes = client.prefixes
-        custom_additions = custom_additions if custom_additions is not None else {}
-        self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
+        custom = custom if custom is not None else {}
+        self.map = {**sparql_type_map, **self.get_map(client), **custom}
 
     def have_cim_version(self, cim) -> bool:
         return cim in (val.split("#")[0] for val in self.map.keys())
 
     @staticmethod
-    def type_map(df: pd.DataFrame) -> Dict[str, Any]:
-        df["type"] = df["type"].str.lower()
-        d = df.set_index("sparql_type").to_dict("index")
-        return {k: python_type_map.get(v.get("type", "string")) for k, v in d.items()}
+    def type_map(df: pd.DataFrame) -> Dict[str, Callable]:
+        return df.set_index("sparql_type")["type"].replace(python_type_map).to_dict()
 
-    @staticmethod
-    def prefix_map(df: pd.DataFrame) -> Dict[str, Any]:
-        df = df.loc[~df["prefix"].isna()].head()
-        df["comb"] = df["prefix"] + "#" + df["type"]
-        df = df.drop_duplicates("comb")
-        d2 = df.set_index("comb").to_dict("index")
-        return {k: python_type_map.get(v.get("type", "string")) for k, v in d2.items()}
+    @property
+    def query(self) -> Optional[str]:
+        if "owl" not in self.prefixes:
+            return
+        variables = ["?sparql_type", "?type"]
+        statements = [self.generals, self.prefix_general]
+        full = combine_statements(*statements, split=union_split, group=True)
+        return combine_statements(select_statement(variables), combine_statements(full, group=True))
 
-    def get_map(self, client: CimModel) -> Dict[str, Any]:
+    def get_map(self, client: Model) -> Dict[str, Callable]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
 
         Args:
-            client: initialized CimModel
+            client: initialized Model
 
         Returns:
             sparql-type -> python type map
 
         """
-        df = client.get_table(self.query, map_data_types=False)
+        if (query := self.query) is None:
+            return {}
+        df = client.get_table(query, map_data_types=False)
+
         if df.empty:
             return {}
-        type_map = self.type_map(df)
-        prefix_map = self.prefix_map(df)
+        type_map = self.type_map(df[~df["type"].isna()])
         xsd_map = {
-            f"{self.prefixes['xsd']}#{xsd_type}": xsd_map
-            for xsd_type, xsd_map in python_type_map.items()
+            f"{self.prefixes['xsd']}#{xsd_type}": xsd_callable
+            for xsd_type, xsd_callable in python_type_map.items()
         }
-        return {**type_map, **prefix_map, **xsd_map}
+        return {**type_map, **xsd_map}
 
     def get_type(
         self,
         sparql_type: str,
-        missing_return: str = "identity",
-        custom_maps: Optional[Dict[str, Any]] = None,
+        missing_return: Optional[str] = "identity",
+        custom_maps: Optional[Dict[str, Callable]] = None,
     ):
         """Gets the python type/function to apply on columns of the sparql_type
 
@@ -165,7 +142,10 @@ class TypeMapper(TypeMapperQueries):
             return None
 
     def convert_dict(
-        self, d: Dict, drop_missing: bool = True, custom_maps: Optional[Dict[str, Any]] = None
+        self,
+        d: Dict[str, Callable],
+        drop_missing: bool = True,
+        custom_maps: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Converts a col_name -> sparql_datatype map to a col_name -> python_type map
 
@@ -190,7 +170,7 @@ class TypeMapper(TypeMapperQueries):
         return base
 
     @staticmethod
-    def map_base_types(df: pd.DataFrame, type_map: Dict) -> pd.DataFrame:
+    def map_base_types(df: pd.DataFrame, type_map: Dict[str, Callable]) -> pd.DataFrame:
         """Maps the datatypes in type_map which can be used with the df.astype function
 
         Args:
@@ -207,7 +187,7 @@ class TypeMapper(TypeMapperQueries):
         return df
 
     @staticmethod
-    def map_exceptions(df: pd.DataFrame, type_map: Dict) -> pd.DataFrame:
+    def map_exceptions(df: pd.DataFrame, type_map: Dict[str, Callable]) -> pd.DataFrame:
         """Maps the functions/datatypes in type_map which cant be done with the df.astype function
 
         Args:
@@ -218,13 +198,16 @@ class TypeMapper(TypeMapperQueries):
             mapped DataFrame
 
         """
-        ex_columns = {c for c, datatype in type_map.items() if datatype not in as_type_able}
-        for column in ex_columns:
+        for column in {c for c, datatype in type_map.items() if datatype not in as_type_able}:
             df[column] = df[column].apply(type_map[column])
         return df
 
     def map_data_types(
-        self, df: pd.DataFrame, col_map: Dict, custom_maps: Dict = None, columns: Dict = None
+        self,
+        df: pd.DataFrame,
+        col_map: Dict[str, Callable],
+        custom_maps: Optional[Dict] = None,
+        columns: Optional[Dict] = None,
     ) -> pd.DataFrame:
         """Maps the dtypes of a DataFrame to the python-corresponding types of the sparql-types from the
         source data

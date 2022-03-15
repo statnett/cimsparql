@@ -16,7 +16,7 @@ converter_types: Tuple[str, ...] = (
     "cim:DCConvertUnit",
 )
 
-union_split: str = "\n} UNION\n{"
+union_split: str = "}\nUNION\n{"
 sequence_numbers: List[int] = [1, 2]
 
 # Default variable names

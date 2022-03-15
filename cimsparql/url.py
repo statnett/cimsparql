@@ -76,7 +76,7 @@ class Prefix:
         try:
             prefixes = set(re.findall(r"(\w+):\w+", query))
             return "\n".join([f"PREFIX {name}:<{self.prefixes[name]}#>" for name in prefixes])
-        except AttributeError:
+        except (AttributeError, KeyError):
             return ""
 
     def items(self) -> ItemsView[str, str]:
