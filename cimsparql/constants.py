@@ -1,12 +1,20 @@
-from typing import Iterable, List, Tuple
+from typing import List, Tuple
 
 # Allowed
-allowed_load_types: Tuple[str] = ("ConformLoad", "NonConformLoad", "EnergyConsumer")
+allowed_load_types: Tuple[str, ...] = ("ConformLoad", "NonConformLoad", "EnergyConsumer")
 
-generating_types: Iterable[str] = ("Hydro", "Thermal", "Wind")
+generating_types: Tuple[str, ...] = ("Hydro", "Thermal", "Wind")
 
 # Available ratings
-ratings: Tuple[str] = ("Normal", "Warning", "Overload")
+ratings: Tuple[str, ...] = ("Normal", "Warning", "Overload")
+
+converter_types: Tuple[str, ...] = (
+    "ALG:VoltageSourceConverter",
+    "ALG:DCConverter",
+    "cim:VsConverter",
+    "cim:CsConverter",
+    "cim:DCConvertUnit",
+)
 
 union_split: str = "\n} UNION\n{"
 sequence_numbers: List[int] = [1, 2]
@@ -15,4 +23,4 @@ sequence_numbers: List[int] = [1, 2]
 con_mrid_str: str = "connectivity_mrid"
 mrid_variable: str = "?mrid"
 
-impedance_variables: Iterable[str] = ("r", "x")
+impedance_variables: Tuple[str, ...] = ("r", "x")

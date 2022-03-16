@@ -12,7 +12,13 @@ import pandas as pd
 from cimsparql import queries
 from cimsparql import query_support as sup
 from cimsparql import ssh_queries, sv_queries, tp_queries
-from cimsparql.constants import generating_types, impedance_variables, mrid_variable, ratings
+from cimsparql.constants import (
+    converter_types,
+    generating_types,
+    impedance_variables,
+    mrid_variable,
+    ratings,
+)
 from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import Prefix
 
@@ -329,7 +335,7 @@ class CimModel(Prefix):
         self,
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
-        converter_types: Iterable[str] = ("VoltageSource", "DC"),
+        converter_types: Iterable[str] = converter_types,
         mrid: str = mrid_variable,
         name: str = "?name",
         sequence_numbers: Optional[List[int]] = None,
@@ -346,7 +352,7 @@ class CimModel(Prefix):
         self,
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
-        converter_types: Iterable[str] = ("VoltageSource", "DC"),
+        converter_types: Iterable[str] = converter_types,
         mrid: str = mrid_variable,
         name: str = "?name",
         dry_run: bool = False,
@@ -356,7 +362,7 @@ class CimModel(Prefix):
         Args:
            region: Limit to region
            sub_region: Assume region is a sub_region
-           converter_types: VoltageSource or DC (ALG:VoltageSourceConverter or ALG:DCConverter)
+           converter_types: VoltageSource, DC (cim:VsConverter, cim:DCConverterUnit)
            dry_run: return string with sql query
 
         """
