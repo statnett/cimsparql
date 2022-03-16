@@ -200,7 +200,7 @@ def corridor_columns() -> List[str]:
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_transformer_connected_to_voltage_source_converters(gdb_cli: GraphDBClient):
     transformers = gdb_cli.transformers_connected_to_converter(
-        region="NO", converter_types=["VoltageSource"]
+        region="NO", converter_types=["ALG:VoltageSourceConverter"]
     )
     assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
     assert len(transformers) == 10
@@ -208,7 +208,9 @@ def test_transformer_connected_to_voltage_source_converters(gdb_cli: GraphDBClie
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_transformer_connected_to_dc_converters(gdb_cli: GraphDBClient):
-    transformers = gdb_cli.transformers_connected_to_converter(region="NO", converter_types=["DC"])
+    transformers = gdb_cli.transformers_connected_to_converter(
+        region="NO", converter_types=["ALG:DCConverter"]
+    )
     assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
     assert len(transformers) == 16
 

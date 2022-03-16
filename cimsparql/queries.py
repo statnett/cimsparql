@@ -446,9 +446,7 @@ def transformers_connected_to_converter(
     region: str, sub_region: bool, converter_types: Iterable[str], mrid: str, name: str
 ) -> str:
     variables = [mrid, "?t_mrid", name]
-    converters = [
-        sup.rdf_type_tripler("?volt", f"ALG:{converter}Converter") for converter in converter_types
-    ]
+    converters = [sup.rdf_type_tripler("?volt", converter) for converter in converter_types]
     where_list = [
         sup.rdf_type_tripler(mrid, "cim:PowerTransformer"),
         sup.get_name(mrid, name, alias=True),
@@ -473,9 +471,7 @@ def converters(
     sequence_numbers: Optional[List[int]],
 ) -> str:
     variables = [mrid, name]
-    converters = [
-        sup.rdf_type_tripler(mrid, f"ALG:{converter}Converter") for converter in converter_types
-    ]
+    converters = [sup.rdf_type_tripler(mrid, converter) for converter in converter_types]
     where_list = [
         sup.get_name(mrid, name, alias=True),
         sup.combine_statements(*converters, group=len(converters) > 1, split=union_split),
