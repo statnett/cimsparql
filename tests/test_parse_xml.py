@@ -23,7 +23,7 @@ tz = "Europe/Oslo"
 
 
 @pytest.fixture(scope="module")
-def profiles():
+def profiles() -> List[str]:
     return ["sv", "tp"]
 
 
@@ -34,12 +34,12 @@ def sv_tp_cim(profiles: List[str]) -> SvTpCimXml:
 
 
 @pytest.fixture(scope="module")
-def bus_data(sv_tp_cim) -> pd.DataFrame:
+def bus_data(sv_tp_cim: SvTpCimXml) -> pd.DataFrame:
     return sv_tp_cim.bus_data
 
 
 @pytest.fixture(scope="module")
-def tp_cim() -> str:
+def tp_cim() -> CimXmlStr:
     with open(root / "data" / "tp.xml", "r") as fid:
         return CimXmlStr(bytes(fid.read(), "utf-8"))
 

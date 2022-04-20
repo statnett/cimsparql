@@ -101,7 +101,7 @@ class GraphDBClient(CimModel):
             if data.get("datatype", data.get("type", None)) != "literal"
         }
 
-    def _get_table(self, query: str, limit: int) -> Tuple[pd.DataFrame, Dict]:
+    def _get_table(self, query: str, limit: int) -> Tuple[pd.DataFrame, Dict[str, str]]:
         self.sparql.setQuery(self._query_with_header(query, limit))
 
         processed_results = self.sparql.queryAndConvert()

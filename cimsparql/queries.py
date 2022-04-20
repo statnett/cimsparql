@@ -47,7 +47,7 @@ def regions_query(mrid: str) -> str:
 
 
 def phase_tap_changer_query(
-    region: Union[str, List[str]],
+    region: Optional[Union[str, List[str]]],
     sub_region: bool,
     with_tap_changer_values: bool,
     impedance: Iterable[str],
@@ -103,7 +103,9 @@ def connectivity_names(mrid: str, name: str = "?name") -> str:
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def bus_data(region: Union[str, List[str]], sub_region: bool, mrid: str, name: str) -> str:
+def bus_data(
+    region: Optional[Union[str, List[str]]], sub_region: bool, mrid: str, name: str
+) -> str:
     variables = [mrid, name]
     where_list = [sup.rdf_type_tripler(mrid, "cim:TopologicalNode"), sup.get_name(mrid, name)]
 
@@ -120,10 +122,10 @@ def bus_data(region: Union[str, List[str]], sub_region: bool, mrid: str, name: s
 
 def load_query(
     load_type: List[str],
-    load_vars: Iterable[str],
-    region: Union[str, List[str]],
+    load_vars: Optional[Iterable[str]],
+    region: Optional[Union[str, List[str]]],
     sub_region: bool,
-    connectivity: str,
+    connectivity: Optional[str],
     station_group_optional: bool,
     with_sequence_number: bool,
     network_analysis: bool,
@@ -189,9 +191,9 @@ def load_query(
 
 def synchronous_machines_query(
     sync_vars: Iterable[str],
-    region: Union[str, List[str]],
+    region: Optional[Union[str, List[str]]],
     sub_region: bool,
-    connectivity: str,
+    connectivity: Optional[str],
     station_group_optional: bool,
     cim_version: int,
     with_sequence_number: bool,
@@ -271,7 +273,7 @@ def synchronous_machines_query(
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def wind_generating_unit_query(network_analysis: bool, mrid: str, name: str):
+def wind_generating_unit_query(network_analysis: bool, mrid: str, name: str) -> str:
     variables = [
         mrid,
         "?station_group",
@@ -409,7 +411,7 @@ def series_compensator_query(
     cim_version: int,
     region: Union[str, List[str]],
     sub_region: bool,
-    connectivity: str,
+    connectivity: Optional[str],
     network_analysis: Optional[bool],
     with_market: bool,
     mrid: str,
@@ -544,11 +546,11 @@ def borders_query(
 def ac_line_query(
     cim_version: int,
     cim: str,
-    region: Union[str, List[str]],
+    region: Optional[Union[str, List[str]]],
     sub_region: bool,
-    connectivity: str,
+    connectivity: Optional[str],
     rates: Iterable[str],
-    network_analysis: bool,
+    network_analysis: Optional[bool],
     with_market: bool,
     temperatures: Optional[List[int]],
     impedance: Iterable[str],

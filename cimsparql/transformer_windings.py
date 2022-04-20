@@ -62,7 +62,7 @@ def transformer_common(
     winding_count: int,
     mrid: str,
     name: str,
-    impedance: List[str],
+    impedance: Iterable[str],
     variables: List[str],
     where_list: List[str],
     with_market: bool,
