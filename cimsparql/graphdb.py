@@ -1,14 +1,15 @@
 """Graphdb CIM sparql client"""
 import contextlib
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 import requests
 from SPARQLWrapper import JSON, SPARQLWrapper
 
 from cimsparql import url
-from cimsparql.model import CimModel
+from cimsparql.model import CimModel, Model
+from cimsparql.type_mapper import TypeMapper
 
 
 def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
@@ -30,9 +31,13 @@ def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
     return full_row
 
 
-class GraphDBClient(CimModel):
+class GraphDBClientBase(Model):
     def __init__(
-        self, service: str, mapper: CimModel = None, infer: bool = False, sameas: bool = True
+        self,
+        service: str,
+        mapper: Optional[TypeMapper] = None,
+        infer: bool = False,
+        sameas: bool = True,
     ) -> None:
         """GraphDB client
 
@@ -42,12 +47,13 @@ class GraphDBClient(CimModel):
            infer: deduce further knowledge based on existing RDF data and a formal set of
            sameas: map same concepts from two or more datasets
         """
-        super().__init__(mapper, service, infer, sameas)
+        super().__init__(mapper)
+        self._setup_client(service, infer, sameas)
 
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service}>"
 
-    def _setup_client(self, service: str, infer: bool, sameas: bool, **kwargs) -> None:
+    def _setup_client(self, service: str, infer: bool, sameas: bool) -> None:
         """Setup client for querying
 
         Args:
@@ -63,7 +69,7 @@ class GraphDBClient(CimModel):
         self.sparql.setCredentials(self.user, self.passwd)
         self.sparql.addParameter("infer", str(infer))
         self.sparql.addParameter("sameAs", str(sameas))
-        self.prefixes = self._service
+        self._set_prefixes()
 
     @property
     def service(self):
@@ -76,16 +82,15 @@ class GraphDBClient(CimModel):
         else:
             self._service = service
 
-    @CimModel.prefixes.setter
-    def prefixes(self, service: str):
-        self._prefixes = {}
+    def _set_prefixes(self) -> None:
+        self.prefixes: Dict[str, str] = {}
         auth = requests.auth.HTTPBasicAuth(self.user, self.passwd)
-        response = requests.get(service + "/namespaces", auth=auth)
+        response = requests.get(self.service + "/namespaces", auth=auth)
         if response.ok:
             for line in response.text.split():
                 prefix, uri = line.split(",")
                 if prefix != "prefix":
-                    self._prefixes[prefix] = uri.rstrip("#")
+                    self.prefixes[prefix] = uri.rstrip("#")
         else:
             msg = (
                 "Could not fetch namespaces and prefixes from graphdb "
@@ -119,6 +124,10 @@ class GraphDBClient(CimModel):
         out = [{c: self.value_getter(row.get(c, {})) for c in cols} for row in data]
 
         return pd.DataFrame(out), data_row(cols, data)
+
+
+class GraphDBClient(GraphDBClientBase, CimModel):
+    pass
 
 
 def get_graphdb_client(

@@ -1,32 +1,32 @@
-from mock import MagicMock
+from mock import Mock, patch
 
-from cimsparql.model import CimModel
+from cimsparql.model import Model
 
 
+@patch.object(Model, "__abstractmethods__", set())
 def test_map_data_types(monkeypatch):
     def cim_init(self, *args):
-        self._mapper = MagicMock(have_cim_version=MagicMock(return_value=True))
-        self._prefixes = {"cim": None}
+        self._mapper = Mock(have_cim_version=Mock(return_value=True))
+        self.prefixes = {"cim": None}
 
-    monkeypatch.setattr(CimModel, "__init__", cim_init)
-    cim_model = CimModel()
+    monkeypatch.setattr(Model, "__init__", cim_init)
+    cim_model = Model()
     assert cim_model.map_data_types
 
 
+@patch.object(Model, "__abstractmethods__", set())
 def test_not_map_data_types(monkeypatch):
     def cim_init(self, *args):
-        self._mapper = MagicMock(have_cim_version=MagicMock(return_value=False))
-        self._prefixes = {"cim": None}
+        self._mapper = Mock(have_cim_version=Mock(return_value=False))
+        self.prefixes = {"cim": None}
 
-    monkeypatch.setattr(CimModel, "__init__", cim_init)
-    cim_model = CimModel()
+    monkeypatch.setattr(Model, "__init__", cim_init)
+    cim_model = Model()
     assert not cim_model.map_data_types
 
 
-def test_not_map_data_types_on_exception(monkeypatch):
-    def cim_init(self, *args):
-        pass
-
-    monkeypatch.setattr(CimModel, "__init__", cim_init)
-    cim_model = CimModel()
+@patch.object(Model, "__abstractmethods__", set())
+@patch.object(Model, "__init__", Mock(return_value=None))
+def test_not_map_data_types_on_exception():
+    cim_model = Model(None)
     assert not cim_model.map_data_types

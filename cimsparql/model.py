@@ -3,7 +3,9 @@ function get_table as well as a set of predefined CIM queries.
 """
 
 import re
+from abc import ABC, abstractmethod
 from datetime import datetime
+from functools import cached_property
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
@@ -23,13 +25,20 @@ from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import Prefix
 
 
-class Model(Prefix):
-    def __init__(self, mapper: TypeMapper, *args, **kwargs) -> None:
-        self._setup_client(*args, **kwargs)
-        self.mapper = mapper
+class Model(Prefix, ABC):
+    def __init__(self, mapper: Optional[TypeMapper]) -> None:
+        self._mapper = mapper
 
-    @property
-    def mapper(self) -> TypeMapper:
+    @abstractmethod
+    def _get_table(self, *args, **kwargs) -> Tuple[pd.DataFrame, Dict[str, str]]:
+        pass
+
+    @abstractmethod
+    def _col_map(self) -> Dict[str, str]:
+        pass
+
+    @cached_property
+    def mapper(self) -> Optional[TypeMapper]:
         """Mapper used to convert str → type described by ontology in Graphdb
 
         Getter:
@@ -37,14 +46,9 @@ class Model(Prefix):
         Setter:
            Sets mapper for self. Query GraphDB if not provided (None)
         """
+        if self._mapper is None and "rdfs" in self.prefixes:
+            return TypeMapper(self)
         return self._mapper
-
-    @mapper.setter
-    def mapper(self, mapper: Optional[TypeMapper] = None) -> None:
-        if mapper is None and "rdfs" in self.prefixes:
-            self._mapper = TypeMapper(self)
-        else:
-            self._mapper = mapper
 
     def _query_with_header(self, query: str, limit: Optional[int] = None) -> str:
         query = "\n".join([self.header_str(query), query])
@@ -453,7 +457,7 @@ class CimModel(Model):
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         query = queries.converters(
-            region, sub_region, converter_types, mrid, name, sequence_numbers
+            region, sub_region, self.in_prefixes(converter_types), mrid, name, sequence_numbers
         )
         if dry_run:
             return self._query_with_header(query)
@@ -478,7 +482,7 @@ class CimModel(Model):
 
         """
         query = queries.transformers_connected_to_converter(
-            region, sub_region, converter_types, mrid, name
+            region, sub_region, self.in_prefixes(converter_types), mrid, name
         )
         if dry_run:
             return self._query_with_header(query)
