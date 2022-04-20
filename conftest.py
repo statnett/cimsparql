@@ -77,7 +77,7 @@ def graphdb_repo() -> str:
 
 
 @pytest.fixture(scope="session")
-def graphdb_path(graphdb_repo) -> str:
+def graphdb_path(graphdb_repo: str) -> str:
     return "services/pgm/equipment/" if graphdb_repo == "LATEST" else ""
 
 
@@ -87,7 +87,7 @@ def graphdb_service(server, graphdb_repo, graphdb_path) -> str:
 
 
 @pytest.fixture(scope="session")
-def gdb_cli(graphdb_service) -> GraphDBClient:
+def gdb_cli(graphdb_service: str) -> GraphDBClient:
     return GraphDBClient(graphdb_service)
 
 
@@ -126,7 +126,7 @@ def datatypes_url(datatype: str) -> str:
 
 
 @pytest.fixture
-def sparql_data_types():
+def sparql_data_types() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "sparql_type": [f"{datatypes_url(key)}" for key in ["Stage.priority", "PerCent"]],
@@ -148,12 +148,12 @@ def data_row():
 
 
 @pytest.fixture(scope="session")
-def disconnectors(gdb_cli: GraphDBClient, n_samples: int):
+def disconnectors(gdb_cli: GraphDBClient, n_samples: int) -> pd.DataFrame:
     return gdb_cli.connections(
         rdf_types="cim:Disconnector", limit=n_samples, connectivity=con_mrid_str
     )
 
 
 @pytest.fixture(scope="module")
-def breakers(gdb_cli: GraphDBClient, n_samples: int):
+def breakers(gdb_cli: GraphDBClient, n_samples: int) -> pd.DataFrame:
     return gdb_cli.connections(rdf_types="cim:Breaker", limit=n_samples, connectivity=con_mrid_str)
