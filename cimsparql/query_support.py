@@ -196,8 +196,8 @@ def negpos(val: Union[float, int]) -> str:
 
 def select_statement(variables: Optional[List[str]] = None) -> str:
     """Combine variables in an select statement"""
-    variables = "*" if variables is None else " ".join(variables)
-    return f"SELECT {variables}"
+    vars = "*" if variables is None else " ".join(variables)
+    return f"SELECT {vars}"
 
 
 def group_query(

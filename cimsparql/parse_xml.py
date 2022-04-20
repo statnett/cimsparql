@@ -1,6 +1,7 @@
 import collections
 import gzip
 import re
+from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
@@ -11,87 +12,114 @@ import pendulum
 from defusedxml.lxml import RestrictedElement, fromstring, parse
 from lxml.etree import _ElementTree
 
-
-def attrib(node: RestrictedElement, key: str, prefix: str) -> str:
-    return re.sub("^[#]?_", "", node.attrib[f"{{{prefix}}}{key}"])
+ElementValues = Dict[str, Optional[Union[float, str, bool]]]
 
 
-class CimXmlBase:
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+def attrib(node: Optional[RestrictedElement], key: str, prefix: str) -> Optional[str]:
+    return None if node is None else re.sub("^[#]?_", "", node.attrib[f"{{{prefix}}}{key}"])
+
+
+class CimXmlBase(ABC):
+    _root = None
+
+    @abstractmethod
+    def _parse(self):
+        pass
 
     @property
     def nsmap(self) -> Dict[str, str]:
         return self.root.nsmap
 
+    @property
+    def root(self) -> _ElementTree:
+        if self._root is None:
+            self._parse()
+        return self._root
+
     def findall(self, path: str) -> List[RestrictedElement]:
         return self.root.findall(path, self.nsmap)
 
     @staticmethod
+    def _attrib(
+        node: RestrictedElement, element: str, nsmap: Dict[str, str], key: str = "resource"
+    ) -> Optional[str]:
+        return attrib(node.find(element, nsmap), key, nsmap["rdf"])
+
+    @classmethod
+    def _element_values(
+        cls,
+        node: RestrictedElement,
+        nsmap: Dict[str, str],
+        element: str,
+        mrid: str,
+        variables: Iterable[str],
+    ) -> ElementValues:
+        vars = {var: float(node.find(f"{element}.{var}", nsmap).text) for var in variables}
+        return {"mrid": cls._attrib(node, f"{element}.{mrid}", nsmap), **vars}
+
+    @classmethod
     def _sv_power_flow_data_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[float, str]]:
-        return {
-            "p": float(node.find("cim:SvPowerFlow.p", nsmap).text),
-            "q": float(node.find("cim:SvPowerFlow.q", nsmap).text),
-            "mrid": attrib(node.find("cim:SvPowerFlow.Terminal", nsmap), "resource", nsmap["rdf"]),
-        }
+        cls, node: RestrictedElement, nsmap: Dict[str, str]
+    ) -> ElementValues:
+        return cls._element_values(node, nsmap, "cim:SvPowerFlow", "Terminal", ["p", "q"])
 
-    @staticmethod
+    @classmethod
     def _sv_voltage_data_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[float, str]]:
-        rdf = nsmap["rdf"]
-        try:
-            return {
-                "v": float(node.find("cim:SvVoltage.v", nsmap).text),
-                "angle": float(node.find("cim:SvVoltage.angle", nsmap).text),
-                "mrid": attrib(node.find("cim:SvVoltage.TopologicalNode", nsmap), "resource", rdf),
-            }
-        except AttributeError:
-            pass
+        cls, node: RestrictedElement, nsmap: Dict[str, str]
+    ) -> ElementValues:
+        return cls._element_values(node, nsmap, "cim:SvVoltage", "TopologicalNode", ["v", "angle"])
+
+    @classmethod
+    def _sv_injection_adder(cls, node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
+        return cls._element_values(
+            node, nsmap, "cim:SvInjection", "TopologicalNode", ["pInjection", "qInjection"]
+        )
 
     @staticmethod
-    def _sv_tap_step_data_adder(node: RestrictedElement, nsmap: Dict[str, str]):
+    def _sv_status_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
-            "position": int(node.find("cim:SvTapStep.position", nsmap).text),
-            "mrid": attrib(node.find("cim:SvTapStep.TapChanger", nsmap), "resource", nsmap["rdf"]),
+            "mrid": attrib(
+                node.find("cim:SvStatus.ConductingEquipment", nsmap), "resource", nsmap["rdf"]
+            ),
+            "in_service": node.find("cim:SvStatus.inService", nsmap).text == "true",
         }
 
     @staticmethod
+    def _sv_tap_step_data_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
+        return {
+            "mrid": attrib(node.find("cim:SvTapStep.TapChanger", nsmap), "resource", nsmap["rdf"]),
+            "position": int(node.find("cim:SvTapStep.position", nsmap).text),
+        }
+
+    @classmethod
     def _topological_node_data_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, str]:
-        rdf = nsmap["rdf"]
+        cls, node: RestrictedElement, nsmap: Dict[str, str]
+    ) -> ElementValues:
         return {
             "name": node.find("cim:IdentifiedObject.name", nsmap).text,
-            "base_voltage": attrib(
-                node.find("cim:TopologicalNode.BaseVoltage", nsmap), "resource", rdf
-            ),
-            "connectivity_node_container": attrib(
-                node.find("cim:TopologicalNode.ConnectivityNodeContainer", nsmap), "resource", rdf
+            "base_voltage": cls._attrib(node, "cim:TopologicalNode.BaseVoltage", nsmap),
+            "connectivity_node_container": cls._attrib(
+                node, "cim:TopologicalNode.ConnectivityNodeContainer", nsmap
             ),
             "mrid": attrib(node, "ID", nsmap["rdf"]),
         }
 
     @staticmethod
-    def _terminal_data_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[bool, str]]:
+    def _terminal_data_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         rdf = nsmap["rdf"]
         connected = node.find("cim:Terminal.connected", nsmap)
         topological_node = node.find("cim:Terminal.TopologicalNode", nsmap)
         tp_node = None if topological_node is None else attrib(topological_node, "resource", rdf)
         return {
+            "mrid": attrib(node, "about", rdf),
             "connected": True if connected is None else connected.text == "true",
             "tp_node": tp_node,
-            "mrid": attrib(node, "about", rdf),
         }
 
     @staticmethod
     def _synchrounous_machine_adder(
         node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[bool, str, float]]:
+    ) -> ElementValues:
         control_enabled = node.find("cim:RegulatingCondEq.controlEnabled", nsmap).text == "true"
         mode = attrib(
             node.find("cim:SynchronousMachine.operatingMode", nsmap), "resource", nsmap["rdf"]
@@ -105,19 +133,17 @@ class CimXmlBase:
             "q": float(node.find("cim:RotatingMachine.q", nsmap).text),
         }
 
-    @staticmethod
+    @classmethod
     def _generating_unit_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, float]]:
+        cls, node: RestrictedElement, nsmap: Dict[str, str]
+    ) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "pf": float(node.find("cim:GeneratingUnit.normalPF", nsmap).text),
         }
 
     @staticmethod
-    def _regulating_control_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[bool, str, float]]:
+    def _regulating_control_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "discrete": node.find("cim:RegulatingControl.discrete", nsmap).text == "true",
@@ -132,9 +158,7 @@ class CimXmlBase:
         }
 
     @staticmethod
-    def _tap_changer_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, bool, int]]:
+    def _tap_changer_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "enabled": node.find("cim:TapChanger.controlEnabled", nsmap).text == "true",
@@ -144,7 +168,7 @@ class CimXmlBase:
     @staticmethod
     def _linear_shunt_compensator_adder(
         node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, bool, int]]:
+    ) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "enabled": node.find("cim:RegulatingCondEq.controlEnabled", nsmap).text == "true",
@@ -152,7 +176,7 @@ class CimXmlBase:
         }
 
     @staticmethod
-    def _load_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> Dict[str, Union[str, float]]:
+    def _load_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "p": float(node.find("cim:EnergyConsumer.p", nsmap).text),
@@ -162,7 +186,7 @@ class CimXmlBase:
     @staticmethod
     def _static_var_compensator_adder(
         node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, bool, float]]:
+    ) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "enabled": node.find("cim:RegulatingCondEq.controlEnabled", nsmap).text == "true",
@@ -170,18 +194,14 @@ class CimXmlBase:
         }
 
     @staticmethod
-    def _control_area_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, float]]:
+    def _control_area_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "interchange": float(node.find("cim:ControlArea.netInterchange", nsmap).text),
         }
 
     @staticmethod
-    def _converter_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, float]]:
+    def _converter_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "p": float(node.find("cim:ACDCConverter.p", nsmap).text),
@@ -189,45 +209,35 @@ class CimXmlBase:
         }
 
     @staticmethod
-    def _terminal_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, bool]]:
+    def _terminal_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "connected": node.find("cim:ACDCTerminal.connected", nsmap).text == "true",
         }
 
     @staticmethod
-    def _switch_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, bool]]:
+    def _switch_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "open": node.find("cim:Switch.open", nsmap).text == "true",
         }
 
     @staticmethod
-    def _power_limit_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, bool]]:
+    def _power_limit_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "limit": float(node.find("cim:ApparentPowerLimit.value", nsmap).text),
         }
 
     @staticmethod
-    def _current_limit_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, bool]]:
+    def _current_limit_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "mrid": attrib(node, "about", nsmap["rdf"]),
             "limit": float(node.find("cim:CurrentLimit.value", nsmap).text),
         }
 
     @staticmethod
-    def _full_model_adder(
-        node: RestrictedElement, nsmap: Dict[str, str]
-    ) -> Dict[str, Union[str, pendulum.DateTime]]:
+    def _full_model_adder(node: RestrictedElement, nsmap: Dict[str, str]) -> ElementValues:
         return {
             "time": pendulum.parse(node.find("md:Model.scenarioTime", nsmap).text),
             "created": pendulum.parse(node.find("md:Model.created", nsmap).text),
@@ -252,16 +262,18 @@ class CimXmlBase:
                 "FullModel": self._full_model_adder,
                 "HydroGeneratingUnit": self._generating_unit_adder,
                 "LinearShuntCompensator": self._linear_shunt_compensator_adder,
-                "TapChangerControl": self._regulating_control_adder,
                 "NonConformLoad": self._load_adder,
                 "PhaseTapChangerLinear": self._tap_changer_adder,
                 "RatioTapChanger": self._tap_changer_adder,
                 "RegulatingControl": self._regulating_control_adder,
                 "StaticVarCompensator": self._static_var_compensator_adder,
+                "SvInjection": self._sv_injection_adder,
                 "SvPowerFlow": self._sv_power_flow_data_adder,
+                "SvStatus": self._sv_status_adder,
                 "SvTapStep": self._sv_tap_step_data_adder,
                 "SvVoltage": self._sv_voltage_data_adder,
                 "SynchronousMachine": self._synchrounous_machine_adder,
+                "TapChangerControl": self._regulating_control_adder,
                 "Terminal": self._terminal_data_adder,
                 "ThermalGeneratingUnit": self._generating_unit_adder,
                 "TopologicalNode": self._topological_node_data_adder,
@@ -289,43 +301,26 @@ class CimXmlBase:
 
 
 class CimXml(CimXmlBase):
-    def __init__(self, file_path: Path, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.file_path = file_path
+    def __init__(self, file_path: Path) -> None:
+        self._file_path = file_path
 
     def _parse(self) -> None:
-        if self.file_path.suffix == ".zip":
-            with ZipFile(self.file_path) as cimzip:
-                with cimzip.open(self.file_path.stem + ".xml") as fid:
+        if self._file_path.suffix == ".zip":
+            with ZipFile(self._file_path) as cimzip:
+                with cimzip.open(self._file_path.stem + ".xml") as fid:
                     self._root = parse(fid).getroot()
         else:
-            open_function = gzip.open if self.file_path.suffix == ".gz" else open
-            with open_function(self.file_path.absolute().as_posix(), "r") as fid:
+            open_function = gzip.open if self._file_path.suffix == ".gz" else open
+            with open_function(self._file_path.absolute().as_posix(), "r") as fid:
                 self._root = parse(fid).getroot()
-
-    @property
-    def root(self) -> _ElementTree:
-        if not hasattr(self, "_root"):
-            self._parse()
-        return self._root
-
-    def __getstate__(self) -> Path:  # pragma: no cover
-        return self.file_path
-
-    def __setstate__(self, file_path: Path):  # pragma: no cover
-        self.file_path = file_path
 
 
 class CimXmlStr(CimXmlBase):
-    def __init__(self, text: str, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, text: str) -> None:
         self._text = text
 
-    @property
-    def root(self) -> _ElementTree:
-        if not hasattr(self, "_root"):
-            self._root = fromstring(self._text)
-        return self._root
+    def _parse(self):
+        self._root = fromstring(self._text)
 
 
 class SvTpCimXml:
@@ -346,16 +341,58 @@ class SvTpCimXml:
         return self._parser["sv"].parse("SvTapStep").set_index("mrid")
 
     @cached_property
-    def bus_data(self, *args, **kwargs) -> pd.DataFrame:
+    def bus_data(self) -> pd.DataFrame:
         return self._parser["tp"].parse("TopologicalNode").set_index("mrid")
 
     @cached_property
-    def terminal(self, *args, **kwargs) -> pd.DataFrame:
+    def terminal(self) -> pd.DataFrame:
         return self._parser["tp"].parse("Terminal").set_index("mrid")
 
     @cached_property
-    def powerflow(self, *args, **kwargs) -> pd.DataFrame:
+    def powerflow(self) -> pd.DataFrame:
         return self._parser["sv"].parse("SvPowerFlow").set_index("mrid")
+
+    @cached_property
+    def status(self) -> pd.DataFrame:
+        return self._parser["sv"].parse("SvStatus").set_index("mrid")
+
+    @cached_property
+    def injection(self) -> pd.DataFrame:
+        return self._parser["sv"].parse("SvInjection").set_index("mrid")
+
+
+class CimXmlProfiles(SvTpCimXml):
+    def __init__(self, sv_path: Path, tp_path: Path, ssh_path: Path) -> None:
+
+        self.paths = {"sv": sv_path, "tp": tp_path, "ssh": ssh_path}
+        self._parser = {profile: CimXml(path) for profile, path in self.paths.items()}
+
+    @cached_property
+    def model(self) -> pd.Series:
+        return self._parser["ssh"].parse("FullModel").squeeze("index").rename("FullModel")
+
+    @cached_property
+    def generation(self) -> pd.DataFrame:
+        return self._parser["ssh"].parse("SynchronousMachine").set_index("mrid")
+
+    def demand(
+        self,
+        loads: Tuple[str, ...] = ("ConformLoad", "NonConformLoad"),
+    ) -> pd.DataFrame:
+        return pd.concat([self._parser["ssh"].parse(load) for load in loads]).set_index("mrid")
+
+    @cached_property
+    def tap_steps(self) -> pd.Series:
+        steps = self._parser["ssh"].parse("RatioTapChanger").set_index("mrid")
+        return steps.loc[steps["enabled"], "step"]
+
+    @cached_property
+    def converters(
+        self, converters: Tuple[str, ...] = ("VsConverter", "CsConverter")
+    ) -> pd.DataFrame:
+        return pd.concat(
+            [self._parser["ssh"].parse(converter) for converter in converters]
+        ).set_index("mrid")
 
 
 def parse_cim_file(file_name: str) -> Tuple[pendulum.DateTime, str]:
