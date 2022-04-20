@@ -25,7 +25,7 @@ def service(
        protocol: http or https
     """
     url = f"{protocol}://{server}/{path}repositories"
-    if repo is not None:
+    if repo:
         url += f"/{repo}"
     return url
 

@@ -19,7 +19,7 @@ def base_voltage(mrid: str, var: str) -> List[str]:
 
 
 def terminal_sequence_query(
-    cim_version: int, var: Optional[str], t_mrid: str = "?t_mrid"
+    cim_version: int, con: Optional[str], nodes: Optional[str], t_mrid: str = "?t_mrid"
 ) -> List[str]:
     query_list = []
     for nr in sequence_numbers:
@@ -31,8 +31,15 @@ def terminal_sequence_query(
                 f"{t_sequence_mrid} cim:{acdc_terminal(cim_version)}.sequenceNumber {nr}",
             ]
         )
-        if var is not None:
-            query_list.append(f"{t_sequence_mrid} cim:Terminal.ConnectivityNode ?{var}_{nr}")
+        if con:
+            query_list.append(f"{t_sequence_mrid} cim:Terminal.ConnectivityNode ?{con}_{nr}")
+        if nodes:
+            query_list.extend(
+                [
+                    f"{t_sequence_mrid} cim:{acdc_terminal(cim_version)}.connected 'true'",
+                    f"{t_sequence_mrid} cim:Terminal.TopologicalNode ?{nodes}_{nr}",
+                ]
+            )
     return query_list
 
 
@@ -118,23 +125,30 @@ def market_code_query(nr: int = None):
 
 
 def terminal_where_query(
-    cim_version: int = 15,
-    var: Optional[str] = con_mrid_str,
+    cim_version: int,
+    con: Optional[str],
+    node: Optional[str],
     with_sequence_number: bool = False,
     terminal_mrid: str = "?t_mrid",
 ) -> List[str]:
-    out = [
+    query_list = [
         rdf_type_tripler(terminal_mrid, "cim:Terminal"),
         f"{terminal_mrid} cim:Terminal.ConductingEquipment ?mrid",
     ]
-    if var is not None:
-        out.append(f"{terminal_mrid} cim:Terminal.ConnectivityNode ?{var}")
-
+    if con:
+        query_list.append(f"{terminal_mrid} cim:Terminal.ConnectivityNode ?{con}")
+    if node:
+        query_list.extend(
+            [
+                f"{terminal_mrid} cim:{acdc_terminal(cim_version)}.connected 'true'",
+                f"{terminal_mrid} cim:Terminal.TopologicalNode ?{node}",
+            ]
+        )
     if with_sequence_number:
-        out.append(
+        query_list.append(
             f"{terminal_mrid} cim:{acdc_terminal(cim_version)}.sequenceNumber ?sequenceNumber"
         )
-    return out
+    return query_list
 
 
 def _temperature_list(temperature: float, xsd: str, curve: str) -> List[str]:

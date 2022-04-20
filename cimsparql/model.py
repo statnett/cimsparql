@@ -20,6 +20,7 @@ from cimsparql.constants import (
     impedance_variables,
     mrid_variable,
     ratings,
+    union_split,
 )
 from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import Prefix
@@ -190,6 +191,7 @@ class CimModel(Model):
         dry_run: bool = False,
         mrid: str = mrid_variable,
         name: str = "?name",
+        with_dummy_buses: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query name of topological nodes (TP query).
 
@@ -200,6 +202,12 @@ class CimModel(Model):
            dry_run: return string with sql query
         """
         query = queries.bus_data(region, sub_region, mrid, name)
+        if with_dummy_buses:
+            dummy_bus_query = queries.three_winding_dummy_bus(region, sub_region, mrid, name)
+            combined = sup.combine_statements(query, dummy_bus_query, split=union_split)
+            query = sup.combine_statements(
+                sup.select_statement([mrid, "?name", "?un"]), f"where {{{{{combined}}}}}"
+            )
         if dry_run:
             return self._query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index=mrid[1:])
@@ -230,6 +238,7 @@ class CimModel(Model):
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         connectivity: Optional[Optional[str]] = None,
+        nodes: Optional[Optional[str]] = None,
         station_group_optional: bool = True,
         station_group: bool = False,
         with_sequence_number: bool = False,
@@ -268,6 +277,7 @@ class CimModel(Model):
             region,
             sub_region,
             connectivity,
+            nodes,
             station_group_optional,
             with_sequence_number,
             network_analysis,
@@ -320,6 +330,7 @@ class CimModel(Model):
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
+        nodes: Optional[str] = None,
         station_group_optional: bool = True,
         with_sequence_number: bool = False,
         network_analysis: bool = True,
@@ -356,6 +367,7 @@ class CimModel(Model):
             region,
             sub_region,
             connectivity,
+            nodes,
             station_group_optional,
             self.cim_version,
             with_sequence_number,
@@ -377,6 +389,7 @@ class CimModel(Model):
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
+        nodes: Optional[str] = None,
         mrid: str = mrid_variable,
         limit: Optional[int] = None,
         dry_run: bool = False,
@@ -401,7 +414,7 @@ class CimModel(Model):
            >>> gdbc.connections(limit=10)
         """
         query = queries.connection_query(
-            self.cim_version, rdf_types, region, sub_region, connectivity, mrid
+            self.cim_version, rdf_types, region, sub_region, connectivity, nodes, mrid
         )
         if dry_run:
             return self._query_with_header(query, limit)
@@ -493,6 +506,7 @@ class CimModel(Model):
         sub_region: bool = False,
         limit: Optional[int] = None,
         connectivity: Optional[str] = None,
+        nodes: Optional[str] = None,
         rates: Optional[Tuple[str]] = ratings,
         network_analysis: bool = True,
         with_market: bool = False,
@@ -526,6 +540,7 @@ class CimModel(Model):
             region,
             sub_region,
             connectivity,
+            nodes,
             rates,
             network_analysis,
             with_market,
@@ -548,6 +563,7 @@ class CimModel(Model):
         region: Optional[Union[str, List[str]]] = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
+        nodes: Optional[str] = None,
         network_analysis: bool = True,
         with_market: bool = False,
         mrid: str = mrid_variable,
@@ -577,6 +593,7 @@ class CimModel(Model):
             region,
             sub_region,
             connectivity,
+            nodes,
             network_analysis,
             with_market,
             mrid,
@@ -643,6 +660,7 @@ class CimModel(Model):
         with_market: bool = False,
         impedance: Iterable[str] = impedance_variables,
         mrid: str = "?p_mrid",
+        nodes: Optional[str] = None,
         name: str = "?name",
         limit: Optional[int] = None,
         dry_run: bool = False,
@@ -666,7 +684,7 @@ class CimModel(Model):
            >>> gdbc.two_winding_transformers(limit=10)
         """
         query = queries.two_winding_transformer_query(
-            region, sub_region, rates, network_analysis, with_market, mrid, name, impedance
+            region, sub_region, rates, network_analysis, with_market, mrid, nodes, name, impedance
         )
         if dry_run:
             return self._query_with_header(query, limit)
@@ -681,6 +699,7 @@ class CimModel(Model):
         with_market: bool = False,
         impedance: Iterable[str] = impedance_variables,
         mrid: str = "?p_mrid",
+        nodes: Optional[str] = None,
         name: str = "?name",
         limit: Optional[int] = None,
         dry_run: bool = False,
@@ -704,7 +723,7 @@ class CimModel(Model):
            >>> gdbc.two_winding_transformers(limit=10)
         """
         query = queries.three_winding_transformer_query(
-            region, sub_region, rates, network_analysis, with_market, mrid, name, impedance
+            region, sub_region, rates, network_analysis, with_market, mrid, nodes, name, impedance
         )
         if dry_run:
             return self._query_with_header(query, limit)

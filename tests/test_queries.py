@@ -17,6 +17,7 @@ def load_query_kwargs():
         "load_vars": None,
         "region": "NO",
         "connectivity": None,
+        "nodes": None,
         "station_group_optional": False,
         "with_sequence_number": False,
         "network_analysis": False,

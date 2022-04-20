@@ -1,7 +1,7 @@
 from typing import Iterable, List, Union
 
 import cimsparql.query_support as sup
-from cimsparql.cim import EQUIP_CONTAINER, ID_OBJ, TR_WINDING
+from cimsparql.cim import EQUIP_CONTAINER, TR_WINDING
 
 
 def end_number(nr: int, lock_end_number: bool) -> List[str]:
@@ -11,7 +11,7 @@ def end_number(nr: int, lock_end_number: bool) -> List[str]:
         nr: Lock to this end number
         lock_end_number: return empty list if false
     """
-    return [f"?w_mrid_{nr} cim:TransformerEnd.endNumber {nr} "] if lock_end_number else []
+    return [f"?w_mrid_{nr} cim:TransformerEnd.endNumber '{nr}'"] if lock_end_number else []
 
 
 def terminal(mrid: str, nr: int, lock_end_number: bool = True) -> List[str]:
@@ -74,7 +74,7 @@ def transformer_common(
     variables.extend([name, mrid, "?mrid", *sup.to_variables(impedance), "?un"])
     where_list.extend(
         [
-            f"{mrid} {ID_OBJ}.name {name}",
+            sup.get_name(mrid, name),
             f"?w_mrid_1 {TR_WINDING}.ratedU ?un",
             "bind(?w_mrid_1 as ?mrid)",
             number_of_windings(mrid, winding_count),

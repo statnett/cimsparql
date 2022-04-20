@@ -16,12 +16,15 @@ def test_region_query():
 
 
 def test_default_terminal_where_query():
-    assert len(qs.terminal_where_query()) == 3
+    assert len(qs.terminal_where_query(cim_version=15, con="con", node=None)) == 3
 
 
 def test_terminal_where_query_no_var():
-    assert len(qs.terminal_where_query(var=None)) == 2
+    assert len(qs.terminal_where_query(cim_version=15, con=None, node=None)) == 2
 
 
 def test_terminal_where_query_no_var_with_sequence():
-    assert len(qs.terminal_where_query(cim_version=15, var=None, with_sequence_number=1)) == 3
+    assert (
+        len(qs.terminal_where_query(cim_version=15, con=None, node=None, with_sequence_number=True))
+        == 3
+    )

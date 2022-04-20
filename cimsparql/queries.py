@@ -14,7 +14,7 @@ from cimsparql.cim import (
     TR_WINDING,
 )
 from cimsparql.constants import allowed_load_types, mrid_variable, sequence_numbers, union_split
-from cimsparql.transformer_windings import terminal, transformer_common
+from cimsparql.transformer_windings import number_of_windings, terminal, transformer_common
 
 
 def version_date() -> str:
@@ -106,8 +106,13 @@ def connectivity_names(mrid: str, name: str = "?name") -> str:
 def bus_data(
     region: Optional[Union[str, List[str]]], sub_region: bool, mrid: str, name: str
 ) -> str:
-    variables = [mrid, name]
-    where_list = [sup.rdf_type_tripler(mrid, "cim:TopologicalNode"), sup.get_name(mrid, name)]
+    variables = [mrid, name, "?un"]
+    where_list = [
+        sup.rdf_type_tripler(mrid, "cim:TopologicalNode"),
+        sup.get_name(mrid, name),
+        f"{mrid} cim:TopologicalNode.BaseVoltage ?base_voltage",
+        "?base_voltage cim:BaseVoltage.nominalVoltage ?un.",
+    ]
 
     if region is not None:
         where_list.extend(
@@ -117,6 +122,22 @@ def bus_data(
                 *sup.region_query(region, sub_region, "Substation", "?subgeoreg"),
             ]
         )
+
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
+def three_winding_dummy_bus(
+    region: Optional[Union[str, List[str]]], sub_region: bool, mrid: str, name: str
+) -> str:
+    variables = [mrid, name, "?un"]
+    where_list = [
+        "?w_mrid cim:TransformerEnd.endNumber '1'",
+        "?w_mrid cim:PowerTransformerEnd.ratedU ?un",
+        f"?w_mrid cim:PowerTransformerEnd.PowerTransformer {mrid}",
+        sup.get_name(mrid, name),
+        number_of_windings(mrid, 3),
+    ]
+
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
@@ -126,6 +147,7 @@ def load_query(
     region: Optional[Union[str, List[str]]],
     sub_region: bool,
     connectivity: Optional[str],
+    nodes: Optional[str],
     station_group_optional: bool,
     with_sequence_number: bool,
     network_analysis: bool,
@@ -137,7 +159,7 @@ def load_query(
     if not set(load_type).issubset(allowed_load_types) or not load_type:
         raise ValueError(f"load_type should be any combination of {allowed_load_types}")
 
-    variables = [mrid, "?t_mrid", "?bidzone", "?name"]
+    variables = [mrid, "?t_mrid" if nodes is None else f"?{nodes}", "?bidzone", "?name"]
 
     if with_sequence_number:
         variables.append("?sequenceNumber")
@@ -150,7 +172,7 @@ def load_query(
     where_list = [
         f"{mrid} cim:IdentifiedObject.aliasName ?name",
         sup.combine_statements(*cim_types, group=len(cim_types) > 1, split=union_split),
-        *sup.terminal_where_query(cim_version, connectivity, with_sequence_number),
+        *sup.terminal_where_query(cim_version, connectivity, nodes, with_sequence_number),
         *sup.bid_market_code_query(),
     ]
 
@@ -195,6 +217,7 @@ def synchronous_machines_query(
     region: Optional[Union[str, List[str]]],
     sub_region: bool,
     connectivity: Optional[str],
+    nodes: Optional[str],
     station_group_optional: bool,
     cim_version: int,
     with_sequence_number: bool,
@@ -208,7 +231,7 @@ def synchronous_machines_query(
     variables = [
         mrid,
         name,
-        terminal_mrid,
+        terminal_mrid if nodes is None else f"?{nodes}",
         "?station_group",
         "?market_code",
         "?maxP",
@@ -230,7 +253,9 @@ def synchronous_machines_query(
         sup.rdf_type_tripler(mrid, SYNC_MACH),
         sup.get_name(mrid, name),
         *sup.bid_market_code_query(),
-        *sup.terminal_where_query(cim_version, connectivity, with_sequence_number, terminal_mrid),
+        *sup.terminal_where_query(
+            cim_version, connectivity, nodes, with_sequence_number, terminal_mrid
+        ),
         *[f"{mrid} {SYNC_MACH}.{lim} ?{lim}" for lim in ["maxQ", "minQ"] if lim in variables],
         *[
             sup.group_query(
@@ -312,11 +337,23 @@ def two_winding_transformer_query(
     network_analysis: bool,
     with_market: bool,
     mrid: str,
+    nodes: Optional[str],
     name: str,
     impedance: Iterable[str],
 ) -> str:
-    variables = ["?t_mrid_1", "?t_mrid_2"]
+    term = nodes if nodes else "t_mrid"
+    variables = [f"?{term}_{nr}" for nr in sequence_numbers]
     where_list = [*terminal(mrid, 1), *terminal(mrid, 2)]
+    if nodes:
+        for nr in sequence_numbers:
+            where_list.extend(
+                [
+                    f"?t_mrid_{nr} cim:{sup.acdc_terminal(16)}.connected 'true'",
+                    # f"?t_mrid_{nr} cim:Terminal.TopologicalNode ?{nodes}_{nr}",
+                    f"?t_mrid_{nr} cim:Terminal.TopologicalNode ?{nodes}{nr}c",
+                    f"?{nodes}{nr}c cim:IdentifiedObject.name ?{nodes}_{nr}",
+                ]
+            )
     transformer_common(
         2,
         mrid,
@@ -340,11 +377,23 @@ def three_winding_transformer_query(
     network_analysis: bool,
     with_market: bool,
     mrid: str,
+    nodes: Optional[str],
     name: str,
     impedance: Iterable[str],
 ) -> str:
-    variables = ["?t_mrid_1", f"({mrid} as ?t_mrid_2)"]
+    term = nodes if nodes else "t_mrid"
+    variables = [f"?{term}_1", f"({mrid} as ?{term}_2)"]
     where_list = [*terminal(mrid, 1, lock_end_number=False)]
+    if nodes:
+        where_list.extend(
+            [
+                f"?t_mrid_1 cim:{sup.acdc_terminal(16)}.connected 'true'",
+                # f"?t_mrid_1 cim:Terminal.TopologicalNode ?{nodes}_1",
+                f"?t_mrid_1 cim:Terminal.TopologicalNode ?{nodes}1c",
+                f"?{nodes}1c cim:IdentifiedObject.name ?{nodes}_1",
+            ]
+        )
+
     transformer_common(
         3,
         mrid,
@@ -412,17 +461,21 @@ def series_compensator_query(
     region: Union[str, List[str]],
     sub_region: bool,
     connectivity: Optional[str],
+    nodes: Optional[str],
     network_analysis: Optional[bool],
     with_market: bool,
     mrid: str,
     name: str,
 ) -> str:
-    variables = [mrid, "?x", "?un", name] + sup.sequence_variables("t_mrid")
-    if connectivity is not None:
-        variables += sup.sequence_variables(connectivity)
+    variables = [mrid, "?x", "?un", name]
+
+    variables.extend(sup.sequence_variables(nodes if nodes else "t_mrid"))
+
+    if connectivity:
+        variables.extend(sup.sequence_variables(connectivity))
 
     where_list = [
-        *sup.terminal_sequence_query(cim_version, var=connectivity),
+        *sup.terminal_sequence_query(cim_version, connectivity, nodes),
         sup.rdf_type_tripler(mrid, "cim:SeriesCompensator"),
         f"{mrid} cim:SeriesCompensator.x ?x",
         f"{mrid} cim:ConductingEquipment.BaseVoltage ?obase",
@@ -514,7 +567,7 @@ def borders_query(
     where_list = [
         sup.get_name(mrid, name),
         sup.rdf_type_tripler(mrid, ACLINE),
-        *sup.terminal_sequence_query(cim_version, var="con"),
+        *sup.terminal_sequence_query(cim_version, "con", None),
         sup.combine_statements(*border_filter, group=True, split=union_split),
     ]
     for nr in sequence_numbers:
@@ -549,6 +602,7 @@ def ac_line_query(
     region: Optional[Union[str, List[str]]],
     sub_region: bool,
     connectivity: Optional[str],
+    nodes: Optional[str],
     rates: Iterable[str],
     network_analysis: Optional[bool],
     with_market: bool,
@@ -557,14 +611,11 @@ def ac_line_query(
     mrid: str,
     name: str,
 ) -> str:
-    variables = [
-        name,
-        mrid,
-        "?length",
-        "?un",
-        *sup.sequence_variables("t_mrid"),
-        *sup.to_variables(impedance),
-    ]
+    variables = [name, mrid, "?length", "?un", *sup.to_variables(impedance)]
+    variables.extend(sup.sequence_variables(nodes if nodes else "t_mrid"))
+
+    if connectivity:
+        variables.extend(sup.sequence_variables(connectivity))
 
     acline_properties = {z: f"?{z}" for z in impedance}
 
@@ -573,12 +624,9 @@ def ac_line_query(
         f"{mrid} cim:Conductor.length ?length",
         sup.get_name(mrid, name),
         *sup.base_voltage(mrid, "?un"),
-        *sup.terminal_sequence_query(cim_version, var=connectivity),
+        *sup.terminal_sequence_query(cim_version, connectivity, nodes),
         *sup.predicate_list(mrid, ACLINE, acline_properties),
     ]
-
-    if connectivity is not None:
-        variables.extend(sup.sequence_variables(connectivity))
 
     sup.include_market(with_market, variables, where_list)
 
@@ -617,10 +665,11 @@ def ac_line_query(
 
 def connection_query(
     cim_version: int,
-    rdf_types: Union[str, List[str]],
-    region: Union[str, List[str]],
+    rdf_types: Union[str, Iterable[str]],
+    region: Optional[Union[str, List[str]]],
     sub_region: bool,
-    connectivity: str,
+    connectivity: Optional[str],
+    nodes: Optional[str],
     mrid: str,
 ) -> str:
     variables = [mrid, *sup.sequence_variables("t_mrid")]
@@ -633,7 +682,7 @@ def connection_query(
 
     where_list = [
         sup.combine_statements(*cim_types, group=len(cim_types) > 1, split=union_split),
-        *sup.terminal_sequence_query(cim_version=cim_version, var=connectivity),
+        *sup.terminal_sequence_query(cim_version, connectivity, nodes),
     ]
 
     if region is not None:

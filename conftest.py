@@ -1,3 +1,4 @@
+import logging
 import os
 import pathlib
 
@@ -8,9 +9,10 @@ from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.url import GraphDbConfig, service
 
+logger = logging.getLogger(__name__)
 this_dir = pathlib.Path(__file__).parent
 
-ssh_repo = "20190522T0730Z"
+ssh_repo = "current"
 eq_repo = "20190521T0030Z"
 
 cim_date = "20190522_070618"
@@ -23,7 +25,7 @@ def local_server() -> str:
 local_graphdb = GraphDbConfig(local_server(), protocol="http")
 
 
-need_local_graphdb_ssh = pytest.mark.skipif(
+need_local_graphdb = pytest.mark.skipif(
     ssh_repo not in local_graphdb.repos, reason=f"Need {ssh_repo} in local repository"
 )
 

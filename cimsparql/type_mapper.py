@@ -24,8 +24,7 @@ python_type_map: Dict[str, Callable] = {
     "float": float,
     "dateTime": parser.parse,
 }
-
-uri_snmst = re.compile("[^\\#]*(.\\#\\_)")
+uri_snmst = re.compile("([^\\#]*(.\\#\\_)|urn:uuid:)")
 sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x) if x is not None else ""}
 
 
