@@ -130,8 +130,7 @@ def sparql_data_types() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "sparql_type": [f"{datatypes_url(key)}" for key in ["Stage.priority", "PerCent"]],
-            "type": ["Integer", "float"],
-            "prefix": [None, None],
+            "type": ["integer", "float"],
         }
     )
 

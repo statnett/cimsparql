@@ -142,7 +142,7 @@ def load_query(
     if with_sequence_number:
         variables.append("?sequenceNumber")
 
-    if connectivity is not None:
+    if connectivity:
         variables.append(f"?{connectivity}")
 
     cim_types = [sup.rdf_type_tripler(mrid, f"cim:{cim_type}") for cim_type in load_type]
@@ -153,7 +153,7 @@ def load_query(
         *sup.bid_market_code_query(),
     ]
 
-    if load_vars is not None:
+    if load_vars:
         variables.extend([f"?{load}" for load in load_vars])
         where_list.append(
             sup.group_query(
@@ -174,7 +174,7 @@ def load_query(
         else:
             where_list.extend(station_group_list)
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     if region is not None:
@@ -218,7 +218,7 @@ def synchronous_machines_query(
         *[f"?{var}" for var in sync_vars],
     ]
 
-    if connectivity is not None:
+    if connectivity:
         variables.append(f"?{connectivity}")
 
     if with_sequence_number:
@@ -386,20 +386,19 @@ def transformer_query(
         variables.append("?bidzone")
         where_list.append(sup.market_code_query())
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
-    if connectivity is not None:
+    if connectivity:
         variables.append(f"?{connectivity}")
         where_list.append(f"?t_mrid cim:Terminal.ConnectivityNode ?{connectivity}")
 
-    if region is not None:
+    if region:
         where_list.append(f"{mrid} {EQUIP_CONTAINER} ?Substation")
         where_list.extend(sup.region_query(region, sub_region, "Substation", "?subgeoreg"))
 
     if rates:
         where_rate = ["?oplimitset cim:OperationalLimitSet.Terminal ?t_mrid"]
-
         for rate in rates:
             variables.append(f"?rate{rate}")
             where_rate.extend(sup.operational_limit(mrid, rate, "oplimitset"))
@@ -422,7 +421,7 @@ def series_compensator_query(
         variables += sup.sequence_variables(connectivity)
 
     where_list = [
-        *sup.terminal_sequence_query(cim_version=cim_version, var=connectivity),
+        *sup.terminal_sequence_query(cim_version, var=connectivity),
         sup.rdf_type_tripler(mrid, "cim:SeriesCompensator"),
         f"{mrid} cim:SeriesCompensator.x ?x",
         f"{mrid} cim:ConductingEquipment.BaseVoltage ?obase",
@@ -514,7 +513,7 @@ def borders_query(
     where_list = [
         sup.get_name(mrid, name),
         sup.rdf_type_tripler(mrid, ACLINE),
-        *sup.terminal_sequence_query(cim_version=cim_version, var="con"),
+        *sup.terminal_sequence_query(cim_version, var="con"),
         sup.combine_statements(*border_filter, group=True, split=union_split),
     ]
     for nr in sequence_numbers:
@@ -573,7 +572,7 @@ def ac_line_query(
         f"{mrid} cim:Conductor.length ?length",
         sup.get_name(mrid, name),
         *sup.base_voltage(mrid, "?un"),
-        *sup.terminal_sequence_query(cim_version=cim_version, var=connectivity),
+        *sup.terminal_sequence_query(cim_version, var=connectivity),
         *sup.predicate_list(mrid, ACLINE, acline_properties),
     ]
 
@@ -582,7 +581,7 @@ def ac_line_query(
 
     sup.include_market(with_market, variables, where_list)
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     if region is not None:

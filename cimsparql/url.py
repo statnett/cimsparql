@@ -6,7 +6,7 @@ variables ("GRAPHDB_USER" & "GRAPHDB_USER_PASSWD").
 """
 import os
 import re
-from typing import Dict, ItemsView, List, Optional
+from typing import Dict, ItemsView, Iterable, List, Optional
 
 import requests
 
@@ -67,16 +67,27 @@ class GraphDbConfig:
 
 
 class Prefix:
+    def __init__(self) -> None:
+        self.prefixes: Dict[str, str] = {}
+
+    def in_prefixes(self, variables: Iterable) -> Iterable:
+        return {variable for variable in variables if variable.split(":")[0] in self.prefixes}
+
     def header_str(self, query: str) -> str:
         """Build header string, for sparql queries, with list of prefixes
 
-        The list of available prefixes should be provided by the source (sourch as GraphDB).
+        The list of available prefixes should be provided by the source (such as GraphDB).
 
         """
         try:
-            prefixes = set(re.findall(r"(\w+):\w+", query))
-            return "\n".join([f"PREFIX {name}:<{self.prefixes[name]}#>" for name in prefixes])
-        except (AttributeError, KeyError):
+            return "\n".join(
+                [
+                    f"PREFIX {name}:<{self.prefixes[name]}#>"
+                    for name in set(re.findall(r"(\w+):\w+", query))
+                    if name in self.prefixes
+                ]
+            )
+        except AttributeError:
             return ""
 
     def items(self) -> ItemsView[str, str]:
@@ -87,11 +98,6 @@ class Prefix:
     def cim_version(self) -> int:
         """CIM version on server/repo"""
         return int(self.prefixes["cim"].split("CIM-schema-cim")[1])
-
-    @property
-    def prefixes(self) -> Dict[str, str]:
-        """Source defined prefixes"""
-        return self._prefixes
 
     @property
     def ns(self) -> Dict[str, str]:
