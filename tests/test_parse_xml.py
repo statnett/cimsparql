@@ -19,9 +19,6 @@ def cim_file(date: pendulum.DateTime, profile: str) -> str:
     return f"cim_{date.format('YYYYMMDD_HHmmss')}_mis_bymin_rtnet_ems_{profile}.xml"
 
 
-tz = "Europe/Oslo"
-
-
 @pytest.fixture(scope="module")
 def profiles() -> List[str]:
     return ["sv", "tp"]
@@ -79,7 +76,7 @@ def test_parse_sv_tp_cim_xml_tap_step(sv_tp_cim: SvTpCimXml):
 
 def test_parse_cim_file():
     target_file_type = "sv"
-    target_date = pendulum.datetime(2019, 11, 2, 0, 13, 40, tz=tz)
+    target_date = pendulum.local(2019, 11, 2, 0, 13, 40)
 
     file_name = cim_file(target_date, "sv")
     date, file_type = parse_xml.parse_cim_file(Path(file_name).stem)
@@ -102,7 +99,7 @@ def test_find_min():
 
 
 def get_file_data(path: Path, profiles: List[str]):
-    dates = [pendulum.datetime(2019, 11, 2, 0, 13, seconds, tz=tz) for seconds in [40, 50]]
+    dates = [pendulum.local(2019, 11, 2, 0, 13, seconds) for seconds in [40, 50]]
     files = [cim_file(date, profile) for date, profile in product(dates, profiles)]
     file_dict = {
         date: {f"{profile}_path": path / cim_file(date, profile) for profile in profiles}
@@ -121,18 +118,18 @@ def test_get_files(profiles: List[str]):
 
 
 def test_get_sv_tp(profiles: List[str]):
-    file_date = pendulum.datetime(2019, 11, 2, 0, 13, 40, tz=tz)
+    file_date = pendulum.local(2019, 11, 2, 0, 13, 40)
     date_path = Path("191102")
     target = {f"{profile}_path": date_path / cim_file(file_date, profile) for profile in profiles}
     file_dict, _ = get_file_data(date_path, profiles)
 
-    date = pendulum.datetime(2019, 11, 2, 0, 12, 42, tz=tz)
-    sv_tp, f_c = parse_xml.get_sv_tp(date, Path(""), file_dict)
+    date = pendulum.local(2019, 11, 2, 0, 12, 42)
+    sv_tp, _ = parse_xml.get_sv_tp(date, Path(""), file_dict)
     assert sv_tp == target
 
 
 def test_get_cim_files(profiles: List[str]):
-    dates = [pendulum.datetime(2019, 11, 2, 0, 13, seconds, tz=tz) for seconds in [45, 55]]
+    dates = [pendulum.local(2019, 11, 2, 0, 13, seconds) for seconds in [45, 55]]
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         root_path = Path("tmp") / tmp_dir
@@ -155,7 +152,7 @@ def test_get_cim_files(profiles: List[str]):
 
 
 def test_get_cim_files_no_o_disc(profiles: List[str]):
-    dates = [pendulum.datetime(2019, 11, 2, 0, 13, seconds, tz=tz) for seconds in [44, 55]]
+    dates = [pendulum.local(2019, 11, 2, 0, 13, seconds) for seconds in [44, 55]]
     file_dates = [date.subtract(seconds=seconds) for date, seconds in zip(dates, [4, 5])]
 
     with tempfile.TemporaryDirectory() as tmp_dir:
