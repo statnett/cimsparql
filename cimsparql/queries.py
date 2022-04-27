@@ -137,7 +137,7 @@ def load_query(
     if not set(load_type).issubset(allowed_load_types) or not load_type:
         raise ValueError(f"load_type should be any combination of {allowed_load_types}")
 
-    variables = [mrid, "?t_mrid", "?bidzone"]
+    variables = [mrid, "?t_mrid", "?bidzone", "?name"]
 
     if with_sequence_number:
         variables.append("?sequenceNumber")
@@ -148,6 +148,7 @@ def load_query(
     cim_types = [sup.rdf_type_tripler(mrid, f"cim:{cim_type}") for cim_type in load_type]
 
     where_list = [
+        f"{mrid} cim:IdentifiedObject.aliasName ?name",
         sup.combine_statements(*cim_types, group=len(cim_types) > 1, split=union_split),
         *sup.terminal_where_query(cim_version, connectivity, with_sequence_number),
         *sup.bid_market_code_query(),

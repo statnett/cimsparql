@@ -34,7 +34,7 @@ def test_str_rep(gdb_cli: GraphDBClient, graphdb_service: str):
     assert str(gdb_cli) == target
 
 
-load_columns = [con_mrid_str, "t_mrid", "bidzone", "p", "q"]
+load_columns = [con_mrid_str, "t_mrid", "bidzone", "p", "q", "name"]
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
