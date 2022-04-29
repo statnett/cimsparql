@@ -51,7 +51,7 @@ pytest-integration = "*"
 pytest-profiling = "*"
 
 [tool.poetry.extras]
-parse_xml = ["lxml", "pendulum"]
+parse_xml = ["lxml", "defusedxml", "pendulum"]
 
 [tool.poetry-dynamic-versioning]
 enable = true
