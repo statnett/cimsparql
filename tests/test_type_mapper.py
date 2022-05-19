@@ -2,7 +2,7 @@ import warnings
 
 import pandas as pd
 import pytest
-from mock import MagicMock, patch
+from mock import MagicMock
 from pandas.testing import assert_frame_equal
 
 from cimsparql import type_mapper
@@ -35,11 +35,10 @@ def test_python_type_map_bool():
     assert not type_mapper.python_type_map["boolean"]("FALSE")
 
 
-@patch("cimsparql.type_mapper.TypeMapper.__init__", new=MagicMock(return_value=None))
 def test_get_map_empty_pandas():
     cli = MagicMock()
     cli.get_table.return_value = pd.DataFrame()
-    mapper = type_mapper.TypeMapper()
+    mapper = type_mapper.TypeMapper(cli)
     assert mapper.get_map(cli) == {}
 
 

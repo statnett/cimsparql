@@ -90,8 +90,9 @@ class TypeMapperQueries:
         return f"{select_query}\nWHERE\n{{\n{full_union}\n}}"
 
 
-class TypeMapper(TypeMapperQueries):
+class TypeMapper:
     def __init__(self, client: CimModel, custom_additions: Optional[Dict[str, Any]] = None) -> None:
+        self.queries = TypeMapperQueries()
         self.prefixes = client.prefixes
         custom_additions = custom_additions if custom_additions is not None else {}
         self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
@@ -123,7 +124,7 @@ class TypeMapper(TypeMapperQueries):
             sparql-type -> python type map
 
         """
-        df = client.get_table(self.query, map_data_types=False)
+        df = client.get_table(self.queries.query, map_data_types=False)
         if df.empty:
             return {}
         type_map = self.type_map(df)
