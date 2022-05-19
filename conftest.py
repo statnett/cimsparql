@@ -111,7 +111,7 @@ def type_dataframe_ref():
             "str_col": ["a", "b", "c"],
             "int_col": [1, 2, 3],
             "float_col": [2.2, 3.3, 4.4],
-            "prefixed_col": ["a", "b", "c"],
+            "prefixed_col": ["prefix_a", "prefix_b", "prefix_c"],
             "boolean_col": [True, True, False],
         }
     ).astype({"int_col": int})
@@ -129,11 +129,16 @@ def datatypes_url(datatype: str) -> str:
 def sparql_data_types():
     return pd.DataFrame(
         {
-            "sparql_type": [f"{datatypes_url(key)}" for key in ["Stage.priority", "PerCent"]],
-            "type": ["Integer", "float"],
-            "prefix": [None, None],
+            "sparql_type": [f"{datatypes_url(key)}" for key in ["Stage.priority", "PerCent"]]
+            + ["http://flag"],
+            "range": ["cim#Integer", "xsd#float", "xsd#boolean"],
         }
     )
+
+
+@pytest.fixture
+def prefixes():
+    return {"cim": "cim", "xsd": "xsd"}
 
 
 @pytest.fixture
@@ -143,7 +148,7 @@ def data_row():
         "int_col": {"datatype": datatypes_url("Stage.priority"), "type": "literal", "value": "1"},
         "float_col": {"datatype": datatypes_url("PerCent"), "type": "literal", "value": "2.2"},
         "prefixed_col": {"type": "uri", "value": "prefixed_a"},
-        "boolean_col": {"datatype": datatypes_url("AsynchronousMachine.converterFedDrive")},
+        "boolean_col": {"datatype": "http://flag"},
     }
 
 

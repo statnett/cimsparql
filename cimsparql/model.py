@@ -776,9 +776,10 @@ class CimModel(Prefix):
 
     @classmethod
     def col_map(cls, data_row, columns) -> Tuple[Dict[str, str]]:
-        columns = {} if columns is None else columns
+        columns = columns or {}
         col_map = cls._col_map(data_row)
-        return col_map, {col: columns[col] for col in set(columns).difference(col_map)}
+        col_map.update(columns)
+        return col_map
 
     def get_table(
         self,
@@ -816,8 +817,8 @@ class CimModel(Prefix):
             return pd.DataFrame([])
 
         if map_data_types and self.mapper is not None:
-            col_map, columns = self.col_map(data_row, columns)
-            result = self.mapper.map_data_types(result, col_map, custom_maps, columns)
+            col_map = self.col_map(data_row, columns)
+            result = self.mapper.map_data_types(result, col_map)
 
         if index and not result.empty:
             result.set_index(index, inplace=True)
