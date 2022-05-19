@@ -1,4 +1,6 @@
+import datetime
 import warnings
+from decimal import Decimal
 
 import pandas as pd
 import pytest
@@ -9,9 +11,10 @@ from cimsparql import type_mapper
 
 
 @pytest.fixture
-def mocked_graphdb(sparql_data_types):
+def mocked_graphdb(sparql_data_types, prefixes):
     cli = MagicMock()
     cli.get_table.return_value = sparql_data_types
+    cli.configure_mock(prefixes=prefixes)
     return cli
 
 
@@ -31,8 +34,8 @@ def test_get_type(type_mapper_instance):
 
 
 def test_python_type_map_bool():
-    assert type_mapper.python_type_map["boolean"]("TRUE")
-    assert not type_mapper.python_type_map["boolean"]("FALSE")
+    assert type_mapper.XSD_TYPE_MAP["boolean"]("TRUE")
+    assert not type_mapper.XSD_TYPE_MAP["boolean"]("FALSE")
 
 
 def test_get_map_empty_pandas():
@@ -43,15 +46,34 @@ def test_get_map_empty_pandas():
 
 
 def test_map_data_types(type_mapper_instance, type_dataframe, data_row, type_dataframe_ref):
-    columns = {"prefixed_col": lambda x: x.split("_")[-1]}
-    entsoe_profile = "http://entsoe.eu/Secretariat/ProfileExtension/1"
-    custom_maps = {f"{entsoe_profile}#AsynchronousMachine.converterFedDrive": lambda x: x == "True"}
     col_map = {
-        column: data.get("datatype", data.get("type", None))
-        for column, data in data_row.items()
-        if column not in columns.keys()
+        column: data.get("datatype", data.get("type", None)) for column, data in data_row.items()
     }
-    result = type_mapper_instance.map_data_types(
-        type_dataframe, col_map, custom_maps=custom_maps, columns=columns
-    )
+    result = type_mapper_instance.map_data_types(type_dataframe, col_map)
     assert_frame_equal(result, type_dataframe_ref)
+
+
+@pytest.mark.parametrize(
+    "dtype,test",
+    [
+        ("boolean", ("true", True)),
+        ("boolean", ("false", False)),
+        ("boolean", ("1", True)),
+        ("boolean", ("0", False)),
+        ("date", ("2021-12-14", pd.Timestamp("2021-12-14 00:00:00"))),
+        ("dateTime", ("2002-10-14T12:00:00", datetime.datetime(2002, 10, 14, 12, 0, 0))),
+        ("dateTime", ("2002-10-14T12:00:00Z", pd.Timestamp("2002-10-14 12:00:00+0000", tz="UTC"))),
+        ("duration", ("P365D", datetime.timedelta(365))),
+        ("duration", ("-P365D", datetime.timedelta(-365))),
+        (
+            "duration",
+            ("P3DT5H20M30.123S", datetime.timedelta(days=3, seconds=5 * 3600 + 20 * 60 + 30.123)),
+        ),
+        ("decimal", ("2.3", Decimal("2.3"))),
+        ("time", ("21:32:52", pd.Timestamp("21:32:52"))),
+        ("time", ("21:32:52Z", pd.Timestamp("21:32:52", tz="UTC"))),
+    ],
+)
+def test_xsd_types(dtype: str, test: tuple):
+    value, expect = test
+    assert type_mapper.XSD_TYPE_MAP[dtype](value) == expect
