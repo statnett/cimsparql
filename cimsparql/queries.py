@@ -128,7 +128,7 @@ def load_query(
     connectivity: Optional[str],
     station_group_optional: bool,
     with_sequence_number: bool,
-    network_analysis: bool,
+    network_analysis: Optional[bool],
     station_group: bool,
     cim_version: int,
     mrid: str,
@@ -175,7 +175,7 @@ def load_query(
         else:
             where_list.extend(station_group_list)
 
-    if network_analysis:
+    if network_analysis is not None:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     if region is not None:
@@ -198,7 +198,7 @@ def synchronous_machines_query(
     station_group_optional: bool,
     cim_version: int,
     with_sequence_number: bool,
-    network_analysis: bool,
+    network_analysis: Optional[bool],
     u_groups: bool,
     terminal_mrid: str,
     mrid: str,
@@ -274,7 +274,7 @@ def synchronous_machines_query(
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def wind_generating_unit_query(network_analysis: bool, mrid: str, name: str) -> str:
+def wind_generating_unit_query(network_analysis: Optional[bool], mrid: str, name: str) -> str:
     variables = [
         mrid,
         "?station_group",
@@ -309,7 +309,7 @@ def two_winding_transformer_query(
     region: Union[str, List[str]],
     sub_region: bool,
     rates: Iterable[str],
-    network_analysis: bool,
+    network_analysis: Optional[bool],
     with_market: bool,
     mrid: str,
     name: str,
@@ -337,7 +337,7 @@ def three_winding_transformer_query(
     region: Union[str, List[str]],
     sub_region: bool,
     rates: Iterable[str],
-    network_analysis: bool,
+    network_analysis: Optional[bool],
     with_market: bool,
     mrid: str,
     name: str,
@@ -366,7 +366,7 @@ def transformer_query(
     sub_region: bool,
     connectivity: str,
     rates: Iterable[str],
-    network_analysis: bool,
+    network_analysis: Optional[bool],
     with_market: bool,
     mrid: str,
     name: str,
@@ -387,7 +387,7 @@ def transformer_query(
         variables.append("?bidzone")
         where_list.append(sup.market_code_query())
 
-    if network_analysis:
+    if network_analysis is not None:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     if connectivity:
@@ -582,7 +582,7 @@ def ac_line_query(
 
     sup.include_market(with_market, variables, where_list)
 
-    if network_analysis:
+    if network_analysis is not None:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     if region is not None:

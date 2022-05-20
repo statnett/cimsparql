@@ -1,4 +1,4 @@
-from typing import Iterable, List, Union
+from typing import Iterable, List, Optional, Union
 
 import cimsparql.query_support as sup
 from cimsparql.cim import EQUIP_CONTAINER, ID_OBJ, TR_WINDING
@@ -69,7 +69,7 @@ def transformer_common(
     region: Union[str, List[str]],
     sub_region: bool,
     rates: Iterable[str],
-    network_analysis: bool,
+    network_analysis: Optional[bool],
 ) -> None:
     variables.extend([name, mrid, "?mrid", *sup.to_variables(impedance), "?un"])
     where_list.extend(
