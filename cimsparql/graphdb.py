@@ -109,7 +109,7 @@ class GraphDBClient(CimModel):
             for column, data in data_row.items()
         }
 
-    def _get_table(self, query: str, limit: int) -> Tuple[pd.DataFrame, Dict]:
+    def _get_table(self, query: str, limit: int) -> Tuple[pd.DataFrame, Dict[str, str]]:
         self.sparql.setQuery(self._query_with_header(query, limit))
 
         processed_results = self.sparql.queryAndConvert()

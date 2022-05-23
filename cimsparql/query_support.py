@@ -18,7 +18,9 @@ def base_voltage(mrid: str, var: str) -> List[str]:
     ]
 
 
-def terminal_sequence_query(cim_version: int, var: str, t_mrid: str = "?t_mrid") -> List[str]:
+def terminal_sequence_query(
+    cim_version: int, var: Optional[str], t_mrid: str = "?t_mrid"
+) -> List[str]:
     query_list = []
     for nr in sequence_numbers:
         t_sequence_mrid = f"{t_mrid}_{nr}"
@@ -56,7 +58,10 @@ def region_name_query(
 
 
 def region_query(
-    region: Union[str, List[str]], sub_region: bool, container: str, sub_geographical_region: str
+    region: Optional[Union[str, List[str]]],
+    sub_region: bool,
+    container: str,
+    sub_geographical_region: str,
 ) -> List[str]:
     if region is None:
         return []
@@ -114,7 +119,7 @@ def market_code_query(nr: int = None):
 
 def terminal_where_query(
     cim_version: int = 15,
-    var: str = con_mrid_str,
+    var: Optional[str] = con_mrid_str,
     with_sequence_number: bool = False,
     terminal_mrid: str = "?t_mrid",
 ) -> List[str]:
@@ -224,10 +229,10 @@ def get_name(mrid: str, name: str, alias: bool = False) -> str:
     return f"{mrid} {ID_OBJ}.{param} {name}"
 
 
-def border_filter(region: Union[str, List[str]], area1: str, area2: str) -> List[str]:
+def border_filter(region: Optional[Union[str, List[str]]], area1: str, area2: str) -> List[str]:
     """Border filter where one area is in and the other is out"""
 
-    def _in_first(var1: str, var2: str, regions: str) -> List[str]:
+    def _in_first(var1: str, var2: str, regions: Optional[str]) -> List[str]:
         """Return filter for inclusion of first variable and not second"""
         return [f"FILTER (regex({var1}, '{regions}'))", f"FILTER (!regex({var2}, '{regions}'))"]
 
