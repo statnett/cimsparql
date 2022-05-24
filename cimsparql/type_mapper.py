@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 TYPE_CASTER = Callable[[Any], Any]
 SPARQL_TYPE = str
 COL_NAME = str
+PREFIX = str
+URI = str
 
 as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
 
@@ -61,7 +63,7 @@ uri_snmst = re.compile("[^\\#]*(.\\#\\_)")
 sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x) if x is not None else ""}
 
 
-def build_type_map(prefixes: Dict[str, str]) -> Dict[SPARQL_TYPE, TYPE_CASTER]:
+def build_type_map(prefixes: Dict[PREFIX, URI]) -> Dict[SPARQL_TYPE, TYPE_CASTER]:
     short_map = {"xsd": XSD_TYPE_MAP, "cim": CIM_TYPE_MAP}
 
     type_map = {}
@@ -75,62 +77,54 @@ def build_type_map(prefixes: Dict[str, str]) -> Dict[SPARQL_TYPE, TYPE_CASTER]:
 
 
 class TypeMapperQueries:
+    def __init__(self, prefixes: Dict[PREFIX, URI]):
+        self.prefixes = prefixes
+
     @property
-    def generals(self) -> List[List[str]]:
-        """For sparql-types that are not sourced from objects of type rdf:property, sparql & type are
-        required
+    def type_queries(self) -> List[List[str]]:
+        queries = [
+            ["?sparql_type rdf:type rdfs:Datatype", "?sparql_type owl:equivalentClass ?range"],
+            ["?range owl:equivalentClass ?class", "?class rdfs:label ?type"],
+        ]
 
-        Sparql values should be like: http://iec.ch/TC57/2010/CIM-schema-cim15#PerCent this is how
-        type or DataType usually looks like for each data point in the converted query result from
-        SPARQLWrapper.
+        if "cims" in self.prefixes:
+            queries += self.cims_queries
+        return queries
 
-        type can be anything as long as it is represented in one of the type_maps
-        (XSD_TYPE_MAP, CIM_TYPE_MAP etc.).
+    @property
+    def cims_queries(self) -> List[List[str]]:
         """
-        return [["?sparql_type rdf:type rdfs:Datatype", "?sparql_type owl:equivalentClass ?range"]]
-
-    @property
-    def prefix_general(self) -> List[str]:
-        """Common query used as a base for all prefix_based queries."""
-        return ["?sparql_type rdf:type rdf:Property", "?sparql_type rdfs:range ?range"]
-
-    @property
-    def prefix_based(self) -> Dict[str, List[str]]:
-        """Each prefix can have different locations of where DataTypes are described.
-
-        Based on a object of type rdf:property & its rdfs:range, one has edit the query such that
-        one ends up with the DataType.
-
+        Return queries that require that cims namespace. We must distinguish between types
+        that is of type 'Primitive' and types that are of type 'CIMdatatype'. In the latter case
+        we must find the type of the 'value' attribute
         """
-        return {
-            "https://www.w3.org/2001/XMLSchema": ["?range rdfs:label ?type"],
-            "https://iec.ch/TC57/2010/CIM-schema-cim15": [
-                "?range owl:equivalentClass ?class",
-                "?class rdfs:label ?type",
+        return [
+            [
+                "?datatypevalue rdfs:domain ?sparql_type",
+                "?datatypevalue cims:dataType ?range",
+                '?range cims:stereotype "Primitive"',
             ],
-        }
+            [
+                "?datatypevalue rdfs:domain ?sparql_type",
+                "?datatypevalue cims:dataType ?CIMdtype",
+                '?CIMdtype cims:stereotype "CIMDatatype"',
+                "?CIMdtypeValue rdfs:domain ?CIMdtype",
+                '?CIMdtypeValue rdfs:label "value"@en',
+                "?CIMdtypeValue cims:dataType ?range",
+            ],
+        ]
 
     @property
     def query(self) -> str:
         select_query = "SELECT ?sparql_type ?range"
-
-        grouped_generals = [combine_statements(*g, split=" .\n") for g in self.generals]
-        grouped_prefixes = [
-            combine_statements(*v, f'FILTER (?prefix = "{k}")', split=" .\n")
-            for k, v in self.prefix_based.items()
-        ]
-        grouped_prefix_general = combine_statements(*self.prefix_general, split=" .\n")
-        unionized_generals = unionize(*grouped_generals)
-        unionized_prefixes = unionize(*grouped_prefixes)
-
-        full_prefixes = combine_statements(grouped_prefix_general, unionized_prefixes, group=True)
-        full_union = unionize(unionized_generals, full_prefixes, group=False)
-        return f"{select_query}\nWHERE\n{{\n{full_union}\n}}"
+        grouped = [combine_statements(*g, split=".\n") for g in self.type_queries]
+        union = unionize(*grouped)
+        return f"{select_query}\nWHERE\n{{\n{union}\n}}"
 
 
 class TypeMapper:
     def __init__(self, client: CimModel, custom_additions: Optional[Dict[str, Any]] = None) -> None:
-        self.queries = TypeMapperQueries()
+        self.queries = TypeMapperQueries(client.prefixes)
         self.prefixes = client.prefixes
         custom_additions = custom_additions or {}
         self.prim_type_map = build_type_map(self.prefixes)
