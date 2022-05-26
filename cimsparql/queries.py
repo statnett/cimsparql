@@ -72,11 +72,11 @@ def phase_tap_changer_query(
             ]
         )
 
-    if impedance is not None:
+    if impedance:
         variables.extend(sup.to_variables(impedance))
         where_list.extend([f"?w_mrid_1 {TR_WINDING}.{imp} ?{imp}" for imp in impedance])
 
-    if region is not None:
+    if region:
         where_list.extend([f"?pt {EQUIP_CONTAINER} ?Substation"])
         where_list.extend(sup.region_query(region, sub_region, "Substation", "?subgeoreg"))
 
@@ -109,7 +109,7 @@ def bus_data(
     variables = [mrid, name]
     where_list = [sup.rdf_type_tripler(mrid, "cim:TopologicalNode"), sup.get_name(mrid, name)]
 
-    if region is not None:
+    if region:
         where_list.extend(
             [
                 f"{mrid} cim:TopologicalNode.ConnectivityNodeContainer ?cont",
@@ -175,10 +175,10 @@ def load_query(
         else:
             where_list.extend(station_group_list)
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
-    if region is not None:
+    if region:
         where_list.extend(
             [
                 f"{mrid} {EQUIP_CONTAINER} ?cont",
@@ -240,7 +240,7 @@ def synchronous_machines_query(
         ],
     ]
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     station_group = [
@@ -263,7 +263,7 @@ def synchronous_machines_query(
     if not u_groups:
         where_list.append("FILTER (!bound(?st_gr_n) || (!regex(?st_gr_n, 'U-')))")
 
-    if region is not None:
+    if region:
         where_list.extend(
             [
                 f"{mrid} {EQUIP_CONTAINER} ?cont",
@@ -299,7 +299,7 @@ def wind_generating_unit_query(network_analysis: Optional[bool], mrid: str, name
         "?sr SN:ScheduleResource.marketCode ?station_group",
     ]
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
@@ -387,7 +387,7 @@ def transformer_query(
         variables.append("?bidzone")
         where_list.append(sup.market_code_query())
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     if connectivity:
@@ -431,10 +431,10 @@ def series_compensator_query(
     ]
     sup.include_market(with_market, variables, where_list)
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
-    if region is not None:
+    if region:
         where_list += [
             f"{mrid} {EQUIP_CONTAINER} ?EquipmentContainer",
             f"?EquipmentContainer {SUBSTATION} ?Substation",
@@ -458,7 +458,7 @@ def transformers_connected_to_converter(
         "?t_tvolt cim:Terminal.ConnectivityNode ?con",
         sup.combine_statements(*converters, group=len(converters) > 1, split=union_split),
     ]
-    if region is not None:
+    if region:
         where_list.append(f"{mrid} {EQUIP_CONTAINER} ?Substation")
         where_list.extend(sup.region_query(region, sub_region, "Substation", "?subgeoreg"))
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
@@ -582,10 +582,10 @@ def ac_line_query(
 
     sup.include_market(with_market, variables, where_list)
 
-    if network_analysis is not None:
+    if network_analysis:
         where_list.append(f"{mrid} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
-    if region is not None:
+    if region:
         where_list.extend(
             [
                 f"{mrid} {EQUIP_CONTAINER} ?Line",
@@ -600,7 +600,7 @@ def ac_line_query(
         )
         where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
 
-    if temperatures is not None:
+    if temperatures:
         variables.extend(
             [
                 f"?{sup.negpos(temperature)}_{abs(temperature)}_factor"
@@ -625,7 +625,7 @@ def connection_query(
 ) -> str:
     variables = [mrid, *sup.sequence_variables("t_mrid")]
 
-    if connectivity is not None:
+    if connectivity:
         variables.extend(sup.sequence_variables(connectivity))
 
     rdf_types = [rdf_types] if isinstance(rdf_types, str) else rdf_types
@@ -636,7 +636,7 @@ def connection_query(
         *sup.terminal_sequence_query(cim_version=cim_version, var=connectivity),
     ]
 
-    if region is not None:
+    if region:
         where_list.extend(
             [
                 f"{mrid} {EQUIP_CONTAINER} ?EquipmentContainer",
