@@ -26,7 +26,8 @@ from cimsparql.url import Prefix
 
 
 class Model(Prefix, ABC):
-    def __init__(self, mapper: Optional[TypeMapper]) -> None:
+    def __init__(self, mapper: Optional[TypeMapper], *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self._mapper = mapper
 
     @abstractmethod
