@@ -738,8 +738,7 @@ class CimModel(Model):
         query = ssh_queries.synchronous_machines()
         if dry_run:
             return self._query_with_header(query, limit)
-        columns = {"p": float, "q": float, "controlEnabled": bool}
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
 
     def ssh_load(
         self,
@@ -760,8 +759,7 @@ class CimModel(Model):
         query = ssh_queries.load(rdf_types)
         if dry_run:
             return self._query_with_header(query, limit)
-        columns = {"p": float, "q": float}
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
 
     def ssh_generating_unit(
         self,
@@ -783,8 +781,7 @@ class CimModel(Model):
         query = ssh_queries.generating_unit(rdf_types)
         if dry_run:
             return self._query_with_header(query, limit)
-        columns = {"normalPF": float}
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
 
     def terminal(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -798,8 +795,7 @@ class CimModel(Model):
         query = tp_queries.terminal(self.cim_version)
         if dry_run:
             return self._query_with_header(query, limit)
-        columns = {"connected": bool}
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
 
     def topological_node(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -813,8 +809,7 @@ class CimModel(Model):
         query = tp_queries.topological_node()
         if dry_run:
             return self._query_with_header(query, limit)
-        columns = {"BaseVoltage": float}
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
 
     def powerflow(
         self,
@@ -832,8 +827,7 @@ class CimModel(Model):
         query = sv_queries.powerflow(power)
         if dry_run:
             return self._query_with_header(query, limit)
-        columns = {x: float for x in power}
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
 
     def voltage(
         self,
@@ -851,8 +845,7 @@ class CimModel(Model):
         query = sv_queries.voltage(voltage_vars)
         if dry_run:
             return self._query_with_header(query, limit)
-        columns = {x: float for x in voltage_vars}
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
 
     def tapstep(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -866,8 +859,7 @@ class CimModel(Model):
         query = sv_queries.tapstep()
         if dry_run:
             return self._query_with_header(query, limit)
-        columns = {"position": float}
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
 
     @property
     def regions(self) -> pd.DataFrame:
