@@ -86,7 +86,7 @@ def phase_tap_changer_query(
                 sup.rdf_type_tripler(f"?term_{i}", "cim:Terminal"),
                 f"?w_mrid_{i} {TR_WINDING}.PowerTransformer ?pt",
                 f"?w_mrid_{i} cim:TransformerEnd.Terminal ?term_{i}",
-                f'?term_{i} cim:Terminal.sequenceNumber "{i}"^^xsd:integer',
+                f"?term_{i} cim:Terminal.sequenceNumber {i}",
                 f"?term_{i} {ID_OBJ}.mRID ?t_mrid_{i}",
             ]
         )
