@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 import pytest
@@ -96,3 +97,11 @@ def test_bus_data_with_region(bus_data_kwargs: Dict[str, str]):
 
 def test_bus_data_no_region(bus_data_kwargs: Dict[str, str]):
     assert GEO_REG not in queries.bus_data(region=None, **bus_data_kwargs)
+
+
+@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
+def test_bus_data_with_nodes(gdb_cli):
+    data = gdb_cli.bus_data()
+    assert data.index.name == "mrid"
+    assert list(data.columns) == ["name"]
+    assert list(data.dtypes) == ["string"]

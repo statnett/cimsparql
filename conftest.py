@@ -114,7 +114,7 @@ def type_dataframe_ref():
             "prefixed_col": ["prefix_a", "prefix_b", "prefix_c"],
             "boolean_col": [True, True, False],
         }
-    ).astype({"int_col": int})
+    ).astype({"int_col": int, "str_col": "string"})
 
 
 def datatypes_url(datatype: str) -> str:
