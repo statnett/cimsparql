@@ -4,7 +4,7 @@ import re
 import warnings
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -13,13 +13,15 @@ from cimsparql.query_support import combine_statements, unionize
 if TYPE_CHECKING:
     from cimsparql.model import CimModel
 
-TYPE_CASTER = Callable[[Any], Any]
+# Type-caster that can be used with pandas. It can be python types, numpy dtypes or string
+# value. Examples: float, "int", int, "string"
+TYPE_CASTER = Union[Callable[[Any], Any], str]
 SPARQL_TYPE = str
 COL_NAME = str
 PREFIX = str
 URI = str
 
-as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
+as_type_able = [int, float, "string", "Int64", "Int32", "Int16"]
 
 
 def to_timedelta(duration: str) -> datetime.timedelta:
@@ -52,7 +54,7 @@ XSD_TYPE_MAP = {
 
 
 CIM_TYPE_MAP = {
-    "String": str,
+    "String": "string",
     "Integer": int,
     "Boolean": bool,
     "Float": float,
@@ -60,7 +62,10 @@ CIM_TYPE_MAP = {
 }
 
 uri_snmst = re.compile("[^\\#]*(.\\#\\_)")
-sparql_type_map = {"literal": str, "uri": lambda x: uri_snmst.sub("", x) if x is not None else ""}
+sparql_type_map = {
+    "literal": "string",
+    "uri": lambda x: uri_snmst.sub("", x) if x is not None else "",
+}
 
 
 def build_type_map(prefixes: Dict[PREFIX, URI]) -> Dict[SPARQL_TYPE, TYPE_CASTER]:
@@ -134,7 +139,9 @@ class TypeMapper:
         return cim in (val.split("#")[0] for val in self.map.keys())
 
     def type_map(self, df: pd.DataFrame) -> Dict[str, Any]:
-        return {row.sparql_type: self.prim_type_map.get(row.range, str) for row in df.itertuples()}
+        return {
+            row.sparql_type: self.prim_type_map.get(row.range, "string") for row in df.itertuples()
+        }
 
     def get_map(self, client: CimModel) -> Dict[str, Any]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map

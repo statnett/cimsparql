@@ -98,7 +98,6 @@ class GraphDBClient(CimModel):
         return {
             column: data.get("datatype", data.get("type", None))
             for column, data in data_row.items()
-            if data.get("datatype", data.get("type", None)) != "literal"
         }
 
     def _get_table(self, query: str, limit: int) -> Tuple[pd.DataFrame, Dict]:
