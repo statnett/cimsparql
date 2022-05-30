@@ -9,6 +9,7 @@ import pytest
 
 from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient, data_row
+from cimsparql.type_mapper import TypeMapperQueries
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
@@ -249,3 +250,10 @@ def test_data_row_missing_column():
     cols = ["a", "b", "c", "d", "e"]
     rows = [{"a": 1, "b": 2}, {"c": 3}, {"a": 5, "b": 6}, {"e": 7}]
     assert set(data_row(cols, rows).keys()).symmetric_difference(cols) == {"d"}
+
+
+@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
+def test_dtypes(gdb_cli: GraphDBClient):
+    queries = TypeMapperQueries(gdb_cli.prefixes)
+    df = gdb_cli.get_table(queries.query, map_data_types=False)
+    assert df["sparql_type"].isna().sum() == 0
