@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import warnings
 from datetime import datetime
 from decimal import Decimal
@@ -61,10 +60,9 @@ CIM_TYPE_MAP = {
     "Date": pd.to_datetime,
 }
 
-uri_snmst = re.compile("[^\\#]*(.\\#\\_)")
 sparql_type_map = {
     "literal": "string",
-    "uri": lambda x: uri_snmst.sub("", x) if x is not None else "",
+    "uri": "string",
 }
 
 
