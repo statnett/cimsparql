@@ -105,3 +105,4 @@ def test_bus_data_with_nodes(gdb_cli):
     assert data.index.name == "mrid"
     assert list(data.columns) == ["name"]
     assert list(data.dtypes) == ["string"]
+    assert data.index.dtype == "string"
