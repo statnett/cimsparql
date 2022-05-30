@@ -87,7 +87,7 @@ class TypeMapperQueries:
     def type_queries(self) -> List[List[str]]:
         queries = [
             ["?sparql_type rdf:type rdfs:Datatype", "?sparql_type owl:equivalentClass ?range"],
-            ["?range owl:equivalentClass ?class", "?class rdfs:label ?type"],
+            ["?sparql_type owl:equivalentClass ?range"],
         ]
 
         if "cims" in self.prefixes:
