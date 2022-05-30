@@ -131,7 +131,7 @@ class TypeMapper:
         self.prefixes = client.prefixes
         custom_additions = custom_additions or {}
         self.prim_type_map = build_type_map(self.prefixes)
-        self.map = {**sparql_type_map, **self.get_map(client), **custom_additions}
+        self.map = sparql_type_map | self.get_map(client) | self.prim_type_map | custom_additions
 
     def have_cim_version(self, cim) -> bool:
         return cim in (val.split("#")[0] for val in self.map.keys())
