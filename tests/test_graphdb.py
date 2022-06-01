@@ -78,15 +78,7 @@ def test_conform_and_non_conform_load(gdb_cli: GraphDBClient, n_samples: int):
 
 @pytest.fixture()
 def gen_columns() -> List[str]:
-    return [
-        "allocationMax",
-        "allocationWeight",
-        "market_code",
-        "maxP",
-        "minP",
-        "name",
-        "station_group",
-    ]
+    return ["allocationmax", "meritorder", "market_code", "maxP", "minP", "name", "station_group"]
 
 
 @pytest.fixture()
