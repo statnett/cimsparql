@@ -184,6 +184,12 @@ class CimModel(Model):
                 date_version = self._date_version = date_version.astype("<M8[s]").astype(datetime)
         return date_version
 
+    def full_model(self, dry_run: bool = False) -> pd.DataFrame:
+        query = queries.full_model()
+        if dry_run:
+            return self._query_with_header(query)
+        return self._get_table_and_convert(query)
+
     def bus_data(
         self,
         region: Optional[Union[str, List[str]]] = None,

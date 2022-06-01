@@ -103,6 +103,21 @@ def connectivity_names(mrid: str, name: str = "?name") -> str:
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
+def full_model() -> str:
+    variables = ["?model", "?time", "?profile", "?description", "?version", "?created", "?dependon"]
+    where_list = [
+        sup.rdf_type_tripler("?model", "md:FullModel"),
+        "?model md:Model.profile ?profile",
+        "?model md:Model.scenarioTime ?time",
+        "?model md:Model.description ?description",
+        "?model md:Model.version ?version",
+        "?model md:Model.created ?created",
+        "?model md:Model.DependentOn ?dependon",
+        "?dependon rdf:type md:FullModel",
+    ]
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
 def bus_data(
     region: Optional[Union[str, List[str]]], sub_region: bool, mrid: str, name: str
 ) -> str:
