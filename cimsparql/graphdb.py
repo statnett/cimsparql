@@ -103,7 +103,7 @@ class GraphDBClientBase(Model):
             for column, data in data_row.items()
         }
 
-    def _get_table(self, query: str, limit: int) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    def _exec_query(self, query: str, limit: Optional[int]):
         self.sparql.setQuery(self._query_with_header(query, limit))
 
         processed_results = self.sparql.queryAndConvert()
@@ -111,8 +111,15 @@ class GraphDBClientBase(Model):
         cols = processed_results["head"]["vars"]
         data = processed_results["results"]["bindings"]
         out = [{c: self.value_getter(row.get(c, {})) for c in cols} for row in data]
+        return out, data_row(cols, data)
 
-        return pd.DataFrame(out), data_row(cols, data)
+    def exec_query(self, query: str, limit: Optional[int] = None) -> List[Dict[str, str]]:
+        out, _ = self._exec_query(query, limit)
+        return out
+
+    def _get_table(self, query: str, limit: Optional[int]) -> Tuple[pd.DataFrame, Dict[str, str]]:
+        out, data_row = self._exec_query(query, limit)
+        return pd.DataFrame(out), data_row
 
 
 class GraphDBClient(GraphDBClientBase, CimModel):
