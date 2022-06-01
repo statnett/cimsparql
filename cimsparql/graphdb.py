@@ -53,7 +53,7 @@ class GraphDBClientBase(Model):
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service}>"
 
-    def _setup_client(self, service: str, infer: bool, sameas: bool) -> None:
+    def _setup_client(self, service: Optional[str], infer: bool, sameas: bool) -> None:
         """Setup client for querying
 
         Args:
@@ -63,24 +63,13 @@ class GraphDBClientBase(Model):
         """
         self.user = os.getenv("GRAPHDB_USER")
         self.passwd = os.getenv("GRAPHDB_USER_PASSWD")
-        self.service = service
+        self.service = service or url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
         self.sparql = SPARQLWrapper(self.service)
         self.sparql.setReturnFormat(JSON)
         self.sparql.setCredentials(self.user, self.passwd)
         self.sparql.addParameter("infer", str(infer))
         self.sparql.addParameter("sameAs", str(sameas))
         self._set_prefixes()
-
-    @property
-    def service(self):
-        return self._service
-
-    @service.setter
-    def service(self, service: str):
-        if service is None:
-            self._service = url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
-        else:
-            self._service = service
 
     def _set_prefixes(self) -> None:
         self.prefixes: Dict[str, str] = {}
