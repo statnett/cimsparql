@@ -86,6 +86,15 @@ class GraphDBClient(CimModel):
                 prefix, uri = line.split(",")
                 if prefix != "prefix":
                     self._prefixes[prefix] = uri.rstrip("#")
+        else:
+            msg = (
+                "Could not fetch namespaces and prefixes from graphdb "
+                "Verify that user and password are correctly set in the "
+                "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
+            )
+            raise RuntimeError(
+                f"{msg}\nStatus code: {response.status_code}\nReason: {response.reason}"
+            )
 
     @staticmethod
     def value_getter(d: Dict[str, str]) -> str:

@@ -6,6 +6,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+import requests
 
 from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient, data_row
@@ -257,3 +258,16 @@ def test_dtypes(gdb_cli: GraphDBClient):
     queries = TypeMapperQueries(gdb_cli.prefixes)
     df = gdb_cli.get_table(queries.query, map_data_types=False)
     assert df["sparql_type"].isna().sum() == 0
+
+
+def test_prefix_resp_not_ok(monkeypatch):
+    resp = requests.Response()
+    resp.status_code = 401
+    resp.reason = "Something went wrong"
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: resp)
+
+    with pytest.raises(RuntimeError) as exc:
+        GraphDBClient("http://some-url:87")
+
+    assert resp.reason in str(exc)
+    assert str(resp.status_code) in str(exc)
