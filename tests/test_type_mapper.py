@@ -1,5 +1,4 @@
 import datetime
-import warnings
 from decimal import Decimal
 
 import pandas as pd
@@ -21,16 +20,6 @@ def mocked_graphdb(sparql_data_types, prefixes):
 @pytest.fixture
 def type_mapper_instance(mocked_graphdb):
     return type_mapper.TypeMapper(mocked_graphdb)
-
-
-def test_get_type(type_mapper_instance):
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        identity_result = type_mapper_instance.get_type("missing_type")(123)
-        missing_result = type_mapper_instance.get_type("missing_type", None)
-    assert identity_result == 123
-    assert missing_result is None
-    assert len(w) == 2
 
 
 def test_python_type_map_bool():

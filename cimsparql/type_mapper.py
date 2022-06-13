@@ -156,7 +156,7 @@ class TypeMapper:
             return {}
         return self.type_map(df)
 
-    def get_type(self, sparql_type: str, missing_return: str = "identity"):
+    def get_type(self, sparql_type: str, col: str = ""):
         """Gets the python type/function to apply on columns of the sparql_type
 
         Args:
@@ -176,10 +176,7 @@ class TypeMapper:
         try:
             return self.map[sparql_type]
         except KeyError:
-            warnings.warn(f"{sparql_type} not found in the sparql -> python type map")
-            if missing_return == "identity":
-                return lambda x: x
-            return None
+            warnings.warn(f"{col}:{sparql_type} not found in the sparql -> python type map")
 
     def build_type_caster(
         self, col_map: Dict[COL_NAME, SPARQL_TYPE]
@@ -187,7 +184,7 @@ class TypeMapper:
         """
         Construct a direct mapping from column names to a type caster from the
         """
-        return {col: self.get_type(dtype) for col, dtype in col_map.items()}
+        return {col: self.get_type(dtype, col) for col, dtype in col_map.items()}
 
     def map_data_types(
         self, df: pd.DataFrame, col_map: Dict[COL_NAME, SPARQL_TYPE]
