@@ -10,7 +10,7 @@ from cimsparql.url import GraphDbConfig, service
 
 this_dir = pathlib.Path(__file__).parent
 
-ssh_repo = "20190522T0730Z"
+ssh_repo = "current"
 eq_repo = "20190521T0030Z"
 
 cim_date = "20190522_070618"
@@ -21,19 +21,6 @@ def local_server() -> str:
 
 
 local_graphdb = GraphDbConfig(local_server(), protocol="http")
-
-
-need_local_graphdb_ssh = pytest.mark.skipif(
-    ssh_repo not in local_graphdb.repos, reason=f"Need {ssh_repo} in local repository"
-)
-
-need_local_graphdb_eq = pytest.mark.skipif(
-    eq_repo not in local_graphdb.repos, reason=f"Need {eq_repo} in local repository"
-)
-
-need_local_graphdb_cim = pytest.mark.skipif(
-    cim_date not in local_graphdb.repos, reason=f"Need {cim_date} in local repository"
-)
 
 
 @pytest.fixture(scope="session")

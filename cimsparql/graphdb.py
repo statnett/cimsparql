@@ -4,7 +4,6 @@ import os
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-import requests
 from SPARQLWrapper import JSON, SPARQLWrapper
 
 from cimsparql import url
@@ -69,26 +68,6 @@ class GraphDBClientBase(Model):
         self.sparql.setCredentials(self.user, self.passwd)
         self.sparql.addParameter("infer", str(infer))
         self.sparql.addParameter("sameAs", str(sameas))
-        self._set_prefixes()
-
-    def _set_prefixes(self) -> None:
-        self.prefixes: Dict[str, str] = {}
-        auth = requests.auth.HTTPBasicAuth(self.user, self.passwd)
-        response = requests.get(self.service + "/namespaces", auth=auth)
-        if response.ok:
-            for line in response.text.split():
-                prefix, uri = line.split(",")
-                if prefix != "prefix":
-                    self.prefixes[prefix] = uri.rstrip("#")
-        else:
-            msg = (
-                "Could not fetch namespaces and prefixes from graphdb "
-                "Verify that user and password are correctly set in the "
-                "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
-            )
-            raise RuntimeError(
-                f"{msg}\nStatus code: {response.status_code}\nReason: {response.reason}"
-            )
 
     @staticmethod
     def value_getter(d: Dict[str, str]) -> str:

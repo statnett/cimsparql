@@ -11,17 +11,22 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from cimsparql import queries
+from cimsparql import line_queries, queries
 from cimsparql import query_support as sup
 from cimsparql import ssh_queries, sv_queries, tp_queries
-from cimsparql.constants import (
-    converter_types,
-    generating_types,
-    impedance_variables,
-    mrid_variable,
-    ratings,
+from cimsparql.constants import union_split
+from cimsparql.enums import (
+    ConverterTypes,
+    GeneratorTypes,
+    Impedance,
+    LoadTypes,
+    Power,
+    Rates,
+    SyncVars,
+    TapChangerObjects,
 )
 from cimsparql.type_mapper import TypeMapper
+from cimsparql.typehints import Region
 from cimsparql.url import Prefix
 
 
@@ -80,7 +85,7 @@ class Model(Prefix, ABC):
                 result[column] = pd.to_numeric(result[column], errors="coerce").astype(column_type)
 
     @classmethod
-    def col_map(cls, data_row, columns) -> Dict[str, str]:
+    def col_map(cls, data_row, columns: Dict[str, str]) -> Dict[str, str]:
         columns = columns or {}
         col_map = cls._col_map(data_row)
         col_map.update(columns)
@@ -92,7 +97,6 @@ class Model(Prefix, ABC):
         index: Optional[str] = None,
         limit: Optional[int] = None,
         map_data_types: bool = True,
-        custom_maps: Optional[Dict] = None,
         columns: Optional[Dict] = None,
     ) -> pd.DataFrame:
         """Gets given table from the configured database.
@@ -131,10 +135,7 @@ class Model(Prefix, ABC):
 
     @property
     def map_data_types(self) -> bool:
-        try:
-            return self.mapper.have_cim_version(self.prefixes["cim"])
-        except AttributeError:
-            return False
+        return "cim" in self.prefixes and self.mapper.have_cim_version(self.prefixes["cim"])
 
     @classmethod
     def _manual_convert_types(
@@ -156,12 +157,9 @@ class Model(Prefix, ABC):
         query: str,
         limit: Optional[int] = None,
         index: Optional[str] = None,
-        custom_maps: Optional[Dict] = None,
-        columns: Optional[Dict] = None,
+        columns: Optional[Dict[str, str]] = None,
     ) -> pd.DataFrame:
-        result = self.get_table(
-            query, index, limit, map_data_types=True, custom_maps=custom_maps, columns=columns
-        )
+        result = self.get_table(query, index, limit, map_data_types=True, columns=columns)
 
         if not self.map_data_types and len(result) > 0:
             result = self._manual_convert_types(result, columns, index)
@@ -172,19 +170,22 @@ class Model(Prefix, ABC):
 class CimModel(Model):
     """Used to query with sparql queries (typically CIM)"""
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._date_version = None
+
     @property
     def date_version(self) -> datetime:
         """Activation date for this repository"""
-        try:
-            date_version = self._date_version
-        except AttributeError:
-            repository_date = self._get_table_and_convert(queries.version_date())
-            date_version = repository_date["activationDate"].values[0]
-            if isinstance(date_version, np.datetime64):
-                date_version = self._date_version = date_version.astype("<M8[s]").astype(datetime)
-        return date_version
+        if self._date_version:
+            return self._date_version
+        repository_date = self._get_table_and_convert(queries.version_date())
+        self._date_version = repository_date["activationDate"].values[0]
+        if isinstance(self._date_version, np.datetime64):
+            self._date_version = self._date_version.astype("<M8[s]").astype(datetime)
+        return self._date_version
 
-    def full_model(self, dry_run: bool = False) -> pd.DataFrame:
+    def full_model(self, dry_run: bool = False) -> Union[pd.DataFrame, str]:
         query = queries.full_model()
         if dry_run:
             return self._query_with_header(query)
@@ -192,12 +193,11 @@ class CimModel(Model):
 
     def bus_data(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
         limit: Optional[int] = None,
         dry_run: bool = False,
-        mrid: str = mrid_variable,
-        name: str = "?name",
+        with_dummy_buses: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query name of topological nodes (TP query).
 
@@ -207,44 +207,51 @@ class CimModel(Model):
            limit: return first 'limit' number of rows
            dry_run: return string with sql query
         """
-        query = queries.bus_data(region, sub_region, mrid, name)
+        query = queries.bus_data(region, sub_region)
+        if with_dummy_buses:
+            dummy_bus_query = queries.three_winding_dummy_bus(region, sub_region)
+            combined = sup.combine_statements(query, dummy_bus_query, split=union_split)
+            query = sup.combine_statements(
+                sup.select_statement(["?mrid", "?name", "?busname", "?un", "?area", "?bidzone"]),
+                f"where {{{{{combined}}}}}",
+            )
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def phase_tap_changers(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
         with_tap_changer_values: bool = True,
-        impedance: Iterable[str] = impedance_variables,
-        tap_changer_objects: Iterable[str] = ("high", "low", "neutral"),
-        mrid: str = mrid_variable,
+        impedance: Iterable[Impedance] = tuple(Impedance),
+        tap_changer_objects: Iterable[TapChangerObjects] = tuple(TapChangerObjects),
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Get list of phase tap changers"""
         query = queries.phase_tap_changer_query(
-            region, sub_region, with_tap_changer_values, impedance, tap_changer_objects, mrid
+            region, sub_region, with_tap_changer_values, impedance, tap_changer_objects
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def loads(
         self,
-        load_type: List[str],
-        load_vars: Optional[Tuple[str]] = None,
-        region: Optional[Union[str, List[str]]] = None,
+        load_type: LoadTypes,
+        load_vars: Optional[Iterable[Power]] = None,
+        region: Region = None,
         sub_region: bool = False,
         connectivity: Optional[Optional[str]] = None,
+        nodes: Optional[Optional[str]] = None,
         station_group_optional: bool = True,
         station_group: bool = False,
         with_sequence_number: bool = False,
-        network_analysis: Optional[bool] = True,
-        mrid: str = mrid_variable,
+        network_analysis: bool = True,
         limit: Optional[int] = None,
         dry_run: bool = False,
+        ssh_graph: Optional[str] = None,
     ) -> Union[pd.DataFrame, str]:
         """Query load data
 
@@ -276,25 +283,23 @@ class CimModel(Model):
             region,
             sub_region,
             connectivity,
+            nodes,
             station_group_optional,
             with_sequence_number,
             network_analysis,
             station_group,
             self.cim_version,
-            mrid,
+            ssh_graph,
         )
         if dry_run:
             return self._query_with_header(query, limit)
 
-        columns = {} if load_vars is None else {var: float for var in load_vars}
-        return self._get_table_and_convert(query, limit, index=mrid[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def wind_generating_units(
         self,
         limit: Optional[int] = None,
-        network_analysis: Optional[bool] = True,
-        mrid: str = mrid_variable,
-        name: str = "?name",
+        network_analysis: bool = True,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query wind generating units
@@ -315,27 +320,25 @@ class CimModel(Model):
            >>> gdbc.wind_generating_units(limit=10)
 
         """
-        query = queries.wind_generating_unit_query(network_analysis, mrid, name)
+        query = queries.wind_generating_unit_query(network_analysis)
         if dry_run:
             return self._query_with_header(query, limit)
-        float_list = ["maxP", "allocationMax", "allocationWeight", "minP"]
-        columns = {var: float for var in float_list}
-        return self._get_table_and_convert(query, limit, index=mrid[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def synchronous_machines(
         self,
-        sync_vars: Tuple[str, ...] = ("sn", "p", "q"),
-        region: Optional[Union[str, List[str]]] = None,
+        sync_vars: Iterable[SyncVars] = tuple(SyncVars),
+        region: Region = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
+        nodes: Optional[str] = None,
         station_group_optional: bool = True,
         with_sequence_number: bool = False,
-        network_analysis: Optional[bool] = True,
+        network_analysis: bool = True,
         u_groups: bool = False,
-        mrid: str = mrid_variable,
-        name: str = "?name",
         limit: Optional[int] = None,
         dry_run: bool = False,
+        ssh_graph: Optional[str] = None,
     ) -> Union[pd.DataFrame, str]:
         """Query synchronous machines
 
@@ -357,35 +360,30 @@ class CimModel(Model):
            >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.synchronous_machines(limit=10)
         """
-        terminal_mrid: str = "?t_mrid"
-
         query = queries.synchronous_machines_query(
             sync_vars,
             region,
             sub_region,
             connectivity,
+            nodes,
             station_group_optional,
             self.cim_version,
             with_sequence_number,
             network_analysis,
             u_groups,
-            terminal_mrid,
-            mrid,
-            name,
+            ssh_graph,
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        float_list = ["maxP", "minP", "allocationMax", "allocationWeight", *sync_vars]
-        columns = {var: float for var in float_list}
-        return self._get_table_and_convert(query, limit, index=mrid[1:], columns=columns)
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def connections(
         self,
         rdf_types: Union[str, Iterable[str]] = ("cim:Breaker", "cim:Disconnector"),
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
-        mrid: str = mrid_variable,
+        nodes: Optional[str] = None,
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
@@ -409,21 +407,20 @@ class CimModel(Model):
            >>> gdbc.connections(limit=10)
         """
         query = queries.connection_query(
-            self.cim_version, rdf_types, region, sub_region, connectivity, mrid
+            self.cim_version, rdf_types, region, sub_region, connectivity, nodes
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def borders(
         self,
         region: Union[str, List[str]],
         sub_region: bool = False,
+        nodes: Optional[str] = None,
         ignore_hvdc: bool = True,
         with_market_code: bool = False,
         market_optional: bool = False,
-        mrid: str = mrid_variable,
-        name: str = "?name",
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
@@ -439,44 +436,40 @@ class CimModel(Model):
             dry_run: return string with sql query
 
         """
-        query = queries.borders_query(
+        query = line_queries.borders_query(
             self.cim_version,
             region,
             sub_region,
+            nodes,
             ignore_hvdc,
             with_market_code,
             market_optional,
-            mrid,
-            name,
         )
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def converters(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
-        converter_types: Iterable[str] = converter_types,
-        mrid: str = mrid_variable,
-        name: str = "?name",
+        converter_types: Iterable[ConverterTypes] = tuple(ConverterTypes),
+        nodes: Optional[str] = None,
         sequence_numbers: Optional[List[int]] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         query = queries.converters(
-            region, sub_region, self.in_prefixes(converter_types), mrid, name, sequence_numbers
+            region, sub_region, self.in_prefixes(converter_types), nodes, sequence_numbers
         )
         if dry_run:
             return self._query_with_header(query)
-        return self._get_table_and_convert(query, index=mrid[1:])
+        return self._get_table_and_convert(query, index="mrid")
 
     def transformers_connected_to_converter(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
-        converter_types: Iterable[str] = converter_types,
-        mrid: str = mrid_variable,
-        name: str = "?name",
+        converter_types: Iterable[ConverterTypes] = tuple(ConverterTypes),
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query list of transformer connected at a converter (Voltage source or DC)
@@ -489,25 +482,26 @@ class CimModel(Model):
 
         """
         query = queries.transformers_connected_to_converter(
-            region, sub_region, self.in_prefixes(converter_types), mrid, name
+            region, sub_region, self.in_prefixes(converter_types)
         )
         if dry_run:
             return self._query_with_header(query)
-        return self._get_table_and_convert(query, index=mrid[1:])
+        return self._get_table_and_convert(query, index="mrid")
 
     def ac_lines(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
         limit: Optional[int] = None,
         connectivity: Optional[str] = None,
-        rates: Optional[Tuple[str]] = ratings,
-        network_analysis: Optional[bool] = True,
+        nodes: Optional[str] = None,
+        with_loss: bool = False,
+        rates: Iterable[Rates] = (Rates.Normal,),
+        network_analysis: bool = True,
         with_market: bool = False,
         temperatures: Optional[List[int]] = None,
-        impedance: Iterable[str] = impedance_variables,
-        mrid: str = mrid_variable,
-        name: str = "?name",
+        impedance: Iterable[Impedance] = tuple(Impedance),
+        length: bool = False,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query ac line segments
@@ -528,19 +522,20 @@ class CimModel(Model):
            >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.ac_lines(limit=10)
         """
-        query = queries.ac_line_query(
+        query = line_queries.ac_line_query(
             self.cim_version,
             self.ns["cim"],
             region,
             sub_region,
             connectivity,
+            nodes,
+            with_loss,
             rates,
             network_analysis,
             with_market,
             temperatures,
             impedance,
-            mrid,
-            name,
+            length,
         )
         if dry_run:
             return self._query_with_header(query, limit)
@@ -553,13 +548,15 @@ class CimModel(Model):
 
     def series_compensators(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
-        network_analysis: Optional[bool] = True,
+        with_loss: bool = False,
+        nodes: Optional[str] = None,
+        rates: Iterable[Rates] = (Rates.Normal,),
+        network_analysis: bool = True,
         with_market: bool = False,
-        mrid: str = mrid_variable,
-        name: str = "?name",
+        impedance: Iterable[Impedance] = tuple(Impedance),
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
@@ -580,15 +577,17 @@ class CimModel(Model):
            >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.series_compensators(limit=10)
         """
-        query = queries.series_compensator_query(
+        query = line_queries.series_compensator_query(
             self.cim_version,
             region,
             sub_region,
             connectivity,
+            with_loss,
+            nodes,
+            rates,
             network_analysis,
             with_market,
-            mrid,
-            name,
+            impedance,
         )
         if dry_run:
             return self._query_with_header(query, limit)
@@ -596,15 +595,13 @@ class CimModel(Model):
 
     def transformers(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
-        rates: Tuple[str] = ratings,
-        network_analysis: Optional[bool] = True,
+        rates: Iterable[Rates] = (Rates.Normal,),
+        network_analysis: bool = True,
         with_market: bool = False,
-        impedance: Iterable[str] = impedance_variables,
-        mrid: str = "?p_mrid",
-        name: str = "?name",
+        impedance: Iterable[Impedance] = tuple(Impedance),
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
@@ -628,15 +625,7 @@ class CimModel(Model):
            >>> gdbc.transformers(limit=10)
         """
         query = queries.transformer_query(
-            region,
-            sub_region,
-            connectivity,
-            rates,
-            network_analysis,
-            with_market,
-            mrid,
-            name,
-            impedance,
+            region, sub_region, connectivity, rates, network_analysis, with_market, impedance
         )
         if dry_run:
             return self._query_with_header(query, limit)
@@ -644,13 +633,15 @@ class CimModel(Model):
 
     def two_winding_transformers(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
-        rates: Tuple[str] = ratings,
-        network_analysis: Optional[bool] = True,
+        rates: Iterable[Rates] = (Rates.Normal,),
+        network_analysis: bool = True,
         with_market: bool = False,
-        impedance: Iterable[str] = impedance_variables,
-        mrid: str = "?p_mrid",
+        impedance: Iterable[Impedance] = tuple(Impedance),
+        p_mrid: bool = False,
+        nodes: Optional[str] = None,
+        with_loss: bool = False,
         name: str = "?name",
         limit: Optional[int] = None,
         dry_run: bool = False,
@@ -674,7 +665,17 @@ class CimModel(Model):
            >>> gdbc.two_winding_transformers(limit=10)
         """
         query = queries.two_winding_transformer_query(
-            region, sub_region, rates, network_analysis, with_market, mrid, name, impedance
+            region,
+            sub_region,
+            rates,
+            network_analysis,
+            with_market,
+            p_mrid,
+            nodes,
+            with_loss,
+            name,
+            impedance,
+            self.cim_version,
         )
         if dry_run:
             return self._query_with_header(query, limit)
@@ -682,13 +683,15 @@ class CimModel(Model):
 
     def three_winding_transformers(
         self,
-        region: Optional[Union[str, List[str]]] = None,
+        region: Region = None,
         sub_region: bool = False,
-        rates: Tuple[str] = ratings,
-        network_analysis: Optional[bool] = True,
+        rates: Iterable[Rates] = (Rates.Normal,),
+        network_analysis: bool = True,
         with_market: bool = False,
-        impedance: Iterable[str] = impedance_variables,
-        mrid: str = "?p_mrid",
+        impedance: Iterable[Impedance] = tuple(Impedance),
+        p_mrid: bool = False,
+        nodes: Optional[str] = None,
+        with_loss: bool = False,
         name: str = "?name",
         limit: Optional[int] = None,
         dry_run: bool = False,
@@ -712,7 +715,17 @@ class CimModel(Model):
            >>> gdbc.two_winding_transformers(limit=10)
         """
         query = queries.three_winding_transformer_query(
-            region, sub_region, rates, network_analysis, with_market, mrid, name, impedance
+            region,
+            sub_region,
+            rates,
+            network_analysis,
+            with_market,
+            p_mrid,
+            nodes,
+            with_loss,
+            name,
+            impedance,
+            self.cim_version,
         )
         if dry_run:
             return self._query_with_header(query, limit)
@@ -745,7 +758,7 @@ class CimModel(Model):
         query = ssh_queries.synchronous_machines()
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def ssh_load(
         self,
@@ -766,7 +779,7 @@ class CimModel(Model):
         query = ssh_queries.load(rdf_types)
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def ssh_generating_unit(
         self,
@@ -784,11 +797,11 @@ class CimModel(Model):
 
         """
         if rdf_types is None:
-            rdf_types = [f"cim:{unit}GeneratingUnit" for unit in generating_types]
+            rdf_types = [f"cim:{unit}GeneratingUnit" for unit in GeneratorTypes]
         query = ssh_queries.generating_unit(rdf_types)
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def terminal(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -802,7 +815,7 @@ class CimModel(Model):
         query = tp_queries.terminal(self.cim_version)
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def topological_node(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -816,7 +829,7 @@ class CimModel(Model):
         query = tp_queries.topological_node()
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def powerflow(
         self,
@@ -834,7 +847,7 @@ class CimModel(Model):
         query = sv_queries.powerflow(power)
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def voltage(
         self,
@@ -852,7 +865,7 @@ class CimModel(Model):
         query = sv_queries.voltage(voltage_vars)
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     def tapstep(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -866,7 +879,7 @@ class CimModel(Model):
         query = sv_queries.tapstep()
         if dry_run:
             return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index=mrid_variable[1:])
+        return self._get_table_and_convert(query, limit, index="mrid")
 
     @property
     def regions(self) -> pd.DataFrame:
@@ -881,5 +894,5 @@ class CimModel(Model):
            >>> gdbc = GraphDBClient(service('LATEST'))
            >>> gdbc.regions
         """
-        query = queries.regions_query(mrid_variable)
-        return self._get_table_and_convert(query, limit=None, index=mrid_variable[1:])
+        query = queries.regions_query()
+        return self._get_table_and_convert(query, limit=None, index="mrid")

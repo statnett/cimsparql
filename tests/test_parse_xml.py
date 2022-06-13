@@ -14,6 +14,10 @@ from cimsparql.parse_xml import CimXmlStr, SvTpCimXml
 
 root = Path(__file__).parent.parent
 
+not_on_github = pytest.mark.skipif(
+    not os.getenv("GITHUB_ACTIONS", None) is None, reason="Can't run on github"
+)
+
 
 def cim_file(date: pendulum.DateTime, profile: str) -> str:
     return f"cim_{date.format('YYYYMMDD_HHmmss')}_mis_bymin_rtnet_ems_{profile}.xml"
@@ -74,6 +78,7 @@ def test_parse_sv_tp_cim_xml_tap_step(sv_tp_cim: SvTpCimXml):
     assert (sv_tp_cim.tap_steps.dtypes == int).all()
 
 
+@not_on_github
 def test_parse_cim_file():
     target_file_type = "sv"
     target_date = pendulum.local(2019, 11, 2, 0, 13, 40)
@@ -108,6 +113,7 @@ def get_file_data(path: Path, profiles: List[str]):
     return file_dict, files
 
 
+@not_on_github
 def test_get_files(profiles: List[str]):
     with tempfile.TemporaryDirectory() as tmp_dir:
         target_d, files = get_file_data(Path("tmp") / tmp_dir, profiles)
@@ -151,6 +157,7 @@ def test_get_cim_files(profiles: List[str]):
     assert result == target
 
 
+@not_on_github
 def test_get_cim_files_no_o_disc(profiles: List[str]):
     dates = [pendulum.local(2019, 11, 2, 0, 13, seconds) for seconds in [44, 55]]
     file_dates = [date.subtract(seconds=seconds) for date, seconds in zip(dates, [4, 5])]

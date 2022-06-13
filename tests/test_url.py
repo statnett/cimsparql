@@ -28,7 +28,7 @@ prefixes = [
 def test_set_cim_version():
     pre = Prefix()
     for nr in range(10):
-        pre.prefixes = {"cim": f"CIM-schema-cim{nr}"}
+        pre._prefixes = {"cim": f"CIM-schema-cim{nr}"}
         assert pre.cim_version == nr
 
 
@@ -50,7 +50,7 @@ def test_header_str_missing_prefixes():
 
 def test_header_str():
     pre = Prefix()
-    pre.prefixes = {"cim": "cim_url", "sn": "sn_url", "ALG": "alg_url"}
+    pre._prefixes = {"cim": "cim_url", "sn": "sn_url", "ALG": "alg_url"}
     ref_prefix = ["PREFIX cim:<cim_url#>", "PREFIX sn:<sn_url#>"]
     assert set(pre.header_str("cim:Var sn:Var").split("\n")).difference(ref_prefix) == set()
 

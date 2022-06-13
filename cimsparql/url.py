@@ -68,7 +68,33 @@ class GraphDbConfig:
 
 class Prefix:
     def __init__(self) -> None:
-        self.prefixes: Dict[str, str] = {}
+        self._prefixes = None
+
+    @property
+    def prefixes(self) -> Dict[str, str]:
+        if self._prefixes is None:
+            self._prefixes = self._get_prefixes()
+        return self._prefixes
+
+    def _get_prefixes(self) -> Dict[str, str]:
+        prefixes = {}
+        auth = requests.auth.HTTPBasicAuth(self.user, self.passwd)
+        response = requests.get(self.service + "/namespaces", auth=auth)
+        if response.ok:
+            for line in response.text.split():
+                prefix, uri = line.split(",")
+                if prefix != "prefix":
+                    prefixes[prefix] = uri.rstrip("#")
+        else:
+            msg = (
+                "Could not fetch namespaces and prefixes from graphdb "
+                "Verify that user and password are correctly set in the "
+                "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
+            )
+            raise RuntimeError(
+                f"{msg}\nStatus code: {response.status_code}\nReason: {response.reason}"
+            )
+        return prefixes
 
     def in_prefixes(self, variables: Iterable) -> Iterable:
         return {variable for variable in variables if variable.split(":")[0] in self.prefixes}

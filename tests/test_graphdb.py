@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 from typing import List
@@ -8,9 +9,13 @@ import pandas as pd
 import pytest
 import requests
 
+import cimsparql.query_support as sup
 from cimsparql.constants import con_mrid_str
+from cimsparql.enums import ConverterTypes
 from cimsparql.graphdb import GraphDBClient, data_row
 from cimsparql.type_mapper import TypeMapperQueries
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
@@ -53,14 +58,14 @@ def test_non_conform_load(gdb_cli: GraphDBClient, n_samples: int):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_series_compensator(gdb_cli: GraphDBClient):
-    compensators = gdb_cli.series_compensators(region="NO", limit=3)
-    assert compensators.shape == (3, 6)
+    compensators = gdb_cli.series_compensators(region="NO", rates=["Normal"], limit=3)
+    assert compensators.shape == (3, 8)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_series_compensator_with_market(gdb_cli: GraphDBClient):
-    compensators = gdb_cli.series_compensators(region="NO", limit=3, with_market=True)
-    assert compensators.shape == (3, 8)
+    compensators = gdb_cli.series_compensators(region="NO", rates=None, with_market=True, limit=3)
+    assert compensators.shape == (3, 9)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
@@ -78,7 +83,15 @@ def test_conform_and_non_conform_load(gdb_cli: GraphDBClient, n_samples: int):
 
 @pytest.fixture()
 def gen_columns() -> List[str]:
-    return ["allocationmax", "meritorder", "market_code", "maxP", "minP", "name", "station_group"]
+    return [
+        "allocationmax",
+        "allocationWeight",
+        "market_code",
+        "maxP",
+        "minP",
+        "name",
+        "station_group",
+    ]
 
 
 @pytest.fixture()
@@ -116,29 +129,29 @@ def test_regions(gdb_cli: GraphDBClient):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_branch(gdb_cli: GraphDBClient, n_samples: int):
-    lines = gdb_cli.ac_lines(limit=n_samples)
-    assert lines.shape == (n_samples, 11)
+    lines = gdb_cli.ac_lines(limit=n_samples, length=True)
+    assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_branch_with_temperatures(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-30, 30, 10))
-    assert lines.shape == (n_samples, 14)
+    assert lines.shape == (n_samples, 13)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_branch_with_two_temperatures(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-20, 0, 10))
-    assert lines.shape == (n_samples, 10)
+    assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_ac_line_segment_with_market(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(limit=n_samples, with_market=True, rates=None, temperatures=None)
-    assert lines.shape == (n_samples, 10)
+    assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
@@ -147,7 +160,7 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
     lines = gdb_cli.ac_lines(
         limit=n_samples, connectivity=con_mrid_str, temperatures=range(0, 10, 10)
     )
-    assert lines.shape == (n_samples, 14)
+    assert lines.shape == (n_samples, 11)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
@@ -155,7 +168,7 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
 def test_transformers_with_multiple_sub_regions(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region=[f"NO0{no}" for no in [1, 2, 3]], sub_region=True)
     assert windings.shape[0] > 2
-    assert windings.shape[1] == 11
+    assert windings.shape[1] == 9
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
@@ -167,13 +180,24 @@ def test_transformers_with_faseshift(gdb_cli: GraphDBClient):
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_windings(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="NO01", sub_region=True)
-    assert windings.shape[1] == 11
+    assert windings.shape[1] == 9
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_windings_with_market(gdb_cli: GraphDBClient):
     windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
-    assert windings.shape[1] == 12
+    assert windings.shape[1] == 10
+
+
+def transformers(gdb: GraphDBClient) -> pd.DataFrame:
+    """Information used by ptc"""
+    select = "select ?mrid ?endNumber ?w_mrid "
+    where_list = [
+        "?mrid rdf:type cim:PowerTransformer",
+        "?w_mrid cim:PowerTransformerEnd.PowerTransformer ?mrid",
+        "?w_mrid cim:TransformerEnd.endNumber ?endNumber",
+    ]
+    return gdb.get_table(sup.combine_statements(select, sup.group_query(where_list)))
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
@@ -194,7 +218,7 @@ def corridor_columns() -> List[str]:
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_transformer_connected_to_voltage_source_converters(gdb_cli: GraphDBClient):
     transformers = gdb_cli.transformers_connected_to_converter(
-        region="NO", converter_types=["ALG:VoltageSourceConverter"]
+        region="NO", converter_types=[ConverterTypes.VoltageSourceConverter]
     )
     assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
     assert len(transformers) == 10
@@ -203,7 +227,7 @@ def test_transformer_connected_to_voltage_source_converters(gdb_cli: GraphDBClie
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_transformer_connected_to_dc_converters(gdb_cli: GraphDBClient):
     transformers = gdb_cli.transformers_connected_to_converter(
-        region="NO", converter_types=["ALG:DCConverter"]
+        region="NO", converter_types=[ConverterTypes.DCConverter]
     )
     assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
     assert len(transformers) == 16
@@ -261,7 +285,6 @@ def test_prefix_resp_not_ok(monkeypatch):
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: resp)
 
     with pytest.raises(RuntimeError) as exc:
-        GraphDBClient("http://some-url:87")
-
+        GraphDBClient("http://some-url:87").prefixes
     assert resp.reason in str(exc)
     assert str(resp.status_code) in str(exc)

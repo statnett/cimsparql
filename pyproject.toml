@@ -13,19 +13,21 @@ authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
 repository = "https://github.com/statnett/cimsparql.git"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+SPARQLWrapper = "*"
+StrEnum = "*"
+defusedxml = {version = "*", optional = true}
+lxml = {version = "*", optional = true}
+networkx = "*"
 numpy = "*"
 pandas = "*"
-tables = "*"
-networkx = "*"
-SPARQLWrapper = "*"
-requests = "*"
 pendulum = {version = "*", optional = true}
-lxml = {version = "*", optional = true}
-defusedxml = {version = "*", optional = true}
+python = "^3.9"
+requests = "*"
+tables = "*"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "*"
+asyncio = "*"
 black = { version = "*", allow-prereleases = true }
 coverage = { version = "*", extras = ['toml'] }
 flake8 = "*"
@@ -46,6 +48,7 @@ pylint = "*"
 pyls-flake8 = "*"
 pyls-memestra = "*"
 pytest = ">= 6"
+pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-integration = "*"
 pytest-profiling = "*"
@@ -100,6 +103,7 @@ branch = true
 source = ["cimsparql",  "conftest", "tests"]
 
 [tool.pytest.ini_options]
+asyncio_mode = 'auto'
 log_file = "pytest.log"
 log_level = "DEBUG"
 log_file_format = "%(asctime)s - %(name)s - %(levelname)s: %(message)s"

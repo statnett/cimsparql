@@ -1,79 +1,94 @@
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Dict, Iterable, List, Literal, Optional, Union
 
 from cimsparql.cim import (
+    BIDDINGAREA,
     CNODE_CONTAINER,
     DELIVERYPOINT,
     EQUIP_CONTAINER,
     GEO_REG,
     ID_OBJ,
+    MARKETCODE,
+    OPERATIONAL_LIMIT_SET,
     SUBSTATION,
+    TC_EQUIPMENT,
+    TC_NODE,
 )
 from cimsparql.constants import con_mrid_str, sequence_numbers
+from cimsparql.typehints import Region
 
 
-def base_voltage(mrid: str, var: str) -> List[str]:
-    return [
-        f"{mrid} cim:ConductingEquipment.BaseVoltage ?obase",
-        f"?obase cim:BaseVoltage.nominalVoltage {var}",
-    ]
+def graph(url: Optional[str], query: str) -> str:
+    return f"graph <{url}> {{{query}}}" if url else query
+
+
+def base_voltage(mrid: str, var: str) -> str:
+    return f"{mrid} cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage {var}"
+
+
+def node_list(node: str, query_list: List[str], cim_version: int, mrid: str) -> None:
+    query_list.extend(
+        [
+            f"{mrid} cim:{acdc_terminal(cim_version)}.connected 'true'",
+            f"{mrid} cim:Terminal.TopologicalNode {node}",
+        ]
+    )
 
 
 def terminal_sequence_query(
-    cim_version: int, var: Optional[str], t_mrid: str = "?t_mrid"
+    cim_version: int, con: Optional[str], nodes: Optional[str], mrid_subject: str
 ) -> List[str]:
     query_list = []
     for nr in sequence_numbers:
-        t_sequence_mrid = f"{t_mrid}_{nr}"
+        t_sequence_mrid = f"?_t_mrid_{nr}"
         query_list.extend(
             [
+                f"{t_sequence_mrid} {ID_OBJ}.mRID ?t_mrid_{nr}",
                 rdf_type_tripler(t_sequence_mrid, "cim:Terminal"),
-                f"{t_sequence_mrid} cim:Terminal.ConductingEquipment ?mrid",
-                f"{t_sequence_mrid} cim:{acdc_terminal(cim_version)}.sequenceNumber {nr}",
+                f"{t_sequence_mrid} {TC_EQUIPMENT} {mrid_subject}",
+                f"{t_sequence_mrid} cim:{acdc_terminal(15)}.sequenceNumber {nr}",
             ]
         )
-        if var is not None:
-            query_list.append(f"{t_sequence_mrid} cim:Terminal.ConnectivityNode ?{var}_{nr}")
+        if con:
+            query_list.append(f"{t_sequence_mrid} {TC_NODE} ?{con}_{nr}")
+        if nodes:
+            node_list(f"?{nodes}_{nr}", query_list, cim_version, t_sequence_mrid)
+            query_list.append(f"{t_sequence_mrid} cim:ACDCTerminal.connected 'true'")
     return query_list
 
 
-def operational_limit(mrid: str, rate: str, limitset: str = "oplimset") -> List[str]:
+def operational_limit(
+    mrid: str,
+    rate: str,
+    limit_type: Literal["ActivePowerLimit", "CurrentLimit"] = "ActivePowerLimit",
+    limit_set: Literal["Terminal", "Equipment"] = "Equipment",
+) -> List[str]:
+    equip_predicate = f"{OPERATIONAL_LIMIT_SET}/cim:OperationalLimitSet.{limit_set}"
     return [
-        f"?{limitset} cim:OperationalLimitSet.Equipment {mrid}",
-        f"?p_lim{rate} cim:OperationalLimit.OperationalLimitSet ?{limitset}",
-        rdf_type_tripler(f"?p_lim{rate}", "cim:ActivePowerLimit"),
+        f"?p_lim{rate} {equip_predicate} {mrid}",
+        rdf_type_tripler(f"?p_lim{rate}", f"cim:{limit_type}"),
         f"?p_lim{rate} {ID_OBJ}.name '{rate}@20'",
-        f"?p_lim{rate} cim:ActivePowerLimit.value ?rate{rate}",
+        f"?p_lim{rate} cim:{limit_type}.value ?rate{rate}",
     ]
 
 
-def region_name_query(
-    region: str, sub_region: bool, sub_geographical_region: str, region_var: str = "?region"
-) -> List[str]:
-    if sub_region:
-        return [f"{sub_geographical_region} SN:IdentifiedObject.shortName {region}"]
-    return [
-        f"{sub_geographical_region} {GEO_REG}.Region {region_var}",
-        f"{region_var} {ID_OBJ}.name {region}",
-    ]
+def region_name_query(region: str, sub_region: bool, geographical_region: str) -> str:
+    predicate = "SN:IdentifiedObject.shortName" if sub_region else f"{GEO_REG}.Region/{ID_OBJ}.name"
+    return f"{geographical_region} {predicate} {region}"
 
 
-def region_query(
-    region: Optional[Union[str, List[str]]],
-    sub_region: bool,
-    container: str,
-    sub_geographical_region: str,
-) -> List[str]:
+def region_query(region: Region, sub_region: bool, container: str) -> List[str]:
     if region is None:
         return []
-    query = [f"?{container} cim:{container}.Region {sub_geographical_region}"]
-    if isinstance(region, str):
-        query.extend(region_name_query(f"'{region}'", sub_region, sub_geographical_region))
-    elif isinstance(region, list):
-        query.extend(region_name_query("?r_na", sub_region, sub_geographical_region))
-        query.append("FILTER regex(?r_na, '" + "|".join(region) + "')")
-    else:
-        raise NotImplementedError("region must be either str or List")
-    return query
+    try:
+        regions_str = region if isinstance(region, str) else "|".join(region)
+        filter = [f"FILTER regex(?area, '{regions_str}')"]
+    except TypeError:
+        filter = []
+    return [
+        f"?{container} cim:{container}.Region ?subgeoreg",
+        region_name_query("?area", sub_region, "?subgeoreg"),
+        *filter,
+    ]
 
 
 def sequence_variables(var: str = con_mrid_str) -> List[str]:
@@ -102,39 +117,41 @@ def include_market(with_market: bool, variables: List[str], where_list: List[str
         where_list.extend([market_code_query(terminal_nr) for terminal_nr in sequence_numbers])
 
 
-def market_code_query(nr: int = None):
+def market_code_query(nr: Optional[int] = None, substation: Optional[str] = None) -> str:
     nr_s = "" if nr is None else f"_{nr}"
-    return group_query(
-        [
-            f"?t_mrid{nr_s} cim:Terminal.ConnectivityNode ?con{nr_s}",
-            f"?con{nr_s} {CNODE_CONTAINER} ?container{nr_s}",
-            f"?container{nr_s} {SUBSTATION} ?substation{nr_s}",
-            f"?substation{nr_s} {DELIVERYPOINT} ?m_d_p{nr_s}",
-            f"?m_d_p{nr_s} SN:MarketDeliveryPoint.BiddingArea ?barea{nr_s}",
-            f"?barea{nr_s} SN:BiddingArea.marketCode ?bidzone{nr_s}",
-        ],
-        command="OPTIONAL",
-    )
+    bidzone_predicate = f"{DELIVERYPOINT}/{BIDDINGAREA}/{MARKETCODE}"
+    if not substation:
+        substation = f"?_t_mrid{nr_s}"
+        bidzone_predicate = f"{TC_NODE}/{CNODE_CONTAINER}/{SUBSTATION}/{bidzone_predicate}"
+    return f"optional {{{substation} {bidzone_predicate} ?bidzone{nr_s}}}"
 
 
 def terminal_where_query(
-    cim_version: int = 15,
-    var: Optional[str] = con_mrid_str,
+    cim_version: int,
+    con: Optional[str],
+    node: Optional[str],
+    mrid_subject: str,
     with_sequence_number: bool = False,
-    terminal_mrid: str = "?t_mrid",
 ) -> List[str]:
-    out = [
-        rdf_type_tripler(terminal_mrid, "cim:Terminal"),
-        f"{terminal_mrid} cim:Terminal.ConductingEquipment ?mrid",
+    t_mrid_subject: str = "?_t_mrid"
+    query_list = [
+        rdf_type_tripler(t_mrid_subject, "cim:Terminal"),
+        f"{t_mrid_subject} {TC_EQUIPMENT} {mrid_subject}",
     ]
-    if var is not None:
-        out.append(f"{terminal_mrid} cim:Terminal.ConnectivityNode ?{var}")
-
-    if with_sequence_number:
-        out.append(
-            f"{terminal_mrid} cim:{acdc_terminal(cim_version)}.sequenceNumber ?sequenceNumber"
+    if con:
+        query_list.append(f"{t_mrid_subject} {TC_NODE} ?{con}")
+    if node:
+        query_list.extend(
+            [
+                f"{t_mrid_subject} cim:{acdc_terminal(cim_version)}.connected 'true'",
+                f"{t_mrid_subject} cim:Terminal.TopologicalNode ?{node}",
+            ]
         )
-    return out
+    if with_sequence_number:
+        query_list.append(
+            f"{t_mrid_subject} cim:{acdc_terminal(cim_version)}.sequenceNumber ?sequenceNumber"
+        )
+    return query_list
 
 
 def _temperature_list(temperature: float, xsd: str, curve: str) -> List[str]:
@@ -160,13 +177,11 @@ def temp_correction_factors(
     return where_list
 
 
-def bid_market_code_query() -> List[str]:
+def bid_market_code_query(mrid_subject: str) -> List[str]:
     return [
-        f"?mrid {EQUIP_CONTAINER} ?eq_container",
+        f"{mrid_subject} {EQUIP_CONTAINER} ?eq_container",
         f"?eq_container {SUBSTATION} ?substation",
-        f"?substation {DELIVERYPOINT} ?m_d_p",
-        "?m_d_p SN:MarketDeliveryPoint.BiddingArea ?barea",
-        "?barea SN:BiddingArea.marketCode ?bidzone",
+        f"?substation {DELIVERYPOINT}/{BIDDINGAREA}/{MARKETCODE} ?bidzone",
     ]
 
 
@@ -194,10 +209,10 @@ def negpos(val: Union[float, int]) -> str:
     return "minus" if val < 0 else "plus"
 
 
-def select_statement(variables: Optional[List[str]] = None) -> str:
+def select_statement(variables: Optional[List[str]] = None, distinct: bool = False) -> str:
     """Combine variables in an select statement"""
     vars = "*" if variables is None else " ".join(variables)
-    return f"SELECT {vars}"
+    return f"SELECT {'distinct' if distinct else ''} {vars}"
 
 
 def group_query(
@@ -218,7 +233,7 @@ def group_query(
     return command + " " + combine_statements(*x, group=group, split=split)
 
 
-def unionize(*args: str, group: bool = True):
+def unionize(*args: str, group: bool = True) -> str:
     if group:
         args = tuple(f"{{\n{arg}\n}}" for arg in args)
     return "\nUNION\n".join(args)
@@ -229,7 +244,15 @@ def get_name(mrid: str, name: str, alias: bool = False) -> str:
     return f"{mrid} {ID_OBJ}.{param} {name}"
 
 
-def border_filter(region: Optional[Union[str, List[str]]], area1: str, area2: str) -> List[str]:
+def terminal_number(
+    subject: str, predicat: str, number: Union[str, int], union: bool = True
+) -> str:
+    if union and (isinstance(number, int) or not number.startswith("?")):
+        return unionize(f"{subject} {predicat} {number}", f"{subject} {predicat} '{number}'")
+    return f"{subject} {predicat} {number}"
+
+
+def border_filter(region: Union[str, List[str]], area1: str, area2: str) -> List[str]:
     """Border filter where one area is in and the other is out"""
 
     def _in_first(var1: str, var2: str, regions: Optional[str]) -> List[str]:

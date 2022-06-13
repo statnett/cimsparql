@@ -1,5 +1,4 @@
-import os
-from typing import Dict
+from typing import Dict, List, Optional, Union
 
 import pytest
 from mock import MagicMock, call, patch
@@ -7,11 +6,11 @@ from mock import MagicMock, call, patch
 from cimsparql import queries
 from cimsparql.cim import GEO_REG
 from cimsparql.constants import con_mrid_str as c_mrid
-from cimsparql.constants import mrid_variable, union_split
+from cimsparql.constants import union_split
 
 
 @pytest.fixture()
-def load_query_kwargs():
+def load_query_kwargs() -> Dict[str, Optional[Union[List[str], bool, str, int]]]:
     return {
         "load_type": ["ConformLoad"],
         "sub_region": False,
@@ -23,7 +22,8 @@ def load_query_kwargs():
         "network_analysis": False,
         "station_group": False,
         "cim_version": 15,
-        "mrid": mrid_variable,
+        "nodes": None,
+        "ssh_graph": None,
     }
 
 
@@ -71,7 +71,7 @@ def test_load_query_with_no_station_group(load_query_kwargs):
 @patch("cimsparql.query_support.combine_statements")
 def test_load_query_conform(_combine_statements_mock, load_query_kwargs):
     queries.load_query(**load_query_kwargs)
-    call_args = [f"?mrid rdf:type cim:{load_type}" for load_type in load_query_kwargs["load_type"]]
+    call_args = [f"?_mrid rdf:type cim:{load_type}" for load_type in load_query_kwargs["load_type"]]
     call_wargs = {"group": False, "split": union_split}
     assert _combine_statements_mock.call_args_list[0] == call(*call_args, **call_wargs)
 
@@ -81,14 +81,14 @@ def test_load_query_conform(_combine_statements_mock, load_query_kwargs):
 def test_load_query_combined(_combine_statements_mock, load_query_kwargs):
     load_query_kwargs["load_type"] = ["ConformLoad", "NonConformLoad"]
     queries.load_query(**load_query_kwargs)
-    call_args = [f"?mrid rdf:type cim:{load_type}" for load_type in load_query_kwargs["load_type"]]
+    call_args = [f"?_mrid rdf:type cim:{load_type}" for load_type in load_query_kwargs["load_type"]]
     call_wargs = {"group": True, "split": union_split}
     assert _combine_statements_mock.call_args_list[0] == call(*call_args, **call_wargs)
 
 
 @pytest.fixture(scope="module")
 def bus_data_kwargs() -> Dict[str, str]:
-    return {"mrid": "?mrid", "name": "?name", "sub_region": False}
+    return {"sub_region": False}
 
 
 def test_bus_data_with_region(bus_data_kwargs: Dict[str, str]):
@@ -99,10 +99,10 @@ def test_bus_data_no_region(bus_data_kwargs: Dict[str, str]):
     assert GEO_REG not in queries.bus_data(region=None, **bus_data_kwargs)
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_bus_data_with_nodes(gdb_cli):
-    data = gdb_cli.bus_data()
-    assert data.index.name == "mrid"
-    assert list(data.columns) == ["name"]
-    assert list(data.dtypes) == ["string"]
-    assert data.index.dtype == "string"
+def test_bus_data_with_required_region(bus_data_kwargs: Dict[str, str]):
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"\n{queries.bus_data(region=True, **bus_data_kwargs)}")
+
+    # assert GEO_REG in
