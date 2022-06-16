@@ -486,7 +486,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self._query_with_header(query)
-        return self._get_table_and_convert(query, index="mrid")
+        return self._get_table_and_convert(query, index="converter_mrid")
 
     def ac_lines(
         self,
