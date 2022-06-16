@@ -519,9 +519,10 @@ def transformers_connected_to_converter(
 ) -> str:
     mrid_subject = "?_mrid"
     name = "?name"
-    variables = ["?mrid", "?t_mrid", name]
+    variables = ["?mrid", "?t_mrid", "?converter_mrid", name]
     converters = [sup.rdf_type_tripler("?volt", converter) for converter in converter_types]
     where_list = [
+        f"?volt {ID_OBJ}.mRID ?converter_mrid",
         f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
         f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
         sup.rdf_type_tripler(mrid_subject, "cim:PowerTransformer"),
