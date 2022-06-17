@@ -1,8 +1,11 @@
+import logging
 import os
 import pathlib
+from typing import Optional, Set
 
 import pandas as pd
 import pytest
+import requests
 
 from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient
@@ -14,6 +17,8 @@ ssh_repo = "current"
 eq_repo = "20190521T0030Z"
 
 cim_date = "20190522_070618"
+
+logger = logging.getLogger(__name__)
 
 
 def local_server() -> str:
@@ -149,3 +154,50 @@ def disconnectors(gdb_cli: GraphDBClient, n_samples: int) -> pd.DataFrame:
 @pytest.fixture(scope="module")
 def breakers(gdb_cli: GraphDBClient, n_samples: int) -> pd.DataFrame:
     return gdb_cli.connections(rdf_types="cim:Breaker", limit=n_samples, connectivity=con_mrid_str)
+
+
+@pytest.fixture(scope="session")
+def rdf4j_url() -> str:
+    if os.getenv("CI"):
+        # Running on GitHub
+        return "http://localhost:8080"
+
+    return os.getenv("RDF4J_URL")
+
+
+def upload_ttl_to_repo(
+    url: str, fname: pathlib.Path, ignored_error_codes: Optional[Set[int]] = None
+):
+    ignored_error_codes = ignored_error_codes or set()
+    with open(fname, "rb") as infile:
+        data_bytes = infile.read()
+
+    response = requests.put(url, data=data_bytes, headers={"Content-Type": "text/turtle"})
+    if response.status_code not in ignored_error_codes:
+        response.raise_for_status()
+
+
+def initialized_rdf4j_repo_url(service_url) -> str:
+    data_path = this_dir / "tests/data"
+
+    config = data_path / "native_store_config.ttl"
+    name = "picasso"
+    data_file = data_path / "artist.ttl"
+
+    # Initialize repo
+    url = f"{service_url}/repositories/{name}"
+
+    # 409 happens if repo exist before
+    upload_ttl_to_repo(url, config, ignored_error_codes={409})
+    upload_ttl_to_repo(url + "/statements", data_file)
+    return url
+
+
+@pytest.fixture(scope="session")
+def rdf4j_gdb(rdf4j_url) -> Optional[GraphDBClient]:
+    try:
+        url = initialized_rdf4j_repo_url(rdf4j_url)
+    except Exception as exc:
+        logger.error(f"{exc}")
+        return None
+    return GraphDBClient(url, prefix_suffix="")
