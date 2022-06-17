@@ -588,7 +588,10 @@ def transformer_query(
 
 
 def transformers_connected_to_converter(
-    region: Region, sub_region: bool, converter_types: Iterable[ConverterTypes]
+    region: Region,
+    sub_region: bool,
+    converter_types: Iterable[ConverterTypes],
+    on_primary_side: bool,
 ) -> str:
     mrid_subject = "?_mrid"
     name = "?name"
@@ -597,13 +600,30 @@ def transformers_connected_to_converter(
     where_list = [
         f"?volt {ID_OBJ}.mRID ?converter_mrid",
         f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
         sup.rdf_type_tripler(mrid_subject, "cim:PowerTransformer"),
         sup.get_name(mrid_subject, name, alias=True),
-        f"?_t_mrid {TC_EQUIPMENT} {mrid_subject}",
-        f"?_t_mrid {TC_NODE}/^{TC_NODE}/{TC_EQUIPMENT} ?volt",
+        common_subject(
+            "?_t_mrid",
+            [f"{TC_EQUIPMENT} {mrid_subject}", f"{TC_NODE}/^{TC_NODE}/{TC_EQUIPMENT} ?volt"],
+        ),
         sup.combine_statements(*converters, group=len(converters) > 1, split=union_split),
     ]
+    if on_primary_side:
+        where_list.extend(
+            [
+                common_subject(
+                    "?_winding_1",
+                    [
+                        "cim:PowerTransformerEnd.PowerTransformer ?_mrid",
+                        "cim:TransformerEnd.endNumber 1",
+                        "cim:TransformerEnd.Terminal ?_t_mrid_1",
+                    ],
+                ),
+                f"?_t_mrid_1 {ID_OBJ}.mRID ?t_mrid",
+            ]
+        )
+    else:
+        where_list.append(f"?_t_mrid {ID_OBJ}.mRID ?t_mrid")
     if region:
         where_list.append(f"{mrid_subject} {EQUIP_CONTAINER} ?Substation")
         where_list.extend(sup.region_query(region, sub_region, "Substation"))

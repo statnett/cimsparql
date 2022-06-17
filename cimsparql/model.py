@@ -415,6 +415,7 @@ class CimModel(Model):
         region: Region = None,
         sub_region: bool = False,
         converter_types: Iterable[ConverterTypes] = tuple(ConverterTypes),
+        on_primary_side: bool = True,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query list of transformer connected at a converter (Voltage source or DC)
@@ -423,11 +424,12 @@ class CimModel(Model):
            region: Limit to region
            sub_region: Assume region is a sub_region
            converter_types: VoltageSource, DC (cim:VsConverter, cim:DCConverterUnit)
+           on_primary_side: Put converter on transformer primary side
            dry_run: return string with sql query
 
         """
         query = queries.transformers_connected_to_converter(
-            region, sub_region, self.client.prefixes.in_prefixes(converter_types)
+            region, sub_region, self.client.prefixes.in_prefixes(converter_types), on_primary_side
         )
         if dry_run:
             return self.client.query_with_header(query)
