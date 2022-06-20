@@ -220,7 +220,7 @@ def test_transformer_connected_to_voltage_source_converters(gdb_cli: GraphDBClie
     transformers = gdb_cli.transformers_connected_to_converter(
         region="NO", converter_types=[ConverterTypes.VoltageSourceConverter]
     )
-    assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
+    assert set(transformers.columns) == {"t_mrid", "name", "mrid"}
     assert len(transformers) == 10
 
 
@@ -229,14 +229,14 @@ def test_transformer_connected_to_dc_converters(gdb_cli: GraphDBClient):
     transformers = gdb_cli.transformers_connected_to_converter(
         region="NO", converter_types=[ConverterTypes.DCConverter]
     )
-    assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
+    assert set(transformers.columns) == {"t_mrid", "name", "mrid"}
     assert len(transformers) == 16
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_transformer_connected_to_converters(gdb_cli: GraphDBClient):
     transformers = gdb_cli.transformers_connected_to_converter(region="NO")
-    assert set(transformers.columns).difference(["t_mrid", "name"]) == set()
+    assert set(transformers.columns) == {"t_mrid", "name", "mrid"}
     assert len(transformers) == 26
 
 

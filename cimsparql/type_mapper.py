@@ -74,7 +74,7 @@ def build_type_map(prefixes: Dict[PREFIX, URI]) -> Dict[SPARQL_TYPE, TYPE_CASTER
         if namespace not in prefixes:
             continue
         prefix = prefixes[namespace]
-        new_map = {f"{prefix}#{dtype}": converter for dtype, converter in prim_types.items()}
+        new_map = {f"{prefix}{dtype}": converter for dtype, converter in prim_types.items()}
         type_map.update(new_map)
     return type_map
 
@@ -134,7 +134,7 @@ class TypeMapper:
         self.map = sparql_type_map | self.get_map(client) | self.prim_type_map | custom_additions
 
     def have_cim_version(self, cim) -> bool:
-        return cim in (val.split("#")[0] for val in self.map.keys())
+        return any(cim in val for val in self.map.keys())
 
     def type_map(self, df: pd.DataFrame) -> Dict[str, Any]:
         return {

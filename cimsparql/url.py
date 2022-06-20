@@ -81,10 +81,10 @@ class Prefix:
         auth = requests.auth.HTTPBasicAuth(self.user, self.passwd)
         response = requests.get(self.service + "/namespaces", auth=auth)
         if response.ok:
-            for line in response.text.split():
+            # Extract prefixes (skip line 1 which is a header)
+            for line in response.text.split()[1:]:
                 prefix, uri = line.split(",")
-                if prefix != "prefix":
-                    prefixes[prefix] = uri.rstrip("#")
+                prefixes[prefix] = uri
         else:
             msg = (
                 "Could not fetch namespaces and prefixes from graphdb "
@@ -105,14 +105,10 @@ class Prefix:
         The list of available prefixes should be provided by the source (such as GraphDB).
 
         """
+
         try:
-            return "\n".join(
-                [
-                    f"PREFIX {name}:<{self.prefixes[name]}#>"
-                    for name in set(re.findall(r"(\w+):\w+", query))
-                    if name in self.prefixes
-                ]
-            )
+            names_in_query = set(re.findall(r"(\w+):\w+", query))
+            return "\n".join(f"PREFIX {name}:<{self.prefixes[name]}>" for name in names_in_query)
         except AttributeError:
             return ""
 
@@ -123,14 +119,15 @@ class Prefix:
     @property
     def cim_version(self) -> int:
         """CIM version on server/repo"""
-        return int(self.prefixes["cim"].split("CIM-schema-cim")[1])
+        m = re.search("cim(\\d+)", self.prefixes["cim"])
+        return int(m.group(1))
 
     @property
     def ns(self) -> Dict[str, str]:
         """Return namespace as dict"""
-        return {name: f"{url}#" for name, url in self.items()}
+        return dict(self.items())
 
     @property
     def inverse_ns(self) -> Dict[str, str]:
         """Return inverse namespace as dict"""
-        return {f"{url}#": name for name, url in self.items()}
+        return {url: name for name, url in self.items()}

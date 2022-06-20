@@ -130,7 +130,7 @@ def sparql_data_types() -> pd.DataFrame:
 
 @pytest.fixture
 def prefixes():
-    return {"cim": "cim", "xsd": "xsd"}
+    return {"cim": "cim#", "xsd": "xsd#"}
 
 
 @pytest.fixture
@@ -200,4 +200,4 @@ def rdf4j_gdb(rdf4j_url) -> Optional[GraphDBClient]:
     except Exception as exc:
         logger.error(f"{exc}")
         return None
-    return GraphDBClient(url, prefix_suffix="")
+    return GraphDBClient(url)
