@@ -160,7 +160,7 @@ def breakers(gdb_cli: GraphDBClient, n_samples: int) -> pd.DataFrame:
 def rdf4j_url() -> str:
     if os.getenv("CI"):
         # Running on GitHub
-        return "http://localhost:8080"
+        return "http://localhost:8080/rdf4j-server"
 
     return os.getenv("RDF4J_URL")
 
