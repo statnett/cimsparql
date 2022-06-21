@@ -47,6 +47,11 @@ def _line_query(
 
     sup.include_market(with_market, variables, where_list)
 
+    if nodes:
+        where_list.extend(
+            [f"?_{nodes}_{nr} {ID_OBJ}.mRID ?{nodes}_{nr}" for nr in sequence_numbers]
+        )
+
     if with_loss:
         variables.append("(?pl as ?pl_1) (?pl as ?pl_2)")
         loss_list = [_sv_terminal_injection(nr) for nr in [1, 2]]

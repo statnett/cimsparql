@@ -52,8 +52,10 @@ def terminal_sequence_query(
         if con:
             where_list.append(f"{TC_NODE} ?{con}_{nr}")
         if nodes:
-            node_list(f"?{nodes}_{nr}", where_list, cim_version, "")
-            where_list.append("cim:ACDCTerminal.connected 'true'")
+            node_list(f"?_{nodes}_{nr}", where_list, cim_version, "")
+            where_list.append(
+                f"cim:{acdc_terminal(cim_version)}.connected 'true'",
+            )
         return common_subject(f"?_t_mrid_{nr}", where_list)
 
     return [_term_seq_nr(cim_version, con, nodes, mrid_subject, nr) for nr in sequence_numbers]
@@ -146,7 +148,7 @@ def terminal_where_query(
         query_list.extend(
             [
                 f"cim:{acdc_terminal(cim_version)}.connected 'true'",
-                f"cim:Terminal.TopologicalNode ?{node}",
+                f"cim:Terminal.TopologicalNode ?_{node}",
             ]
         )
     if with_sequence_number:

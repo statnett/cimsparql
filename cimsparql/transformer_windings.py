@@ -7,6 +7,7 @@ from cimsparql.cim import (
     EQUIP_CONTAINER,
     ID_OBJ,
     MARKETCODE,
+    TR_END,
     TR_WINDING,
 )
 
@@ -18,7 +19,7 @@ def _end_number(nr: int, lock_end_number: bool) -> List[str]:
         nr: Lock to this end number
         lock_end_number: return empty list if false
     """
-    return [f"?w_mrid_{nr} cim:TransformerEnd.endNumber {nr}"] if lock_end_number else []
+    return [f"?w_mrid_{nr} {TR_END}.endNumber {nr}"] if lock_end_number else []
 
 
 def terminal(mrid: str, nr: int, lock_end_number: bool = True) -> List[str]:
@@ -27,7 +28,7 @@ def terminal(mrid: str, nr: int, lock_end_number: bool = True) -> List[str]:
         *_end_number(nr, lock_end_number),
         sup.common_subject(
             f"?w_mrid_{nr}",
-            [f"cim:TransformerEnd.Terminal ?_t_mrid_{nr}", f"{TR_WINDING}.PowerTransformer {mrid}"],
+            [f"{TR_END}.Terminal ?_t_mrid_{nr}", f"{TR_WINDING}.PowerTransformer {mrid}"],
         ),
     ]
 
@@ -38,14 +39,14 @@ def number_of_windings(mrid: str, winding_count: int, with_loss: bool = False) -
     where_list = [
         f"{mrid} rdf:type cim:PowerTransformer",
         sup.common_subject(
-            "?wwmrid", [f"{TR_WINDING}.PowerTransformer {mrid}", "cim:TransformerEnd.endNumber ?nr"]
+            "?wwmrid", [f"{TR_WINDING}.PowerTransformer {mrid}", f"{TR_END}.endNumber ?nr"]
         ),
     ]
     if with_loss:
         variables.append("(sum(xsd:float(?sv_p)) as ?pl)")
         where_list.extend(
             [
-                "?wwmrid cim:TransformerEnd.Terminal ?p_t_mrid",
+                f"?wwmrid {TR_END}.Terminal ?p_t_mrid",
                 sup.common_subject(
                     "?sv_t", ["cim:SvPowerFlow.Terminal ?p_t_mrid", "cim:SvPowerFlow.p ?sv_p"]
                 ),

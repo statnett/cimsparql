@@ -148,7 +148,7 @@ class CimModel(Model):
             dummy_bus_query = queries.three_winding_dummy_bus(region, sub_region)
             combined = sup.combine_statements(query, dummy_bus_query, split=union_split)
             query = sup.combine_statements(
-                sup.select_statement(["?mrid", "?name", "?busname", "?un", "?area", "?bidzone"]),
+                sup.select_statement(["?mrid", "?name", "?busname", "?un", "?bidzone"]),
                 f"where {{{{{combined}}}}}",
             )
         if dry_run:
