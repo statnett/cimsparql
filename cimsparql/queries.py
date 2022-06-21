@@ -11,6 +11,8 @@ from cimsparql.cim import (
     T_SEQUENCE,
     TC_EQUIPMENT,
     TC_NODE,
+    TN,
+    TR_END,
     TR_WINDING,
 )
 from cimsparql.constants import sequence_numbers, union_split
@@ -85,7 +87,7 @@ def phase_tap_changer_query(
             [
                 f"{ID_OBJ}.mRID ?mrid",
                 sup.rdf_type_tripler("", TR_WINDING),
-                "cim:TransformerEnd.PhaseTapChanger ?_tap",
+                f"{TR_END}.PhaseTapChanger ?_tap",
                 f"{TR_WINDING}.PowerTransformer ?pt",
             ],
         )
@@ -100,7 +102,7 @@ def phase_tap_changer_query(
                 [
                     *sup.predicate_list("", "cim:TapChanger", properties),
                     "cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_incr",
-                    f"cim:IdentifiedObject.mRID {tap}",
+                    f"{ID_OBJ}.mRID {tap}",
                 ],
             )
         )
@@ -120,8 +122,8 @@ def phase_tap_changer_query(
             f"?_w_mrid_{i}",
             [
                 f"{TR_WINDING}.PowerTransformer ?pt",
-                f"cim:TransformerEnd.Terminal ?term_{i}",
-                f"cim:IdentifiedObject.mRID ?w_mrid_{i}",
+                f"{TR_END}.Terminal ?term_{i}",
+                f"{ID_OBJ}.mRID ?w_mrid_{i}",
             ],
         )
         t_mrid = common_subject(
@@ -170,15 +172,16 @@ def bus_data(region: Region, sub_region: bool, with_market: bool = True) -> str:
     mrid_subject = "?t_mrid"
     bus_name = "?busname"
 
-    variables = [f"({mrid_subject} as ?mrid)", "?name", bus_name, "?un"]
+    variables = ["?mrid", "?name", bus_name, "?un"]
     where_list = [
         common_subject(
             mrid_subject,
             [
-                sup.rdf_type_tripler("", "cim:TopologicalNode"),
+                sup.rdf_type_tripler("", TN),
                 sup.get_name("", bus_name),
-                "cim:TopologicalNode.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un",
-                "cim:TopologicalNode.ConnectivityNodeContainer ?cont",
+                f"{ID_OBJ}.mRID ?mrid",
+                f"{TN}.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un",
+                f"{TN}.ConnectivityNodeContainer ?cont",
             ],
         ),
         common_subject("?cont", [f"{ID_OBJ}.aliasName ?name", f"{SUBSTATION} ?Substation"]),
@@ -201,7 +204,7 @@ def three_winding_dummy_bus(region: Region, sub_region: bool) -> str:
         common_subject(
             "?w_mrid",
             [
-                "cim:TransformerEnd.endNumber 1",
+                f"{TR_END}.endNumber 1",
                 f"{TR_WINDING}.ratedU ?un",
                 f"{TR_WINDING}.PowerTransformer ?p_mrid",
             ],
@@ -253,6 +256,9 @@ def load_query(
         ),
         *sup.bid_market_code_query(mrid_subject),
     ]
+
+    if nodes:
+        where_list.append(f"?_{nodes} {ID_OBJ}.mRID ?{nodes}")
 
     if load_vars:
         variables.extend([f"?{load}" for load in load_vars])
@@ -359,6 +365,9 @@ def synchronous_machines_query(
         ),
     ]
 
+    if nodes:
+        where_list.append(f"?_{nodes} {ID_OBJ}.mRID ?{nodes}")
+
     if network_analysis:
         where_list.append(f"{mrid_subject} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
@@ -460,7 +469,8 @@ def two_winding_transformer_query(
     where_list = [*terminal("?p_mrid", 1), *terminal("?p_mrid", 2)]
     for nr in sequence_numbers:
         if nodes:
-            sup.node_list(f"?{nodes}_{nr}", where_list, cim_version, mrid=f"?_t_mrid_{nr}")
+            sup.node_list(f"?_{nodes}_{nr}", where_list, cim_version, mrid=f"?_t_mrid_{nr}")
+            where_list.append(f"?_{nodes}_{nr} {ID_OBJ}.mRID ?{nodes}_{nr}")
         else:
             where_list.append(f"?_t_mrid_{nr} {ID_OBJ}.mRID ?t_mrid_{nr}")
 
@@ -501,7 +511,8 @@ def three_winding_transformer_query(
         f"?p_mrid {ID_OBJ}.mRID ?p_mrid_object",
     ]
     if nodes:
-        sup.node_list(f"?{nodes}_1", where_list, cim_version, mrid="?_t_mrid_1")
+        sup.node_list(f"?_{nodes}_1", where_list, cim_version, mrid="?_t_mrid_1")
+        where_list.append(f"?_{nodes}_1 {ID_OBJ}.mRID ?{nodes}_1")
     else:
         where_list.append(f"?_t_mrid_1 {ID_OBJ}.mRID ?t_mrid_1")
 
@@ -543,8 +554,8 @@ def transformer_query(
             f"{ID_OBJ}.name {name}",
             f"{TR_WINDING}.PowerTransformer {mrid_subject}",
             f"{TR_WINDING}.ratedU ?un",
-            "cim:TransformerEnd.endNumber ?endNumber",
-            "cim:TransformerEnd.Terminal ?_t_mrid",
+            f"{TR_END}.endNumber ?endNumber",
+            f"{TR_END}.Terminal ?_t_mrid",
             *sup.predicate_list("", TR_WINDING, {z: f"?{z}" for z in impedance}),
         ],
     )
@@ -605,9 +616,9 @@ def transformers_connected_to_converter(
                 common_subject(
                     "?_winding_1",
                     [
-                        "cim:PowerTransformerEnd.PowerTransformer ?_mrid",
-                        "cim:TransformerEnd.endNumber 1",
-                        "cim:TransformerEnd.Terminal ?_t_mrid_1",
+                        f"{TR_WINDING}.PowerTransformer ?_mrid",
+                        f"{TR_END}.endNumber 1",
+                        f"{TR_END}.Terminal ?_t_mrid_1",
                     ],
                 ),
                 f"?_t_mrid_1 {ID_OBJ}.mRID ?t_mrid",
@@ -646,9 +657,10 @@ def converters(
             t_mrid_ref = f"?_t_mrid_{num}"
             sequence_where = [f"{TC_EQUIPMENT} {mrid_subject}", f"{T_SEQUENCE} {num}"]
             if nodes:
-                node = f"?{nodes}" + (f"_{num}" if len(sequence_numbers) > 1 else "")
-                sup.node_list(node, where_list, cim_version=16, mrid=t_mrid_ref)
-                variables.append(node)
+                node = nodes + (f"_{num}" if len(sequence_numbers) > 1 else "")
+                sup.node_list(f"?_{node}", where_list, cim_version=16, mrid=t_mrid_ref)
+                where_list.append(f"?_{node} {ID_OBJ}.mRID ?{node}")
+                variables.append(f"?{node}")
             else:
                 variables.append(t_mrid)
                 sequence_where.append(f"{ID_OBJ}.mRID {t_mrid}")

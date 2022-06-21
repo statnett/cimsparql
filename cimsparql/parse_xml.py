@@ -12,6 +12,8 @@ import pendulum
 from defusedxml.lxml import RestrictedElement, fromstring, parse
 from lxml.etree import _ElementTree
 
+from cimsparql.cim import ID_OBJ, TN
+
 ElementValues = Dict[str, Optional[Union[float, str, bool]]]
 
 
@@ -96,10 +98,10 @@ class CimXmlBase(ABC):
         cls, node: RestrictedElement, nsmap: Dict[str, str]
     ) -> ElementValues:
         return {
-            "name": node.find("cim:IdentifiedObject.name", nsmap).text,
-            "base_voltage": cls._attrib(node, "cim:TopologicalNode.BaseVoltage", nsmap),
+            "name": node.find(f"{ID_OBJ}.name", nsmap).text,
+            "base_voltage": cls._attrib(node, f"{TN}.BaseVoltage", nsmap),
             "connectivity_node_container": cls._attrib(
-                node, "cim:TopologicalNode.ConnectivityNodeContainer", nsmap
+                node, "{TN}.ConnectivityNodeContainer", nsmap
             ),
             "mrid": attrib(node, "ID", nsmap["rdf"]),
         }
