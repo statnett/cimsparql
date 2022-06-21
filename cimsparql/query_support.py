@@ -26,34 +26,37 @@ def base_voltage(mrid: str, var: str) -> str:
 
 
 def node_list(node: str, query_list: List[str], cim_version: int, mrid: str) -> None:
-    query_list.extend(
-        [
-            f"{mrid} cim:{acdc_terminal(cim_version)}.connected 'true'",
-            f"{mrid} cim:Terminal.TopologicalNode {node}",
-        ]
+    query_list.append(
+        common_subject(
+            mrid,
+            [
+                f"cim:{acdc_terminal(cim_version)}.connected 'true'",
+                f"cim:Terminal.TopologicalNode {node}",
+            ],
+        )
     )
 
 
 def terminal_sequence_query(
     cim_version: int, con: Optional[str], nodes: Optional[str], mrid_subject: str
 ) -> List[str]:
-    query_list = []
-    for nr in sequence_numbers:
-        t_sequence_mrid = f"?_t_mrid_{nr}"
-        query_list.extend(
-            [
-                f"{t_sequence_mrid} {ID_OBJ}.mRID ?t_mrid_{nr}",
-                rdf_type_tripler(t_sequence_mrid, "cim:Terminal"),
-                f"{t_sequence_mrid} {TC_EQUIPMENT} {mrid_subject}",
-                f"{t_sequence_mrid} cim:{acdc_terminal(15)}.sequenceNumber {nr}",
-            ]
-        )
+    def _term_seq_nr(
+        cim_version: int, con: Optional[str], nodes: Optional[str], mrid_subject: str, nr: int
+    ) -> str:
+        where_list = [
+            f"{ID_OBJ}.mRID ?t_mrid_{nr}",
+            rdf_type_tripler("", "cim:Terminal"),
+            f"{TC_EQUIPMENT} {mrid_subject}",
+            f"cim:{acdc_terminal(15)}.sequenceNumber {nr}",
+        ]
         if con:
-            query_list.append(f"{t_sequence_mrid} {TC_NODE} ?{con}_{nr}")
+            where_list.append(f"{TC_NODE} ?{con}_{nr}")
         if nodes:
-            node_list(f"?{nodes}_{nr}", query_list, cim_version, t_sequence_mrid)
-            query_list.append(f"{t_sequence_mrid} cim:ACDCTerminal.connected 'true'")
-    return query_list
+            node_list(f"?{nodes}_{nr}", where_list, cim_version, "")
+            where_list.append("cim:ACDCTerminal.connected 'true'")
+        return common_subject(f"?_t_mrid_{nr}", where_list)
+
+    return [_term_seq_nr(cim_version, con, nodes, mrid_subject, nr) for nr in sequence_numbers]
 
 
 def operational_limit(
@@ -61,14 +64,16 @@ def operational_limit(
     rate: str,
     limit_type: Literal["ActivePowerLimit", "CurrentLimit"] = "ActivePowerLimit",
     limit_set: Literal["Terminal", "Equipment"] = "Equipment",
-) -> List[str]:
-    equip_predicate = f"{OPERATIONAL_LIMIT_SET}/cim:OperationalLimitSet.{limit_set}"
-    return [
-        f"?p_lim{rate} {equip_predicate} {mrid}",
-        rdf_type_tripler(f"?p_lim{rate}", f"cim:{limit_type}"),
-        f"?p_lim{rate} {ID_OBJ}.name '{rate}@20'",
-        f"?p_lim{rate} cim:{limit_type}.value ?rate{rate}",
-    ]
+) -> str:
+    return common_subject(
+        f"?p_lim{rate}",
+        [
+            f"{OPERATIONAL_LIMIT_SET}/cim:OperationalLimitSet.{limit_set} {mrid}",
+            rdf_type_tripler("", f"cim:{limit_type}"),
+            f"{ID_OBJ}.name '{rate}@20'",
+            f"cim:{limit_type}.value ?rate{rate}",
+        ],
+    )
 
 
 def region_name_query(region: str, sub_region: bool, geographical_region: str) -> str:
@@ -132,26 +137,21 @@ def terminal_where_query(
     node: Optional[str],
     mrid_subject: str,
     with_sequence_number: bool = False,
-) -> List[str]:
-    t_mrid_subject: str = "?_t_mrid"
-    query_list = [
-        rdf_type_tripler(t_mrid_subject, "cim:Terminal"),
-        f"{t_mrid_subject} {TC_EQUIPMENT} {mrid_subject}",
-    ]
+) -> str:
+
+    query_list = [rdf_type_tripler("", "cim:Terminal"), f"{TC_EQUIPMENT} {mrid_subject}"]
     if con:
-        query_list.append(f"{t_mrid_subject} {TC_NODE} ?{con}")
+        query_list.append(f"{TC_NODE} ?{con}")
     if node:
         query_list.extend(
             [
-                f"{t_mrid_subject} cim:{acdc_terminal(cim_version)}.connected 'true'",
-                f"{t_mrid_subject} cim:Terminal.TopologicalNode ?{node}",
+                f"cim:{acdc_terminal(cim_version)}.connected 'true'",
+                f"cim:Terminal.TopologicalNode ?{node}",
             ]
         )
     if with_sequence_number:
-        query_list.append(
-            f"{t_mrid_subject} cim:{acdc_terminal(cim_version)}.sequenceNumber ?sequenceNumber"
-        )
-    return query_list
+        query_list.append(f"cim:{acdc_terminal(cim_version)}.sequenceNumber ?sequenceNumber")
+    return common_subject("?_t_mrid", query_list)
 
 
 def _temperature_list(temperature: float, xsd: str, curve: str) -> List[str]:
@@ -187,6 +187,18 @@ def bid_market_code_query(mrid_subject: str) -> List[str]:
 
 def to_variables(vars: Iterable[str]) -> List[str]:
     return [f"?{var}" for var in vars]
+
+
+def common_subject(subject: str, predicates_and_objects: List[str]) -> str:
+    """Combine list of predicates and objects with common subject
+
+    Example:
+    >>> common_subject("?s", ["rdf:type ?type", "cim:ACDCTerminal.connected ?connected"])
+
+    extracts the rdf:type predicate and the cim:ACDCTerminal.connected predicate for all subjects
+    where both predicates are present.
+    """
+    return f"{subject} {';'.join(predicates_and_objects)}"
 
 
 def combine_statements(*args, group: bool = False, split: str = "\n") -> str:

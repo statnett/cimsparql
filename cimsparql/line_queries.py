@@ -1,6 +1,4 @@
-from functools import reduce
-from operator import iconcat
-from typing import Iterable, List, Literal, Optional, Tuple, Union
+from typing import Iterable, List, Optional, Tuple, Union
 
 import cimsparql.query_support as sup
 from cimsparql.cim import ACLINE, CNODE_CONTAINER, EQUIP_CONTAINER, ID_OBJ, SUBSTATION
@@ -10,12 +8,7 @@ from cimsparql.typehints import Region
 
 
 def _sv_terminal_injection(nr: int) -> str:
-    return "\n".join(
-        [
-            f"?sv_t_{nr} cim:SvPowerFlow.Terminal ?_t_mrid_{nr}.",
-            f"?sv_t_{nr} cim:SvPowerFlow.p ?sv_p_{nr}",
-        ]
-    )
+    return f"?sv_t_{nr} cim:SvPowerFlow.Terminal ?_t_mrid_{nr};cim:SvPowerFlow.p ?sv_p_{nr}"
 
 
 def _line_query(
@@ -24,10 +17,10 @@ def _line_query(
     connectivity: Optional[str],
     nodes: Optional[str],
     with_loss: bool,
-    rates: Iterable[Literal["Normal", "Warning", "Overload"]],
+    rates: Iterable[Rates],
     network_analysis: bool,
     with_market: bool,
-    impedance: Iterable[str],
+    impedance: Iterable[Impedance],
 ) -> Tuple[List[str], List[str], str]:
     mrid_subject = "?_mrid"
     name = "?name"
@@ -38,14 +31,18 @@ def _line_query(
     if connectivity:
         variables.extend(sup.sequence_variables(connectivity))
 
-    impedance_properties = {z: f"?{z}" for z in impedance}
     where_list = [
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        sup.rdf_type_tripler(mrid_subject, line_type),
-        sup.get_name(mrid_subject, name),
-        sup.base_voltage(mrid_subject, "?un"),
+        sup.common_subject(
+            mrid_subject,
+            [
+                f"{ID_OBJ}.mRID ?mrid",
+                sup.rdf_type_tripler("", line_type),
+                sup.get_name("", name),
+                sup.base_voltage("", "?un"),
+                *sup.predicate_list("", line_type, {z: f"?{z}" for z in impedance}),
+            ],
+        ),
         *sup.terminal_sequence_query(cim_version, connectivity, nodes, mrid_subject),
-        *sup.predicate_list(mrid_subject, line_type, impedance_properties),
     ]
 
     sup.include_market(with_market, variables, where_list)
@@ -62,9 +59,7 @@ def _line_query(
     if rates:
         limit_type = "ActivePowerLimit" if line_type == ACLINE else "CurrentLimit"
         variables.extend([f"?rate{rate}" for rate in rates])
-        where_rate: List[str] = reduce(
-            iconcat, [sup.operational_limit(mrid_subject, rate, limit_type) for rate in rates], []
-        )
+        where_rate = [sup.operational_limit(mrid_subject, rate, limit_type) for rate in rates]
         where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
     return variables, where_list, mrid_subject
 
@@ -173,9 +168,10 @@ def borders_query(
 
     border_filter = sup.border_filter(region, *areas)
     where_list = [
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        sup.get_name(mrid_subject, name),
-        sup.rdf_type_tripler(mrid_subject, ACLINE),
+        sup.common_subject(
+            mrid_subject,
+            [f"{ID_OBJ}.mRID ?mrid", sup.get_name("", name), sup.rdf_type_tripler("", ACLINE)],
+        ),
         *sup.terminal_sequence_query(cim_version, "con", nodes, mrid_subject),
         sup.combine_statements(*border_filter, group=True, split=union_split),
     ]
