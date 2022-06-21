@@ -8,6 +8,7 @@ from cimsparql.cim import (
     ID_OBJ,
     SUBSTATION,
     SYNC_MACH,
+    T_SEQUENCE,
     TC_EQUIPMENT,
     TC_NODE,
     TR_WINDING,
@@ -22,6 +23,7 @@ from cimsparql.enums import (
     SyncVars,
     TapChangerObjects,
 )
+from cimsparql.query_support import common_subject
 from cimsparql.transformer_windings import number_of_windings, terminal, transformer_common
 from cimsparql.typehints import Region
 
@@ -30,10 +32,15 @@ def version_date() -> str:
     name: str = "?name"
     variables = ["?mrid", name, "?activationDate"]
     where_list = [
-        sup.rdf_type_tripler("?marketDefinitionSet", "SN:MarketDefinitionSet"),
-        f"?marketDefinitionSet {ID_OBJ}.mRID ?mrid",
-        sup.get_name("?marketDefinitionSet", name),
-        "?marketDefinitionSet SN:MarketDefinitionSet.activationDate ?activationDate",
+        common_subject(
+            "?marketDefinitionSet",
+            [
+                sup.rdf_type_tripler("", "SN:MarketDefinitionSet"),
+                f"{ID_OBJ}.mRID ?mrid",
+                sup.get_name("", name),
+                "SN:MarketDefinitionSet.activationDate ?activationDate",
+            ],
+        ),
         f"FILTER regex({name}, 'ScheduleResource')",
     ]
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
@@ -44,10 +51,15 @@ def regions_query() -> str:
     variables = ["?mrid", "?shortName"]
     region_variable = "?subgeoreg"
     where_list = [
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        sup.rdf_type_tripler(mrid_subject, GEO_REG),
-        f"{mrid_subject} SN:IdentifiedObject.shortName ?shortName",
-        f"{mrid_subject} {GEO_REG}.Region {region_variable}",
+        common_subject(
+            mrid_subject,
+            [
+                f"{ID_OBJ}.mRID ?mrid",
+                sup.rdf_type_tripler("", GEO_REG),
+                "SN:IdentifiedObject.shortName ?shortName",
+                f"{GEO_REG}.Region {region_variable}",
+            ],
+        )
     ]
     names = {mrid_subject: ["?name", "?alias_name"], region_variable: ["?region", "?region_name"]}
     for name_mrid, (name, alias_name) in names.items():
@@ -68,40 +80,59 @@ def phase_tap_changer_query(
     variables = ["?mrid", "?w_mrid_1", "?w_mrid_2", "?t_mrid_1", "?t_mrid_2"]
     tap = "?tap"
     where_list = [
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        sup.rdf_type_tripler(mrid_subject, TR_WINDING),
-        f"{mrid_subject} cim:TransformerEnd.PhaseTapChanger {tap}",
-        f"{mrid_subject} {TR_WINDING}.PowerTransformer ?pt",
+        common_subject(
+            mrid_subject,
+            [
+                f"{ID_OBJ}.mRID ?mrid",
+                sup.rdf_type_tripler("", TR_WINDING),
+                "cim:TransformerEnd.PhaseTapChanger ?_tap",
+                f"{TR_WINDING}.PowerTransformer ?pt",
+            ],
+        )
     ]
 
     if with_tap_changer_values:
         variables.extend([tap, "?phase_incr"] + sup.to_variables(tap_changer_objects))
         properties = {f"{obj}Step": f"?{obj}" for obj in tap_changer_objects}
-        where_list.extend(
-            [
-                *sup.predicate_list(tap, "cim:TapChanger", properties),
-                "?tap cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_incr",
-            ]
+        where_list.append(
+            common_subject(
+                "?_tap",
+                [
+                    *sup.predicate_list("", "cim:TapChanger", properties),
+                    "cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_incr",
+                    f"cim:IdentifiedObject.mRID {tap}",
+                ],
+            )
         )
 
     if impedance:
         variables.extend(sup.to_variables(impedance))
-        where_list.extend([f"?w_mrid_1 {TR_WINDING}.{imp} ?{imp}" for imp in impedance])
+        where_list.append(
+            common_subject("?_w_mrid_1", [f"{TR_WINDING}.{imp} ?{imp}" for imp in impedance])
+        )
 
     if region:
         where_list.extend([f"?pt {EQUIP_CONTAINER} ?Substation"])
         where_list.extend(sup.region_query(region, sub_region, "Substation"))
 
     for i in sequence_numbers:
-        where_list.extend(
+        w_mrid = common_subject(
+            f"?_w_mrid_{i}",
             [
-                sup.rdf_type_tripler(f"?term_{i}", "cim:Terminal"),
-                f"?w_mrid_{i} {TR_WINDING}.PowerTransformer ?pt",
-                f"?w_mrid_{i} cim:TransformerEnd.Terminal ?term_{i}",
-                f"?term_{i} cim:Terminal.sequenceNumber {i}",
-                f"?term_{i} {ID_OBJ}.mRID ?t_mrid_{i}",
-            ]
+                f"{TR_WINDING}.PowerTransformer ?pt",
+                f"cim:TransformerEnd.Terminal ?term_{i}",
+                f"cim:IdentifiedObject.mRID ?w_mrid_{i}",
+            ],
         )
+        t_mrid = common_subject(
+            f"?term_{i}",
+            [
+                sup.rdf_type_tripler("", "cim:Terminal"),
+                f"cim:Terminal.sequenceNumber {i}",
+                f"{ID_OBJ}.mRID ?t_mrid_{i}",
+            ],
+        )
+        where_list.extend([w_mrid, t_mrid])
 
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
@@ -118,13 +149,18 @@ def connectivity_names(mrid_subject: str, name: str = "?name") -> str:
 def full_model() -> str:
     variables = ["?model", "?time", "?profile", "?description", "?version", "?created", "?dependon"]
     where_list = [
-        sup.rdf_type_tripler("?model", "md:FullModel"),
-        "?model md:Model.profile ?profile",
-        "?model md:Model.scenarioTime ?time",
-        "?model md:Model.description ?description",
-        "?model md:Model.version ?version",
-        "?model md:Model.created ?created",
-        "?model md:Model.DependentOn ?dependon",
+        common_subject(
+            "?model",
+            [
+                sup.rdf_type_tripler("", "md:FullModel"),
+                "md:Model.profile ?profile",
+                "md:Model.scenarioTime ?time",
+                "md:Model.description ?description",
+                "md:Model.version ?version",
+                "md:Model.created ?created",
+                "md:Model.DependentOn ?dependon",
+            ],
+        ),
         "?dependon rdf:type md:FullModel",
     ]
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
@@ -136,12 +172,16 @@ def bus_data(region: Region, sub_region: bool, with_market: bool = True) -> str:
 
     variables = [f"({mrid_subject} as ?mrid)", "?name", bus_name, "?un"]
     where_list = [
-        sup.rdf_type_tripler(mrid_subject, "cim:TopologicalNode"),
-        sup.get_name(mrid_subject, bus_name),
-        f"{mrid_subject} cim:TopologicalNode.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un",
-        f"{mrid_subject} cim:TopologicalNode.ConnectivityNodeContainer ?cont",
-        f"?cont {ID_OBJ}.aliasName ?name",
-        f"?cont {SUBSTATION} ?Substation",
+        common_subject(
+            mrid_subject,
+            [
+                sup.rdf_type_tripler("", "cim:TopologicalNode"),
+                sup.get_name("", bus_name),
+                "cim:TopologicalNode.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un",
+                "cim:TopologicalNode.ConnectivityNodeContainer ?cont",
+            ],
+        ),
+        common_subject("?cont", [f"{ID_OBJ}.aliasName ?name", f"{SUBSTATION} ?Substation"]),
     ]
     if with_market:
         variables.append("?bidzone")
@@ -157,11 +197,15 @@ def three_winding_dummy_bus(region: Region, sub_region: bool) -> str:
     name = "?name"
     variables = ["?mrid", name, f"({name} as ?busname)", "?un"]
     where_list = [
-        f"?p_mrid {ID_OBJ}.mRID ?mrid",
-        "?w_mrid cim:TransformerEnd.endNumber 1",
-        f"?w_mrid {TR_WINDING}.ratedU ?un",
-        f"?w_mrid {TR_WINDING}.PowerTransformer ?p_mrid",
-        sup.get_name("?p_mrid", name),
+        common_subject("?p_mrid", [f"{ID_OBJ}.mRID ?mrid", sup.get_name("", name)]),
+        common_subject(
+            "?w_mrid",
+            [
+                "cim:TransformerEnd.endNumber 1",
+                f"{TR_WINDING}.ratedU ?un",
+                f"{TR_WINDING}.PowerTransformer ?p_mrid",
+            ],
+        ),
         number_of_windings("?p_mrid", 3),
     ]
     if region:
@@ -204,7 +248,7 @@ def load_query(
         f"{mrid_subject} {ID_OBJ}.aliasName ?name",
         f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
         sup.combine_statements(*cim_types, group=len(cim_types) > 1, split=union_split),
-        *sup.terminal_where_query(
+        sup.terminal_where_query(
             cim_version, connectivity, nodes, mrid_subject, with_sequence_number
         ),
         *sup.bid_market_code_query(mrid_subject),
@@ -301,7 +345,7 @@ def synchronous_machines_query(
         sup.get_name(mrid_subject, name),
         sup.rdf_type_tripler(mrid_subject, SYNC_MACH),
         *sup.bid_market_code_query(mrid_subject),
-        *sup.terminal_where_query(
+        sup.terminal_where_query(
             cim_version, connectivity, nodes, mrid_subject, with_sequence_number
         ),
         *[
@@ -320,15 +364,25 @@ def synchronous_machines_query(
 
     station_group = [
         f"{mrid_subject} cim:SynchronousMachine.GeneratingUnit ?gu",
-        "?gu SN:GeneratingUnit.marketCode ?market_code",
-        "?gu cim:GeneratingUnit.maxOperatingP ?maxP",
-        "?gu cim:GeneratingUnit.minOperatingP ?minP",
-        "?gu SN:GeneratingUnit.groupAllocationMax ?apctmax",
+        common_subject(
+            "?gu",
+            [
+                "SN:GeneratingUnit.marketCode ?market_code",
+                "cim:GeneratingUnit.maxOperatingP ?maxP",
+                "cim:GeneratingUnit.minOperatingP ?minP",
+                "SN:GeneratingUnit.groupAllocationMax ?apctmax",
+                "SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
+                "SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
+            ],
+        ),
+        common_subject(
+            "?ScheduleResource",
+            [
+                "SN:ScheduleResource.marketCode ?station_group",
+                sup.get_name("", "?st_gr_n", alias=True),
+            ],
+        ),
         "bind(xsd:float(str(?apctmax))*xsd:float(str(?maxP)) / 100.0 as ?allocationmax)",
-        "?gu SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
-        "?gu SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
-        "?ScheduleResource SN:ScheduleResource.marketCode ?station_group",
-        sup.get_name("?ScheduleResource", "?st_gr_n", alias=True),
     ]
 
     if station_group_optional:
@@ -364,18 +418,22 @@ def wind_generating_unit_query(network_analysis: bool) -> str:
         "?plant_mrid",
     ]
     where_list = [
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        sup.rdf_type_tripler(mrid_subject, "cim:WindGeneratingUnit"),
-        f"{mrid_subject} cim:GeneratingUnit.maxOperatingP ?maxP",
-        f"{mrid_subject} SN:GeneratingUnit.marketCode ?market_code",
-        f"{mrid_subject} cim:GeneratingUnit.minOperatingP ?minP",
-        sup.get_name(mrid_subject, name),
-        f"{mrid_subject} SN:WindGeneratingUnit.WindPowerPlant ?plant_mrid",
-        f"{mrid_subject} SN:GeneratingUnit.groupAllocationMax ?apctmax",
+        common_subject(
+            mrid_subject,
+            [
+                f"{ID_OBJ}.mRID ?mrid",
+                sup.rdf_type_tripler("", "cim:WindGeneratingUnit"),
+                "cim:GeneratingUnit.maxOperatingP ?maxP",
+                "SN:GeneratingUnit.marketCode ?market_code",
+                "cim:GeneratingUnit.minOperatingP ?minP",
+                sup.get_name("", name),
+                "SN:WindGeneratingUnit.WindPowerPlant ?plant_mrid",
+                "SN:GeneratingUnit.groupAllocationMax ?apctmax",
+                "SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
+                "SN:GeneratingUnit.ScheduleResource/SN:ScheduleResource.marketCode ?station_group",
+            ],
+        ),
         "bind(xsd:float(str(?apctmax))*xsd:float(str(?maxP)) / 100.0 as ?allocationmax)",
-        f"{mrid_subject} SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
-        f"{mrid_subject} SN:GeneratingUnit.ScheduleResource ?sr",
-        "?sr SN:ScheduleResource.marketCode ?station_group",
     ]
 
     if network_analysis:
@@ -478,17 +536,23 @@ def transformer_query(
 
     variables = [name, "?p_mrid", "?w_mrid", "?endNumber", "?un", "?t_mrid"]
     variables.extend(sup.to_variables(impedance))
+    w_mrid = common_subject(
+        "?_w_mrid",
+        [
+            f"{ID_OBJ}.mRID ?w_mrid",
+            f"{ID_OBJ}.name {name}",
+            f"{TR_WINDING}.PowerTransformer {mrid_subject}",
+            f"{TR_WINDING}.ratedU ?un",
+            "cim:TransformerEnd.endNumber ?endNumber",
+            "cim:TransformerEnd.Terminal ?_t_mrid",
+            *sup.predicate_list("", TR_WINDING, {z: f"?{z}" for z in impedance}),
+        ],
+    )
     where_list = [
         f"{mrid_subject} {ID_OBJ}.mRID ?p_mrid",
-        f"?_w_mrid {ID_OBJ}.mRID ?w_mrid",
-        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
         sup.rdf_type_tripler(mrid_subject, "cim:PowerTransformer"),
-        f"?_w_mrid {TR_WINDING}.PowerTransformer {mrid_subject}",
-        f"?_w_mrid {TR_WINDING}.ratedU ?un",
-        "?_w_mrid cim:TransformerEnd.endNumber ?endNumber",
-        "?_w_mrid cim:TransformerEnd.Terminal ?_t_mrid",
-        f"?_w_mrid {ID_OBJ}.name {name}",
-        *sup.predicate_list("?_w_mrid", TR_WINDING, {z: f"?{z}" for z in impedance}),
+        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
+        w_mrid,
     ]
     if with_market:
         variables.append("?bidzone")
@@ -509,7 +573,7 @@ def transformer_query(
         where_rate = []
         for rate in rates:
             variables.append(f"?rate{rate}")
-            where_rate.extend(sup.operational_limit(mrid_subject, rate))
+            where_rate.append(sup.operational_limit(mrid_subject, rate))
         where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
@@ -558,19 +622,17 @@ def converters(
 
     if sequence_numbers:
         for num in sequence_numbers:
+            t_mrid = f"?t_mrid_{num}"
+            t_mrid_ref = f"?_t_mrid_{num}"
+            sequence_where = [f"{TC_EQUIPMENT} {mrid_subject}", f"{T_SEQUENCE} {num}"]
             if nodes:
                 node = f"?{nodes}" + (f"_{num}" if len(sequence_numbers) > 1 else "")
-                sup.node_list(node, where_list, cim_version=16, mrid=f"?_t_mrid_{num}")
+                sup.node_list(node, where_list, cim_version=16, mrid=t_mrid_ref)
                 variables.append(node)
             else:
-                variables.append(f"?t_mrid_{num}")
-            where_list.extend(
-                [
-                    f"?_t_mrid_{num} {TC_EQUIPMENT} {mrid_subject}",
-                    f"?_t_mrid_{num} cim:Terminal.sequenceNumber {num}",
-                    f"?_t_mrid_{num} {ID_OBJ}.mRID ?t_mrid_{num}",
-                ]
-            )
+                variables.append(t_mrid)
+                sequence_where.append(f"{ID_OBJ}.mRID {t_mrid}")
+            where_list.append(common_subject(t_mrid_ref, sequence_where))
 
     if region:
         container = "Substation"

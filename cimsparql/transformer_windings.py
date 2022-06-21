@@ -25,8 +25,10 @@ def terminal(mrid: str, nr: int, lock_end_number: bool = True) -> List[str]:
     """Where statements for transformer terminals"""
     return [
         *_end_number(nr, lock_end_number),
-        f"?w_mrid_{nr} cim:TransformerEnd.Terminal ?_t_mrid_{nr}",
-        f"?w_mrid_{nr} {TR_WINDING}.PowerTransformer {mrid}",
+        sup.common_subject(
+            f"?w_mrid_{nr}",
+            [f"cim:TransformerEnd.Terminal ?_t_mrid_{nr}", f"{TR_WINDING}.PowerTransformer {mrid}"],
+        ),
     ]
 
 
@@ -35,16 +37,18 @@ def number_of_windings(mrid: str, winding_count: int, with_loss: bool = False) -
     variables = [mrid, "(count(distinct ?nr) as ?winding_count)"]
     where_list = [
         f"{mrid} rdf:type cim:PowerTransformer",
-        f"?wwmrid {TR_WINDING}.PowerTransformer {mrid}",
-        "?wwmrid cim:TransformerEnd.endNumber ?nr",
+        sup.common_subject(
+            "?wwmrid", [f"{TR_WINDING}.PowerTransformer {mrid}", "cim:TransformerEnd.endNumber ?nr"]
+        ),
     ]
     if with_loss:
         variables.append("(sum(xsd:float(?sv_p)) as ?pl)")
         where_list.extend(
             [
                 "?wwmrid cim:TransformerEnd.Terminal ?p_t_mrid",
-                "?sv_t cim:SvPowerFlow.Terminal ?p_t_mrid",
-                "?sv_t cim:SvPowerFlow.p ?sv_p",
+                sup.common_subject(
+                    "?sv_t", ["cim:SvPowerFlow.Terminal ?p_t_mrid", "cim:SvPowerFlow.p ?sv_p"]
+                ),
             ]
         )
     select = sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
@@ -92,8 +96,7 @@ def transformer_common(
     where_list.extend(
         [
             sup.get_name("?p_mrid", name),
-            f"?w_mrid_1 {TR_WINDING}.ratedU ?un",
-            f"?w_mrid_1 {ID_OBJ}.mRID ?mrid",
+            sup.common_subject("?w_mrid_1", [f"{TR_WINDING}.ratedU ?un", f"{ID_OBJ}.mRID ?mrid"]),
             number_of_windings("?p_mrid", winding_count, with_loss),
         ]
     )
@@ -111,5 +114,5 @@ def transformer_common(
         where_rate = []
         for rate in rates:
             variables.append(f"?rate{rate}")
-            where_rate.extend(sup.operational_limit("?_t_mrid_1", rate, limit_set="Terminal"))
+            where_rate.append(sup.operational_limit("?_t_mrid_1", rate, limit_set="Terminal"))
         where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
