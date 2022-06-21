@@ -80,3 +80,17 @@ which can be used in queries (such as `rdf` and `cim`) can by found by
  'SN': 'http://www.statnett.no/CIM-schema-cim15-extension#',
  'ALG': 'http://www.alstom.com/grid/CIM-schema-cim15-extension#'}
 ```
+
+### Running Tests Against RDF4J Database
+
+To run tests using data in an RDF4J database, the `rdf4j-server` must be available. A docker image with the `rdf4j-server` and `rdf4j-workbench` can be downloaded via
+
+```
+docker pull eclipse/rdf4j-workbench
+```
+
+Launch a container with this image and specify the URL in the `RDF4J_URL` environment variable. With default settings in the container, it should be
+
+```
+RDF4J_URL = "http://localhost:8080/rdf4j-server"
+```
