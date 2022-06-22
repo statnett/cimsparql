@@ -88,7 +88,7 @@ def test_load_query_combined(_combine_statements_mock, load_query_kwargs):
 
 @pytest.fixture(scope="module")
 def bus_data_kwargs() -> Dict[str, str]:
-    return {"sub_region": False}
+    return {"sub_region": False, "with_market": False, "container": ""}
 
 
 def test_bus_data_with_region(bus_data_kwargs: Dict[str, str]):
