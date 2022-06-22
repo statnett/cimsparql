@@ -42,7 +42,7 @@ def test_cimversion(cim_model: CimModel):
     assert cim_model.cim_version == 15
 
 
-load_columns = [con_mrid_str, "t_mrid", "bidzone", "p", "q", "name"]
+load_columns = [con_mrid_str, "t_mrid", "bidzone", "p", "q", "name", "station"]
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
@@ -99,7 +99,7 @@ def gen_columns() -> List[str]:
 
 @pytest.fixture()
 def synchronous_machines_columns(gen_columns: List[str]) -> List[str]:
-    return gen_columns + ["bidzone", "p", "q", "sn", "t_mrid"]
+    return gen_columns + ["bidzone", "p", "q", "sn", "t_mrid", "station"]
 
 
 @pytest.fixture()

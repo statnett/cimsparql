@@ -3,6 +3,7 @@ from typing import Callable, Iterable, List, Optional, Union
 
 import cimsparql.query_support as sup
 from cimsparql.cim import (
+    CNODE_CONTAINER,
     EQUIP_CONTAINER,
     GEO_REG,
     ID_OBJ,
@@ -173,18 +174,18 @@ def full_model() -> str:
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def bus_data(region: Region, sub_region: bool, with_market: bool = True) -> str:
-    mrid_subject = "?t_mrid"
+def bus_data(region: Region, sub_region: bool, with_market: bool, container: str) -> str:
+    mrid_subject = "?_node"
     bus_name = "?busname"
 
-    variables = ["?mrid", "?name", bus_name, "?un"]
+    variables = ["?node", "?name", bus_name, "?un", "?station"]
     where_list = [
         common_subject(
             mrid_subject,
             [
                 sup.rdf_type_tripler("", TN),
                 sup.get_name("", bus_name),
-                f"{ID_OBJ}.mRID ?mrid",
+                f"{ID_OBJ}.mRID ?node",
                 f"{TN}.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un",
                 f"{TN}.ConnectivityNodeContainer ?cont",
             ],
@@ -192,7 +193,13 @@ def bus_data(region: Region, sub_region: bool, with_market: bool = True) -> str:
         common_subject(
             "?cont", [f"{ID_OBJ}.aliasName|{ID_OBJ}.name ?name", f"{SUBSTATION} ?Substation"]
         ),
+        f"?Substation {ID_OBJ}.mRID ?station",
     ]
+
+    if container:
+        where_list.append(f"?cont {ID_OBJ}.mRID {container}")
+        variables.append(container)
+
     if with_market:
         variables.append("?bidzone")
         where_list.append(sup.market_code_query(substation="?Substation"))
@@ -203,11 +210,16 @@ def bus_data(region: Region, sub_region: bool, with_market: bool = True) -> str:
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def three_winding_dummy_bus(region: Region, sub_region: bool) -> str:
+def three_winding_dummy_bus(
+    region: Region, sub_region: bool, with_market: bool, container: str
+) -> str:
     name = "?name"
-    variables = ["?mrid", name, f"({name} as ?busname)", "?un"]
+    variables = ["?node", name, f"({name} as ?busname)", "?un", "?station"]
     where_list = [
-        common_subject("?p_mrid", [f"{ID_OBJ}.mRID ?mrid", sup.get_name("", name)]),
+        common_subject(
+            "?p_mrid",
+            [f"{ID_OBJ}.mRID ?node", sup.get_name("", name), f"{EQUIP_CONTAINER} ?Substation"],
+        ),
         common_subject(
             "?w_mrid",
             [
@@ -216,10 +228,20 @@ def three_winding_dummy_bus(region: Region, sub_region: bool) -> str:
                 f"{TR_WINDING}.PowerTransformer ?p_mrid",
             ],
         ),
+        f"?Substation {ID_OBJ}.mRID ?station",
         number_of_windings("?p_mrid", 3),
     ]
+    if container:
+        where_list.append(
+            f"?w_mrid {TR_END}.Terminal/{TC_NODE}/{CNODE_CONTAINER}/{ID_OBJ}.mRID {container}"
+        )
+        variables.append(container)
+
+    if with_market:
+        variables.append("?bidzone")
+        where_list.extend([sup.market_code_query(substation="?Substation")])
+
     if region:
-        where_list.append(f"?p_mrid {EQUIP_CONTAINER} ?Substation")
         where_list.extend(sup.region_query(region, sub_region, "Substation"))
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
@@ -243,7 +265,7 @@ def load_query(
     if not (load_type and set(load_type).issubset(LoadTypes)):
         raise ValueError(f"load_type should be any combination of {set(LoadTypes)}")
 
-    variables = ["?mrid", "?t_mrid" if nodes is None else f"?{nodes}", "?name"]
+    variables = ["?mrid", "?t_mrid" if nodes is None else f"?{nodes}", "?name", "?station"]
 
     if with_sequence_number:
         variables.append("?sequenceNumber")
@@ -259,8 +281,7 @@ def load_query(
             cim_version, connectivity, nodes, mrid_subject, with_sequence_number
         ),
         f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        f"{mrid_subject} {ID_OBJ}.name ?name",
+        common_subject(mrid_subject, [f"{ID_OBJ}.mRID ?mrid", f"{ID_OBJ}.name ?name"]),
     ]
 
     if with_bidzone:
@@ -330,6 +351,7 @@ def synchronous_machines_query(
         name,
         "?t_mrid" if nodes is None else f"?{nodes}",
         "?station_group",
+        "?station",
         "?market_code",
         "?maxP",
         "?allocationmax",
@@ -347,12 +369,11 @@ def synchronous_machines_query(
 
     properties = {"sn": "ratedS", "p": "p", "q": "q"}
 
-    def _power(mrid: str, sync_vars: Iterable[str], op: Callable[[str, str], bool]) -> List[str]:
-        return [
-            f"{mrid} cim:RotatingMachine.{properties[var]} ?{var}"
-            for var in sync_vars
-            if op(var, "sn")
-        ]
+    def _power(mrid: str, sync_vars: Iterable[str], op: Callable[[str, str], bool]) -> str:
+        return common_subject(
+            mrid,
+            [f"cim:RotatingMachine.{properties[var]} ?{var}" for var in sync_vars if op(var, "sn")],
+        )
 
     where_list = [
         sup.get_name(mrid_subject, name),
@@ -360,14 +381,9 @@ def synchronous_machines_query(
         sup.terminal_where_query(
             cim_version, connectivity, nodes, mrid_subject, with_sequence_number
         ),
-        *[
-            f"{mrid_subject} {SYNC_MACH}.{lim} ?{lim}"
-            for lim in ["maxQ", "minQ"]
-            if lim in variables
-        ],
-        *_power(mrid_subject, sync_vars, eq),
+        _power(mrid_subject, sync_vars, eq),
         sup.graph(
-            ssh_graph, sup.group_query(_power(mrid_subject, sync_vars, ne), command="OPTIONAL")
+            ssh_graph, sup.group_query([_power(mrid_subject, sync_vars, ne)], command="OPTIONAL")
         ),
         f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
         f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",

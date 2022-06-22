@@ -181,9 +181,11 @@ def temp_correction_factors(
 
 def bid_market_code_query(mrid_subject: str) -> List[str]:
     return [
-        f"{mrid_subject} {EQUIP_CONTAINER} ?eq_container",
-        f"?eq_container {SUBSTATION} ?substation",
-        f"?substation {DELIVERYPOINT}/{BIDDINGAREA}/{MARKETCODE} ?bidzone",
+        f"{mrid_subject} {EQUIP_CONTAINER}/{SUBSTATION} ?_substation",
+        common_subject(
+            "?_substation",
+            [f"{DELIVERYPOINT}/{BIDDINGAREA}/{MARKETCODE} ?bidzone", f"{ID_OBJ}.mRID ?station"],
+        ),
     ]
 
 
@@ -227,6 +229,10 @@ def select_statement(variables: Optional[List[str]] = None, distinct: bool = Fal
     """Combine variables in an select statement"""
     vars = "*" if variables is None else " ".join(variables)
     return f"SELECT {'distinct' if distinct else ''} {vars}"
+
+
+def groupby(vars: List[str], where_list: List[str], by: str) -> str:
+    return f"{combine_statements(select_statement(vars), group_query(where_list))} groupby({by})"
 
 
 def group_query(
