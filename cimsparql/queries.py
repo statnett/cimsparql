@@ -733,3 +733,26 @@ def connection_query(
         where_list.append(f"{mrid_subject} {predicate} ?Substation")
         where_list.extend(sup.region_query(region, sub_region, "Substation"))
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
+def substation_voltage_level() -> str:
+    def _substation(volt: str) -> str:
+        return common_subject(
+            "?_container",
+            [
+                "rdf:type cim:VoltageLevel",
+                f"cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage {volt}",
+                "cim:VoltageLevel.Substation ?_substation",
+            ],
+        )
+
+    sub_group = sup.groupby(
+        ["(max(?volt) as ?v)", "?_substation"], [_substation("?volt")], "?_substation"
+    )
+    variables = ["?container", "?substation"]
+    where_list = [
+        _substation("?v"),
+        f"{{{sub_group}}}",
+        *[f"?_{key[1:]} {ID_OBJ}.mRID {key}" for key in variables],
+    ]
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
