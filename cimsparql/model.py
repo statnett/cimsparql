@@ -686,6 +686,14 @@ class CimModel(Model):
             return self.client.query_with_header(query, limit)
         return self.get_table_and_convert(query, limit=limit)
 
+    def substation_voltage_level(
+        self, limit: Optional[int] = None, dry_run: bool = False
+    ) -> Union[pd.DataFrame, str]:
+        query = queries.substation_voltage_level()
+        if dry_run:
+            return self._query_with_header(query, limit)
+        return self._get_table_and_convert(query, limit=limit)
+
     def disconnected(
         self, index: Optional[str] = None, limit: Optional[int] = None, dry_run: bool = False
     ) -> Union[pd.DataFrame, str]:
