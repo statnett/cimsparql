@@ -3,14 +3,12 @@ from __future__ import annotations
 import warnings
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
 
+from cimsparql.graphdb import GraphDBClient
 from cimsparql.query_support import combine_statements, unionize
-
-if TYPE_CHECKING:
-    from cimsparql.model import CimModel
 
 # Type-caster that can be used with pandas. It can be python types, numpy dtypes or string
 # value. Examples: float, "int", int, "string"
@@ -126,9 +124,11 @@ class TypeMapperQueries:
 
 
 class TypeMapper:
-    def __init__(self, client: CimModel, custom_additions: Optional[Dict[str, Any]] = None) -> None:
-        self.queries = TypeMapperQueries(client.prefixes)
-        self.prefixes = client.prefixes
+    def __init__(
+        self, client: GraphDBClient, custom_additions: Optional[Dict[str, Any]] = None
+    ) -> None:
+        self.prefixes = client.prefixes.prefixes
+        self.queries = TypeMapperQueries(self.prefixes)
         custom_additions = custom_additions or {}
         self.prim_type_map = build_type_map(self.prefixes)
         self.map = sparql_type_map | self.get_map(client) | self.prim_type_map | custom_additions
@@ -141,7 +141,7 @@ class TypeMapper:
             row.sparql_type: self.prim_type_map.get(row.range, "string") for row in df.itertuples()
         }
 
-    def get_map(self, client: CimModel) -> Dict[str, Any]:
+    def get_map(self, client: GraphDBClient) -> Dict[str, Any]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
 
         Args:
@@ -151,7 +151,7 @@ class TypeMapper:
             sparql-type -> python type map
 
         """
-        df = client.get_table(self.queries.query, map_data_types=False)
+        df = client.get_table(self.queries.query)[0]
         if df.empty:
             return {}
         return self.type_map(df)

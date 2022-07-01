@@ -13,70 +13,65 @@ import cimsparql.query_support as sup
 from cimsparql.constants import con_mrid_str
 from cimsparql.enums import ConverterTypes
 from cimsparql.graphdb import GraphDBClient, data_row
+from cimsparql.model import CimModel
 from cimsparql.type_mapper import TypeMapperQueries
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-@patch.object(GraphDBClient, "_get_table_and_convert")
-def test_date_version(get_table_mock, gdb_cli: GraphDBClient):
+@patch.object(CimModel, "_get_table_and_convert")
+def test_date_version(get_table_mock, cim_model: CimModel):
     t_ref = datetime(2020, 1, 1)
     get_table_mock.return_value = pd.DataFrame(
         {"col1": [1], "activationDate": [np.datetime64(t_ref)]}
     )
-    assert gdb_cli.date_version == t_ref
+    assert cim_model.date_version == t_ref
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_cimversion(gdb_cli: GraphDBClient):
-    assert gdb_cli.cim_version == 15
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_str_rep(gdb_cli: GraphDBClient, graphdb_service: str):
-    target = f"<GraphDBClient object, service: {graphdb_service}>"
-    assert str(gdb_cli) == target
+def test_cimversion(cim_model: CimModel):
+    assert cim_model.cim_version == 15
 
 
 load_columns = [con_mrid_str, "t_mrid", "bidzone", "p", "q", "name"]
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_conform_load(gdb_cli: GraphDBClient, n_samples: int):
-    load = gdb_cli.loads(load_type=["ConformLoad"], limit=n_samples)
+def test_conform_load(cim_model: CimModel, n_samples: int):
+    load = cim_model.loads(load_type=["ConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_non_conform_load(gdb_cli: GraphDBClient, n_samples: int):
-    load = gdb_cli.loads(load_type=["NonConformLoad"], limit=n_samples)
+def test_non_conform_load(cim_model: CimModel, n_samples: int):
+    load = cim_model.loads(load_type=["NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_series_compensator(gdb_cli: GraphDBClient):
-    compensators = gdb_cli.series_compensators(region="NO", rates=["Normal"], limit=3)
+def test_series_compensator(cim_model: CimModel):
+    compensators = cim_model.series_compensators(region="NO", rates=["Normal"], limit=3)
     assert compensators.shape == (3, 8)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_series_compensator_with_market(gdb_cli: GraphDBClient):
-    compensators = gdb_cli.series_compensators(region="NO", rates=None, with_market=True, limit=3)
+def test_series_compensator_with_market(cim_model: CimModel):
+    compensators = cim_model.series_compensators(region="NO", rates=None, with_market=True, limit=3)
     assert compensators.shape == (3, 9)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_phase_tap_changer(gdb_cli: GraphDBClient):
-    tap_changers = gdb_cli.phase_tap_changers(region=None, dry_run=False)
+def test_phase_tap_changer(cim_model: CimModel):
+    tap_changers = cim_model.phase_tap_changers(region=None, dry_run=False)
     assert tap_changers.shape == (1, 11)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_conform_and_non_conform_load(gdb_cli: GraphDBClient, n_samples: int):
-    load = gdb_cli.loads(load_type=["ConformLoad", "NonConformLoad"], limit=n_samples)
+def test_conform_and_non_conform_load(cim_model: CimModel, n_samples: int):
+    load = cim_model.loads(load_type=["ConformLoad", "NonConformLoad"], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
@@ -106,58 +101,58 @@ def wind_units_machines_columns(gen_columns: List[str]) -> List[str]:
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_synchronous_machines(
-    gdb_cli: GraphDBClient, synchronous_machines_columns: List[str], n_samples: int
+    cim_model: CimModel, synchronous_machines_columns: List[str], n_samples: int
 ):
-    synchronous_machines = gdb_cli.synchronous_machines(limit=n_samples)
+    synchronous_machines = cim_model.synchronous_machines(limit=n_samples)
     assert len(synchronous_machines) == n_samples
     assert set(synchronous_machines.columns).difference(synchronous_machines_columns) == set()
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_wind_generating_units(
-    gdb_cli: GraphDBClient, wind_units_machines_columns: List[str], n_samples: int
+    cim_model: CimModel, wind_units_machines_columns: List[str], n_samples: int
 ):
-    wind_units_machines = gdb_cli.wind_generating_units(limit=n_samples)
+    wind_units_machines = cim_model.wind_generating_units(limit=n_samples)
     assert len(wind_units_machines) == n_samples
     assert set(wind_units_machines.columns).difference(wind_units_machines_columns) == set()
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_regions(gdb_cli: GraphDBClient):
-    assert gdb_cli.regions.groupby("region").count()["shortName"]["NO"] > 16
+def test_regions(cim_model: CimModel):
+    assert cim_model.regions.groupby("region").count()["shortName"]["NO"] > 16
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_branch(gdb_cli: GraphDBClient, n_samples: int):
-    lines = gdb_cli.ac_lines(limit=n_samples, length=True)
+def test_branch(cim_model: CimModel, n_samples: int):
+    lines = cim_model.ac_lines(limit=n_samples, length=True)
     assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_branch_with_temperatures(gdb_cli: GraphDBClient, n_samples: int):
-    lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-30, 30, 10))
+def test_branch_with_temperatures(cim_model: CimModel, n_samples: int):
+    lines = cim_model.ac_lines(limit=n_samples, rates=None, temperatures=range(-30, 30, 10))
     assert lines.shape == (n_samples, 13)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_branch_with_two_temperatures(gdb_cli: GraphDBClient, n_samples: int):
-    lines = gdb_cli.ac_lines(limit=n_samples, rates=None, temperatures=range(-20, 0, 10))
+def test_branch_with_two_temperatures(cim_model: CimModel, n_samples: int):
+    lines = cim_model.ac_lines(limit=n_samples, rates=None, temperatures=range(-20, 0, 10))
     assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_ac_line_segment_with_market(gdb_cli: GraphDBClient, n_samples: int):
-    lines = gdb_cli.ac_lines(limit=n_samples, with_market=True, rates=None, temperatures=None)
+def test_ac_line_segment_with_market(cim_model: CimModel, n_samples: int):
+    lines = cim_model.ac_lines(limit=n_samples, with_market=True, rates=None, temperatures=None)
     assert lines.shape == (n_samples, 9)
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
-    lines = gdb_cli.ac_lines(
+def test_branch_with_connectivity(cim_model: CimModel, n_samples: int):
+    lines = cim_model.ac_lines(
         limit=n_samples, connectivity=con_mrid_str, temperatures=range(0, 10, 10)
     )
     assert lines.shape == (n_samples, 11)
@@ -165,27 +160,27 @@ def test_branch_with_connectivity(gdb_cli: GraphDBClient, n_samples: int):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_transformers_with_multiple_sub_regions(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(region=[f"NO0{no}" for no in [1, 2, 3]], sub_region=True)
+def test_transformers_with_multiple_sub_regions(cim_model: CimModel):
+    windings = cim_model.transformers(region=[f"NO0{no}" for no in [1, 2, 3]], sub_region=True)
     assert windings.shape[0] > 2
     assert windings.shape[1] == 9
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_transformers_with_faseshift(gdb_cli: GraphDBClient):
-    tap_changers = gdb_cli.phase_tap_changers(region="SE")
+def test_transformers_with_faseshift(cim_model: CimModel):
+    tap_changers = cim_model.phase_tap_changers(region="SE")
     assert "w_mrid_1" in tap_changers.columns
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_windings(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(region="NO01", sub_region=True)
+def test_windings(cim_model: CimModel):
+    windings = cim_model.transformers(region="NO01", sub_region=True)
     assert windings.shape[1] == 9
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_windings_with_market(gdb_cli: GraphDBClient):
-    windings = gdb_cli.transformers(region="NO01", sub_region=True, with_market=True)
+def test_windings_with_market(cim_model: CimModel):
+    windings = cim_model.transformers(region="NO01", sub_region=True, with_market=True)
     assert windings.shape[1] == 10
 
 
@@ -216,8 +211,8 @@ def corridor_columns() -> List[str]:
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_transformer_connected_to_voltage_source_converters(gdb_cli: GraphDBClient):
-    transformers = gdb_cli.transformers_connected_to_converter(
+def test_transformer_connected_to_voltage_source_converters(cim_model: CimModel):
+    transformers = cim_model.transformers_connected_to_converter(
         region="NO", converter_types=[ConverterTypes.VoltageSourceConverter]
     )
     assert set(transformers.columns) == {"t_mrid", "name", "mrid"}
@@ -225,8 +220,8 @@ def test_transformer_connected_to_voltage_source_converters(gdb_cli: GraphDBClie
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_transformer_connected_to_dc_converters(gdb_cli: GraphDBClient):
-    transformers = gdb_cli.transformers_connected_to_converter(
+def test_transformer_connected_to_dc_converters(cim_model: CimModel):
+    transformers = cim_model.transformers_connected_to_converter(
         region="NO", converter_types=[ConverterTypes.DCConverter]
     )
     assert set(transformers.columns) == {"t_mrid", "name", "mrid"}
@@ -234,15 +229,15 @@ def test_transformer_connected_to_dc_converters(gdb_cli: GraphDBClient):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_transformer_connected_to_converters(gdb_cli: GraphDBClient):
-    transformers = gdb_cli.transformers_connected_to_converter(region="NO")
+def test_transformer_connected_to_converters(cim_model: CimModel):
+    transformers = cim_model.transformers_connected_to_converter(region="NO")
     assert set(transformers.columns) == {"t_mrid", "name", "mrid"}
     assert len(transformers) == 26
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_borders_no(gdb_cli: GraphDBClient, corridor_columns: List[str]):
-    borders = gdb_cli.borders(region="NO", limit=10)
+def test_borders_no(cim_model: CimModel, corridor_columns: List[str]):
+    borders = cim_model.borders(region="NO", limit=10)
     assert set(borders.columns).difference(corridor_columns) == set()
     assert len(borders) == 10
     assert (borders[["area_1", "area_2"]] == "NO").any(axis=1).all()
@@ -250,8 +245,8 @@ def test_borders_no(gdb_cli: GraphDBClient, corridor_columns: List[str]):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_borders_no_se(gdb_cli: GraphDBClient, corridor_columns: List[str]):
-    borders = gdb_cli.borders(region=["NO", "SE"])
+def test_borders_no_se(cim_model: CimModel, corridor_columns: List[str]):
+    borders = cim_model.borders(region=["NO", "SE"])
     assert set(borders.columns).difference(corridor_columns) == set()
     assert (borders[["area_1", "area_2"]].isin(["NO", "SE"])).any(axis=1).all()
     assert (borders["area_1"] != borders["area_2"]).all()
@@ -272,9 +267,9 @@ def test_data_row_missing_column():
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_dtypes(gdb_cli: GraphDBClient):
-    queries = TypeMapperQueries(gdb_cli.prefixes)
-    df = gdb_cli.get_table(queries.query, map_data_types=False)
+def test_dtypes(cim_model: CimModel):
+    queries = TypeMapperQueries(cim_model.client.prefixes.prefixes)
+    df = cim_model.client.get_table(queries.query)[0]
     assert df["sparql_type"].isna().sum() == 0
 
 
@@ -285,6 +280,6 @@ def test_prefix_resp_not_ok(monkeypatch):
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: resp)
 
     with pytest.raises(RuntimeError) as exc:
-        GraphDBClient("http://some-url:87").prefixes
+        GraphDBClient("http://some-url:87").get_prefixes()
     assert resp.reason in str(exc)
     assert str(resp.status_code) in str(exc)

@@ -16,6 +16,7 @@ repository = "https://github.com/statnett/cimsparql.git"
 SPARQLWrapper = "*"
 StrEnum = "*"
 defusedxml = {version = "*", optional = true}
+deprecated = "*"
 lxml = {version = "*", optional = true}
 networkx = "*"
 numpy = "*"

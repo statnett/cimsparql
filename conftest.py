@@ -9,6 +9,8 @@ import requests
 
 from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient
+from cimsparql.model import CimModel, get_cim_model
+from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import GraphDbConfig, service
 
 this_dir = pathlib.Path(__file__).parent
@@ -40,17 +42,17 @@ def local_graphdb_config():
 
 @pytest.fixture(scope="session")
 def gcli_eq():
-    return GraphDBClient(service=service(server=local_server(), repo=eq_repo, protocol="http"))
+    return get_cim_model(local_server(), cim_date, "", protocol="http")
 
 
 @pytest.fixture(scope="session")
 def gcli_ssh():
-    return GraphDBClient(service=service(server=local_server(), repo=ssh_repo, protocol="http"))
+    return get_cim_model(local_server(), cim_date, "", protocol="http")
 
 
 @pytest.fixture(scope="session")
 def gcli_cim():
-    return GraphDBClient(service=service(server=local_server(), repo=cim_date, protocol="http"))
+    return get_cim_model(local_server(), cim_date, "", protocol="http")
 
 
 @pytest.fixture(scope="session")
@@ -79,8 +81,8 @@ def graphdb_service(server, graphdb_repo, graphdb_path) -> str:
 
 
 @pytest.fixture(scope="session")
-def gdb_cli(graphdb_service: str) -> GraphDBClient:
-    return GraphDBClient(graphdb_service)
+def cim_model(server, graphdb_repo, graphdb_path) -> CimModel:
+    return get_cim_model(server, graphdb_repo, graphdb_path)
 
 
 @pytest.fixture
@@ -145,15 +147,17 @@ def data_row():
 
 
 @pytest.fixture(scope="session")
-def disconnectors(gdb_cli: GraphDBClient, n_samples: int) -> pd.DataFrame:
-    return gdb_cli.connections(
+def disconnectors(cim_model: CimModel, n_samples: int) -> pd.DataFrame:
+    return cim_model.connections(
         rdf_types="cim:Disconnector", limit=n_samples, connectivity=con_mrid_str
     )
 
 
 @pytest.fixture(scope="module")
-def breakers(gdb_cli: GraphDBClient, n_samples: int) -> pd.DataFrame:
-    return gdb_cli.connections(rdf_types="cim:Breaker", limit=n_samples, connectivity=con_mrid_str)
+def breakers(cim_model: CimModel, n_samples: int) -> pd.DataFrame:
+    return cim_model.connections(
+        rdf_types="cim:Breaker", limit=n_samples, connectivity=con_mrid_str
+    )
 
 
 @pytest.fixture(scope="session")
@@ -194,10 +198,13 @@ def initialized_rdf4j_repo_url(service_url) -> str:
 
 
 @pytest.fixture(scope="session")
-def rdf4j_gdb(rdf4j_url) -> Optional[GraphDBClient]:
+def rdf4j_gdb(rdf4j_url) -> Optional[CimModel]:
     try:
         url = initialized_rdf4j_repo_url(rdf4j_url)
     except Exception as exc:
         logger.error(f"{exc}")
         return None
-    return GraphDBClient(url)
+
+    client = GraphDBClient(url)
+    mapper = TypeMapper(client)
+    return CimModel(mapper, client)

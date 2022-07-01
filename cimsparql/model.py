@@ -3,7 +3,6 @@ function get_table as well as a set of predefined CIM queries.
 """
 
 import re
-from abc import ABC, abstractmethod
 from datetime import datetime
 from functools import cached_property
 from typing import Dict, Iterable, List, Optional, Tuple, Union
@@ -25,23 +24,23 @@ from cimsparql.enums import (
     SyncVars,
     TapChangerObjects,
 )
+from cimsparql.graphdb import GraphDBClient
 from cimsparql.type_mapper import TypeMapper
 from cimsparql.typehints import Region
-from cimsparql.url import Prefix
+from cimsparql.url import service
 
 
-class Model(Prefix, ABC):
-    def __init__(self, mapper: Optional[TypeMapper], *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+class Model:
+    def __init__(self, mapper: Optional[TypeMapper], client: GraphDBClient) -> None:
         self._mapper = mapper
+        self.client = client
 
-    @abstractmethod
-    def _get_table(self, *args, **kwargs) -> Tuple[pd.DataFrame, Dict[str, str]]:
-        pass
-
-    @abstractmethod
-    def _col_map(self) -> Dict[str, str]:
-        pass
+    @staticmethod
+    def _col_map(data_row) -> Dict[str, str]:
+        return {
+            column: data.get("datatype", data.get("type", None))
+            for column, data in data_row.items()
+        }
 
     @cached_property
     def mapper(self) -> Optional[TypeMapper]:
@@ -55,21 +54,6 @@ class Model(Prefix, ABC):
         if self._mapper is None and "rdfs" in self.prefixes:
             return TypeMapper(self)
         return self._mapper
-
-    def _query_with_header(self, query: str, limit: Optional[int] = None) -> str:
-        query = "\n".join([self.header_str(query), query])
-        if limit is not None:
-            query += f" limit {limit}"
-        return query
-
-    @property
-    def empty(self) -> bool:
-        """Identify empty GraphDB repo"""
-        try:
-            self._get_table("SELECT * \n WHERE { ?s ?p ?o }", limit=1)
-            return False
-        except IndexError:
-            return True
 
     @staticmethod
     def _assign_column_types(
@@ -91,51 +75,10 @@ class Model(Prefix, ABC):
         col_map.update(columns)
         return col_map
 
-    def get_table(
-        self,
-        query: str,
-        index: Optional[str] = None,
-        limit: Optional[int] = None,
-        map_data_types: bool = True,
-        columns: Optional[Dict] = None,
-    ) -> pd.DataFrame:
-        """Gets given table from the configured database.
-
-        Args:
-           query: to sparql server
-           index: column name to use as index
-           limit: limit number of resulting rows
-           map_data_types: gets datatypes from the configured graphdb & maps the types in the result
-                  to correct python types
-           custom_maps: dictionary of 'sparql_datatype': function to apply on columns with that
-                  type. Overwrites sparql map for the types specified.
-           columns: dictionary of 'column_name': function,
-                  uses pandas astype on the column, or applies function.
-                  Sparql map overwrites columns when available
-
-        Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> query = 'select * where { ?subject ?predicate ?object }'
-           >>> gdbc.get_table(query, limit=10)
-        """
-        try:
-            result, data_row = self._get_table(query, limit)
-        except IndexError:
-            return pd.DataFrame([])
-
-        if map_data_types and self.mapper is not None:
-            col_map = self.col_map(data_row, columns)
-            result = self.mapper.map_data_types(result, col_map)
-
-        if index and not result.empty:
-            result.set_index(index, inplace=True)
-        return result
-
     @property
     def map_data_types(self) -> bool:
-        return "cim" in self.prefixes and self.mapper.have_cim_version(self.prefixes["cim"])
+        pref = self.client.prefixes.prefixes
+        return "cim" in pref and self.mapper.have_cim_version(pref["cim"])
 
     @classmethod
     def _manual_convert_types(
@@ -159,7 +102,14 @@ class Model(Prefix, ABC):
         index: Optional[str] = None,
         columns: Optional[Dict[str, str]] = None,
     ) -> pd.DataFrame:
-        result = self.get_table(query, index, limit, map_data_types=True, columns=columns)
+        result, data_row = self.client.get_table(query, index, limit)
+
+        if self.mapper is not None:
+            col_map = self.col_map(data_row, columns)
+            result = self.mapper.map_data_types(result, col_map)
+
+        if index and not result.empty:
+            result.set_index(index, inplace=True)
 
         if not self.map_data_types and len(result) > 0:
             result = self._manual_convert_types(result, columns, index)
@@ -170,9 +120,13 @@ class Model(Prefix, ABC):
 class CimModel(Model):
     """Used to query with sparql queries (typically CIM)"""
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, mapper: Optional[TypeMapper], client: GraphDBClient) -> None:
+        super().__init__(mapper, client)
         self._date_version = None
+
+    @property
+    def cim_version(self) -> int:
+        return self.client.prefixes.cim_version
 
     @property
     def date_version(self) -> datetime:
@@ -188,7 +142,7 @@ class CimModel(Model):
     def full_model(self, dry_run: bool = False) -> Union[pd.DataFrame, str]:
         query = queries.full_model()
         if dry_run:
-            return self._query_with_header(query)
+            return self.client.query_with_header(query)
         return self._get_table_and_convert(query)
 
     def bus_data(
@@ -216,7 +170,7 @@ class CimModel(Model):
                 f"where {{{{{combined}}}}}",
             )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def phase_tap_changers(
@@ -234,7 +188,7 @@ class CimModel(Model):
             region, sub_region, with_tap_changer_values, impedance, tap_changer_objects
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def loads(
@@ -272,10 +226,10 @@ class CimModel(Model):
            'station_group']
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.loads(load_type=['ConformLoad', 'NonConformLoad'])
+           >>> from cimsparql.model import get_cim_model
+           >>> server_url = "127.0.0.1:7200"
+           >>> model = get_cim_model(server_url, "LATEST")
+           >>> model.loads(load_type=['ConformLoad', 'NonConformLoad'])
         """
         query = queries.load_query(
             load_type,
@@ -292,7 +246,7 @@ class CimModel(Model):
             ssh_graph,
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
 
         return self._get_table_and_convert(query, limit, index="mrid")
 
@@ -314,15 +268,15 @@ class CimModel(Model):
            'maxP', 'allocationMax', 'allocationWeight', 'minP', 'name', 'power_plant_mrid']
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.wind_generating_units(limit=10)
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.wind_generating_units(limit=10)
 
         """
         query = queries.wind_generating_unit_query(network_analysis)
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def synchronous_machines(
@@ -355,10 +309,10 @@ class CimModel(Model):
            dry_run: return string with sql query
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.synchronous_machines(limit=10)
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.synchronous_machines(limit=10)
         """
         query = queries.synchronous_machines_query(
             sync_vars,
@@ -374,7 +328,7 @@ class CimModel(Model):
             ssh_graph,
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def connections(
@@ -401,16 +355,16 @@ class CimModel(Model):
            dry_run: return string with sql query
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.connections(limit=10)
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.connections(limit=10)
         """
         query = queries.connection_query(
             self.cim_version, rdf_types, region, sub_region, connectivity, nodes
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def borders(
@@ -446,7 +400,7 @@ class CimModel(Model):
             market_optional,
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def converters(
@@ -462,7 +416,7 @@ class CimModel(Model):
             region, sub_region, self.in_prefixes(converter_types), nodes, sequence_numbers
         )
         if dry_run:
-            return self._query_with_header(query)
+            return self.client.query_with_header(query)
         return self._get_table_and_convert(query, index="mrid")
 
     def transformers_connected_to_converter(
@@ -482,10 +436,10 @@ class CimModel(Model):
 
         """
         query = queries.transformers_connected_to_converter(
-            region, sub_region, self.in_prefixes(converter_types)
+            region, sub_region, self.client.prefixes.in_prefixes(converter_types)
         )
         if dry_run:
-            return self._query_with_header(query)
+            return self.client.query_with_header(query)
         return self._get_table_and_convert(query, index="converter_mrid")
 
     def ac_lines(
@@ -517,14 +471,14 @@ class CimModel(Model):
            dry_run: return string with sql query
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.ac_lines(limit=10)
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.ac_lines(limit=10)
         """
         query = line_queries.ac_line_query(
             self.cim_version,
-            self.ns["cim"],
+            self.client.prefixes.ns["cim"],
             region,
             sub_region,
             connectivity,
@@ -538,7 +492,7 @@ class CimModel(Model):
             length,
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         ac_lines = self._get_table_and_convert(query, limit=limit)
         if temperatures is not None:
             for temperature in temperatures:
@@ -572,10 +526,10 @@ class CimModel(Model):
            dry_run: return string with sql query
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.series_compensators(limit=10)
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.series_compensators(limit=10)
         """
         query = line_queries.series_compensator_query(
             self.cim_version,
@@ -590,7 +544,7 @@ class CimModel(Model):
             impedance,
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit=limit)
 
     def transformers(
@@ -619,16 +573,16 @@ class CimModel(Model):
            dry_run: return string with sql query
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.transformers(limit=10)
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.transformers(limit=10)
         """
         query = queries.transformer_query(
             region, sub_region, connectivity, rates, network_analysis, with_market, impedance
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit=limit)
 
     def two_winding_transformers(
@@ -659,10 +613,10 @@ class CimModel(Model):
            dry_run: return string with sql query
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.two_winding_transformers(limit=10)
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.two_winding_transformers(limit=10)
         """
         query = queries.two_winding_transformer_query(
             region,
@@ -678,7 +632,7 @@ class CimModel(Model):
             self.cim_version,
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit=limit)
 
     def three_winding_transformers(
@@ -709,10 +663,10 @@ class CimModel(Model):
            dry_run: return string with sql query
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.two_winding_transformers(limit=10)
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.two_winding_transformers(limit=10)
         """
         query = queries.three_winding_transformer_query(
             region,
@@ -728,7 +682,7 @@ class CimModel(Model):
             self.cim_version,
         )
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit=limit)
 
     def disconnected(
@@ -743,7 +697,7 @@ class CimModel(Model):
         """
         query = ssh_queries.disconnected(self.cim_version)
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self.get_table(query, index=index, limit=limit)
 
     def ssh_synchronous_machines(
@@ -757,7 +711,7 @@ class CimModel(Model):
         """
         query = ssh_queries.synchronous_machines()
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def ssh_load(
@@ -778,7 +732,7 @@ class CimModel(Model):
             rdf_types = ["cim:ConformLoad", "cim:NonConformLoad"]
         query = ssh_queries.load(rdf_types)
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def ssh_generating_unit(
@@ -800,7 +754,7 @@ class CimModel(Model):
             rdf_types = [f"cim:{unit}GeneratingUnit" for unit in GeneratorTypes]
         query = ssh_queries.generating_unit(rdf_types)
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def terminal(
@@ -814,7 +768,7 @@ class CimModel(Model):
         """
         query = tp_queries.terminal(self.cim_version)
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def topological_node(
@@ -828,7 +782,7 @@ class CimModel(Model):
         """
         query = tp_queries.topological_node()
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def powerflow(
@@ -846,7 +800,7 @@ class CimModel(Model):
         """
         query = sv_queries.powerflow(power)
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def voltage(
@@ -864,7 +818,7 @@ class CimModel(Model):
         """
         query = sv_queries.voltage(voltage_vars)
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     def tapstep(
@@ -878,7 +832,7 @@ class CimModel(Model):
         """
         query = sv_queries.tapstep()
         if dry_run:
-            return self._query_with_header(query, limit)
+            return self.client.query_with_header(query, limit)
         return self._get_table_and_convert(query, limit, index="mrid")
 
     @property
@@ -889,10 +843,31 @@ class CimModel(Model):
            regions: List of regions in database
 
         Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> gdbc.regions
+            >>> from cimsparql.model import get_cim_model
+            >>> server_url = "127.0.0.1:7200"
+            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model.regions
         """
         query = queries.regions_query()
         return self._get_table_and_convert(query, limit=None, index="mrid")
+
+
+def get_cim_model(
+    server: str,
+    graphdb_repo: str,
+    graphdb_path: str = "services/pgm/equipment/",
+    protocol: str = "https",
+) -> CimModel:
+    """Get a CIM Model
+
+    Args:
+        server: graphdb server
+        graphdb_repo: query this repo
+        graphdb_path: Prepend with this path when graphdb_repo is LATEST
+        protocol: https or http
+    """
+    graphdb_path = graphdb_path if graphdb_repo == "LATEST" else ""
+    service_url = service(graphdb_repo, server, protocol, graphdb_path)
+    client = GraphDBClient(service_url)
+    mapper = TypeMapper(client)
+    return CimModel(mapper, client)

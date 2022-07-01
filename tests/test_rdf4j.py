@@ -24,7 +24,7 @@ def test_rdf4j_picasso_data(rdf4j_gdb, query, expect):
     if skip_rdf4j_test(rdf4j_gdb):
         pytest.skip("Require access to RDF4J service")
 
-    result = rdf4j_gdb.exec_query(query)
+    result = rdf4j_gdb.client.exec_query(query)
     assert result == expect
 
 
@@ -32,4 +32,4 @@ def test_rdf4j_prefixes(rdf4j_gdb):
     if skip_rdf4j_test(rdf4j_gdb):
         pytest.skip("Require access to RDF4J service")
 
-    assert set(rdf4j_gdb.prefixes.keys()) == {"ex", "foaf"}
+    assert set(rdf4j_gdb.client.prefixes.prefixes.keys()) == {"ex", "foaf"}

@@ -67,34 +67,8 @@ class GraphDbConfig:
 
 
 class Prefix:
-    def __init__(self) -> None:
-        self._prefixes = None
-
-    @property
-    def prefixes(self) -> Dict[str, str]:
-        if self._prefixes is None:
-            self._prefixes = self._get_prefixes()
-        return self._prefixes
-
-    def _get_prefixes(self) -> Dict[str, str]:
-        prefixes = {}
-        auth = requests.auth.HTTPBasicAuth(self.user, self.passwd)
-        response = requests.get(self.service + "/namespaces", auth=auth)
-        if response.ok:
-            # Extract prefixes (skip line 1 which is a header)
-            for line in response.text.split()[1:]:
-                prefix, uri = line.split(",")
-                prefixes[prefix] = uri
-        else:
-            msg = (
-                "Could not fetch namespaces and prefixes from graphdb "
-                "Verify that user and password are correctly set in the "
-                "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
-            )
-            raise RuntimeError(
-                f"{msg}\nStatus code: {response.status_code}\nReason: {response.reason}"
-            )
-        return prefixes
+    def __init__(self, prefixes: Dict[str, str]) -> None:
+        self.prefixes = prefixes
 
     def in_prefixes(self, variables: Iterable) -> Iterable:
         return {variable for variable in variables if variable.split(":")[0] in self.prefixes}
@@ -106,7 +80,11 @@ class Prefix:
 
         """
         names_in_query = set(re.findall(r"(\w+):\w+", query))
-        return "\n".join(f"PREFIX {name}:<{self.prefixes[name]}>" for name in names_in_query)
+        return "\n".join(
+            f"PREFIX {name}:<{self.prefixes[name]}>"
+            for name in names_in_query
+            if name in self.prefixes
+        )
 
     def items(self) -> ItemsView[str, str]:
         """Get an itemsview of prefixes in graphdb instance"""
