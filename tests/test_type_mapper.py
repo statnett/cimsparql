@@ -7,13 +7,14 @@ from mock import MagicMock
 from pandas.testing import assert_frame_equal
 
 from cimsparql import type_mapper
+from cimsparql.url import Prefix
 
 
 @pytest.fixture
 def mocked_graphdb(sparql_data_types, prefixes):
     cli = MagicMock()
-    cli.get_table.return_value = sparql_data_types
-    cli.configure_mock(prefixes=prefixes)
+    cli.get_table.return_value = (sparql_data_types, {})
+    cli.configure_mock(prefixes=Prefix(prefixes))
     return cli
 
 
@@ -29,7 +30,7 @@ def test_python_type_map_bool():
 
 def test_get_map_empty_pandas():
     cli = MagicMock()
-    cli.get_table.return_value = pd.DataFrame()
+    cli.get_table.return_value = (pd.DataFrame(), {})
     mapper = type_mapper.TypeMapper(cli)
     assert mapper.get_map(cli) == {}
 
