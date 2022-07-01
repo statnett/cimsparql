@@ -105,12 +105,8 @@ class Prefix:
         The list of available prefixes should be provided by the source (such as GraphDB).
 
         """
-
-        try:
-            names_in_query = set(re.findall(r"(\w+):\w+", query))
-            return "\n".join(f"PREFIX {name}:<{self.prefixes[name]}>" for name in names_in_query)
-        except AttributeError:
-            return ""
+        names_in_query = set(re.findall(r"(\w+):\w+", query))
+        return "\n".join(f"PREFIX {name}:<{self.prefixes[name]}>" for name in names_in_query)
 
     def items(self) -> ItemsView[str, str]:
         """Get an itemsview of prefixes in graphdb instance"""
