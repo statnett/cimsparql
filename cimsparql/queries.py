@@ -667,11 +667,17 @@ def converters(
     mrid_subject = "?_mrid"
     name = "?name"
 
-    variables = ["?mrid", name, "?p"]
+    variables = ["?mrid", name, "?p", "?station"]
     converters = [sup.rdf_type_tripler(mrid_subject, converter) for converter in converter_types]
     where_list = [
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        sup.get_name(mrid_subject, name, alias=True),
+        common_subject(
+            mrid_subject,
+            [
+                f"{ID_OBJ}.mRID ?mrid",
+                sup.get_name("", name, alias=True),
+                f"{EQUIP_CONTAINER}/{SUBSTATION}/{ID_OBJ}.mRID ?station",
+            ],
+        ),
         sup.combine_statements(*converters, group=len(converters) > 1, split=union_split),
         f"Optional{{{mrid_subject} cim:ACDCConverter.p ?p}}",
     ]
