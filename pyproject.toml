@@ -22,6 +22,7 @@ lxml = {version = "*", optional = true}
 networkx = "*"
 numpy = "*"
 pandas = "*"
+pandera = {version = "*", extras=["io"]}
 pendulum = {version = "*", optional = true}
 python = "^3.9"
 requests = "*"

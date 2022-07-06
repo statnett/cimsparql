@@ -1,0 +1,23 @@
+schema_type: dataframe
+required_string: &required_string
+  dtype: string
+  nullable: false
+  required: true
+columns:
+  mrid:
+    <<: *required_string
+    unique: true
+  name:
+    <<: *required_string
+  busname:
+    <<: *required_string
+  un:
+    dtype: float
+    nullable: false
+    required: true
+  area:
+    <<: *required_string
+  bidzone:
+    dtype: string
+    nullable: false
+    required: false

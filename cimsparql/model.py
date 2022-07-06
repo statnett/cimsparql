@@ -5,10 +5,13 @@ function get_table as well as a set of predefined CIM queries.
 import re
 from datetime import datetime
 from functools import cached_property
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from pandera import DataFrameSchema
+from pandera.io import from_yaml
 
 from cimsparql import line_queries, queries
 from cimsparql import query_support as sup
@@ -171,7 +174,11 @@ class CimModel(Model):
             )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+
+        df = self._get_table_and_convert(query, limit, index="mrid")
+        df_schema = schema("bus_data")
+        df_schema.validate(df)
+        return df
 
     def phase_tap_changers(
         self,
@@ -871,3 +878,8 @@ def get_cim_model(
     client = GraphDBClient(service_url)
     mapper = TypeMapper(client)
     return CimModel(mapper, client)
+
+
+def schema(name: str) -> DataFrameSchema:
+    path = Path(__file__).parent.parent / f"pkg_data/schemas/{name}.yml"
+    return from_yaml(path)
