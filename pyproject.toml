@@ -11,6 +11,7 @@ description = "CIM query utilities"
 readme = "README.md"
 authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
 repository = "https://github.com/statnett/cimsparql.git"
+include = ["pkg_data/*"]
 
 [tool.poetry.dependencies]
 SPARQLWrapper = "*"

@@ -6,7 +6,7 @@
 @prefix sb: <http://www.openrdf.org/config/sail/base#>.
 
 [] a rep:Repository ;
-   rep:repositoryID "picasso" ;
+   rep:repositoryID "{{repo}}" ;
    rdfs:label "Example Native store" ;
    rep:repositoryImpl [
       rep:repositoryType "openrdf:SailRepository" ;
