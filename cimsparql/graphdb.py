@@ -1,6 +1,7 @@
 """Graphdb CIM sparql client"""
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -9,7 +10,7 @@ from deprecated import deprecated
 from SPARQLWrapper import JSON, SPARQLWrapper
 
 from cimsparql import url
-from cimsparql.url import Prefix
+from cimsparql.url import Prefix, service
 
 
 def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
@@ -164,6 +165,32 @@ class GraphDBClient:
             )
         return prefixes
 
+    def delete_repo(self):
+        response = requests.delete(self.service_cfg.url)
+        response.raise_for_status()
+
+    def upload_rdf_xml(self, fname: Path):
+        with open(fname, "rb") as infile:
+            xml_content = infile.read()
+
+        response = requests.post(
+            self.service_cfg.url + "/statements",
+            data=xml_content,
+            headers={"Content-Type": "application/rdf+xml"},
+        )
+        response.raise_for_status()
+
+    def upload_ttl(self, fname: Path):
+        with open(fname, "rb") as infile:
+            turtle_content = infile.read()
+
+        response = requests.post(
+            self.service_cfg.url + "/statements",
+            data=turtle_content,
+            headers={"Content-Type": "text/turtle"},
+        )
+        response.raise_for_status()
+
 
 @deprecated(version="1.11", reason="Use cimsparqel.model.get_cim_model instead")
 def get_graphdb_client(
@@ -175,3 +202,79 @@ def get_graphdb_client(
     from cimsparql.model import get_cim_model
 
     return get_cim_model(server, graphdb_repo, graphdb_path, protocol)
+
+
+@dataclass
+class RepoInfo:
+    uri: str
+    repo_id: str
+    title: str
+    readable: bool
+    writable: bool
+
+
+def repos(server: str) -> List[RepoInfo]:
+    """
+    List available repositories
+    """
+    response = requests.get(server + "/repositories")
+    response.raise_for_status()
+
+    infos = []
+    for line in response.text.split("\n")[1:]:
+        if not line:
+            continue
+        uri, repo_id, title, readable, writable = line.strip().split(",")
+        readable = readable == "true"
+        writable = writable == "true"
+        info = RepoInfo(uri=uri, repo_id=repo_id, title=title, readable=readable, writable=writable)
+        infos.append(info)
+    return infos
+
+
+def new_repo(
+    server: str, repo: str, config: bytes, allow_exist: bool = True, protocol: str = "http"
+) -> GraphDBClient:
+    """
+    Initiialzie a new repository
+
+    Args:
+        server: URL to service
+        repo: Name of repo
+        config: Bytes representaiton of a Turtle config file
+        allow_exist: If True, a client pointing to the existing repo is returned.
+            Otherwise an error is raised if a repository with the same name already exists
+        protocol: Default https
+    """
+    ignored_errors = {409} if allow_exist else set()
+    url = service(repo, server, protocol)
+    response = requests.put(url, data=config, headers={"Content-Type": "text/turtle"})
+    if response.status_code not in ignored_errors:
+        response.raise_for_status()
+
+    return GraphDBClient(url)
+
+
+def config_bytes_from_template(
+    template: Path, params: Dict[str, str], encoding: str = "utf8"
+) -> bytes:
+    """
+    Replace value in template file with items in params
+
+    Args:
+        template: Path to template file
+        params: Dict with key-value pairs where key must be enclode by double curly braces
+            in the template file ({{}}). {{key}} will be replaced by value
+    """
+    with open(template, "rb") as infile:
+        data = infile.read()
+
+    for param, value in params.items():
+        enc_templ = f"{{{{{param}}}}}".encode(encoding)
+        enc_value = value.encode(encoding)
+        data = data.replace(enc_templ, enc_value)
+    return data
+
+
+def confpath() -> Path:
+    return Path(__file__).parent.parent / "pkg_data"

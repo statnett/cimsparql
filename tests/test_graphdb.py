@@ -12,7 +12,14 @@ import requests
 import cimsparql.query_support as sup
 from cimsparql.constants import con_mrid_str
 from cimsparql.enums import ConverterTypes
-from cimsparql.graphdb import GraphDBClient, data_row
+from cimsparql.graphdb import (
+    GraphDBClient,
+    config_bytes_from_template,
+    confpath,
+    data_row,
+    new_repo,
+    repos,
+)
 from cimsparql.model import CimModel
 from cimsparql.type_mapper import TypeMapperQueries
 
@@ -283,3 +290,30 @@ def test_prefix_resp_not_ok(monkeypatch):
         GraphDBClient("http://some-url:87").get_prefixes()
     assert resp.reason in str(exc)
     assert str(resp.status_code) in str(exc)
+
+
+def test_conf_bytes_from_template():
+    template = confpath() / "native_store_config_template.ttl"
+
+    conf_bytes = config_bytes_from_template(template, {"repo": "test_repo"})
+    conf_str = conf_bytes.decode("utf8")
+    assert 'rep:repositoryID "test_repo"' in conf_str
+
+
+def test_create_delete_repo(rdf4j_url):
+    repo = "test_repo"
+    template = confpath() / "native_store_config_template.ttl"
+    conf_bytes = config_bytes_from_template(template, {"repo": repo})
+    url_with_protocol = "http://" + rdf4j_url
+    current_repos = repos(url_with_protocol)
+
+    assert "test_repo" not in [i.repo_id for i in current_repos]
+
+    # protocol is added internally. Thus, skip from rdf4j_url
+    client = new_repo(rdf4j_url, repo, conf_bytes, protocol="http")
+    current_repos = repos(url_with_protocol)
+    assert "test_repo" in [i.repo_id for i in current_repos]
+
+    client.delete_repo()
+    current_repos = repos(url_with_protocol)
+    assert "test_repo" not in [i.repo_id for i in current_repos]

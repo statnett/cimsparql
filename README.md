@@ -92,5 +92,5 @@ docker pull eclipse/rdf4j-workbench
 Launch a container with this image and specify the URL in the `RDF4J_URL` environment variable. With default settings in the container, it should be
 
 ```
-RDF4J_URL = "http://localhost:8080/rdf4j-server"
+RDF4J_URL = "localhost:8080/rdf4j-server"
 ```

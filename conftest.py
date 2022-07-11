@@ -8,9 +8,8 @@ import pytest
 import requests
 
 from cimsparql.constants import con_mrid_str
-from cimsparql.graphdb import GraphDBClient
+from cimsparql.graphdb import GraphDBClient, config_bytes_from_template, confpath, new_repo
 from cimsparql.model import CimModel, get_cim_model
-from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import GraphDbConfig, service
 
 this_dir = pathlib.Path(__file__).parent
@@ -164,7 +163,7 @@ def breakers(cim_model: CimModel, n_samples: int) -> pd.DataFrame:
 def rdf4j_url() -> str:
     if os.getenv("CI"):
         # Running on GitHub
-        return "http://localhost:8080/rdf4j-server"
+        return "localhost:8080/rdf4j-server"
 
     return os.getenv("RDF4J_URL")
 
@@ -181,30 +180,29 @@ def upload_ttl_to_repo(
         response.raise_for_status()
 
 
-def initialized_rdf4j_repo_url(service_url) -> str:
+def initialized_rdf4j_repo(service_url) -> GraphDBClient:
     data_path = this_dir / "tests/data"
 
-    config = data_path / "native_store_config.ttl"
-    name = "picasso"
+    template = confpath() / "native_store_config_template.ttl"
+    config = config_bytes_from_template(template, {"repo": "picasso"})
+
+    client = new_repo(service_url, "picasso", config, allow_exist=True, protocol="http")
+
     data_file = data_path / "artist.ttl"
-
-    # Initialize repo
-    url = f"{service_url}/repositories/{name}"
-
-    # 409 happens if repo exist before
-    upload_ttl_to_repo(url, config, ignored_error_codes={409})
-    upload_ttl_to_repo(url + "/statements", data_file)
-    return url
+    client.upload_ttl(data_file)
+    return client
 
 
-@pytest.fixture(scope="session")
-def rdf4j_gdb(rdf4j_url) -> Optional[CimModel]:
+@pytest.fixture
+def rdf4j_gdb(rdf4j_url) -> Optional[GraphDBClient]:
+    client = None
     try:
-        url = initialized_rdf4j_repo_url(rdf4j_url)
+        client = initialized_rdf4j_repo(rdf4j_url)
+        yield client
     except Exception as exc:
         logger.error(f"{exc}")
-        return None
-
-    client = GraphDBClient(url)
-    mapper = TypeMapper(client)
-    return CimModel(mapper, client)
+        yield client
+    finally:
+        # Tear down delete content
+        if client:
+            client.delete_repo()
