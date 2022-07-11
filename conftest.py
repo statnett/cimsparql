@@ -10,6 +10,7 @@ import requests
 from cimsparql.constants import con_mrid_str
 from cimsparql.graphdb import GraphDBClient, config_bytes_from_template, confpath, new_repo
 from cimsparql.model import CimModel, get_cim_model
+from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import GraphDbConfig, service
 
 this_dir = pathlib.Path(__file__).parent
@@ -206,3 +207,31 @@ def rdf4j_gdb(rdf4j_url) -> Optional[GraphDBClient]:
         # Tear down delete content
         if client:
             client.delete_repo()
+
+
+def init_test_cim_model(rdf4j_url, name):
+    folder = pathlib.Path(__file__).parent / f"tests/data/{name}/"
+    template = confpath() / "native_store_config_template.ttl"
+    config = config_bytes_from_template(template, {"repo": name})
+    client = new_repo(rdf4j_url, name, config, allow_exist=False, protocol="http")
+
+    for f in folder.iterdir():
+        if f.suffix == ".xml":
+            client.upload_rdf_xml(f)
+    return client
+
+
+@pytest.fixture(scope="session")
+def micro_t1_nl(rdf4j_url) -> Optional[CimModel]:
+    model = None
+    try:
+        client = init_test_cim_model(rdf4j_url, "micro_t1_nl")
+        mapper = TypeMapper(client)
+        model = CimModel(mapper, client)
+        yield model
+    except Exception as exc:
+        logger.error(f"{exc}")
+        yield model
+    finally:
+        if model:
+            model.client.delete_repo()

@@ -133,6 +133,7 @@ class CimModel(Model):
         limit: Optional[int] = None,
         dry_run: bool = False,
         with_dummy_buses: bool = False,
+        with_market: bool = True,
     ) -> Union[pd.DataFrame, str]:
         """Query name of topological nodes (TP query).
 
@@ -142,7 +143,7 @@ class CimModel(Model):
            limit: return first 'limit' number of rows
            dry_run: return string with sql query
         """
-        query = queries.bus_data(region, sub_region)
+        query = queries.bus_data(region, sub_region, with_market)
         if with_dummy_buses:
             dummy_bus_query = queries.three_winding_dummy_bus(region, sub_region)
             combined = sup.combine_statements(query, dummy_bus_query, split=union_split)
@@ -152,7 +153,8 @@ class CimModel(Model):
             )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, limit, index="mrid")
+        df = self.get_table_and_convert(query, limit)
+        return df.groupby("mrid").first()
 
     def phase_tap_changers(
         self,
