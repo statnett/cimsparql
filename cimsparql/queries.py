@@ -181,7 +181,9 @@ def bus_data(region: Region, sub_region: bool, with_market: bool = True) -> str:
                 "cim:TopologicalNode.ConnectivityNodeContainer ?cont",
             ],
         ),
-        common_subject("?cont", [f"{ID_OBJ}.aliasName ?name", f"{SUBSTATION} ?Substation"]),
+        common_subject(
+            "?cont", [f"{ID_OBJ}.aliasName|{ID_OBJ}.name ?name", f"{SUBSTATION} ?Substation"]
+        ),
     ]
     if with_market:
         variables.append("?bidzone")

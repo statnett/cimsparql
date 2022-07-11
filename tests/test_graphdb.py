@@ -25,6 +25,8 @@ from cimsparql.type_mapper import TypeMapperQueries
 
 logger = logging.getLogger(__name__)
 
+RDF4J_ACCESS = "Require access to RDF4J"
+
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 @patch.object(CimModel, "get_table_and_convert")
@@ -317,3 +319,21 @@ def test_create_delete_repo(rdf4j_url):
     client.delete_repo()
     current_repos = repos(url_with_protocol)
     assert "test_repo" not in [i.repo_id for i in current_repos]
+
+
+def test_bus_data_micro_t1_nl(micro_t1_nl):
+    if not micro_t1_nl and not os.getenv("CI"):
+        pytest.skip(RDF4J_ACCESS)
+
+    data = micro_t1_nl.bus_data(with_market=False)
+    assert len(data) == 2
+    assert data.index.name == "mrid"
+
+
+def test_full_model_micro_t1_nl(micro_t1_nl):
+    if not micro_t1_nl and not os.getenv("CI"):
+        pytest.skip(RDF4J_ACCESS)
+
+    data = micro_t1_nl.full_model()
+    assert len(data) >= 1
+    assert len(data.columns) == 7
