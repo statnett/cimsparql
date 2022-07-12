@@ -99,7 +99,20 @@ class GraphDBClient:
         out, _ = self._exec_query(query, limit)
         return out
 
-    def _get_table(self, query: str, limit: Optional[int]) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    def get_table(
+        self, query: str, limit: Optional[int] = None
+    ) -> Tuple[pd.DataFrame, Dict[str, str]]:
+        """
+        Args:
+           query: to sparql server
+           limit: limit number of resulting rows
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('LATEST'))
+           >>> query = 'select * where { ?subject ?predicate ?object }'
+           >>> gdbc.get_table(query, limit=10)
+        """
         out, data_row = self._exec_query(query, limit)
         return pd.DataFrame(out), data_row
 
@@ -111,39 +124,6 @@ class GraphDBClient:
             return False
         except IndexError:
             return True
-
-    def get_table(
-        self,
-        query: str,
-        index: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> pd.DataFrame:
-        """Gets given table from the configured database.
-
-        Args:
-           query: to sparql server
-           index: column name to use as index
-           limit: limit number of resulting rows
-           map_data_types: gets datatypes from the configured graphdb & maps the types in the result
-                  to correct python types
-           custom_maps: dictionary of 'sparql_datatype': function to apply on columns with that
-                  type. Overwrites sparql map for the types specified.
-           columns: dictionary of 'column_name': function,
-                  uses pandas astype on the column, or applies function.
-                  Sparql map overwrites columns when available
-
-        Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> query = 'select * where { ?subject ?predicate ?object }'
-           >>> gdbc.get_table(query, limit=10)
-        """
-        try:
-            result, data_row = self._get_table(query, limit)
-        except IndexError:
-            return pd.DataFrame([]), {}
-        return result, data_row
 
     def get_prefixes(self) -> Dict[str, str]:
         prefixes = {}

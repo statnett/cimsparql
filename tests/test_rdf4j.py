@@ -45,3 +45,11 @@ def test_upload_rdf_xml(rdf4j_gdb):
 
     df = rdf4j_gdb.exec_query("SELECT * WHERE {?s rdf:type md:FullModel}")
     assert len(df) == 1
+
+
+def test_get_table_default_arg(rdf4j_gdb):
+    if skip_rdf4j_test(rdf4j_gdb):
+        pytest.skip("Require access to RDF4J service")
+
+    df = rdf4j_gdb.get_table("SELECT * {?s ?o ?p}")[0]
+    assert len(df) == 6
