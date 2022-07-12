@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-@patch.object(CimModel, "_get_table_and_convert")
+@patch.object(CimModel, "get_table_and_convert")
 def test_date_version(get_table_mock, cim_model: CimModel):
     t_ref = datetime(2020, 1, 1)
     get_table_mock.return_value = pd.DataFrame(

@@ -80,14 +80,14 @@ class Model:
         pref = self.client.prefixes.prefixes
         return "cim" in pref and self.mapper.have_cim_version(pref["cim"])
 
-    def _get_table_and_convert(
+    def get_table_and_convert(
         self,
         query: str,
         limit: Optional[int] = None,
         index: Optional[str] = None,
         columns: Optional[Dict[str, str]] = None,
     ) -> pd.DataFrame:
-        result, data_row = self.client.get_table(query, index, limit)
+        result, data_row = self.client.get_table(query, limit)
 
         if self.mapper is not None:
             col_map = self.col_map(data_row, columns)
@@ -95,7 +95,6 @@ class Model:
 
         if index and not result.empty:
             result.set_index(index, inplace=True)
-
         return result
 
 
@@ -115,7 +114,7 @@ class CimModel(Model):
         """Activation date for this repository"""
         if self._date_version:
             return self._date_version
-        repository_date = self._get_table_and_convert(queries.version_date())
+        repository_date = self.get_table_and_convert(queries.version_date())
         self._date_version = repository_date["activationDate"].values[0]
         if isinstance(self._date_version, np.datetime64):
             self._date_version = self._date_version.astype("<M8[s]").astype(datetime)
@@ -125,7 +124,7 @@ class CimModel(Model):
         query = queries.full_model()
         if dry_run:
             return self.client.query_with_header(query)
-        return self._get_table_and_convert(query)
+        return self.get_table_and_convert(query)
 
     def bus_data(
         self,
@@ -153,7 +152,7 @@ class CimModel(Model):
             )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def phase_tap_changers(
         self,
@@ -171,7 +170,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def loads(
         self,
@@ -230,7 +229,7 @@ class CimModel(Model):
         if dry_run:
             return self.client.query_with_header(query, limit)
 
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def wind_generating_units(
         self,
@@ -259,7 +258,7 @@ class CimModel(Model):
         query = queries.wind_generating_unit_query(network_analysis)
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def synchronous_machines(
         self,
@@ -311,7 +310,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def connections(
         self,
@@ -347,7 +346,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def borders(
         self,
@@ -383,7 +382,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def converters(
         self,
@@ -399,7 +398,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query)
-        return self._get_table_and_convert(query, index="mrid")
+        return self.get_table_and_convert(query, index="mrid")
 
     def transformers_connected_to_converter(
         self,
@@ -422,7 +421,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query)
-        return self._get_table_and_convert(query, index="converter_mrid")
+        return self.get_table_and_convert(query, index="converter_mrid")
 
     def ac_lines(
         self,
@@ -475,7 +474,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        ac_lines = self._get_table_and_convert(query, limit=limit)
+        ac_lines = self.get_table_and_convert(query, limit=limit)
         if temperatures is not None:
             for temperature in temperatures:
                 column = f"{sup.negpos(temperature)}_{abs(temperature)}_factor"
@@ -527,7 +526,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit=limit)
+        return self.get_table_and_convert(query, limit=limit)
 
     def transformers(
         self,
@@ -565,7 +564,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit=limit)
+        return self.get_table_and_convert(query, limit=limit)
 
     def two_winding_transformers(
         self,
@@ -615,7 +614,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit=limit)
+        return self.get_table_and_convert(query, limit=limit)
 
     def three_winding_transformers(
         self,
@@ -665,7 +664,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit=limit)
+        return self.get_table_and_convert(query, limit=limit)
 
     def disconnected(
         self, index: Optional[str] = None, limit: Optional[int] = None, dry_run: bool = False
@@ -694,7 +693,7 @@ class CimModel(Model):
         query = ssh_queries.synchronous_machines()
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def ssh_load(
         self,
@@ -715,7 +714,7 @@ class CimModel(Model):
         query = ssh_queries.load(rdf_types)
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def ssh_generating_unit(
         self,
@@ -737,7 +736,7 @@ class CimModel(Model):
         query = ssh_queries.generating_unit(rdf_types)
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def terminal(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -751,7 +750,7 @@ class CimModel(Model):
         query = tp_queries.terminal(self.cim_version)
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def topological_node(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -765,7 +764,7 @@ class CimModel(Model):
         query = tp_queries.topological_node()
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def powerflow(
         self,
@@ -783,7 +782,7 @@ class CimModel(Model):
         query = sv_queries.powerflow(power)
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def voltage(
         self,
@@ -801,7 +800,7 @@ class CimModel(Model):
         query = sv_queries.voltage(voltage_vars)
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def tapstep(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -815,7 +814,7 @@ class CimModel(Model):
         query = sv_queries.tapstep()
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     @property
     def regions(self) -> pd.DataFrame:
@@ -831,7 +830,7 @@ class CimModel(Model):
             >>> model.regions
         """
         query = queries.regions_query()
-        return self._get_table_and_convert(query, limit=None, index="mrid")
+        return self.get_table_and_convert(query, limit=None, index="mrid")
 
 
 def get_cim_model(
