@@ -80,11 +80,6 @@ class GraphDBClient:
             query += f" limit {limit}"
         return query
 
-    @staticmethod
-    def value_getter(d: Dict[str, str]) -> str:
-        """Get item of 'value' key if present else None"""
-        return d.get("value")
-
     def _exec_query(self, query: str, limit: Optional[int]):
         self.sparql.setQuery(self.query_with_header(query, limit))
 
@@ -92,7 +87,7 @@ class GraphDBClient:
 
         cols = processed_results["head"]["vars"]
         data = processed_results["results"]["bindings"]
-        out = [{c: self.value_getter(row.get(c, {})) for c in cols} for row in data]
+        out = [{c: row.get(c, {}).get("value") for c in cols} for row in data]
         return out, data_row(cols, data)
 
     def exec_query(self, query: str, limit: Optional[int] = None) -> List[Dict[str, str]]:
