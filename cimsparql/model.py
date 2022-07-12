@@ -80,21 +80,6 @@ class Model:
         pref = self.client.prefixes.prefixes
         return "cim" in pref and self.mapper.have_cim_version(pref["cim"])
 
-    @classmethod
-    def _manual_convert_types(
-        cls, df: pd.DataFrame, columns: Optional[Dict], index: Optional[str]
-    ) -> pd.DataFrame:
-        if columns is None:
-            columns = {}
-        reset_index = index is not None
-        if reset_index:
-            df.reset_index(inplace=True)
-        df = df.astype(str)
-        cls._assign_column_types(df, columns)
-        if reset_index:
-            df.set_index(index, inplace=True)
-        return df
-
     def _get_table_and_convert(
         self,
         query: str,
@@ -110,9 +95,6 @@ class Model:
 
         if index and not result.empty:
             result.set_index(index, inplace=True)
-
-        if not self.map_data_types and len(result) > 0:
-            result = self._manual_convert_types(result, columns, index)
 
         return result
 
