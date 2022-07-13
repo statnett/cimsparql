@@ -135,6 +135,8 @@ class CimModel(Model):
         with_market: bool = True,
         with_dummy_buses: bool = False,
         container: bool = False,
+        delta_power: bool = True,
+        network_analysis: bool = True,
     ) -> Union[pd.DataFrame, str]:
         """Query name of topological nodes (TP query).
 
@@ -145,13 +147,17 @@ class CimModel(Model):
            dry_run: return string with sql query
         """
         container_variable = "?container" if container else ""
-        query = queries.bus_data(region, sub_region, with_market, container_variable)
+        query = queries.bus_data(
+            region, sub_region, with_market, container_variable, self.cim_version, delta_power
+        )
         if with_dummy_buses:
             dummy_bus_query = queries.three_winding_dummy_bus(
-                region, sub_region, with_market, container_variable
+                region, sub_region, with_market, container_variable, network_analysis, delta_power
             )
             combined = sup.combine_statements(query, dummy_bus_query, split=union_split)
             variables = ["?node", "?name", "?busname", "?un", "?station"]
+            if delta_power:
+                variables.append("?delta_p")
             if with_market:
                 variables.append("?bidzone")
             if container:
@@ -693,6 +699,14 @@ class CimModel(Model):
         if dry_run:
             return self._query_with_header(query, limit)
         return self._get_table_and_convert(query, limit=limit)
+
+    def delta_node_power(
+        self, node: str = "node", limit: Optional[int] = None, dry_run: bool = False
+    ):
+        query = queries.node_delta_power(node, self.cim_version)
+        if dry_run:
+            return self.client.query_with_header(query, limit)
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def disconnected(
         self, index: Optional[str] = None, limit: Optional[int] = None, dry_run: bool = False
