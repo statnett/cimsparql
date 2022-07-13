@@ -9,7 +9,6 @@ import pandas as pd
 import pytest
 import requests
 
-import cimsparql.query_support as sup
 from cimsparql.cim import ID_OBJ
 from cimsparql.constants import con_mrid_str
 from cimsparql.enums import ConverterTypes
@@ -190,17 +189,6 @@ def test_windings(cim_model: CimModel):
 def test_windings_with_market(cim_model: CimModel):
     windings = cim_model.transformers(region="NO01", sub_region=True, with_market=True)
     assert windings.shape[1] == 10
-
-
-def transformers(gdb: GraphDBClient) -> pd.DataFrame:
-    """Information used by ptc"""
-    select = "select ?mrid ?endNumber ?w_mrid "
-    where_list = [
-        "?mrid rdf:type cim:PowerTransformer",
-        "?w_mrid cim:PowerTransformerEnd.PowerTransformer ?mrid",
-        "?w_mrid cim:TransformerEnd.endNumber ?endNumber",
-    ]
-    return gdb.get_table(sup.combine_statements(select, sup.group_query(where_list)))
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
