@@ -96,20 +96,20 @@ def transformer_common(
             variables.append("(xsd:float(0.0) as ?pl_1) (?pl as ?pl_2)")
     where_list.extend(
         [
-            sup.get_name("?p_mrid", name),
+            sup.get_name("?_p_mrid", name),
             sup.common_subject("?w_mrid_1", [f"{TR_WINDING}.ratedU ?un", f"{ID_OBJ}.mRID ?mrid"]),
-            number_of_windings("?p_mrid", winding_count, with_loss),
+            number_of_windings("?_p_mrid", winding_count, with_loss),
         ]
     )
     where_list.extend(sup.predicate_list("?w_mrid_1", TR_WINDING, {z: f"?{z}" for z in impedance}))
 
     if with_market or region is not None:
-        where_list.append(f"?p_mrid {EQUIP_CONTAINER} ?Substation")
+        where_list.append(f"?_p_mrid {EQUIP_CONTAINER} ?Substation")
         where_list.extend(sup.region_query(region, sub_region, "Substation"))
         _market(variables, where_list, with_market)
 
     if network_analysis:
-        where_list.append(f"?p_mrid SN:Equipment.networkAnalysisEnable {network_analysis}")
+        where_list.append(f"?_p_mrid SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     if rates:
         where_rate = []
