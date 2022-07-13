@@ -409,7 +409,11 @@ class CimModel(Model):
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         query = queries.converters(
-            region, sub_region, self.in_prefixes(converter_types), nodes, sequence_numbers
+            region,
+            sub_region,
+            self.client.prefixes.in_prefixes(converter_types),
+            nodes,
+            sequence_numbers,
         )
         if dry_run:
             return self.client.query_with_header(query)
