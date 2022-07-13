@@ -251,7 +251,7 @@ def three_winding_dummy_bus(
     variables = ["?node", name, f"({name} as ?busname)", "?un", "?station"]
     where_list = [
         common_subject(
-            "?p_mrid",
+            "?_p_mrid",
             [f"{ID_OBJ}.mRID ?node", sup.get_name("", name), f"{EQUIP_CONTAINER} ?Substation"],
         ),
         common_subject(
@@ -533,7 +533,7 @@ def two_winding_transformer_query(
 ) -> str:
     term = nodes if nodes else "t_mrid"
     variables = [f"?{term}_{nr}" for nr in sequence_numbers]
-    where_list = [*terminal("?p_mrid", 1), *terminal("?p_mrid", 2)]
+    where_list = [*terminal("?_p_mrid", 1), *terminal("?_p_mrid", 2)]
     for nr in sequence_numbers:
         if nodes:
             sup.node_list(f"?_{nodes}_{nr}", where_list, cim_version, mrid=f"?_t_mrid_{nr}")
@@ -572,10 +572,10 @@ def three_winding_transformer_query(
     cim_version: int,
 ) -> str:
     term = nodes if nodes else "t_mrid"
-    variables = [f"?{term}_1", f"(?p_mrid_object as ?{term}_2)"]
+    variables = [f"?{term}_1", f"(?p_mrid as ?{term}_2)"]
     where_list = [
-        *terminal("?p_mrid", 1, lock_end_number=False),
-        f"?p_mrid {ID_OBJ}.mRID ?p_mrid_object",
+        *terminal("?_p_mrid", 1, lock_end_number=False),
+        f"?_p_mrid {ID_OBJ}.mRID ?p_mrid",
     ]
     if nodes:
         sup.node_list(f"?_{nodes}_1", where_list, cim_version, mrid="?_t_mrid_1")
