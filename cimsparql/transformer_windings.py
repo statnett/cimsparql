@@ -86,7 +86,7 @@ def transformer_common(
     network_analysis: bool,
     with_loss: bool,
 ) -> None:
-    variables.extend([name, "?mrid", *sup.to_variables(impedance), "?un"])
+    variables.extend([name, "?mrid", "?un"])
     if p_mrid:
         variables.append("?p_mrid")
     if with_loss:
@@ -101,7 +101,20 @@ def transformer_common(
             number_of_windings("?_p_mrid", winding_count, with_loss),
         ]
     )
-    where_list.extend(sup.predicate_list("?w_mrid_1", TR_WINDING, {z: f"?{z}" for z in impedance}))
+    if winding_count == 2:
+        for z in impedance:
+            variables.append(f"(xsd:float(str(?{z}_1)) + xsd:float(str(?{z}_2)) as ?{z})")
+        for nr in [1, 2]:
+            where_list.extend(
+                sup.predicate_list(
+                    f"?w_mrid_{nr}", TR_WINDING, {z: f"?{z}_{nr}" for z in impedance}
+                )
+            )
+    else:
+        variables.extend(sup.to_variables(impedance))
+        where_list.extend(
+            sup.predicate_list("?w_mrid_1", TR_WINDING, {z: f"?{z}" for z in impedance})
+        )
 
     if with_market or region is not None:
         where_list.append(f"?_p_mrid {EQUIP_CONTAINER} ?Substation")
