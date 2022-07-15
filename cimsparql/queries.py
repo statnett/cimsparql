@@ -23,7 +23,7 @@ from cimsparql.enums import (
     SyncVars,
     TapChangerObjects,
 )
-from cimsparql.query_support import common_subject
+from cimsparql.query_support import common_subject, insert_params
 from cimsparql.transformer_windings import number_of_windings, terminal, transformer_common
 from cimsparql.typehints import Region
 
@@ -587,27 +587,46 @@ def transformer_query(
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
+TRANSF_CON_TO_CONVERTER = f"""
+SELECT ?mrid ?t_mrid ?converter_mrid ?name WHERE {{
+    ?volt {ID_OBJ}.mRID ?converter_mrid.
+    ?_mrid {ID_OBJ}.mRID ?mrid.
+    ?_t_mrid {ID_OBJ}.mRID ?t_mrid.
+    ?_mrid rdf:type cim:PowerTransformer.
+    ?_mrid {ID_OBJ}.aliasName ?name.
+    ?_t_mrid {TC_EQUIPMENT} ?_mrid.
+    ?_t_mrid {TC_NODE}/^{TC_NODE}/{TC_EQUIPMENT} ?volt.
+    {{{{converters}}}}.
+    {{{{region}}}}
+}}
+"""
+
+TRANSF_REG = f"""
+    ?_mrid {EQUIP_CONTAINER} ?Substation .
+    ?Substation cim:Substation.Region ?subgeoreg.
+    ?subgeoreg {{{{subst_predicate}}}} ?area FILTER regex(?area, '{{{{regions}}}}')
+"""
+
+
 def transformers_connected_to_converter(
     region: Region, sub_region: bool, converter_types: Iterable[ConverterTypes]
 ) -> str:
-    mrid_subject = "?_mrid"
-    name = "?name"
-    variables = ["?mrid", "?t_mrid", "?converter_mrid", name]
     converters = [sup.rdf_type_tripler("?volt", converter) for converter in converter_types]
-    where_list = [
-        f"?volt {ID_OBJ}.mRID ?converter_mrid",
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
-        sup.rdf_type_tripler(mrid_subject, "cim:PowerTransformer"),
-        sup.get_name(mrid_subject, name, alias=True),
-        f"?_t_mrid {TC_EQUIPMENT} {mrid_subject}",
-        f"?_t_mrid {TC_NODE}/^{TC_NODE}/{TC_EQUIPMENT} ?volt",
-        sup.combine_statements(*converters, group=len(converters) > 1, split=union_split),
-    ]
+    cnv_query = sup.combine_statements(*converters, group=len(converters) > 1, split=union_split)
+    params = {"converters": cnv_query}
+
     if region:
-        where_list.append(f"{mrid_subject} {EQUIP_CONTAINER} ?Substation")
-        where_list.extend(sup.region_query(region, sub_region, "Substation"))
-    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+        params["region"] = populate_transf_reg(sub_region, region)
+    return insert_params(TRANSF_CON_TO_CONVERTER, params)
+
+
+def populate_transf_reg(sub_region: bool, region: Region) -> str:
+    predicate = "SN:IdentifiedObject.shortName" if sub_region else f"{GEO_REG}.Region/{ID_OBJ}.name"
+    params = {
+        "subst_predicate": predicate,
+        "regions": region if isinstance(region, str) else "|".join(region),
+    }
+    return insert_params(TRANSF_REG, params)
 
 
 def converters(

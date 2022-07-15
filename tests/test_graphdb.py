@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import List
+from typing import List, Union
 from unittest.mock import patch
 
 import numpy as np
@@ -237,8 +237,9 @@ def test_transformer_connected_to_dc_converters(cim_model: CimModel):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_transformer_connected_to_converters(cim_model: CimModel):
-    transformers = cim_model.transformers_connected_to_converter(region="NO")
+@pytest.mark.parametrize("region", ["NO", ["NO", "NON-EXISTING"]])
+def test_transformer_connected_to_converters(cim_model: CimModel, region: Union[str, List[str]]):
+    transformers = cim_model.transformers_connected_to_converter(region=region)
     assert set(transformers.columns) == {"t_mrid", "name", "mrid"}
     assert len(transformers) == 26
 

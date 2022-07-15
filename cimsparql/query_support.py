@@ -1,3 +1,4 @@
+import re
 from typing import Dict, Iterable, List, Literal, Optional, Union
 
 from cimsparql.cim import (
@@ -276,3 +277,15 @@ def border_filter(region: Union[str, List[str]], area1: str, area2: str) -> List
         combine_statements(*_in_first(area1, area2, regions)),
         combine_statements(*_in_first(area2, area1, regions)),
     ]
+
+
+def insert_params(template: str, params: Dict[str, str]) -> str:
+    query = template[:]  # Make sure we modify a copy of the template
+    for param, value in params.items():
+        query = query.replace(f"{{{{{param}}}}}", value)
+
+    # Remove remaining placeholders
+    matches = re.findall(r"({{\w+}})", query)
+    for match in matches:
+        query = query.replace(match, "")
+    return query.strip()
