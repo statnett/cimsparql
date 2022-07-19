@@ -48,6 +48,8 @@ def _line_query(
     sup.include_market(with_market, variables, where_list)
 
     if nodes:
+        variables.append("?STATUS")
+        where_list.append(sup.bind_status("?connected_1 = 'true' && ?connected_2 = 'true'"))
         where_list.extend(
             [f"?_{nodes}_{nr} {ID_OBJ}.mRID ?{nodes}_{nr}" for nr in sequence_numbers]
         )
