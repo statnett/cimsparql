@@ -331,6 +331,7 @@ def load_query(
         where_list += sup.bid_market_code_query(mrid_subject)
 
     if nodes:
+        variables.append("(xsd:boolean(?connected) as ?status)")
         where_list.append(f"?_{nodes} {ID_OBJ}.mRID ?{nodes}")
 
     if load_vars:
@@ -435,6 +436,7 @@ def synchronous_machines_query(
         where_list += sup.bid_market_code_query(mrid_subject)
 
     if nodes:
+        variables.append("(xsd:boolean(?connected) as ?status)")
         where_list.append(f"?_{nodes} {ID_OBJ}.mRID ?{nodes}")
 
     if network_analysis:
@@ -533,13 +535,20 @@ def two_winding_transformer_query(
 ) -> str:
     term = nodes if nodes else "t_mrid"
     variables = [f"?{term}_{nr}" for nr in sequence_numbers]
-    where_list = [*terminal("?_p_mrid", 1), *terminal("?_p_mrid", 2)]
+    variables.append("?status")
+    where_list = [
+        *terminal("?_p_mrid", 1),
+        *terminal("?_p_mrid", 2),
+        "bind((?connected_1 && ?connected_2) as ?status)",
+    ]
     for nr in sequence_numbers:
+        where_list.append(f"?_{term}_{nr} {ID_OBJ}.mRID ?{term}_{nr}")
+        mrid = f"?_t_mrid_{nr}"
+        connected = f"?connected_{nr}"
         if nodes:
-            sup.node_list(f"?_{nodes}_{nr}", where_list, cim_version, mrid=f"?_t_mrid_{nr}")
-            where_list.append(f"?_{nodes}_{nr} {ID_OBJ}.mRID ?{nodes}_{nr}")
+            sup.node_list(f"?_{term}_{nr}", where_list, cim_version, mrid, connected)
         else:
-            where_list.append(f"?_t_mrid_{nr} {ID_OBJ}.mRID ?t_mrid_{nr}")
+            where_list.append(f"{mrid} cim:{sup.acdc_terminal(cim_version)}.connected {connected}")
 
     transformer_common(
         2,
@@ -572,16 +581,20 @@ def three_winding_transformer_query(
     cim_version: int,
 ) -> str:
     term = nodes if nodes else "t_mrid"
-    variables = [f"?{term}_1", f"(?p_mrid as ?{term}_2)"]
+
+    connected = "?connected"
+    variables = [f"?{term}_1", f"(?p_mrid as ?{term}_2)", "(xsd:boolean(?connected) as ?status)"]
     where_list = [
         *terminal("?_p_mrid", 1, lock_end_number=False),
         f"?_p_mrid {ID_OBJ}.mRID ?p_mrid",
+        f"?_{nodes}_1 {ID_OBJ}.mRID ?{nodes}_1",
     ]
+    mrid = "?_t_mrid_1"
+
     if nodes:
-        sup.node_list(f"?_{nodes}_1", where_list, cim_version, mrid="?_t_mrid_1")
-        where_list.append(f"?_{nodes}_1 {ID_OBJ}.mRID ?{nodes}_1")
+        sup.node_list(f"?_{nodes}_1", where_list, cim_version, mrid, connected)
     else:
-        where_list.append(f"?_t_mrid_1 {ID_OBJ}.mRID ?t_mrid_1")
+        where_list.append(f"{mrid} cim:{sup.acdc_terminal(cim_version)}.connected {connected}")
 
     transformer_common(
         3,
@@ -705,6 +718,7 @@ def converters(
     converter_types: Iterable[ConverterTypes],
     nodes: Optional[str],
     sequence_numbers: Optional[List[int]],
+    cim_version: int,
 ) -> str:
     mrid_subject = "?_mrid"
     name = "?name"
@@ -725,18 +739,20 @@ def converters(
     ]
 
     if sequence_numbers:
+        variables.append("(xsd:boolean(?connected) as ?status)")
         for num in sequence_numbers:
             t_mrid = f"?t_mrid_{num}"
             t_mrid_ref = f"?_t_mrid_{num}"
             sequence_where = [f"{TC_EQUIPMENT} {mrid_subject}", f"{T_SEQUENCE} {num}"]
             if nodes:
                 node = nodes + (f"_{num}" if len(sequence_numbers) > 1 else "")
-                sup.node_list(f"?_{node}", where_list, cim_version=16, mrid=t_mrid_ref)
+                sup.node_list(f"?_{node}", where_list, cim_version, t_mrid_ref, "?connected")
                 where_list.append(f"?_{node} {ID_OBJ}.mRID ?{node}")
                 variables.append(f"?{node}")
             else:
                 variables.append(t_mrid)
-                sequence_where.append(f"{ID_OBJ}.mRID {t_mrid}")
+                sequence_where.extend([f"{ID_OBJ}.mRID {t_mrid}", ""])
+
             where_list.append(common_subject(t_mrid_ref, sequence_where))
 
     if region:
