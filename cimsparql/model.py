@@ -419,6 +419,7 @@ class CimModel(Model):
             self.client.prefixes.in_prefixes(converter_types),
             nodes,
             sequence_numbers,
+            self.cim_version,
         )
         if dry_run:
             return self.client.query_with_header(query)
