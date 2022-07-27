@@ -46,7 +46,6 @@ def terminal_sequence_query(
         cim_version: int, con: Optional[str], nodes: Optional[str], mrid_subject: str, nr: int
     ) -> str:
         where_list = [
-            f"{ID_OBJ}.mRID ?t_mrid_{nr}",
             rdf_type_tripler("", "cim:Terminal"),
             f"{TC_EQUIPMENT} {mrid_subject}",
             f"cim:{acdc_terminal(15)}.sequenceNumber {nr}",
@@ -55,6 +54,9 @@ def terminal_sequence_query(
             where_list.append(f"{TC_NODE} ?{con}_{nr}")
         if nodes:
             node_list(f"?_{nodes}_{nr}", where_list, cim_version, "", f"?connected_{nr}")
+        else:
+            where_list.append(f"{ID_OBJ}.mRID ?t_mrid_{nr}")
+
         return common_subject(f"?_t_mrid_{nr}", where_list)
 
     return [_term_seq_nr(cim_version, con, nodes, mrid_subject, nr) for nr in sequence_numbers]
