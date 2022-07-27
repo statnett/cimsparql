@@ -18,4 +18,4 @@ def test_region_query_empty(region_kwargs: Dict[str, Union[bool, str]]):
 
 def test_region_query(region_kwargs: Dict[str, Union[bool, str]]):
     regions = qs.region_query(region="NO", **region_kwargs)
-    assert len(regions) == 3
+    assert len(regions) == 2
