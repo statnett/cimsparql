@@ -371,7 +371,6 @@ class CimModel(Model):
     def borders(
         self,
         region: Union[str, List[str]],
-        sub_region: bool = False,
         nodes: Optional[str] = None,
         ignore_hvdc: bool = True,
         with_market_code: bool = False,
@@ -392,13 +391,7 @@ class CimModel(Model):
 
         """
         query = line_queries.borders_query(
-            self.cim_version,
-            region,
-            sub_region,
-            nodes,
-            ignore_hvdc,
-            with_market_code,
-            market_optional,
+            self.cim_version, region, nodes, ignore_hvdc, with_market_code, market_optional
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
