@@ -79,9 +79,8 @@ def operational_limit(
     )
 
 
-def region_name_query(region: str, sub_region: bool, geographical_region: str) -> str:
-    predicate = "SN:IdentifiedObject.shortName" if sub_region else f"{GEO_REG}.Region/{ID_OBJ}.name"
-    return f"{geographical_region} {predicate} {region}"
+def region_name_predicate(sub_region: bool) -> str:
+    return "SN:IdentifiedObject.shortName" if sub_region else f"{GEO_REG}.Region/{ID_OBJ}.name"
 
 
 def region_query(region: Region, sub_region: bool, container: str) -> List[str]:
@@ -93,8 +92,7 @@ def region_query(region: Region, sub_region: bool, container: str) -> List[str]:
     except TypeError:
         filter = []
     return [
-        f"?{container} cim:{container}.Region ?subgeoreg",
-        region_name_query("?area", sub_region, "?subgeoreg"),
+        f"?{container} cim:{container}.Region/{region_name_predicate(sub_region)} ?area",
         *filter,
     ]
 
