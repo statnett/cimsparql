@@ -1,7 +1,7 @@
 from typing import Iterable, List, Optional, Tuple, Union
 
 import cimsparql.query_support as sup
-from cimsparql.cim import ACLINE, CNODE_CONTAINER, EQUIP_CONTAINER, ID_OBJ, SUBSTATION
+from cimsparql.cim import ACLINE, CNODE_CONTAINER, EQUIP_CONTAINER, GEO_REG, ID_OBJ, SUBSTATION
 from cimsparql.constants import sequence_numbers, union_split
 from cimsparql.enums import Impedance, Rates
 from cimsparql.typehints import Region
@@ -160,7 +160,6 @@ def series_compensator_query(
 def borders_query(
     cim_version: int,
     region: Union[str, List[str]],
-    sub_region: bool,
     nodes: Optional[str],
     ignore_hvdc: bool,
     with_market_code: bool,
@@ -182,12 +181,16 @@ def borders_query(
         *sup.terminal_sequence_query(cim_version, "con", nodes, mrid_subject),
         sup.combine_statements(*border_filter, group=True, split=union_split),
     ]
-    for nr in sequence_numbers:
+    predicate = (
+        f"{CNODE_CONTAINER}/{SUBSTATION}/cim:Substation.Region/{GEO_REG}.Region/{ID_OBJ}.name"
+    )
+    where_list.extend([f"?con_{nr} {predicate} ?area_{nr}" for nr in sequence_numbers])
+
+    if nodes:
+        variables.append("?status")
+        where_list.append("bind((?connected_1 && ?connected_2) as ?status)")
         where_list.extend(
-            [
-                f"?con_{nr} {CNODE_CONTAINER}/{SUBSTATION}/cim:Substation.Region ?reg_{nr}",
-                sup.region_name_query(f"?area_{nr}", sub_region, f"?reg_{nr}"),
-            ]
+            [f"?_{nodes}_{nr} {ID_OBJ}.mRID ?{nodes}_{nr}" for nr in sequence_numbers]
         )
 
     if with_market_code:
