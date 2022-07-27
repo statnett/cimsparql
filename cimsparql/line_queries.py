@@ -102,10 +102,21 @@ def ac_line_query(
         where_list.append(f"{mrid_subject} cim:Conductor.length ?length")
 
     if region:
+        region_str = region if isinstance(region, str) else "|".join(region)
+        area_p = "/".join(
+            [
+                "cim:Terminal.ConnectivityNode",
+                "cim:ConnectivityNode.ConnectivityNodeContainer",
+                "cim:VoltageLevel.Substation",
+                "cim:Substation.Region",
+                "cim:SubGeographicalRegion.Region",
+                "cim:IdentifiedObject.name",
+            ]
+        )
         where_list.extend(
             [
-                f"{mrid_subject} {EQUIP_CONTAINER} ?Line",
-                *sup.region_query(region, sub_region, "Line"),
+                f"?_t_mrid_{nr} {area_p} ?_area_{nr} . filter(regex(?_area_{nr}, '{region_str}'))"
+                for nr in [1, 2]
             ]
         )
 
