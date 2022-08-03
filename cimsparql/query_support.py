@@ -179,13 +179,9 @@ def temp_correction_factors(
 
 
 def bid_market_code_query(mrid_subject: str) -> List[str]:
-    return [
-        f"{mrid_subject} {EQUIP_CONTAINER}/{SUBSTATION} ?_substation",
-        common_subject(
-            "?_substation",
-            [f"{DELIVERYPOINT}/{BIDDINGAREA}/{MARKETCODE} ?bidzone", f"{ID_OBJ}.mRID ?station"],
-        ),
-    ]
+    substation = f"{mrid_subject} {EQUIP_CONTAINER}/{SUBSTATION} ?_substation"
+    bidzone = f"?_substation {DELIVERYPOINT}/{BIDDINGAREA}/{MARKETCODE} ?bidzone"
+    return [substation, f"optional {{{bidzone}}}", f"?_substation {ID_OBJ}.mRID ?station"]
 
 
 def to_variables(vars: Iterable[str]) -> List[str]:
