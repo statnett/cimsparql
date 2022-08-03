@@ -24,10 +24,9 @@ from cimsparql.enums import (
     SyncVars,
     TapChangerObjects,
 )
-from cimsparql.graphdb import GraphDBClient
+from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.type_mapper import TypeMapper
 from cimsparql.typehints import Region
-from cimsparql.url import service
 
 
 class Model:
@@ -916,7 +915,7 @@ def get_cim_model(
         protocol: https or http
     """
     graphdb_path = graphdb_path if graphdb_repo == "LATEST" else ""
-    service_url = service(graphdb_repo, server, protocol, graphdb_path)
-    client = GraphDBClient(service_url)
+    service_cfg = ServiceConfig(graphdb_repo, protocol, server, graphdb_path)
+    client = GraphDBClient(service_cfg)
     mapper = TypeMapper(client)
     return CimModel(mapper, client)

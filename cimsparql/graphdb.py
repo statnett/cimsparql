@@ -50,7 +50,10 @@ def parse_namespaces_rdf4j(response: requests.Response) -> Dict[str, str]:
 
 @dataclass
 class ServiceConfig:
-    url: str
+    repo: str = field(default=os.getenv("GRAPHDB_REPO", "LATEST"))
+    protocol: str = "https"
+    server: str = field(default=os.getenv("GRAPHDB_SERVER", "127.0.0.1:7200"))
+    path: str = ""
     user: str = field(default=os.getenv("GRAPHDB_USER"))
     passwd: str = field(default=os.getenv("GRAPHDB_USER_PASSWD"))
     rest_api: RestApi = field(default=os.getenv("SPARQL_REST_API", RestApi.RDF4J))
@@ -58,6 +61,12 @@ class ServiceConfig:
     def __post_init__(self):
         if self.rest_api not in RestApi:
             raise ValueError(f"rest_api must be one of {RestApi}")
+
+    @property
+    def url(self) -> str:
+        if self.rest_api == RestApi.BLAZEGRAPH:
+            return service_blazegraph(self.server, self.repo, self.protocol)
+        return service(self.repo, self.server, self.protocol, self.path)
 
 
 # Available formats from RDF4J API
@@ -90,10 +99,7 @@ def require_rdf4j(f):
 
 class GraphDBClient:
     def __init__(
-        self,
-        service: str,
-        infer: bool = False,
-        sameas: bool = True,
+        self, service_cfg: Optional[ServiceConfig] = None, infer: bool = False, sameas: bool = True
     ) -> None:
         """GraphDB client
 
@@ -103,15 +109,21 @@ class GraphDBClient:
            infer: deduce further knowledge based on existing RDF data and a formal set of
            sameas: map same concepts from two or more datasets
         """
-        service = service or url.service(repo=os.getenv("GRAPHDB_REPO", "LATEST"))
-        self.service_cfg = ServiceConfig(url=service)
+        self.service_cfg = service_cfg or ServiceConfig()
         self.sparql = SPARQLWrapper(self.service_cfg.url)
         self.sparql.setReturnFormat(JSON)
         self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
-        self.sparql.addParameter("infer", str(infer))
-        self.sparql.addParameter("sameAs", str(sameas))
-
+        self.set_parameter("infer", str(infer))
+        self.set_parameter("sameAs", str(sameas))
         self._prefixes = None
+
+    def set_parameter(self, key: str, value: str) -> None:
+        self.sparql.clearParameter(key)
+        self.sparql.addParameter(key, value)
+
+    def set_repo(self, repo: str) -> None:
+        self.service_cfg.repo = repo
+        self.sparql.endpoint = self.service_cfg.url
 
     @property
     def prefixes(self) -> Prefix:
@@ -314,7 +326,7 @@ def new_repo(
     if response.status_code not in ignored_errors:
         response.raise_for_status()
 
-    return GraphDBClient(url)
+    return GraphDBClient(ServiceConfig(repo, protocol, server))
 
 
 def new_repo_blazegraph(url: str, repo: str, protocol: str = "https") -> GraphDBClient:
@@ -325,8 +337,7 @@ def new_repo_blazegraph(url: str, repo: str, protocol: str = "https") -> GraphDB
         f"http://{url}", data=config, headers={"Content-type": "application/xml"}
     )
     response.raise_for_status()
-    client = GraphDBClient(service_blazegraph(url, repo, protocol))
-    client.service_cfg.rest_api = RestApi.BLAZEGRAPH
+    client = GraphDBClient(ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH))
     return client
 
 

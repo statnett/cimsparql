@@ -14,6 +14,7 @@ from cimsparql.constants import con_mrid_str
 from cimsparql.enums import ConverterTypes
 from cimsparql.graphdb import (
     GraphDBClient,
+    ServiceConfig,
     config_bytes_from_template,
     confpath,
     data_row,
@@ -276,7 +277,7 @@ def test_prefix_resp_not_ok(monkeypatch):
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: resp)
 
     with pytest.raises(RuntimeError) as exc:
-        GraphDBClient("http://some-url:87").get_prefixes()
+        GraphDBClient(ServiceConfig(server="some-serever")).get_prefixes()
     assert resp.reason in str(exc)
     assert str(resp.status_code) in str(exc)
 
@@ -290,21 +291,23 @@ def test_conf_bytes_from_template():
 
 
 def test_create_delete_repo(rdf4j_url):
+    if not rdf4j_url:
+        pytest.skip("require rdf4j")
     repo = "test_repo"
     template = confpath() / "native_store_config_template.ttl"
     conf_bytes = config_bytes_from_template(template, {"repo": repo})
-    url_with_protocol = "http://" + rdf4j_url
-    current_repos = repos(url_with_protocol)
+    service_cfg = ServiceConfig(repo, "http", rdf4j_url)
+    current_repos = repos(service_cfg)
 
     assert "test_repo" not in [i.repo_id for i in current_repos]
 
     # protocol is added internally. Thus, skip from rdf4j_url
     client = new_repo(rdf4j_url, repo, conf_bytes, protocol="http")
-    current_repos = repos(url_with_protocol)
+    current_repos = repos(service_cfg)
     assert "test_repo" in [i.repo_id for i in current_repos]
 
     client.delete_repo()
-    current_repos = repos(url_with_protocol)
+    current_repos = repos(service_cfg)
     assert "test_repo" not in [i.repo_id for i in current_repos]
 
 
@@ -323,7 +326,7 @@ def test_add_mrid(micro_t1_nl):
 
 def test_update_prefixes(monkeypatch):
     monkeypatch.setattr(GraphDBClient, "get_prefixes", lambda *args: {})
-    client = GraphDBClient("http://some.url")
+    client = GraphDBClient(ServiceConfig(server="some-server"))
     assert client.prefixes.prefixes == {}
 
     new_pref = {"eq": "http://eq"}

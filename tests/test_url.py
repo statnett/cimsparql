@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from cimsparql.graphdb import GraphDBClient
+from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.url import Prefix
 
 prefixes = [
@@ -33,7 +33,7 @@ def test_set_cim_version():
 
 
 @pytest.fixture
-def gdbc(graphdb_service: str) -> GraphDBClient:
+def gdbc(graphdb_service: ServiceConfig) -> GraphDBClient:
     return GraphDBClient(graphdb_service)
 
 

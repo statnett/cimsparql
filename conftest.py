@@ -12,6 +12,7 @@ from cimsparql.constants import CIM_TYPES_WITH_MRID, con_mrid_str
 from cimsparql.graphdb import (
     GraphDBClient,
     RestApi,
+    ServiceConfig,
     config_bytes_from_template,
     confpath,
     new_repo,
@@ -19,7 +20,7 @@ from cimsparql.graphdb import (
 )
 from cimsparql.model import CimModel, get_cim_model
 from cimsparql.type_mapper import TypeMapper
-from cimsparql.url import GraphDbConfig, service
+from cimsparql.url import GraphDbConfig
 
 this_dir = pathlib.Path(__file__).parent
 
@@ -35,9 +36,6 @@ def local_server() -> str:
     return os.getenv("GRAPHDB_LOCAL_TEST_SERVER", "127.0.0.2:7200")
 
 
-local_graphdb = GraphDbConfig(local_server(), protocol="http")
-
-
 @pytest.fixture(scope="session")
 def n_samples() -> int:
     return 40
@@ -45,7 +43,7 @@ def n_samples() -> int:
 
 @pytest.fixture(scope="session")
 def local_graphdb_config():
-    return local_graphdb
+    return GraphDbConfig(local_server(), protocol="http")
 
 
 @pytest.fixture(scope="session")
@@ -84,8 +82,8 @@ def graphdb_path(graphdb_repo: str) -> str:
 
 
 @pytest.fixture(scope="session")
-def graphdb_service(server, graphdb_repo, graphdb_path) -> str:
-    return service(graphdb_repo, server, "https", graphdb_path)
+def graphdb_service(server, graphdb_repo, graphdb_path) -> ServiceConfig:
+    return ServiceConfig(graphdb_repo, "https", server, graphdb_path)
 
 
 @pytest.fixture(scope="session")
