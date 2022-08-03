@@ -1,6 +1,13 @@
 # Miscellaneous cim classes
 
-ACLINE = "cim:ACLineSegment"
+from strenum import StrEnum
+
+
+class LineTypes(StrEnum):
+    ACLineSegment = "cim:ACLineSegment"
+    SeriesCompensator = "cim:SeriesCompensator"
+
+
 BIDDINGAREA = "SN:MarketDeliveryPoint.BiddingArea"
 CNODE_CONTAINER = "cim:ConnectivityNode.ConnectivityNodeContainer"
 DELIVERYPOINT = "SN:Substation.MarketDeliveryPoint"
