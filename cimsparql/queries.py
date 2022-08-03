@@ -398,7 +398,7 @@ def synchronous_machines_query(
         "?market_code",
         "?maxP",
         "?allocationmax",
-        "?allocationWeight",
+        "(?allocationWeight as ?MO)",
         "?minP",
         "?bidzone",
         *[f"?{var}" for var in sync_vars],
