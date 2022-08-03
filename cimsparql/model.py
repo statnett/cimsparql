@@ -129,13 +129,13 @@ class CimModel(Model):
         self,
         region: Region = None,
         sub_region: bool = False,
-        limit: Optional[int] = None,
-        dry_run: bool = False,
         with_market: bool = True,
         with_dummy_buses: bool = False,
         container: bool = False,
         delta_power: bool = True,
         network_analysis: bool = True,
+        limit: Optional[int] = None,
+        dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query name of topological nodes (TP query).
 
@@ -403,6 +403,7 @@ class CimModel(Model):
         converter_types: Iterable[ConverterTypes] = tuple(ConverterTypes),
         nodes: Optional[str] = None,
         sequence_numbers: Optional[List[int]] = None,
+        limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         query = queries.converters(
@@ -415,7 +416,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query)
-        return self.get_table_and_convert(query, index="mrid")
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def transformers_connected_to_converter(
         self,
@@ -423,6 +424,7 @@ class CimModel(Model):
         sub_region: bool = False,
         converter_types: Iterable[ConverterTypes] = tuple(ConverterTypes),
         on_primary_side: bool = True,
+        limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query list of transformer connected at a converter (Voltage source or DC)
@@ -440,13 +442,12 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query)
-        return self.get_table_and_convert(query, index="converter_mrid")
+        return self.get_table_and_convert(query, limit, index="converter_mrid")
 
     def ac_lines(
         self,
         region: Region = None,
         sub_region: bool = False,
-        limit: Optional[int] = None,
         connectivity: Optional[str] = None,
         nodes: Optional[str] = None,
         with_loss: bool = False,
@@ -456,6 +457,7 @@ class CimModel(Model):
         temperatures: Optional[List[int]] = None,
         impedance: Iterable[Impedance] = tuple(Impedance),
         length: bool = False,
+        limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         """Query ac line segments
@@ -493,7 +495,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        ac_lines = self.get_table_and_convert(query, limit=limit)
+        ac_lines = self.get_table_and_convert(query, limit)
         if temperatures is not None:
             for temperature in temperatures:
                 column = f"{sup.negpos(temperature)}_{abs(temperature)}_factor"
@@ -545,7 +547,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, limit=limit)
+        return self.get_table_and_convert(query, limit)
 
     def transformers(
         self,
@@ -583,7 +585,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, limit=limit)
+        return self.get_table_and_convert(query, limit)
 
     def two_winding_transformers(
         self,
@@ -633,7 +635,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, limit=limit)
+        return self.get_table_and_convert(query, limit)
 
     def three_winding_transformers(
         self,
@@ -683,15 +685,15 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, limit=limit)
+        return self.get_table_and_convert(query, limit)
 
     def substation_voltage_level(
         self, limit: Optional[int] = None, dry_run: bool = False
     ) -> Union[pd.DataFrame, str]:
         query = queries.substation_voltage_level()
         if dry_run:
-            return self._query_with_header(query, limit)
-        return self._get_table_and_convert(query, limit=limit)
+            return self.client.query_with_header(query, limit)
+        return self.get_table_and_convert(query, limit)
 
     def delta_node_power(
         self, node: str = "node", limit: Optional[int] = None, dry_run: bool = False
@@ -714,7 +716,7 @@ class CimModel(Model):
         query = ssh_queries.disconnected(self.cim_version)
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, index=index, limit=limit)
+        return self.get_table_and_convert(query, limit, index)
 
     def ssh_synchronous_machines(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -872,7 +874,7 @@ class CimModel(Model):
 
     def get_regions(self, with_sn_short_name: bool = True):
         query = queries.regions_query(with_sn_short_name)
-        return self.get_table_and_convert(query, limit=None, index="mrid")
+        return self.get_table_and_convert(query, index="mrid")
 
     def add_mrid(
         self, rdf_type: str, graph: Optional[str] = "?g", replace: Optional[Tuple[str, str]] = None
