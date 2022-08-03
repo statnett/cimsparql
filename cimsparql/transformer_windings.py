@@ -43,10 +43,12 @@ def number_of_windings(mrid: str, winding_count: int, with_loss: bool = False) -
         ),
     ]
     if with_loss:
-        variables.append("(sum(xsd:float(?sv_p)) as ?pl)")
+        variables.append("(sum(xsd:float(?sv_p)) / sum(?nr_connected) as ?pl)")
         where_list.extend(
             [
                 f"?wwmrid {TR_END}.Terminal ?p_t_mrid",
+                "?p_t_mrid cim:ACDCTerminal.connected ?connected",
+                "bind(if(?connected, 1, 0) as ?nr_connected)",
                 sup.common_subject(
                     "?sv_t", ["cim:SvPowerFlow.Terminal ?p_t_mrid", "cim:SvPowerFlow.p ?sv_p"]
                 ),
@@ -91,7 +93,7 @@ def transformer_common(
         variables.append("?p_mrid")
     if with_loss:
         if winding_count == 2:
-            variables.append("(?pl / 2 as ?pl_1) (?pl / 2 as ?pl_2)")
+            variables.append("(?pl as ?pl_1) (?pl as ?pl_2)")
         elif winding_count == 3:
             variables.append("(xsd:float(0.0) as ?pl_1) (?pl as ?pl_2)")
     where_list.extend(
