@@ -1,7 +1,7 @@
 from typing import Iterable, List, Optional, Tuple, Union
 
 import cimsparql.query_support as sup
-from cimsparql.cim import ACLINE, CNODE_CONTAINER, EQUIP_CONTAINER, GEO_REG, ID_OBJ, SUBSTATION
+from cimsparql.cim import CNODE_CONTAINER, EQUIP_CONTAINER, GEO_REG, ID_OBJ, SUBSTATION, LineTypes
 from cimsparql.constants import sequence_numbers, union_split
 from cimsparql.enums import Impedance, Rates
 from cimsparql.sv_queries import sv_terminal_injection
@@ -10,7 +10,7 @@ from cimsparql.typehints import Region
 
 def _line_query(
     cim_version: int,
-    line_type: str,
+    line_type: LineTypes,
     connectivity: Optional[str],
     nodes: Optional[str],
     with_loss: bool,
@@ -61,7 +61,7 @@ def _line_query(
         where_list.append(f"{mrid_subject} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     if rates:
-        limit_type = "ActivePowerLimit" if line_type == ACLINE else "CurrentLimit"
+        limit_type = "ActivePowerLimit" if line_type == LineTypes.ACLineSegment else "CurrentLimit"
         variables.extend([f"?rate{rate}" for rate in rates])
         where_rate = [sup.operational_limit(mrid_subject, rate, limit_type) for rate in rates]
         where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
@@ -85,7 +85,7 @@ def ac_line_query(
 ) -> str:
     variables, where_list, mrid_subject = _line_query(
         cim_version,
-        ACLINE,
+        LineTypes.ACLineSegment,
         connectivity,
         nodes,
         with_loss,
@@ -146,7 +146,7 @@ def series_compensator_query(
 ) -> str:
     variables, where_list, mrid_subject = _line_query(
         cim_version,
-        "cim:SeriesCompensator",
+        LineTypes.SeriesCompensator,
         connectivity,
         nodes,
         with_loss,
@@ -184,7 +184,11 @@ def borders_query(
     where_list = [
         sup.common_subject(
             mrid_subject,
-            [f"{ID_OBJ}.mRID ?mrid", sup.get_name("", name), sup.rdf_type_tripler("", ACLINE)],
+            [
+                f"{ID_OBJ}.mRID ?mrid",
+                sup.get_name("", name),
+                sup.rdf_type_tripler("", LineTypes.ACLineSegment),
+            ],
         ),
         *sup.terminal_sequence_query(cim_version, "con", nodes, mrid_subject),
         sup.combine_statements(*border_filter, group=True, split=union_split),
