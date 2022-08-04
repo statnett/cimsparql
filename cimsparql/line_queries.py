@@ -4,11 +4,8 @@ import cimsparql.query_support as sup
 from cimsparql.cim import ACLINE, CNODE_CONTAINER, EQUIP_CONTAINER, GEO_REG, ID_OBJ, SUBSTATION
 from cimsparql.constants import sequence_numbers, union_split
 from cimsparql.enums import Impedance, Rates
+from cimsparql.sv_queries import sv_terminal_injection
 from cimsparql.typehints import Region
-
-
-def _sv_terminal_injection(nr: int) -> str:
-    return f"?sv_t_{nr} cim:SvPowerFlow.Terminal ?_t_mrid_{nr};cim:SvPowerFlow.p ?sv_p_{nr}"
 
 
 def _line_query(
@@ -56,7 +53,7 @@ def _line_query(
 
     if with_loss:
         variables.append("(?pl as ?pl_1) (?pl as ?pl_2)")
-        loss_list = [_sv_terminal_injection(nr) for nr in [1, 2]]
+        loss_list = [sv_terminal_injection(nr) for nr in [1, 2]]
         loss_list.append("bind((xsd:float(?sv_p_1) + xsd:float(?sv_p_2) ) / 2 as ?pl)")
         where_list.append(sup.group_query(loss_list, command="OPTIONAL"))
 
