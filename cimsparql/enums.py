@@ -23,14 +23,19 @@ class ConverterTypes(StrEnum):
 
 
 class LoadTypes(StrEnum):
-    ConformLoad = auto()
-    NonConformLoad = auto()
-    EnergyConsumer = auto()
+    ConformLoad = "cim:ConformLoad"
+    NonConformLoad = "cim:NonConformLoad"
+    EnergyConsumer = "cim:EnergyConsumer"
 
 
 class Power(StrEnum):
     p = auto()
     q = auto()
+
+
+class Voltage(StrEnum):
+    v = auto()
+    angle = auto()
 
 
 class Rates(StrEnum):
