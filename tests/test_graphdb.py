@@ -10,6 +10,7 @@ import pytest
 import requests
 
 import cimsparql.query_support as sup
+from cimsparql.cim import ID_OBJ
 from cimsparql.constants import con_mrid_str
 from cimsparql.enums import ConverterTypes
 from cimsparql.graphdb import (
@@ -337,3 +338,16 @@ def test_full_model_micro_t1_nl(micro_t1_nl):
     data = micro_t1_nl.full_model()
     assert len(data) >= 1
     assert len(data.columns) == 7
+
+
+def test_add_mrid(micro_t1_nl):
+    if not micro_t1_nl and not os.getenv("CI"):
+        pytest.skip(RDF4J_ACCESS)
+
+    query = f"SELECT ?mrid WHERE {{?s {ID_OBJ}.mRID ?mrid}}"
+    res = micro_t1_nl.client.exec_query(query)
+    assert len(res) == 0
+
+    micro_t1_nl.add_mrid("cim:TopologicalNode")
+    res = micro_t1_nl.client.exec_query(query)
+    assert len(res) == 5
