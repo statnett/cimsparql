@@ -1,5 +1,6 @@
 from typing import Iterable, List
 
+from cimsparql.enums import Power
 from cimsparql.query_support import acdc_terminal, combine_statements, group_query
 
 
@@ -36,7 +37,7 @@ def synchronous_machines() -> str:
 
 def _load(rdf_type: str) -> str:
     return " .\n".join(
-        [f"?mrid rdf:type {rdf_type}"] + [f"?mrid cim:EnergyConsumer.{s} ?{s}" for s in ["p", "q"]]
+        [f"?mrid rdf:type {rdf_type}"] + [f"?mrid cim:EnergyConsumer.{s} ?{s}" for s in Power]
     )
 
 

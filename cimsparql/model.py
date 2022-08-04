@@ -23,6 +23,7 @@ from cimsparql.enums import (
     Rates,
     SyncVars,
     TapChangerObjects,
+    Voltage,
 )
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.type_mapper import TypeMapper
@@ -174,8 +175,8 @@ class CimModel(Model):
         region: Region = None,
         sub_region: bool = False,
         with_tap_changer_values: bool = True,
-        impedance: Iterable[Impedance] = tuple(Impedance),
-        tap_changer_objects: Iterable[TapChangerObjects] = tuple(TapChangerObjects),
+        impedance: Iterable[Impedance] = Impedance,
+        tap_changer_objects: Iterable[TapChangerObjects] = TapChangerObjects,
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
@@ -279,7 +280,7 @@ class CimModel(Model):
 
     def synchronous_machines(
         self,
-        sync_vars: Iterable[SyncVars] = tuple(SyncVars),
+        sync_vars: Iterable[SyncVars] = SyncVars,
         region: Region = None,
         sub_region: bool = False,
         connectivity: Optional[str] = None,
@@ -400,7 +401,7 @@ class CimModel(Model):
         self,
         region: Region = None,
         sub_region: bool = False,
-        converter_types: Iterable[ConverterTypes] = tuple(ConverterTypes),
+        converter_types: Iterable[ConverterTypes] = ConverterTypes,
         nodes: Optional[str] = None,
         sequence_numbers: Optional[List[int]] = None,
         limit: Optional[int] = None,
@@ -422,7 +423,7 @@ class CimModel(Model):
         self,
         region: Region = None,
         sub_region: bool = False,
-        converter_types: Iterable[ConverterTypes] = tuple(ConverterTypes),
+        converter_types: Iterable[ConverterTypes] = ConverterTypes,
         on_primary_side: bool = True,
         limit: Optional[int] = None,
         dry_run: bool = False,
@@ -455,7 +456,7 @@ class CimModel(Model):
         network_analysis: bool = True,
         with_market: bool = False,
         temperatures: Optional[List[int]] = None,
-        impedance: Iterable[Impedance] = tuple(Impedance),
+        impedance: Iterable[Impedance] = Impedance,
         length: bool = False,
         limit: Optional[int] = None,
         dry_run: bool = False,
@@ -512,7 +513,7 @@ class CimModel(Model):
         rates: Iterable[Rates] = (Rates.Normal,),
         network_analysis: bool = True,
         with_market: bool = False,
-        impedance: Iterable[Impedance] = tuple(Impedance),
+        impedance: Iterable[Impedance] = Impedance,
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
@@ -557,7 +558,7 @@ class CimModel(Model):
         rates: Iterable[Rates] = (Rates.Normal,),
         network_analysis: bool = True,
         with_market: bool = False,
-        impedance: Iterable[Impedance] = tuple(Impedance),
+        impedance: Iterable[Impedance] = Impedance,
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
@@ -594,7 +595,7 @@ class CimModel(Model):
         rates: Iterable[Rates] = (Rates.Normal,),
         network_analysis: bool = True,
         with_market: bool = False,
-        impedance: Iterable[Impedance] = tuple(Impedance),
+        impedance: Iterable[Impedance] = Impedance,
         p_mrid: bool = False,
         nodes: Optional[str] = None,
         with_loss: bool = False,
@@ -644,7 +645,7 @@ class CimModel(Model):
         rates: Iterable[Rates] = (Rates.Normal,),
         network_analysis: bool = True,
         with_market: bool = False,
-        impedance: Iterable[Impedance] = tuple(Impedance),
+        impedance: Iterable[Impedance] = Impedance,
         p_mrid: bool = False,
         nodes: Optional[str] = None,
         with_loss: bool = False,
@@ -734,7 +735,7 @@ class CimModel(Model):
 
     def ssh_load(
         self,
-        rdf_types: Optional[List[str]] = None,
+        rdf_types: Iterable[LoadTypes] = LoadTypes,
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
@@ -746,8 +747,6 @@ class CimModel(Model):
            dry_run: return string with sql query
 
         """
-        if rdf_types is None:
-            rdf_types = ["cim:ConformLoad", "cim:NonConformLoad", "cim:EnergyConsumer"]
         query = ssh_queries.load(rdf_types)
         if dry_run:
             return self.client.query_with_header(query, limit)
@@ -806,10 +805,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid")
 
     def powerflow(
-        self,
-        power: Tuple[str, ...] = ("p", "q"),
-        limit: Optional[int] = None,
-        dry_run: bool = False,
+        self, power: Iterable[Power] = Power, limit: Optional[int] = None, dry_run: bool = False
     ) -> Union[pd.DataFrame, str]:
         """Query powerflow from sv profile (not available in GraphDB)
 
@@ -825,11 +821,11 @@ class CimModel(Model):
 
     def voltage(
         self,
-        voltage_vars: Iterable[str] = ("v", "angle"),
+        voltage_vars: Iterable[Voltage] = Voltage,
         limit: Optional[int] = None,
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
-        """Query voltage from sv profile (not available in GraphDB)
+        """Query voltage from sv profile (not available in GraphDB).
 
         Args:
            voltage_vars: allowed ["v", "angle"]
