@@ -834,6 +834,31 @@ class CimModel(Model):
         query = queries.regions_query()
         return self.get_table_and_convert(query, limit=None, index="mrid")
 
+    def add_mrid(
+        self, rdf_type: str, graph: Optional[str] = "?g", replace: Optional[Tuple[str, str]] = None
+    ):
+        """
+        Add cim:IdentifiedObject.mRID to all records. It is copied from rdf:about (or rdf:ID) if
+        replace is not specified
+
+        Args:
+            graph: Name of graph where mrids should be added. Note, mrid is added to all objects
+                in the graph.
+            rdf_type: RDF type where ID should be added
+            replace: Tuple with from/to replacements. Example: if the mrid is given by rdf:about
+                (or rdf:ID) where uuid is replace by an empty string pass ("uuid", "") as
+                replace argument
+        """
+
+        from_str, to_str = replace or ("", "")
+        query = (
+            f"INSERT {{GRAPH {graph} {{?s cim:IdentifiedObject.mRID ?mrid}}}} "
+            f"WHERE {{?s rdf:type {rdf_type}\n"
+            f'BIND(replace(str(?s), "{from_str}", "{to_str}") as ?mrid)}}'
+        )
+        query = self.client.query_with_header(query)
+        self.client.update_query(query)
+
 
 def get_cim_model(
     server: str,

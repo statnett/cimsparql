@@ -166,6 +166,17 @@ class GraphDBClient:
         )
         response.raise_for_status()
 
+    def update_query(self, query: str):
+        """
+        Function that passes a query via a post API call
+        """
+        response = requests.post(
+            self.service_cfg.url + "/statements",
+            data={"update": query},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        response.raise_for_status()
+
 
 @deprecated(version="1.11", reason="Use cimsparqel.model.get_cim_model instead")
 def get_graphdb_client(
