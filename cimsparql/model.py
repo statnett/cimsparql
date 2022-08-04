@@ -819,6 +819,20 @@ class CimModel(Model):
             return self.client.query_with_header(query, limit)
         return self.get_table_and_convert(query, limit, index="mrid")
 
+    def branch_flow(
+        self, power: Iterable[Power] = Power, limit: Optional[int] = None, dry_run: bool = False
+    ) -> Union[pd.DataFrame, pd.Series, str]:
+        """Query branch flow from sv profile.
+
+        Args:
+           limit: return first 'limit' number of rows
+           dry_run: return string with sql query
+        """
+        query = sv_queries.branch_flow(self.cim_version, power)
+        if dry_run:
+            return self.client.query_with_header(query, limit)
+        return self.get_table_and_convert(query, limit, index="mrid")
+
     def voltage(
         self,
         voltage_vars: Iterable[Voltage] = Voltage,
