@@ -315,7 +315,7 @@ def load_query(
     if connectivity:
         variables.append(f"?{connectivity}")
 
-    cim_types = [sup.rdf_type_tripler(mrid_subject, f"cim:{cim_type}") for cim_type in load_type]
+    cim_types = [sup.rdf_type_tripler(mrid_subject, cim_type) for cim_type in load_type]
 
     where_list = [
         sup.combine_statements(*cim_types, group=len(cim_types) > 1, split=union_split),
