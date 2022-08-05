@@ -48,7 +48,7 @@ def terminal_sequence_query(
         where_list = [
             rdf_type_tripler("", "cim:Terminal"),
             f"{TC_EQUIPMENT} {mrid_subject}",
-            f"cim:{acdc_terminal(15)}.sequenceNumber {nr}",
+            f"cim:{acdc_terminal(cim_version)}.sequenceNumber {nr}",
         ]
         if con:
             where_list.append(f"{TC_NODE} ?{con}_{nr}")
