@@ -12,12 +12,12 @@ def script_folder() -> Path:
 
 
 @pytest.mark.integrationtest
-def test_add_base_uri(tmpdir, script_folder):
+def test_modify_xml(tmpdir, script_folder):
     # Copy XML files
     f = Path(__file__).parent / "data/micro_t1_nl/20171002T0930Z_1D_NL_SSH_3.xml"
     tmp_file = tmpdir / "ex.xml"
     shutil.copyfile(f, tmp_file)
 
-    script = script_folder / "add_base.py"
-    sys.argv[1:] = [str(tmpdir) + "/*", "http://base_uri"]
+    script = script_folder / "modify_xml.py"
+    sys.argv[1:] = [str(tmpdir) + "/*"]
     runpy.run_path(str(script))
