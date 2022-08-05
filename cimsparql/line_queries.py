@@ -218,3 +218,55 @@ def borders_query(
         where_list.append(sup.combine_statements(f"FILTER (!regex({name}, 'HVDC'))", group=True))
 
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
+def exchange_query(
+    cim_version: int,
+    region: Union[str, List[str]],
+    nodes: str,
+    ignore_hvdc: bool,
+    with_market_code: bool,
+    market_optional: bool,
+) -> str:
+    mrid_subject = "?_mrid"
+    name = "?name"
+
+    areas = sup.sequence_variables("area")
+    variables = [name, f"?{nodes}", "?mrid"]
+
+    border_filter = sup.border_filter(region, *areas)
+    where_list = [
+        sup.common_subject(
+            mrid_subject,
+            [
+                sup.get_name("", name),
+                sup.rdf_type_tripler("", LineTypes.ACLineSegment),
+                f"{ID_OBJ}.mRID ?mrid",
+            ],
+        ),
+        *sup.terminal_sequence_query(cim_version, "con", nodes, mrid_subject),
+        sup.combine_statements(*border_filter, group=True, split=union_split),
+    ]
+    predicate = (
+        f"{CNODE_CONTAINER}/{SUBSTATION}/cim:Substation.Region/{GEO_REG}.Region/{ID_OBJ}.name"
+    )
+    where_list.extend([f"?con_{nr} {predicate} ?area_{nr}" for nr in sequence_numbers])
+
+    variables.append("?status")
+    where_list.extend(
+        ["bind((?connected_1 && ?connected_2) as ?status)", f"?_{nodes}_1 {ID_OBJ}.mRID ?{nodes}"]
+    )
+    variables.append("(?sv_p_1 as ?p)")
+    where_list.append(sv_terminal_injection(1))
+
+    if with_market_code:
+        variables.append("?market_code")
+        where_market = f"{mrid_subject} {EQUIP_CONTAINER}/SN:Line.marketCode ?market_code"
+        where_list.append(
+            sup.group_query([where_market], command="OPTIONAL") if market_optional else where_market
+        )
+
+    if ignore_hvdc:
+        where_list.append(sup.combine_statements(f"FILTER (!regex({name}, 'HVDC'))", group=True))
+
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
