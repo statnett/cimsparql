@@ -145,15 +145,6 @@ def phase_tap_changer_query(
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def connectivity_names(mrid_subject: str, name: str = "?name") -> str:
-    variables = [mrid_subject, name]
-    where_list = [
-        sup.rdf_type_tripler(mrid_subject, "cim:ConnectivityNode"),
-        sup.get_name(mrid_subject, name),
-    ]
-    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
-
-
 def full_model() -> str:
     variables = ["?model", "?time", "?profile", "?description", "?version", "?created", "?dependon"]
     where_list = [
