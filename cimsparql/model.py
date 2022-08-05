@@ -397,6 +397,35 @@ class CimModel(Model):
             return self.client.query_with_header(query, limit)
         return self.get_table_and_convert(query, limit, index="mrid")
 
+    def exchange(
+        self,
+        region: Union[str, List[str]],
+        nodes: str,
+        ignore_hvdc: bool = True,
+        with_market_code: bool = False,
+        market_optional: bool = False,
+        limit: Optional[int] = None,
+        dry_run: bool = False,
+    ) -> Union[pd.DataFrame, str]:
+        """Retrieve ACLineSegments where one terminal is inside and the other is outside the region
+
+        Args:
+            region: Inside area
+            sub_region: regions is sub areas
+            ignore_hvdc: ignore ac lines with HVDC in name
+            with_marked_code: include SN:Line.marketCode
+            market_optional: include lines without market code if with_marked_code set
+            limit: return first 'limit' number of rows
+            dry_run: return string with sql query
+
+        """
+        query = line_queries.exchange_query(
+            self.cim_version, region, nodes, ignore_hvdc, with_market_code, market_optional
+        )
+        if dry_run:
+            return self.client.query_with_header(query, limit)
+        return self.get_table_and_convert(query, limit, index="mrid")
+
     def converters(
         self,
         region: Region = None,
