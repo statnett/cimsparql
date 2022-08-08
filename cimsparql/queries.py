@@ -46,9 +46,9 @@ def version_date() -> str:
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def regions_query() -> str:
+def regions_query(with_sn_short_name: bool = True) -> str:
     mrid_subject = "?_mrid"
-    variables = ["?mrid", "?shortName"]
+    variables = ["?mrid"]
     region_variable = "?subgeoreg"
     where_list = [
         common_subject(
@@ -56,15 +56,20 @@ def regions_query() -> str:
             [
                 f"{ID_OBJ}.mRID ?mrid",
                 sup.rdf_type_tripler("", GEO_REG),
-                "SN:IdentifiedObject.shortName ?shortName",
                 f"{GEO_REG}.Region {region_variable}",
             ],
         )
     ]
+
+    if with_sn_short_name:
+        where_list.append(f"{mrid_subject} SN:IdentifiedObject.shortName ?shortName")
+        variables.append("?shortName")
+
     names = {mrid_subject: ["?name", "?alias_name"], region_variable: ["?region", "?region_name"]}
     for name_mrid, (name, alias_name) in names.items():
         where_list.append(sup.get_name(name_mrid, name))
-        where_list.append(sup.get_name(name_mrid, alias_name, alias=True))
+        alias_name_triple = sup.get_name(name_mrid, alias_name, alias=True)
+        where_list.append(f"OPTIONAL{{{alias_name_triple}}}")
         variables.extend([name, alias_name])
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
@@ -223,11 +228,11 @@ def load_query(
     sub_region: bool,
     connectivity: Optional[str],
     nodes: Optional[str],
-    station_group_optional: bool,
+    station_group: bool,
     with_sequence_number: bool,
     network_analysis: bool,
-    station_group: bool,
     cim_version: int,
+    with_bidzone: bool,
     ssh_graph: Optional[str],
 ) -> str:
     mrid_subject = "?_mrid"
@@ -235,7 +240,7 @@ def load_query(
     if not (load_type and set(load_type).issubset(LoadTypes)):
         raise ValueError(f"load_type should be any combination of {set(LoadTypes)}")
 
-    variables = ["?mrid", "?t_mrid" if nodes is None else f"?{nodes}", "?bidzone", "?name"]
+    variables = ["?mrid", "?t_mrid" if nodes is None else f"?{nodes}", "?name"]
 
     if with_sequence_number:
         variables.append("?sequenceNumber")
@@ -246,15 +251,18 @@ def load_query(
     cim_types = [sup.rdf_type_tripler(mrid_subject, f"cim:{cim_type}") for cim_type in load_type]
 
     where_list = [
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        f"{mrid_subject} {ID_OBJ}.aliasName ?name",
-        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
         sup.combine_statements(*cim_types, group=len(cim_types) > 1, split=union_split),
         sup.terminal_where_query(
             cim_version, connectivity, nodes, mrid_subject, with_sequence_number
         ),
-        *sup.bid_market_code_query(mrid_subject),
+        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid1",
+        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
+        f"{mrid_subject} {ID_OBJ}.name ?name",
     ]
+
+    if with_bidzone:
+        variables.append("?bidzone")
+        where_list += sup.bid_market_code_query(mrid_subject)
 
     if load_vars:
         variables.extend([f"?{load}" for load in load_vars])
@@ -278,9 +286,7 @@ def load_query(
             ]
         )
         station_group_str = f"{mrid_subject} {predicate} ?station_group"
-        where_list.append(
-            f"optional {{{station_group_str}}}" if station_group_optional else station_group_str
-        )
+        where_list.append(f"optional {{{station_group_str}}}")
 
     if network_analysis:
         where_list.append(f"{mrid_subject} SN:Equipment.networkAnalysisEnable {network_analysis}")
@@ -302,11 +308,12 @@ def synchronous_machines_query(
     sub_region: bool,
     connectivity: Optional[str],
     nodes: Optional[str],
-    station_group_optional: bool,
+    station_group: bool,
     cim_version: int,
     with_sequence_number: bool,
     network_analysis: bool,
     u_groups: bool,
+    with_market: bool,
     ssh_graph: Optional[str],
 ) -> str:
     mrid_subject = "?_mrid"
@@ -342,11 +349,8 @@ def synchronous_machines_query(
         ]
 
     where_list = [
-        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
-        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
         sup.get_name(mrid_subject, name),
         sup.rdf_type_tripler(mrid_subject, SYNC_MACH),
-        *sup.bid_market_code_query(mrid_subject),
         sup.terminal_where_query(
             cim_version, connectivity, nodes, mrid_subject, with_sequence_number
         ),
@@ -359,12 +363,17 @@ def synchronous_machines_query(
         sup.graph(
             ssh_graph, sup.group_query(_power(mrid_subject, sync_vars, ne), command="OPTIONAL")
         ),
+        f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
+        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
     ]
+
+    if with_market:
+        where_list += sup.bid_market_code_query(mrid_subject)
 
     if network_analysis:
         where_list.append(f"{mrid_subject} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
-    station_group = [
+    station_group_query = [
         f"{mrid_subject} cim:SynchronousMachine.GeneratingUnit ?gu",
         common_subject(
             "?gu",
@@ -387,10 +396,8 @@ def synchronous_machines_query(
         "bind(xsd:float(str(?apctmax))*xsd:float(str(?maxP)) / 100.0 as ?allocationmax)",
     ]
 
-    if station_group_optional:
-        where_list.append(sup.group_query(station_group, command="OPTIONAL"))
-    else:
-        where_list.extend(station_group)
+    if station_group:
+        where_list.append(sup.group_query(station_group_query, command="OPTIONAL"))
 
     if not u_groups:
         where_list.append("FILTER (!bound(?st_gr_n) || (!regex(?st_gr_n, 'U-')))")
