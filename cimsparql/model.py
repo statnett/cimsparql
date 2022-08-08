@@ -182,10 +182,10 @@ class CimModel(Model):
         sub_region: bool = False,
         connectivity: Optional[Optional[str]] = None,
         nodes: Optional[Optional[str]] = None,
-        station_group_optional: bool = True,
         station_group: bool = False,
         with_sequence_number: bool = False,
         network_analysis: bool = True,
+        with_bidzone: bool = True,
         limit: Optional[int] = None,
         dry_run: bool = False,
         ssh_graph: Optional[str] = None,
@@ -193,16 +193,18 @@ class CimModel(Model):
         """Query load data
 
         Args:
-           load_type: List of load types. Allowed: "ConformLoad", "NonConformLoad", "EnergyConsumer"
-           load_vars: List of additional load vars to return. Possible are 'p' and/or 'q'.
-           region: Limit to region
-           sub_region: Assume region is a sub_region
-           connectivity: Include connectivity mrids
-           station_group: return station group mrid (if any)
-           with_sequence_number: Include the sequence numbers in output
-           network_analysis: Include only network analysis enabled components
-           limit: return first 'limit' number of rows
-           dry_run: return string with sql query
+            load_type: List of load types. Allowed: "ConformLoad", "NonConformLoad",
+                "EnergyConsumer"
+            load_vars: List of additional load vars to return. Possible are 'p' and/or 'q'.
+            region: Limit to region
+            sub_region: Assume region is a sub_region
+            connectivity: Include connectivity mrids
+            station_group: return station group mrid (if any)
+            with_sequence_number: Include the sequence numbers in output
+            network_analysis: Include only network analysis enabled components
+            with_bidzone: If True bidzone information is added, otherwise it is omitted
+            limit: return first 'limit' number of rows
+            dry_run: return string with sql query
 
         Returns:
            DataFrame: with mrid as index and columns ['terminal_mrid', 'bid_marked_code', 'p', 'q',
@@ -221,11 +223,11 @@ class CimModel(Model):
             sub_region,
             connectivity,
             nodes,
-            station_group_optional,
+            station_group,
             with_sequence_number,
             network_analysis,
-            station_group,
             self.cim_version,
+            with_bidzone,
             ssh_graph,
         )
         if dry_run:
@@ -269,12 +271,13 @@ class CimModel(Model):
         sub_region: bool = False,
         connectivity: Optional[str] = None,
         nodes: Optional[str] = None,
-        station_group_optional: bool = True,
+        station_group: bool = True,
         with_sequence_number: bool = False,
         network_analysis: bool = True,
         u_groups: bool = False,
         limit: Optional[int] = None,
         dry_run: bool = False,
+        with_market: bool = True,
         ssh_graph: Optional[str] = None,
     ) -> Union[pd.DataFrame, str]:
         """Query synchronous machines
@@ -284,7 +287,7 @@ class CimModel(Model):
            region: Limit to region
            sub_region: Assume region is a sub_region
            connectivity: Include connectivity mrids
-           station_group_optional: Assume station group is optional
+           station_group: Assume station group is optional
            with_sequence_number: add this numbers
            network_analysis: query SN:Equipment.networkAnalysisEnable
            u_groups: Filter out station groups where name starts with 'U-'
@@ -303,11 +306,12 @@ class CimModel(Model):
             sub_region,
             connectivity,
             nodes,
-            station_group_optional,
+            station_group,
             self.cim_version,
             with_sequence_number,
             network_analysis,
             u_groups,
+            with_market,
             ssh_graph,
         )
         if dry_run:
@@ -396,7 +400,11 @@ class CimModel(Model):
         dry_run: bool = False,
     ) -> Union[pd.DataFrame, str]:
         query = queries.converters(
-            region, sub_region, self.in_prefixes(converter_types), nodes, sequence_numbers
+            region,
+            sub_region,
+            self.client.prefixes.in_prefixes(converter_types),
+            nodes,
+            sequence_numbers,
         )
         if dry_run:
             return self.client.query_with_header(query)
@@ -681,7 +689,7 @@ class CimModel(Model):
         query = ssh_queries.disconnected(self.cim_version)
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table(query, index=index, limit=limit)
+        return self.get_table_and_convert(query, index=index, limit=limit)
 
     def ssh_synchronous_machines(
         self, limit: Optional[int] = None, dry_run: bool = False
@@ -712,7 +720,7 @@ class CimModel(Model):
 
         """
         if rdf_types is None:
-            rdf_types = ["cim:ConformLoad", "cim:NonConformLoad"]
+            rdf_types = ["cim:ConformLoad", "cim:NonConformLoad", "cim:EnergyConsumer"]
         query = ssh_queries.load(rdf_types)
         if dry_run:
             return self.client.query_with_header(query, limit)
@@ -734,7 +742,9 @@ class CimModel(Model):
 
         """
         if rdf_types is None:
-            rdf_types = [f"cim:{unit}GeneratingUnit" for unit in GeneratorTypes]
+            rdf_types = ["cim:GeneratingUnit"] + [
+                f"cim:{unit}GeneratingUnit" for unit in GeneratorTypes
+            ]
         query = ssh_queries.generating_unit(rdf_types)
         if dry_run:
             return self.client.query_with_header(query, limit)
@@ -831,7 +841,12 @@ class CimModel(Model):
             >>> model = get_cim_model(server_url, "LATEST")
             >>> model.regions
         """
-        query = queries.regions_query()
+        # TODO: Probably deprecate this property in the future. But keep for now.
+        # We need to find a solution for custom namespaces in queries
+        return self.get_regions()
+
+    def get_regions(self, with_sn_short_name: bool = True):
+        query = queries.regions_query(with_sn_short_name)
         return self.get_table_and_convert(query, limit=None, index="mrid")
 
     def add_mrid(
