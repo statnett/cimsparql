@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import requests
 
-from cimsparql.constants import con_mrid_str
+from cimsparql.constants import CIM_TYPES_WITH_MRID, con_mrid_str
 from cimsparql.graphdb import GraphDBClient, config_bytes_from_template, confpath, new_repo
 from cimsparql.model import CimModel, get_cim_model
 from cimsparql.type_mapper import TypeMapper
@@ -166,7 +166,7 @@ def rdf4j_url() -> str:
         # Running on GitHub
         return "localhost:8080/rdf4j-server"
 
-    return os.getenv("RDF4J_URL")
+    return os.getenv("RDF4J_URL", "")
 
 
 def upload_ttl_to_repo(
@@ -181,7 +181,7 @@ def upload_ttl_to_repo(
         response.raise_for_status()
 
 
-def initialized_rdf4j_repo(service_url) -> GraphDBClient:
+def initialized_rdf4j_repo(service_url: str) -> GraphDBClient:
     data_path = this_dir / "tests/data"
 
     template = confpath() / "native_store_config_template.ttl"
@@ -195,7 +195,7 @@ def initialized_rdf4j_repo(service_url) -> GraphDBClient:
 
 
 @pytest.fixture
-def rdf4j_gdb(rdf4j_url) -> Optional[GraphDBClient]:
+def rdf4j_gdb(rdf4j_url: str) -> Optional[GraphDBClient]:
     client = None
     try:
         client = initialized_rdf4j_repo(rdf4j_url)
@@ -209,11 +209,12 @@ def rdf4j_gdb(rdf4j_url) -> Optional[GraphDBClient]:
             client.delete_repo()
 
 
-def init_test_cim_model(rdf4j_url, name):
+def init_test_cim_model(rdf4j_url: str, name: str, repo_name_suffix: str = ""):
     folder = pathlib.Path(__file__).parent / f"tests/data/{name}/"
     template = confpath() / "native_store_config_template.ttl"
-    config = config_bytes_from_template(template, {"repo": name})
-    client = new_repo(rdf4j_url, name, config, allow_exist=False, protocol="http")
+    repo_name = name + repo_name_suffix
+    config = config_bytes_from_template(template, {"repo": repo_name})
+    client = new_repo(rdf4j_url, repo_name, config, allow_exist=False, protocol="http")
 
     for f in folder.iterdir():
         if f.suffix == ".xml":
@@ -221,17 +222,42 @@ def init_test_cim_model(rdf4j_url, name):
     return client
 
 
-@pytest.fixture(scope="session")
-def micro_t1_nl(rdf4j_url) -> Optional[CimModel]:
-    model = None
+def get_micro_t1_nl(
+    rdf4j_url: str, repo_name: str, repo_name_suffix: str = ""
+) -> Optional[CimModel]:
     try:
-        client = init_test_cim_model(rdf4j_url, "micro_t1_nl")
+        client = init_test_cim_model(rdf4j_url, repo_name, repo_name_suffix)
         mapper = TypeMapper(client)
-        model = CimModel(mapper, client)
+        return CimModel(mapper, client)
+    except Exception as exc:
+        logger.error(f"{exc}")
+        return None
+
+
+@pytest.fixture(scope="session")
+def micro_t1_nl(rdf4j_url: str) -> Optional[CimModel]:
+    model = get_micro_t1_nl(rdf4j_url, "micro_t1_nl")
+    try:
+        yield model
+    finally:
+        if model:
+            model.client.delete_repo()
+
+
+@pytest.fixture(scope="session")
+def micro_t1_nl_adapted(rdf4j_url: str) -> Optional[CimModel]:
+    """
+    Fixture that uses the micro_t1_nl model with some adaptions
+    """
+    model = get_micro_t1_nl(rdf4j_url, "micro_t1_nl", "_adapted")
+    try:
+        if model:
+            for rdf_type in CIM_TYPES_WITH_MRID:
+                model.add_mrid(f"cim:{rdf_type}")
         yield model
     except Exception as exc:
         logger.error(f"{exc}")
-        yield model
+        yield None
     finally:
         if model:
             model.client.delete_repo()
