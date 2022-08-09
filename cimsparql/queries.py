@@ -525,8 +525,7 @@ def two_winding_transformer_query(
     cim_version: int,
 ) -> str:
     term = nodes if nodes else "t_mrid"
-    variables = [f"?{term}_{nr}" for nr in sequence_numbers]
-    variables.append("?status")
+    variables = [*[f"?{term}_{nr}" for nr in sequence_numbers], "?status", "?angle"]
     where_list = [
         *terminal("?_p_mrid", 1),
         *terminal("?_p_mrid", 2),
@@ -555,6 +554,38 @@ def two_winding_transformer_query(
         network_analysis,
         with_loss,
     )
+    where_list.extend(
+        [
+            "?w_mrid_2 cim:PowerTransformerEnd.phaseAngleClock ?angleclock",
+            f"optional {{{tap_phase_angle('?w_mrid_2', '?_angle')}}}",
+            "bind((coalesce (?_angle+xsd:float(30.0)*?angleclock, xsd:float(0.0))) as ?angle)",
+        ]
+    )
+
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
+def tap_phase_angle(mrid: str = "?mrid", angle: str = "?angle") -> str:
+    variables = [mrid, angle]
+    where_list = [
+        common_subject(
+            "?tap_step",
+            [
+                "rdf:type cim:SvTapStep",
+                "cim:SvTapStep.TapChanger ?tap_changer",
+                "cim:SvTapStep.position ?position",
+            ],
+        ),
+        common_subject(
+            "?tap_changer",
+            [
+                "cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc",
+                "cim:TapChanger.normalStep ?normalstep",
+                f"cim:PhaseTapChanger.TransformerEnd {mrid}",
+            ],
+        ),
+        f"bind(((?position-?normalstep)*xsd:float(str(?inc))) as {angle})",
+    ]
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
