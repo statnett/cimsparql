@@ -94,3 +94,33 @@ Launch a container with this image and specify the URL in the `RDF4J_URL` enviro
 ```
 RDF4J_URL = "localhost:8080/rdf4j-server"
 ```
+
+
+### Data Assumptions
+
+CimSPARQL makes certain assumptions about the data which is required to be present for the queries to work. The script `modify_xml` should be able to modify
+the XML files such that they are compliant with CimSPARQL.
+
+1. There is a valid `xml:base` attribute in the top-level `rdf:RDF` element. This is required for uploading files (at least for RDF4J which is used in the CI pipeline)
+2. All items `cimsparql.constants.CIM_TYPES_WITH_MRID` has `cim:IdentifiedObject:mRID`
+3. `cim:Terminal.endNumber` is of type `xsd:integer`
+
+```bash
+poetry run python scripts/modify.xml -h
+
+usage: Program that modifies XML files to be compatible with cimsparql [-h] [--baseURI BASEURI] [--suffix SUFFIX] file
+
+positional arguments:
+  file               File or glob pattern for files to modify
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --baseURI BASEURI  Base URI to insert in all XML files. For example: http://iec.ch/TC57/2013/CIM-schema-cim16
+  --suffix SUFFIX    Suffix to the filename after modifying them. If given as an empty string the original files will be overwritten. Default 'mod'
+```
+
+In order to use the script to convert XML files into a format that can be used with `cimsparql`
+
+```` bash
+poetry run scripts/modify_xml.py "path/to/model/*.xml"
+```
