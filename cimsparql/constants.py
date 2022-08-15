@@ -1,5 +1,5 @@
 # Allowed
-union_split = "}\nUNION\n{"
+union_split = "} union {"
 sequence_numbers = [1, 2]
 
 # Default variable names

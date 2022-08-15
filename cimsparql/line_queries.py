@@ -54,7 +54,7 @@ def _line_query(
     if with_loss:
         variables.append("(?pl as ?pl_1) (?pl as ?pl_2)")
         loss_list = [sv_terminal_injection(nr) for nr in [1, 2]]
-        loss_list.append("bind((xsd:float(?sv_p_1) + xsd:float(?sv_p_2) ) / 2 as ?pl)")
+        loss_list.append("bind((xsd:float(str(?sv_p_1)) + xsd:float(str(?sv_p_2)) ) / 2 as ?pl)")
         where_list.append(sup.group_query(loss_list, command="OPTIONAL"))
 
     if network_analysis:
