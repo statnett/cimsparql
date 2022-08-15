@@ -43,7 +43,7 @@ def number_of_windings(mrid: str, winding_count: int, with_loss: bool = False) -
         ),
     ]
     if with_loss:
-        variables.append("(sum(xsd:float(?sv_p)) / sum(?nr_connected) as ?pl)")
+        variables.append("(sum(xsd:float(str(?sv_p))) / sum(?nr_connected) as ?pl)")
         where_list.extend(
             [
                 f"?wwmrid {TR_END}.Terminal ?p_t_mrid",
@@ -131,4 +131,4 @@ def transformer_common(
         for rate in rates:
             variables.append(f"?rate{rate}")
             where_rate.append(sup.operational_limit("?_t_mrid_1", rate, limit_set="Terminal"))
-        where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
+        where_list.append(sup.group_query(where_rate, command="optional"))

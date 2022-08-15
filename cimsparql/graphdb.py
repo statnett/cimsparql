@@ -182,7 +182,7 @@ class GraphDBClient:
     def empty(self) -> bool:
         """Identify empty GraphDB repo"""
         try:
-            self.get_table("SELECT * \n WHERE { ?s ?p ?o }", limit=1)
+            self.get_table("select * where {?s ?p ?o}", limit=1)
             return False
         except IndexError:
             return True
