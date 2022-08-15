@@ -1,7 +1,7 @@
-from typing import Iterable, Union
+from typing import Iterable, List, Union
 
 from cimsparql.cim import ID_OBJ, TC_EQUIPMENT, TR_END, TR_WINDING, LineTypes
-from cimsparql.enums import Power, Voltage
+from cimsparql.enums import Power, SvPowerFlow, SvStatus, SvTapStep, Voltage
 from cimsparql.query_support import (
     acdc_terminal,
     combine_statements,
@@ -58,9 +58,9 @@ def tapstep() -> str:
     where = common_subject(
         "?t_mrid",
         [
-            "rdf:type cim:SvTapStep",
-            "cim:SvTapStep.TapChanger ?mrid",
-            "cim:SvTapStep.position ?position",
+            f"rdf:type {SvTapStep.pred()}",
+            f"{SvTapStep.TapChanger} ?mrid",
+            f"{SvTapStep.position} ?position",
         ],
     )
     return combine_statements(select_statement(variables), group_query([where]))
@@ -69,5 +69,15 @@ def tapstep() -> str:
 def sv_terminal_injection(nr: int, power: Power = Power.p) -> str:
     return common_subject(
         f"?sv_t_{nr}",
-        [f"cim:SvPowerFlow.Terminal ?_t_mrid_{nr}", f"cim:SvPowerFlow.{power} ?sv_{power}_{nr}"],
+        [f"{SvPowerFlow.Terminal} ?_t_mrid_{nr}", f"{SvPowerFlow.pred()}.{power} ?sv_{power}_{nr}"],
     )
+
+
+def sv_status(connected_status: str) -> List[str]:
+    return [
+        common_subject(
+            "?_sv_status",
+            [f"{SvStatus.inService} ?in_service", f"{SvStatus.ConductingEquipment} ?_mrid"],
+        ),
+        f"bind(coalesce(?in_service, {connected_status}) as ?status)",
+    ]

@@ -4,7 +4,7 @@ import cimsparql.query_support as sup
 from cimsparql.cim import CNODE_CONTAINER, EQUIP_CONTAINER, GEO_REG, ID_OBJ, SUBSTATION, LineTypes
 from cimsparql.constants import sequence_numbers, union_split
 from cimsparql.enums import Impedance, Rates
-from cimsparql.sv_queries import sv_terminal_injection
+from cimsparql.sv_queries import sv_status, sv_terminal_injection
 from cimsparql.typehints import Region
 
 
@@ -46,7 +46,7 @@ def _line_query(
 
     if nodes:
         variables.append("?status")
-        where_list.append("bind((?connected_1 && ?connected_2) as ?status)")
+        where_list.extend(sv_status("?connected_1 && ?connected_2"))
         where_list.extend(
             [f"?_{nodes}_{nr} {ID_OBJ}.mRID ?{nodes}_{nr}" for nr in sequence_numbers]
         )
