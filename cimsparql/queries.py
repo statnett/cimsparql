@@ -18,15 +18,23 @@ from cimsparql.cim import (
 )
 from cimsparql.constants import sequence_numbers, union_split
 from cimsparql.enums import (
+    BaseVoltage,
     ConverterTypes,
+    GeneratingUnit,
     Impedance,
     LoadTypes,
     Power,
     Rates,
+    SvPowerFlow,
+    SvTapStep,
+    SynchronousMachine,
     SyncVars,
     TapChangerObjects,
+    VoltageLevel,
+    WindGeneratingUnit,
 )
 from cimsparql.query_support import common_subject
+from cimsparql.sv_queries import sv_status
 from cimsparql.transformer_windings import number_of_windings, terminal, transformer_common
 from cimsparql.typehints import Region
 
@@ -177,7 +185,7 @@ def node_delta_power(node: str, cim_version: int) -> str:
                 f"cim:{sup.acdc_terminal(cim_version)}.connected True",
             ],
         ),
-        common_subject("?_obj", ["cim:SvPowerFlow.Terminal ?_t_mrid", "cim:SvPowerFlow.p ?p"]),
+        common_subject("?_obj", [f"{SvPowerFlow.Terminal} ?_t_mrid", f"{SvPowerFlow.p} ?p"]),
     ]
     return sup.groupby(variables, where_list, f"?_{node}")
 
@@ -321,8 +329,8 @@ def load_query(
         where_list += sup.bid_market_code_query(mrid_subject)
 
     if nodes:
-        variables.append("(xsd:boolean(?connected) as ?status)")
-        where_list.append(f"?_{nodes} {ID_OBJ}.mRID ?{nodes}")
+        variables.append("?status")
+        where_list.extend([f"?_{nodes} {ID_OBJ}.mRID ?{nodes}", *sv_status("?connected")])
 
     if load_vars:
         variables.extend([f"?{load}" for load in load_vars])
@@ -426,23 +434,23 @@ def synchronous_machines_query(
         where_list += sup.bid_market_code_query(mrid_subject)
 
     if nodes:
-        variables.append("(xsd:boolean(?connected) as ?status)")
-        where_list.append(f"?_{nodes} {ID_OBJ}.mRID ?{nodes}")
+        variables.append("?status")
+        where_list.extend([f"?_{nodes} {ID_OBJ}.mRID ?{nodes}", *sv_status("?connected")])
 
     if network_analysis:
         where_list.append(f"{mrid_subject} SN:Equipment.networkAnalysisEnable {network_analysis}")
 
     station_group_query = [
-        f"{mrid_subject} cim:SynchronousMachine.GeneratingUnit ?gu",
+        f"{mrid_subject} {SynchronousMachine.GeneratingUnit} ?gu",
         common_subject(
             "?gu",
             [
-                "SN:GeneratingUnit.marketCode ?market_code",
-                "cim:GeneratingUnit.maxOperatingP ?maxP",
-                "cim:GeneratingUnit.minOperatingP ?minP",
-                "SN:GeneratingUnit.groupAllocationMax ?apctmax",
-                "SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
-                "SN:GeneratingUnit.ScheduleResource ?ScheduleResource",
+                f"{GeneratingUnit.marketCode} ?market_code",
+                f"{GeneratingUnit.maxOperatingP} ?maxP",
+                f"{GeneratingUnit.minOperatingP} ?minP",
+                f"{GeneratingUnit.groupAllocationMax} ?apctmax",
+                f"{GeneratingUnit.groupAllocationWeight} ?allocationWeight",
+                f"{GeneratingUnit.ScheduleResource} ?ScheduleResource",
             ],
         ),
         common_subject(
@@ -490,15 +498,15 @@ def wind_generating_unit_query(network_analysis: bool) -> str:
             mrid_subject,
             [
                 f"{ID_OBJ}.mRID ?mrid",
-                sup.rdf_type_tripler("", "cim:WindGeneratingUnit"),
-                "cim:GeneratingUnit.maxOperatingP ?maxP",
-                "SN:GeneratingUnit.marketCode ?market_code",
-                "cim:GeneratingUnit.minOperatingP ?minP",
+                sup.rdf_type_tripler("", WindGeneratingUnit.pred()),
+                f"{GeneratingUnit.maxOperatingP} ?maxP",
+                f"{GeneratingUnit.marketCode} ?market_code",
+                f"{GeneratingUnit.minOperatingP} ?minP",
                 sup.get_name("", name),
-                "SN:WindGeneratingUnit.WindPowerPlant ?plant_mrid",
-                "SN:GeneratingUnit.groupAllocationMax ?apctmax",
-                "SN:GeneratingUnit.groupAllocationWeight ?allocationWeight",
-                "SN:GeneratingUnit.ScheduleResource/SN:ScheduleResource.marketCode ?station_group",
+                f"{WindGeneratingUnit.WindPowerPlant} ?plant_mrid",
+                f"{GeneratingUnit.groupAllocationMax} ?apctmax",
+                f"{GeneratingUnit.groupAllocationWeight} ?allocationWeight",
+                f"{GeneratingUnit.ScheduleResource}/SN:ScheduleResource.marketCode ?station_group",
             ],
         ),
         "bind(xsd:float(str(?apctmax))*xsd:float(str(?maxP)) / 100.0 as ?allocationmax)",
@@ -570,9 +578,9 @@ def tap_phase_angle(mrid: str = "?mrid", angle: str = "?angle") -> str:
         common_subject(
             "?tap_step",
             [
-                "rdf:type cim:SvTapStep",
-                "cim:SvTapStep.TapChanger ?tap_changer",
-                "cim:SvTapStep.position ?position",
+                f"rdf:type {SvTapStep.pred()}",
+                f"{SvTapStep.TapChanger} ?tap_changer",
+                f"{SvTapStep.position} ?position",
             ],
         ),
         common_subject(
@@ -825,9 +833,9 @@ def substation_voltage_level() -> str:
         return common_subject(
             "?_container",
             [
-                "rdf:type cim:VoltageLevel",
-                f"cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage {volt}",
-                "cim:VoltageLevel.Substation ?_substation",
+                f"rdf:type {VoltageLevel.pred()}",
+                f"{VoltageLevel.BaseVoltage}/{BaseVoltage.nominalVoltage} {volt}",
+                f"{VoltageLevel.Substation} ?_substation",
             ],
         )
 

@@ -3,6 +3,12 @@ from enum import auto
 from strenum import StrEnum
 
 
+class CimStrEnum(StrEnum):
+    @classmethod
+    def pred(cls) -> str:
+        return f"cim:{cls.__name__}"
+
+
 class Impedance(StrEnum):
     r = auto()
     x = auto()
@@ -14,7 +20,7 @@ class GeneratorTypes(StrEnum):
     Wind = auto()
 
 
-class ConverterTypes(StrEnum):
+class ConverterTypes(CimStrEnum):
     VoltageSourceConverter = "ALG:VoltageSourceConverter"
     DCConverter = "ALG:DCConverter"
     VsConverter = "cim:VsConverter"
@@ -22,7 +28,7 @@ class ConverterTypes(StrEnum):
     DCConverterUnit = "cim:DCConvertUnit"
 
 
-class LoadTypes(StrEnum):
+class LoadTypes(CimStrEnum):
     ConformLoad = "cim:ConformLoad"
     NonConformLoad = "cim:NonConformLoad"
     EnergyConsumer = "cim:EnergyConsumer"
@@ -54,3 +60,45 @@ class SyncVars(StrEnum):
     sn = auto()
     p = auto()
     q = auto()
+
+
+class SvStatus(CimStrEnum):
+    inService = "cim:SvStatus.inService"
+    ConductingEquipment = "cim:SvStatus.ConductingEquipment"
+
+
+class SvTapStep(CimStrEnum):
+    TapChanger = "cim:SvTapStep.TapChanger"
+    position = "cim:SvTapStep.position"
+
+
+class SvPowerFlow(CimStrEnum):
+    Terminal = "cim:SvPowerFlow.Terminal"
+    p = "cim:SvPowerFlow.p"
+    q = "cim:SvPowerFlow.q"
+
+
+class GeneratingUnit(CimStrEnum):
+    marketCode = "SN:GeneratingUnit.marketCode"
+    maxOperatingP = "cim:GeneratingUnit.maxOperatingP"
+    minOperatingP = "cim:GeneratingUnit.minOperatingP"
+    groupAllocationMax = "SN:GeneratingUnit.groupAllocationMax"
+    groupAllocationWeight = "SN:GeneratingUnit.groupAllocationWeight"
+    ScheduleResource = "SN:GeneratingUnit.ScheduleResource"
+
+
+class SynchronousMachine(CimStrEnum):
+    GeneratingUnit = "cim:SynchronousMachine.GeneratingUnit"
+
+
+class WindGeneratingUnit(CimStrEnum):
+    WindPowerPlant = "SN:WindGeneratingUnit.WindPowerPlant"
+
+
+class VoltageLevel(CimStrEnum):
+    BaseVoltage = "cim:VoltageLevel.BaseVoltage"
+    Substation = "cim:VoltageLevel.Substation"
+
+
+class BaseVoltage(CimStrEnum):
+    nominalVoltage = "cim:BaseVoltage.nominalVoltage"
