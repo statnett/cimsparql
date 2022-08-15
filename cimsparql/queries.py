@@ -44,7 +44,7 @@ def version_date() -> str:
                 "SN:MarketDefinitionSet.activationDate ?activationDate",
             ],
         ),
-        f"FILTER regex({name}, 'ScheduleResource')",
+        f"filter regex({name}, 'ScheduleResource')",
     ]
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
@@ -72,7 +72,7 @@ def regions_query(with_sn_short_name: bool = True) -> str:
     for name_mrid, (name, alias_name) in names.items():
         where_list.append(sup.get_name(name_mrid, name))
         alias_name_triple = sup.get_name(name_mrid, alias_name, alias=True)
-        where_list.append(f"OPTIONAL{{{alias_name_triple}}}")
+        where_list.append(f"optional {{{alias_name_triple}}}")
         variables.extend([name, alias_name])
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
@@ -167,7 +167,7 @@ def full_model() -> str:
 
 def node_delta_power(node: str, cim_version: int) -> str:
     """Calculate the sum of node injections (should be zero)."""
-    variables = [f"?_{node} (-sum(?inj) as ?delta_p)"]
+    variables = [f"?_{node} (-sum(xsd:float(str(?p))) as ?delta_p)"]
     where_list = [
         common_subject(
             "?_t_mrid",
@@ -178,7 +178,6 @@ def node_delta_power(node: str, cim_version: int) -> str:
             ],
         ),
         common_subject("?_obj", ["cim:SvPowerFlow.Terminal ?_t_mrid", "cim:SvPowerFlow.p ?p"]),
-        "bind(xsd:float(?p) as ?inj)",
     ]
     return sup.groupby(variables, where_list, f"?_{node}")
 
@@ -332,7 +331,7 @@ def load_query(
                 ssh_graph,
                 sup.group_query(
                     [f"{mrid_subject} cim:EnergyConsumer.{load} ?{load}" for load in load_vars],
-                    command="OPTIONAL",
+                    command="optional",
                 ),
             )
         )
@@ -460,7 +459,7 @@ def synchronous_machines_query(
         where_list.append(sup.group_query(station_group_query, command="OPTIONAL"))
 
     if not u_groups:
-        where_list.append("FILTER (!bound(?st_gr_n) || (!regex(?st_gr_n, 'U-')))")
+        where_list.append("filter (!bound(?st_gr_n) || (!regex(?st_gr_n, 'U-')))")
 
     if region:
         where_list.extend(
@@ -558,7 +557,7 @@ def two_winding_transformer_query(
         [
             "?w_mrid_2 cim:PowerTransformerEnd.phaseAngleClock ?angleclock",
             f"optional {{{tap_phase_angle('?w_mrid_2', '?_angle')}}}",
-            "bind((coalesce (?_angle+xsd:float(30.0)*?angleclock, xsd:float(0.0))) as ?angle)",
+            "bind(coalesce (?_angle+xsd:float(30.0)*?angleclock, xsd:float(0.0)) as ?angle)",
         ]
     )
 

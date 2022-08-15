@@ -200,7 +200,7 @@ def common_subject(subject: str, predicates_and_objects: List[str]) -> str:
     return f"{subject} {';'.join(predicates_and_objects)}"
 
 
-def combine_statements(*args, group: bool = False, split: str = "\n") -> str:
+def combine_statements(*args, group: bool = False, split: str = " ") -> str:
     """Join *args
 
     Args:
@@ -212,7 +212,7 @@ def combine_statements(*args, group: bool = False, split: str = "\n") -> str:
        >>> where_list = ['?mrid rdf:type cim:ACLineSegment', '?mrid cim:ACLineSegment.r ?r']
        >>> combine_statements(where_list,group=True, split='\n')
     """
-    return "{\n" + split.join(args) + "\n}" if group else split.join(args)
+    return "{" + split.join(args) + "}" if group else split.join(args)
 
 
 def negpos(val: Union[float, int]) -> str:
@@ -223,7 +223,7 @@ def negpos(val: Union[float, int]) -> str:
 def select_statement(variables: Optional[List[str]] = None, distinct: bool = False) -> str:
     """Combine variables in an select statement"""
     vars = "*" if variables is None else " ".join(variables)
-    return f"SELECT {'distinct' if distinct else ''} {vars}"
+    return f"select {'distinct' if distinct else ''} {vars}"
 
 
 def groupby(vars: List[str], where_list: List[str], by: str) -> str:
@@ -231,7 +231,7 @@ def groupby(vars: List[str], where_list: List[str], by: str) -> str:
 
 
 def group_query(
-    x: List[str], command: str = "WHERE", split: str = " .\n", group: bool = True
+    x: List[str], command: str = "where", split: str = " . ", group: bool = True
 ) -> str:
     """Group Query
 
@@ -250,8 +250,8 @@ def group_query(
 
 def unionize(*args: str, group: bool = True) -> str:
     if group:
-        args = tuple(f"{{\n{arg}\n}}" for arg in args)
-    return "\nUNION\n".join(args)
+        args = tuple(f"{{{arg}}}" for arg in args)
+    return " union ".join(args)
 
 
 def get_name(mrid: str, name: str, alias: bool = False) -> str:
@@ -272,7 +272,7 @@ def border_filter(region: Union[str, List[str]], area1: str, area2: str) -> List
 
     def _in_first(var1: str, var2: str, regions: Optional[str]) -> List[str]:
         """Return filter for inclusion of first variable and not second"""
-        return [f"FILTER (regex({var1}, '{regions}'))", f"FILTER (!regex({var2}, '{regions}'))"]
+        return [f"filter (regex({var1}, '{regions}'))", f"filter (!regex({var2}, '{regions}'))"]
 
     regions = "|".join(region) if isinstance(region, list) else region
     return [
