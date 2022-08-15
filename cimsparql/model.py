@@ -190,7 +190,7 @@ class CimModel(Model):
 
     def loads(
         self,
-        load_type: LoadTypes,
+        load_type: Iterable[LoadTypes] = tuple(LoadTypes),
         load_vars: Optional[Iterable[Power]] = None,
         region: Region = None,
         sub_region: bool = False,
