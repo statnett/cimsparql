@@ -27,6 +27,7 @@ from cimsparql.enums import (
     Power,
     Rates,
     SvPowerFlow,
+    SvStatus,
     SvTapStep,
     SynchronousMachine,
     SyncVars,
@@ -547,11 +548,7 @@ def two_winding_transformer_query(
 ) -> str:
     term = nodes if nodes else "t_mrid"
     variables = [*[f"?{term}_{nr}" for nr in sequence_numbers], "?status", "?angle"]
-    where_list = [
-        *terminal("?_p_mrid", 1),
-        *terminal("?_p_mrid", 2),
-        "bind((?connected_1 && ?connected_2) as ?status)",
-    ]
+    where_list = [*terminal("?_p_mrid", 1), *terminal("?_p_mrid", 2)]
     for nr in sequence_numbers:
         where_list.append(f"?_{nodes}_{nr} {ID_OBJ}.mRID ?{nodes}_{nr}")
         mrid = f"?_t_mrid_{nr}"
@@ -575,10 +572,16 @@ def two_winding_transformer_query(
         network_analysis,
         with_loss,
     )
+    in_service = common_subject(
+        "?_svstatus",
+        [f"{SvStatus.inService} ?in_service", f"{SvStatus.ConductingEquipment} ?_p_mrid"],
+    )
     where_list.extend(
         [
             "?w_mrid_2 cim:PowerTransformerEnd.phaseAngleClock ?angleclock",
             f"optional {{{tap_phase_angle('?w_mrid_2', '?_angle')}}}",
+            f"optional {{{in_service}}}",
+            "bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)",
             "bind(coalesce (?_angle+xsd:float(30.0)*?angleclock, xsd:float(0.0)) as ?angle)",
         ]
     )
@@ -626,7 +629,7 @@ def three_winding_transformer_query(
     term = nodes if nodes else "t_mrid"
 
     connected = "?connected"
-    variables = [f"?{term}_1", f"(?p_mrid as ?{term}_2)", "(xsd:boolean(?connected) as ?status)"]
+    variables = [f"?{term}_1", f"(?p_mrid as ?{term}_2)", "?status"]
     where_list = [
         *terminal("?_p_mrid", 1, lock_end_number=False),
         f"?_p_mrid {ID_OBJ}.mRID ?p_mrid",
@@ -653,6 +656,14 @@ def three_winding_transformer_query(
         network_analysis,
         with_loss,
     )
+    in_service = common_subject(
+        "?_svstatus",
+        [f"{SvStatus.inService} ?in_service", f"{SvStatus.ConductingEquipment} ?w_mrid_1"],
+    )
+    where_list.extend(
+        [f"optional {{{in_service}}}", "bind(coalesce(?in_service, ?connected) as ?status)"]
+    )
+
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
