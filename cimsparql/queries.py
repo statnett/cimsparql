@@ -182,9 +182,9 @@ def full_model() -> str:
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def node_delta_power(node: str, cim_version: int) -> str:
+def node_delta_power(node: str, cim_version: int, p: str) -> str:
     """Calculate the sum of node injections (should be zero)."""
-    variables = [f"?_{node} (-sum(xsd:float(str(?p))) as ?delta_p)"]
+    variables = [f"?_{node} (-sum(xsd:float(str(?p))) as {p})"]
     where_list = [
         common_subject(
             "?_t_mrid",
@@ -230,7 +230,12 @@ def bus_data(
     ]
     if delta_power:
         variables.append("?delta_p")
-        where_list.extend([f"optional {{{node_delta_power(node, cim_version)}}}"])
+        where_list.extend(
+            [
+                f"optional {{{node_delta_power(node, cim_version, '?_delta_p')}}}",
+                "bind(coalesce(?_delta_p, xsd:float(0.0)) as ?delta_p)",
+            ]
+        )
 
     if container:
         where_list.append(f"?cont {ID_OBJ}.mRID {container}")
