@@ -15,6 +15,7 @@ from cimsparql.cim import (
     TN,
     TR_END,
     TR_WINDING,
+    LineTypes,
 )
 from cimsparql.constants import sequence_numbers, union_split
 from cimsparql.enums import (
@@ -82,6 +83,14 @@ def regions_query(with_sn_short_name: bool = True) -> str:
         alias_name_triple = sup.get_name(name_mrid, alias_name, alias=True)
         where_list.append(f"optional {{{alias_name_triple}}}")
         variables.extend([name, alias_name])
+    return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
+
+
+def ac_line_mrids() -> str:
+    variables = ["?mrid"]
+    where_list = [
+        common_subject("?_mrid", [f"rdf:type {LineTypes.ACLineSegment}", f"{ID_OBJ}.mRID ?mrid"])
+    ]
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
