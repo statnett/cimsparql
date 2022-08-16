@@ -10,6 +10,7 @@ from cimsparql.cim import (
     TR_END,
     TR_WINDING,
 )
+from cimsparql.enums import SvPowerFlow
 
 
 def _end_number(nr: int, lock_end_number: bool) -> List[str]:
@@ -44,14 +45,16 @@ def number_of_windings(mrid: str, winding_count: int, with_loss: bool = False) -
     ]
     if with_loss:
         variables.append("(sum(xsd:float(str(?sv_p))) / sum(?nr_connected) as ?pl)")
+        sv_flow = sup.common_subject(
+            "?_sv_t", [f"{SvPowerFlow.Terminal} ?p_t_mrid", f"{SvPowerFlow.p} ?_sv_p"]
+        )
         where_list.extend(
             [
                 f"?wwmrid {TR_END}.Terminal ?p_t_mrid",
-                "?p_t_mrid cim:ACDCTerminal.connected ?connected",
-                "bind(if(?connected, 1, 0) as ?nr_connected)",
-                sup.common_subject(
-                    "?sv_t", ["cim:SvPowerFlow.Terminal ?p_t_mrid", "cim:SvPowerFlow.p ?sv_p"]
-                ),
+                "optional{?p_t_mrid cim:ACDCTerminal.connected ?connected}",
+                "bind(coalesce(if(?connected, 1, 0), 0) as ?nr_connected)",
+                f"optional {{{sv_flow}}}",
+                "bind(coalesce(?_sv_p, xsd:float(0.0)) as ?sv_p)",
             ]
         )
     select = sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
