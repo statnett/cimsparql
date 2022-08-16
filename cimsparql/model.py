@@ -736,7 +736,7 @@ class CimModel(Model):
     def delta_node_power(
         self, node: str = "node", limit: Optional[int] = None, dry_run: bool = False
     ):
-        query = queries.node_delta_power(node, self.cim_version)
+        query = queries.node_delta_power(node, self.cim_version, "?delta_p")
         if dry_run:
             return self.client.query_with_header(query, limit)
         return self.get_table_and_convert(query, limit, index="mrid")
