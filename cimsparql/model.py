@@ -532,6 +532,14 @@ class CimModel(Model):
                 ac_lines.loc[ac_lines[column].isna(), column] = 1.0
         return ac_lines
 
+    def ac_line_mrids(
+        self, limit: Optional[int] = None, dry_run: bool = False
+    ) -> Union[pd.DataFrame, str]:
+        query = queries.ac_line_mrids()
+        if dry_run:
+            return self.client.query_with_header(query)
+        return self.get_table_and_convert(query, limit)
+
     def series_compensators(
         self,
         region: Region = None,
