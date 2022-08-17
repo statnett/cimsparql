@@ -525,7 +525,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        ac_lines = self.get_table_and_convert(query, limit)
+        ac_lines = self.get_table_and_convert(query, limit, index="mrid")
         if temperatures is not None:
             for temperature in temperatures:
                 column = f"{sup.negpos(temperature)}_{abs(temperature)}_factor"
@@ -585,7 +585,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, limit)
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def transformers(
         self,
@@ -673,7 +673,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, limit)
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def three_winding_transformers(
         self,
@@ -723,7 +723,7 @@ class CimModel(Model):
         )
         if dry_run:
             return self.client.query_with_header(query, limit)
-        return self.get_table_and_convert(query, limit)
+        return self.get_table_and_convert(query, limit, index="mrid")
 
     def substation_voltage_level(
         self, limit: Optional[int] = None, dry_run: bool = False
