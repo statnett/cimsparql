@@ -136,7 +136,7 @@ class GraphDBClient:
                 "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
             )
             raise RuntimeError(
-                f"{msg}\nStatus code: {response.status_code}\nReason: {response.reason}"
+                f"{msg} Status code: {response.status_code} Reason: {response.reason}"
             )
         return prefixes
 
