@@ -177,6 +177,22 @@ class GraphDBClient:
         )
         response.raise_for_status()
 
+    def set_namespace(self, prefix: str, value: str):
+        auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
+        response = requests.put(
+            self.service_cfg.url + f"/namespaces/{prefix}",
+            data=value,
+            headers={"Content-Type": "text/plain"},
+            auth=auth,
+        )
+        response.raise_for_status()
+
+    def get_namespace(self, prefix: str) -> str:
+        auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
+        response = requests.get(self.service_cfg.url + f"/namespaces/{prefix}", auth=auth)
+        response.raise_for_status()
+        return response.text
+
 
 @deprecated(version="1.11", reason="Use cimsparqel.model.get_cim_model instead")
 def get_graphdb_client(
