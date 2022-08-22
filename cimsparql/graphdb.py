@@ -87,6 +87,12 @@ class GraphDBClient:
             self._prefixes = Prefix(pref)
         return self._prefixes
 
+    def update_prefixes(self, pref: Dict[str, str]):
+        """
+        Update prefixes from a dict
+        """
+        self.prefixes.update(pref)
+
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service_cfg.url}>"
 
