@@ -39,6 +39,22 @@ class ServiceConfig:
     passwd: str = field(default=os.getenv("GRAPHDB_USER_PASSWD"))
 
 
+# Available formats from RDF4J API
+# https://rdf4j.org/documentation/reference/rest-api/
+MIME_TYPE_RDF_FORMATS = {
+    "rdf/xml": "application/rdf+xml",
+    "n-triples": "text/plain",
+    "turtle": "text/turtle",
+    "n3": "text/rdf+n3",
+    "n-quads": "text/x-nquads",
+    "json-ld": "application/ld+json",
+    "rdf/json": "application/rdf+json",
+    "trix": "application/trix",
+    "trig": "application/x-trig",
+    "rdf4J binary rdf": "application/x-binary-rdf",
+}
+
+
 class GraphDBClient:
     def __init__(
         self,
@@ -144,25 +160,14 @@ class GraphDBClient:
         response = requests.delete(self.service_cfg.url)
         response.raise_for_status()
 
-    def upload_rdf_xml(self, fname: Path):
+    def upload_rdf(self, fname: Path, rdf_format: str):
         with open(fname, "rb") as infile:
             xml_content = infile.read()
 
         response = requests.post(
             self.service_cfg.url + "/statements",
             data=xml_content,
-            headers={"Content-Type": "application/rdf+xml"},
-        )
-        response.raise_for_status()
-
-    def upload_ttl(self, fname: Path):
-        with open(fname, "rb") as infile:
-            turtle_content = infile.read()
-
-        response = requests.post(
-            self.service_cfg.url + "/statements",
-            data=turtle_content,
-            headers={"Content-Type": "text/turtle"},
+            headers={"Content-Type": MIME_TYPE_RDF_FORMATS[rdf_format]},
         )
         response.raise_for_status()
 
