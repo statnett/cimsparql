@@ -41,7 +41,7 @@ def test_upload_rdf_xml(rdf4j_gdb):
         pytest.skip("Require access to RDF4J service")
 
     xml_file = Path(__file__).parent / "data/demo.xml"
-    rdf4j_gdb.upload_rdf_xml(xml_file)
+    rdf4j_gdb.upload_rdf(xml_file, "rdf/xml")
 
     df = rdf4j_gdb.exec_query("SELECT * WHERE {?s rdf:type md:FullModel}")
     assert len(df) == 1
@@ -53,3 +53,13 @@ def test_get_table_default_arg(rdf4j_gdb):
 
     df = rdf4j_gdb.get_table("SELECT * {?s ?o ?p}")[0]
     assert len(df) == 6
+
+
+def test_namespaces(rdf4j_gdb):
+    if skip_rdf4j_test(rdf4j_gdb):
+        pytest.skip("Require access to RDF4J service")
+
+    ns = "http://mynamepace.org"
+    rdf4j_gdb.set_namespace("myns", ns)
+    fetched_ns = rdf4j_gdb.get_namespace("myns")
+    assert ns == fetched_ns
