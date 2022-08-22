@@ -121,6 +121,42 @@ optional arguments:
 
 In order to use the script to convert XML files into a format that can be used with `cimsparql`
 
-```` bash
+``` bash
 poetry run scripts/modify_xml.py "path/to/model/*.xml"
 ```
+
+### Ontology (for developers)
+
+Ontologies for the CIM model can be found at (ENTSOE's webpages)[https://www.entsoe.eu/digital/common-information-model/cim-for-grid-models-exchange/].
+For convenience and testing purposes the ontology are located under `tests/data/ontology`. CIM models used for testing purposes in Cimsparql should
+be stored in N-quads format. In case you have a model in XML format it can be converted to N-quads by launching a DB (for example RDF4J) and upload
+all the XML files and the ontology.
+
+Execute
+
+```sparql
+PREFIX cims: <http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#>
+
+DELETE {?s ?p ?o}
+INSERT {?s ?p ?o_cast} WHERE {
+  ?s ?p ?o .
+  ?p cims:dataType ?_dtype .
+  ?_dtype cims:stereotype ?stereotype .
+  BIND(IF(?stereotype = "Primitive",
+    URI(concat("http://www.w3.org/2001/XMLSchema#", lcase(strafter(str(?_dtype), "#")))),
+    ?_dtype) as ?dtype)
+  BIND(STRDT(?o, ?dtype) as ?o_cast)
+}
+```
+and export as N-quads.
+
+**Note**: Make sure the base URI is either specified in the XML-files or when you upload. It should be set to
+
+```xml
+<rdf:RDF xml:base="http://iec.ch/TC57/2013/CIM-schema-cim16">
+```
+
+
+### Test models
+
+1. *micro_t1_nl*: `MicroGrid/Type1_T1/CGMES_v2.4.15_MicroGridTestConfiguration_T1_NL_Complete_v2`

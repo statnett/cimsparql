@@ -113,6 +113,7 @@ def test_two_winding_transformers(micro_t1_nl_adapted: Optional[CimModel]):
     assert len(data) == 3
     expect_names = {"NL-TR2_1", "NL_TR2_2", "NL_TR2_3"}
     assert set(data["name"]) == expect_names
+    assert data["r"].dtype == float
 
 
 def test_three_winding_transformers(micro_t1_nl_adapted: Optional[CimModel]):
@@ -174,8 +175,8 @@ def test_topological_node(micro_t1_nl_adapted: Optional[CimModel]):
     data = micro_t1_nl_adapted.topological_node()
     assert len(data) == 2
 
-    expect_names = ["NL_TR_BUS2", "N1230822413"]
-    assert list(data["name"]) == expect_names
+    expect_names = {"NL_TR_BUS2", "N1230822413"}
+    assert set(data["name"]) == expect_names
 
 
 def test_powerflow(micro_t1_nl_adapted: Optional[CimModel]):

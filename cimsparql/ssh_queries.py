@@ -7,13 +7,13 @@ def disconnected(cim_version: int) -> str:
     disconnector = [
         "?mrid ?p cim:Disconnector",
         "?mrid cim:Switch.open ?status",
-        'FILTER (?status = "true")',
+        "FILTER (?status = True)",
     ]
 
     terminal = [
         "?mrid ?p cim:Terminal",
         f"?mrid cim:{acdc_terminal(cim_version)}.connected ?connected",
-        'FILTER (?connected = "false")',
+        "FILTER (?connected = False)",
     ]
 
     where_list = group_query(

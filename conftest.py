@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import pathlib
@@ -190,7 +191,7 @@ def initialized_rdf4j_repo(service_url: str) -> GraphDBClient:
     client = new_repo(service_url, "picasso", config, allow_exist=True, protocol="http")
 
     data_file = data_path / "artist.ttl"
-    client.upload_ttl(data_file)
+    client.upload_rdf(data_file, "turtle")
     return client
 
 
@@ -210,15 +211,19 @@ def rdf4j_gdb(rdf4j_url: str) -> Optional[GraphDBClient]:
 
 
 def init_test_cim_model(rdf4j_url: str, name: str, repo_name_suffix: str = ""):
-    folder = pathlib.Path(__file__).parent / f"tests/data/{name}/"
+    nq_file = pathlib.Path(__file__).parent / f"tests/data/{name}.nq"
     template = confpath() / "native_store_config_template.ttl"
     repo_name = name + repo_name_suffix
     config = config_bytes_from_template(template, {"repo": repo_name})
     client = new_repo(rdf4j_url, repo_name, config, allow_exist=False, protocol="http")
+    client.upload_rdf(nq_file, "n-quads")
 
-    for f in folder.iterdir():
-        if f.suffix == ".xml":
-            client.upload_rdf_xml(f)
+    ns_file = pathlib.Path(__file__).parent / "tests/data/namespaces.json"
+    with open(ns_file, "r") as infile:
+        ns = json.load(infile)
+
+    for k, v in ns.items():
+        client.set_namespace(k, v)
     return client
 
 
