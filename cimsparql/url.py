@@ -70,6 +70,9 @@ class Prefix:
     def __init__(self, prefixes: Dict[str, str]) -> None:
         self.prefixes = prefixes
 
+    def update(self, pref: Dict[str, str]):
+        self.prefixes.update(pref)
+
     def in_prefixes(self, variables: Iterable) -> Iterable:
         return {variable for variable in variables if variable.split(":")[0] in self.prefixes}
 

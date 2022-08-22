@@ -331,3 +331,13 @@ def test_add_mrid(micro_t1_nl):
     micro_t1_nl.add_mrid("cim:TopologicalNode")
     res = micro_t1_nl.client.exec_query(query)
     assert len(res) == 5
+
+
+def test_update_prefixes(monkeypatch):
+    monkeypatch.setattr(GraphDBClient, "get_prefixes", lambda *args: {})
+    client = GraphDBClient("http://some.url")
+    assert client.prefixes.prefixes == {}
+
+    new_pref = {"eq": "http://eq"}
+    client.update_prefixes(new_pref)
+    assert client.prefixes.prefixes == new_pref
