@@ -30,6 +30,10 @@ def service(
     return url
 
 
+def service_blazegraph(server: str, repo: str, protocol: str = "https"):
+    return f"{protocol}://{server}/{repo}/sparql"
+
+
 class GraphDbConfig:
     def __init__(
         self,

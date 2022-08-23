@@ -160,3 +160,16 @@ and export as N-quads.
 ### Test models
 
 1. *micro_t1_nl*: `MicroGrid/Type1_T1/CGMES_v2.4.15_MicroGridTestConfiguration_T1_NL_Complete_v2`
+
+
+### Rest APIs
+
+CimSparql mainly uses `SparqlWrapper` to communicate with the databases. However, there are certain operations which are performed
+directly via REST calls. Since there are small differences between different APIs you may have to specify which API you are using.
+This can be done when initializing the `ServiceCfg` class or by specifying the `SPARQL_REST_API` environment variable. Currently,
+`RDF4J` and `blazegraph` is supported (if not given `RDF4J` is default).
+
+```bash
+export SPARQL_REST_API=RDF4J  # To use RDF4J
+export SPARQL_REST_API=BLAZEGRAPH  # To use BlazeGraph
+```

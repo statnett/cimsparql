@@ -1,6 +1,8 @@
 """Graphdb CIM sparql client"""
+import json
 import os
 from dataclasses import dataclass, field
+from enum import auto
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -8,9 +10,10 @@ import pandas as pd
 import requests
 from deprecated import deprecated
 from SPARQLWrapper import JSON, SPARQLWrapper
+from strenum import StrEnum
 
 from cimsparql import url
-from cimsparql.url import Prefix, service
+from cimsparql.url import Prefix, service, service_blazegraph
 
 
 def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
@@ -32,11 +35,29 @@ def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
     return full_row
 
 
+class RestApi(StrEnum):
+    RDF4J = auto()
+    BLAZEGRAPH = auto()
+
+
+def parse_namespaces_rdf4j(response: requests.Response) -> Dict[str, str]:
+    prefixes = {}
+    for line in response.text.split()[1:]:
+        prefix, uri = line.split(",")
+        prefixes[prefix] = uri
+    return prefixes
+
+
 @dataclass
 class ServiceConfig:
     url: str
     user: str = field(default=os.getenv("GRAPHDB_USER"))
     passwd: str = field(default=os.getenv("GRAPHDB_USER_PASSWD"))
+    rest_api: RestApi = field(default=os.getenv("SPARQL_REST_API", RestApi.RDF4J))
+
+    def __post_init__(self):
+        if self.rest_api not in RestApi:
+            raise ValueError(f"rest_api must be one of {RestApi}")
 
 
 # Available formats from RDF4J API
@@ -53,6 +74,18 @@ MIME_TYPE_RDF_FORMATS = {
     "trig": "application/x-trig",
     "rdf4J binary rdf": "application/x-binary-rdf",
 }
+
+UPLOAD_END_POINT = {RestApi.RDF4J: "/statements", RestApi.BLAZEGRAPH: ""}
+
+
+def require_rdf4j(f):
+    def wrapper(*args):
+        self = args[0]
+        if self.service_cfg.rest_api != RestApi.RDF4J:
+            raise NotImplementedError("Function only implemented for RDF4J")
+        return f(*args)
+
+    return wrapper
 
 
 class GraphDBClient:
@@ -143,14 +176,17 @@ class GraphDBClient:
             return True
 
     def get_prefixes(self) -> Dict[str, str]:
+        if self.service_cfg.rest_api == RestApi.BLAZEGRAPH:
+            # Blazegraph does not expose prefixes over API
+            # When using Blazegraph custom prefixes must be added via `update_prefixes`
+            # By default we load a pre-defined set of prefixes
+            return default_namespaces()
+
         prefixes = {}
         auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
         response = requests.get(self.service_cfg.url + "/namespaces", auth=auth)
         if response.ok:
-            # Extract prefixes (skip line 1 which is a header)
-            for line in response.text.split()[1:]:
-                prefix, uri = line.split(",")
-                prefixes[prefix] = uri
+            prefixes = parse_namespaces_rdf4j(response)
         else:
             msg = (
                 "Could not fetch namespaces and prefixes from graphdb "
@@ -163,7 +199,8 @@ class GraphDBClient:
         return prefixes
 
     def delete_repo(self):
-        response = requests.delete(self.service_cfg.url)
+        endpoint = delete_repo_endpoint(self.service_cfg)
+        response = requests.delete(endpoint)
         response.raise_for_status()
 
     def upload_rdf(self, fname: Path, rdf_format: str):
@@ -171,7 +208,7 @@ class GraphDBClient:
             xml_content = infile.read()
 
         response = requests.post(
-            self.service_cfg.url + "/statements",
+            self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
             data=xml_content,
             headers={"Content-Type": MIME_TYPE_RDF_FORMATS[rdf_format]},
         )
@@ -182,12 +219,13 @@ class GraphDBClient:
         Function that passes a query via a post API call
         """
         response = requests.post(
-            self.service_cfg.url + "/statements",
+            self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
             data={"update": query},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         response.raise_for_status()
 
+    @require_rdf4j
     def set_namespace(self, prefix: str, value: str):
         auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
         response = requests.put(
@@ -198,6 +236,7 @@ class GraphDBClient:
         )
         response.raise_for_status()
 
+    @require_rdf4j
     def get_namespace(self, prefix: str) -> str:
         auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
         response = requests.get(self.service_cfg.url + f"/namespaces/{prefix}", auth=auth)
@@ -268,6 +307,19 @@ def new_repo(
     return GraphDBClient(url)
 
 
+def new_repo_blazegraph(url: str, repo: str, protocol: str = "https") -> GraphDBClient:
+    template = confpath() / "blazegraph_repo_config.xml"
+    config = config_bytes_from_template(template, {"repo": repo})
+
+    response = requests.post(
+        f"http://{url}", data=config, headers={"Content-type": "application/xml"}
+    )
+    response.raise_for_status()
+    client = GraphDBClient(service_blazegraph(url, repo, protocol))
+    client.service_cfg.rest_api = RestApi.BLAZEGRAPH
+    return client
+
+
 def config_bytes_from_template(
     template: Path, params: Dict[str, str], encoding: str = "utf8"
 ) -> bytes:
@@ -291,3 +343,15 @@ def config_bytes_from_template(
 
 def confpath() -> Path:
     return Path(__file__).parent.parent / "pkg_data"
+
+
+def default_namespaces() -> Dict[str, str]:
+    with open(confpath() / "namespaces.json") as infile:
+        return json.load(infile)
+
+
+def delete_repo_endpoint(config: ServiceConfig) -> str:
+    if config.rest_api == RestApi.BLAZEGRAPH:
+        # Remove /sparql at the end
+        return config.url.rpartition("/")[0]
+    return config.url
