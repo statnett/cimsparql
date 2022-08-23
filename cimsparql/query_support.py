@@ -228,7 +228,7 @@ def select_statement(variables: Optional[List[str]] = None, distinct: bool = Fal
 
 
 def group_query(
-    x: List[str], command: str = "WHERE", split: str = ".\n", group: bool = True
+    x: List[str], command: str = "WHERE", split: str = " .\n", group: bool = True
 ) -> str:
     """Group Query
 

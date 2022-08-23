@@ -2,14 +2,21 @@ import json
 import logging
 import os
 import pathlib
-from typing import Optional, Set
+from typing import Dict, Optional, Set
 
 import pandas as pd
 import pytest
 import requests
 
 from cimsparql.constants import CIM_TYPES_WITH_MRID, con_mrid_str
-from cimsparql.graphdb import GraphDBClient, config_bytes_from_template, confpath, new_repo
+from cimsparql.graphdb import (
+    GraphDBClient,
+    RestApi,
+    config_bytes_from_template,
+    confpath,
+    new_repo,
+    new_repo_blazegraph,
+)
 from cimsparql.model import CimModel, get_cim_model
 from cimsparql.type_mapper import TypeMapper
 from cimsparql.url import GraphDbConfig, service
@@ -170,6 +177,14 @@ def rdf4j_url() -> str:
     return os.getenv("RDF4J_URL", "")
 
 
+@pytest.fixture(scope="session")
+def blazegraph_url() -> str:
+    if os.getenv("CI"):
+        # Running on GitHub
+        return "localhost:9999/blazegraph/namespace"
+    return os.getenv("BLAZEGRAPH_URL", "")
+
+
 def upload_ttl_to_repo(
     url: str, fname: pathlib.Path, ignored_error_codes: Optional[Set[int]] = None
 ):
@@ -218,7 +233,7 @@ def init_test_cim_model(rdf4j_url: str, name: str, repo_name_suffix: str = ""):
     client = new_repo(rdf4j_url, repo_name, config, allow_exist=False, protocol="http")
     client.upload_rdf(nq_file, "n-quads")
 
-    ns_file = pathlib.Path(__file__).parent / "tests/data/namespaces.json"
+    ns_file = confpath() / "namespaces.json"
     with open(ns_file, "r") as infile:
         ns = json.load(infile)
 
@@ -227,11 +242,25 @@ def init_test_cim_model(rdf4j_url: str, name: str, repo_name_suffix: str = ""):
     return client
 
 
+def init_cim_blazegraph(url: str, name: str, suffix: str = ""):
+    repo = f"{name}{suffix}"
+    client = new_repo_blazegraph(url, repo, "http")
+    nq_file = pathlib.Path(__file__).parent / f"tests/data/{name}.nq"
+    client.upload_rdf(nq_file, "n-quads")
+    return client
+
+
+def cim_client(url: str, repo_name: str, repo_name_suffix: str, rest_api: RestApi) -> GraphDBClient:
+    if rest_api == RestApi.BLAZEGRAPH:
+        return init_cim_blazegraph(url, repo_name, repo_name_suffix)
+    return init_test_cim_model(url, repo_name, repo_name_suffix)
+
+
 def get_micro_t1_nl(
-    rdf4j_url: str, repo_name: str, repo_name_suffix: str = ""
+    url: str, repo_name: str, repo_name_suffix: str = "", rest_api: RestApi = RestApi.RDF4J
 ) -> Optional[CimModel]:
     try:
-        client = init_test_cim_model(rdf4j_url, repo_name, repo_name_suffix)
+        client = cim_client(url, repo_name, repo_name_suffix, rest_api)
         mapper = TypeMapper(client)
         return CimModel(mapper, client)
     except Exception as exc:
@@ -250,15 +279,29 @@ def micro_t1_nl(rdf4j_url: str) -> Optional[CimModel]:
 
 
 @pytest.fixture(scope="session")
+def micro_t1_nl_bg(blazegraph_url: str) -> Optional[CimModel]:
+    model = get_micro_t1_nl(blazegraph_url, "micro_t1_nl", rest_api=RestApi.BLAZEGRAPH)
+    try:
+        yield model
+    finally:
+        if model:
+            model.client.delete_repo()
+
+
+def apply_custom_modifications(model: Optional[CimModel]):
+    if model:
+        for rdf_type in CIM_TYPES_WITH_MRID:
+            model.add_mrid(f"cim:{rdf_type}")
+
+
+@pytest.fixture(scope="session")
 def micro_t1_nl_adapted(rdf4j_url: str) -> Optional[CimModel]:
     """
     Fixture that uses the micro_t1_nl model with some adaptions
     """
     model = get_micro_t1_nl(rdf4j_url, "micro_t1_nl", "_adapted")
     try:
-        if model:
-            for rdf_type in CIM_TYPES_WITH_MRID:
-                model.add_mrid(f"cim:{rdf_type}")
+        apply_custom_modifications(model)
         yield model
     except Exception as exc:
         logger.error(f"{exc}")
@@ -266,3 +309,27 @@ def micro_t1_nl_adapted(rdf4j_url: str) -> Optional[CimModel]:
     finally:
         if model:
             model.client.delete_repo()
+
+
+@pytest.fixture(scope="session")
+def micro_t1_nl_adapted_bg(blazegraph_url: str) -> Optional[CimModel]:
+    """
+    Fixture that uses the micro_t1_nl model with some adaptions
+    """
+    model = get_micro_t1_nl(blazegraph_url, "micro_t1_nl", "_adapted", RestApi.BLAZEGRAPH)
+    try:
+        apply_custom_modifications(model)
+        yield model
+    except Exception as exc:
+        logger.error(f"{exc}")
+        yield None
+    finally:
+        if model:
+            model.client.delete_repo()
+
+
+@pytest.fixture(scope="session")
+def micro_t1_nl_models(
+    micro_t1_nl_adapted, micro_t1_nl_adapted_bg
+) -> Dict[str, Optional[CimModel]]:
+    return {"rdf4j": micro_t1_nl_adapted, "blazegraph": micro_t1_nl_adapted_bg}
