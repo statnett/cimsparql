@@ -81,20 +81,24 @@ which can be used in queries (such as `rdf` and `cim`) can by found by
  'ALG': 'http://www.alstom.com/grid/CIM-schema-cim15-extension#'}
 ```
 
-### Running Tests Against RDF4J Database
+### Running Tests Against Docker Databases
 
-To run tests using data in an RDF4J database, the `rdf4j-server` must be available. A docker image with the `rdf4j-server` and `rdf4j-workbench` can be downloaded via
+Tests can be run agains RDF4J and/or BlazeGraph databases if a container with the correct images are available.
 
 ```
 docker pull eclipse/rdf4j-workbench
+docker pull openkbs/blazegraph
 ```
 
-Launch a container with this image and specify the URL in the `RDF4J_URL` environment variable. With default settings in the container, it should be
+Launch one or both containers and specify the following environment variables
 
 ```
 RDF4J_URL = "localhost:8080/rdf4j-server"
+BLAZEGRAPH_URL = "localhost:9999/blazegraph/namespace
 ```
-
+**Note 1**: The port numbers may differ depending on your local Docker configurations.
+**Note 2**: You don't *have* to install RDF4J or BlazeGraph. Tests requiring these will be skipped in case
+they are not available. They will in any case be run in the CI pipeline on GitHub (where both always are available).
 
 ### Data Assumptions
 
