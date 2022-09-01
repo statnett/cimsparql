@@ -230,10 +230,12 @@ class GraphDBClient:
         """
         Function that passes a query via a post API call
         """
+        auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
         response = requests.post(
             self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
             data={"update": query},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
+            auth=auth,
         )
         response.raise_for_status()
 
@@ -277,23 +279,27 @@ class RepoInfo:
     writable: bool
 
 
-def repos(server: str) -> List[RepoInfo]:
+def repos(service_cfg: Optional[ServiceConfig] = None) -> List[RepoInfo]:
     """
     List available repositories
     """
-    response = requests.get(server + "/repositories")
+
+    service_cfg = service_cfg or ServiceConfig()
+    auth = requests.auth.HTTPBasicAuth(service_cfg.user, service_cfg.passwd)
+
+    url = f"{service_cfg.protocol}://{service_cfg.server}/repositories"
+    response = requests.get(url, auth=auth, headers={"Accept": "application/json"})
     response.raise_for_status()
 
-    infos = []
-    for line in response.text.split("\n")[1:]:
-        if not line:
-            continue
-        uri, repo_id, title, readable, writable = line.strip().split(",")
-        readable = readable == "true"
-        writable = writable == "true"
-        info = RepoInfo(uri=uri, repo_id=repo_id, title=title, readable=readable, writable=writable)
-        infos.append(info)
-    return infos
+    def _repo_info(repo):
+        uri = repo["uri"]["value"]
+        repo_id = repo["id"]["value"]
+        title = repo["title"]["value"]
+        readable = repo["readable"]["value"] == "true"
+        writable = repo["writable"]["value"] == "true"
+        return RepoInfo(uri, repo_id, title, readable, writable)
+
+    return [_repo_info(repo) for repo in response.json()["results"]["bindings"]]
 
 
 def new_repo(
