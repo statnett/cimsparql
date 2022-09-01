@@ -12,7 +12,6 @@ from deprecated import deprecated
 from SPARQLWrapper import JSON, SPARQLWrapper
 from strenum import StrEnum
 
-from cimsparql import url
 from cimsparql.url import Prefix, service, service_blazegraph
 
 
