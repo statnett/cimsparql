@@ -84,7 +84,7 @@ class TypeMapperQueries:
     @property
     def type_queries(self) -> List[List[str]]:
         queries = [
-            ["?sparql_type rdf:type rdfs:Datatype", "?sparql_type owl:equivalentClass ?range"],
+            ["?sparql_type rdf:type rdfs:Datatype;owl:equivalentClass ?range"],
             ["?sparql_type owl:equivalentClass ?range"],
         ]
 
@@ -118,9 +118,9 @@ class TypeMapperQueries:
     @property
     def query(self) -> str:
         select_query = "SELECT ?sparql_type ?range"
-        grouped = [combine_statements(*g, split=".\n") for g in self.type_queries]
+        grouped = [combine_statements(*g, split=" .") for g in self.type_queries]
         union = unionize(*grouped)
-        return f"{select_query}\nWHERE\n{{\n{union}\n}}"
+        return f"{select_query} where {{{union}}}"
 
 
 class TypeMapper:
