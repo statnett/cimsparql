@@ -140,14 +140,15 @@ class GraphDBClient:
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service_cfg.url}>"
 
-    def query_with_header(self, query: str, limit: Optional[int] = None) -> str:
-        query = "\n".join([self.prefixes.header_str(query), query])
+    def query_with_header(self, query: str, add_prefixes: bool, limit: Optional[int] = None) -> str:
+        if add_prefixes:
+            query = "\n".join([self.prefixes.header_str(query), query])
         if limit is not None:
             query += f" limit {limit}"
         return query
 
-    def _exec_query(self, query: str, limit: Optional[int]):
-        self.sparql.setQuery(self.query_with_header(query, limit))
+    def _exec_query(self, query: str, limit: Optional[int], add_prefixes: bool):
+        self.sparql.setQuery(self.query_with_header(query, add_prefixes, limit))
 
         processed_results = self.sparql.queryAndConvert()
 
@@ -161,7 +162,7 @@ class GraphDBClient:
         return out
 
     def get_table(
-        self, query: str, limit: Optional[int] = None
+        self, query: str, limit: Optional[int] = None, add_prefixes: bool = True
     ) -> Tuple[pd.DataFrame, Dict[str, str]]:
         """
         Args:
@@ -174,7 +175,7 @@ class GraphDBClient:
            >>> query = 'select * where { ?subject ?predicate ?object }'
            >>> gdbc.get_table(query, limit=10)
         """
-        out, data_row = self._exec_query(query, limit)
+        out, data_row = self._exec_query(query, limit, add_prefixes)
         return pd.DataFrame(out), data_row
 
     @property
