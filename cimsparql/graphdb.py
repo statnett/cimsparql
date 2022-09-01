@@ -12,7 +12,6 @@ from deprecated import deprecated
 from SPARQLWrapper import JSON, SPARQLWrapper
 from strenum import StrEnum
 
-from cimsparql import url
 from cimsparql.url import Prefix, service, service_blazegraph
 
 
@@ -64,7 +63,9 @@ class ServiceConfig:
 
     @property
     def url(self) -> str:
-        return url.service(self.repo, self.server, self.protocol, self.path)
+        if self.rest_api == RestApi.BLAZEGRAPH:
+            return service_blazegraph()
+        return service(self.repo, self.server, self.protocol, self.path)
 
 
 # Available formats from RDF4J API
