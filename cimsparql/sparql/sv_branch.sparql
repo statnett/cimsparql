@@ -1,0 +1,72 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+select ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?p_1 ?q_1 ?p_2 ?q_2 ?v_1 ?angle_1 ?v_2 ?angle_2
+where {
+  ?_mrid cim:IdentifiedObject.mRID ?mrid;
+         cim:IdentifiedObject.name ?name;
+         cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
+         cim:ACLineSegment.r ?r;
+         cim:ACLineSegment.x ?x;
+         cim:ACLineSegment.bch ?bch;
+         cim:ACLineSegment.gch ?gch;
+  service <${repo}> {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
+  { # Search terminal 1 side SSH/TP/SV
+    select ?_mrid (?connected as ?connected_1) (?p as ?p_1) (?q as ?q_1) (?v as ?v_1) (?angle as ?angle_1)
+    where
+    {
+      ?_mrid rdf:type cim:ACLineSegment .
+      ?_t_mrid rdf:type cim:Terminal;
+               cim:IdentifiedObject.mRID ?t_mrid;
+               cim:Terminal.ConductingEquipment ?_mrid;
+               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+               cim:${ACDCTerminal}.sequenceNumber 1 .
+      filter(regex(?area, '${region}'))
+      service <${repo}>
+      {
+        ?_t_mrid cim:Terminal.TopologicalNode ?_node;
+                 cim:${ACDCTerminal}.connected ?connected .
+        optional
+        {
+          ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
+                 cim:SvPowerFlow.p ?p;
+                 cim:SvPowerFlow.q ?q.
+          ?_sv_n cim:SvVoltage.TopologicalNode ?_node;
+                 cim:SvVoltage.v ?v;
+                 cim:SvVoltage.angle ?angle .
+        }
+      }.
+    }
+  } .
+  { # Search terminal 2 side SSH/TP/SV
+    select ?_mrid (?connected as ?connected_2) (?p as ?p_2) (?q as ?q_2) (?v as ?v_2) (?angle as ?angle_2)
+    where
+    {
+      ?_mrid rdf:type cim:ACLineSegment.
+      ?_t_mrid rdf:type cim:Terminal;
+               cim:IdentifiedObject.mRID ?t_mrid;
+               cim:Terminal.ConductingEquipment ?_mrid;
+               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+               cim:${ACDCTerminal}.sequenceNumber 2.
+      filter(regex(?area, '${region}'))
+      service <${repo}>
+      {
+        ?_t_mrid cim:Terminal.TopologicalNode ?_node;
+                 cim:${ACDCTerminal}.connected ?connected.
+        optional
+        {
+          ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
+                 cim:SvPowerFlow.p ?p;
+                 cim:SvPowerFlow.q ?q.
+          ?_sv_n cim:SvVoltage.TopologicalNode ?_node;
+                 cim:SvVoltage.v ?v;
+                 cim:SvVoltage.angle ?angle .
+        }
+      }.
+    }
+  } .
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  filter(?network_analysis)
+  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status) .
+}

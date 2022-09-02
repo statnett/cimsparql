@@ -11,7 +11,7 @@ def script_folder() -> Path:
     return Path(__file__).parent.parent / "scripts"
 
 
-@pytest.mark.integrationtest
+@pytest.mark.integration_test
 def test_modify_xml(tmpdir, script_folder):
     # Copy XML files
     f = Path(__file__).parent / "data/micro_t1_nl/20171002T0930Z_1D_NL_SSH_3.xml"

@@ -1,0 +1,45 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+PREFIX xsd: <${xsd}>
+select  ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?rateNormal (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2)
+where {
+  # Use mrid of transformer as dummy node
+  ?_p_mrid cim:IdentifiedObject.mRID ?node_2;
+           cim:Equipment.EquipmentContainer ?Substation;
+           cim:IdentifiedObject.name ?name .
+  ?Substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area.
+  filter(regex(?area, '${region}'))
+  ?_mrid cim:TransformerEnd.Terminal ?_t_mrid;
+         cim:IdentifiedObject.mRID ?mrid;
+         cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+         cim:PowerTransformerEnd.ratedU ?un;
+         cim:PowerTransformerEnd.r ?r;
+         cim:PowerTransformerEnd.x ?x .
+  optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
+  service <${repo}> {
+    ?_t_mrid cim:${ACDCTerminal}.connected ?connected;
+             cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .
+  } .
+  service <${repo}> {
+    optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}
+  } .
+  {
+    select  ?_p_mrid (count(distinct ?nr) as ?winding_count)
+    where {
+      ?_p_mrid ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr
+    }
+    group by ?_p_mrid
+    having (?winding_count = 3)
+  } .
+  optional {
+    ?_lim rdf:type cim:ActivePowerLimit;
+          cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?_t_mrid;
+          cim:IdentifiedObject.name 'Normal@20';
+          cim:ActivePowerLimit.value ?rateNormal .
+  }
+  optional {?_p_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  filter(?network_analysis)
+  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  bind(coalesce(?in_service, ?connected) as ?status)
+}

@@ -1,0 +1,20 @@
+PREFIX cim: <${cim}>
+PREFIX rdf: <${rdf}>
+PREFIX xsd: <${xsd}>
+select ?mrid ?angle
+where {
+  ?_p_mrid rdf:type cim:PowerTransformer.
+  ?_mrid_1 rdf:type cim:PowerTransformerEnd;
+           cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+           cim:IdentifiedObject.mRID ?mrid;
+           cim:TransformerEnd.endNumber 1 .
+  ?_mrid_2 rdf:type cim:PowerTransformerEnd;
+           cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+           cim:TransformerEnd.endNumber 2 .
+  ?_tap_changer rdf:type cim:PhaseTapChangerLinear;
+               cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc;
+               cim:TapChanger.normalStep ?normalstep;
+               cim:PhaseTapChanger.TransformerEnd ?_mrid_2 .
+  service <${repo}> {?_tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?position}
+  bind((?position - ?normalstep) * xsd:double(str(?inc)) as ?angle)
+}

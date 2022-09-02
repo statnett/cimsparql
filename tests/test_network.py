@@ -16,15 +16,7 @@ def test_reference_nodes():
     )
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_breaker_reference_nodes(breakers: pd.DataFrame):
-    connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
-    node_dict = Islands(breakers[connect_columns]).reference_nodes()
-    assert len(node_dict) == len(np.unique(breakers[connect_columns].to_numpy()))
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
-def test_connectors_reference_nodes(disconnectors: pd.DataFrame):
-    connect_columns = [f"connectivity_mrid_{nr}" for nr in [1, 2]]
-    node_dict = Islands(disconnectors[connect_columns]).reference_nodes()
-    assert len(node_dict) == len(np.unique(disconnectors[connect_columns].to_numpy()))
+@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
+def test_breaker_reference_nodes(connections: pd.DataFrame):
+    node_dict = Islands(connections).reference_nodes()
+    assert len(node_dict) == len(np.unique(connections.to_numpy()))

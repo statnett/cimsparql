@@ -1,0 +1,50 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+PREFIX xsd: <${xsd}>
+select ?mrid ?name ?allocationmax ?node ?status ?station_group ?station_group_name ?station ?market_code ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
+where {
+  ?_mrid rdf:type cim:SynchronousMachine;
+         cim:IdentifiedObject.name ?name;
+         cim:RotatingMachine.ratedS ?sn;
+         cim:IdentifiedObject.mRID ?mrid;
+         ^cim:Terminal.ConductingEquipment ?_t_mrid;
+         cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?_substation .
+  ?_substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+               cim:IdentifiedObject.mRID ?station .
+  optional {
+    ?_mrid cim:SynchronousMachine.GeneratingUnit ?_unit.
+    ?_unit cim:GeneratingUnit.minOperatingP ?minP;
+           cim:GeneratingUnit.maxOperatingP ?maxP .
+  }
+  filter regex(?area, '${region}')
+  optional {
+    ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
+  } .
+  optional {
+    select ?_unit ?market_code ?MO ?apctmax ?station_group ?station_group_name
+    where
+    {
+      ?_unit cim:GeneratingUnit.maxOperatingP ?maxP;
+             SN:GeneratingUnit.marketCode ?market_code;
+             SN:GeneratingUnit.groupAllocationWeight ?MO;
+             SN:GeneratingUnit.ScheduleResource ?ScheduleResource;
+             SN:GeneratingUnit.groupAllocationMax ?apctmax .
+      ?ScheduleResource SN:ScheduleResource.marketCode ?station_group;
+                        cim:IdentifiedObject.name ?station_group_name .
+    }
+  }
+  service <${repo}> {
+    ?_t_mrid cim:ACDCTerminal.connected ?connected;
+             cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
+  }
+  service <${repo}> {
+    optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
+    graph ${ssh_graph} {optional {?_mrid cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}}
+  }
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  filter(?network_analysis)
+  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  bind(coalesce(?in_service, ?connected) as ?status)
+  bind(xsd:double(str(?apctmax)) * xsd:double(str(?maxP)) / 100.0 as ?allocationmax)
+}

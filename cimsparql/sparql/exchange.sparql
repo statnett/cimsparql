@@ -1,0 +1,39 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+select ?name ?node ?mrid ?status ?p ?market_code
+where
+{
+  ?_mrid cim:IdentifiedObject.name ?name;
+         rdf:type cim:ACLineSegment;
+         cim:IdentifiedObject.mRID ?mrid .
+  filter (!regex(?name, 'HVDC')) .
+  optional {?_mrid cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code . }
+  ?_t_mrid_1 rdf:type cim:Terminal;
+             cim:Terminal.ConductingEquipment ?_mrid;
+             cim:${ACDCTerminal}.sequenceNumber 1;
+             cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 .
+  ?_t_mrid_2 rdf:type cim:Terminal;
+             cim:Terminal.ConductingEquipment ?_mrid;
+             cim:${ACDCTerminal}.sequenceNumber 2;
+             cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .
+  filter ((regex(?area_1, '${region}') && !regex(?area_2, '${region}')) || (regex(?area_1, '${region}') && !regex(?area_2, '${region}')))
+  service <${repo}> {
+    ?_t_mrid_1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p;
+               cim:${ACDCTerminal}.connected ?connected_1;
+               cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
+  } .
+  service <${repo}> {?_t_mrid_2 cim:ACDCTerminal.connected ?connected_2 . }
+  service <repository:abot_20220825T1621Z>
+  { optional
+    { select ?_mrid (min(?_in_service) as ?in_service)
+      where
+      {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service . }
+      group by ?_mrid
+    }
+  }
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+  filter(?analysis_enabled)
+  bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)
+}

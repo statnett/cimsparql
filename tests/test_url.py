@@ -5,25 +5,6 @@ import pytest
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.url import Prefix
 
-prefixes = [
-    "rdf",
-    "alg",
-    "fn",
-    "sesame",
-    "ALG",
-    "owl",
-    "cim",
-    "SN",
-    "pti",
-    "md",
-    "ENTSOE",
-    "entsoe2",
-    "wgs",
-    "gn",
-    "xsd",
-    "rdfs",
-]
-
 
 def test_set_cim_version():
     pre = Prefix({})
@@ -37,7 +18,7 @@ def gdbc(graphdb_service: ServiceConfig) -> GraphDBClient:
     return GraphDBClient(graphdb_service)
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
+@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
 def test_get_prefixes(gdbc: GraphDBClient):
     for prefix in ["rdf", "cim", "SN"]:
         assert prefix in gdbc.prefixes.prefixes
@@ -54,15 +35,15 @@ def test_header_str():
     assert set(pre.header_str("cim:Var sn:Var").split("\n")) == ref_prefix
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
+@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
 def test_prefix_ns(gdbc: GraphDBClient):
     ns = gdbc.prefixes.ns
     assert ns["rdf"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-    assert ns["cim"] == "http://iec.ch/TC57/2010/CIM-schema-cim15#"
+    assert ns["cim"] == "http://iec.ch/TC57/2013/CIM-schema-cim16#"
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_prefix_inverse(gdbc: GraphDBClient):
     cim_inv = gdbc.prefixes.inverse_ns
     assert isinstance(cim_inv, dict)
-    assert set(cim_inv.values()).difference(prefixes) == set()
+    assert {"cim", "rdf", "owl", "xsd", "rdfs", "SN", "md", "ALG"}.issubset(cim_inv.values())

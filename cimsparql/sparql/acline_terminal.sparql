@@ -1,0 +1,29 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+PREFIX xsd: <${xsd}>
+select ?_mrid (?connected as ?connected_${nr}) (?p as ?p_${nr}) ?node_${nr} (?bidzone as ?bidzone_${nr})
+where
+{
+  ?_mrid rdf:type cim:ACLineSegment .
+  ?_t_mrid rdf:type cim:Terminal;
+           cim:IdentifiedObject.mRID ?t_mrid;
+           cim:Terminal.ConductingEquipment ?_mrid;
+           cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation;
+           cim:${ACDCTerminal}.sequenceNumber ${nr} .
+  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+  optional {
+    ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone .
+  }
+  filter(regex(?area, '${region}'))
+  service <${repo}>
+  {
+    ?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node;
+             cim:${ACDCTerminal}.connected ?connected .
+    optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
+  }
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  filter(?analysis_enabled)
+  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+  bind(coalesce(?node, ?t_mrid) as ?node_${nr})
+}

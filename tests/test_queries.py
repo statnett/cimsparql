@@ -7,12 +7,13 @@ from cimsparql import queries
 from cimsparql.cim import GEO_REG
 from cimsparql.constants import con_mrid_str as c_mrid
 from cimsparql.constants import union_split
+from cimsparql.enums import LoadTypes
 
 
 @pytest.fixture()
 def load_query_kwargs() -> Dict[str, Optional[Union[List[str], bool, str, int]]]:
     return {
-        "load_type": ["ConformLoad"],
+        "load_type": [LoadTypes.ConformLoad],
         "sub_region": False,
         "load_vars": None,
         "region": "NO",
@@ -71,7 +72,7 @@ def test_load_query_with_no_station_group(load_query_kwargs):
 @patch("cimsparql.query_support.combine_statements")
 def test_load_query_conform(_combine_statements_mock, load_query_kwargs):
     queries.load_query(**load_query_kwargs)
-    call_args = [f"?_mrid rdf:type cim:{load_type}" for load_type in load_query_kwargs["load_type"]]
+    call_args = [f"?_mrid rdf:type {load_type}" for load_type in load_query_kwargs["load_type"]]
     call_wargs = {"group": False, "split": union_split}
     assert _combine_statements_mock.call_args_list[0] == call(*call_args, **call_wargs)
 
@@ -79,22 +80,16 @@ def test_load_query_conform(_combine_statements_mock, load_query_kwargs):
 @patch("cimsparql.query_support.group_query", new=MagicMock)
 @patch("cimsparql.query_support.combine_statements")
 def test_load_query_combined(_combine_statements_mock, load_query_kwargs):
-    load_query_kwargs["load_type"] = ["ConformLoad", "NonConformLoad"]
+    load_query_kwargs["load_type"] = LoadTypes
     queries.load_query(**load_query_kwargs)
-    call_args = [f"?_mrid rdf:type cim:{load_type}" for load_type in load_query_kwargs["load_type"]]
+    call_args = [f"?_mrid rdf:type {load_type}" for load_type in load_query_kwargs["load_type"]]
     call_wargs = {"group": True, "split": union_split}
     assert _combine_statements_mock.call_args_list[0] == call(*call_args, **call_wargs)
 
 
 @pytest.fixture(scope="module")
 def bus_data_kwargs() -> Dict[str, str]:
-    return {
-        "sub_region": False,
-        "with_market": False,
-        "container": "",
-        "cim_version": 16,
-        "delta_power": False,
-    }
+    return {"sub_region": False, "with_market": False, "container": ""}
 
 
 def test_bus_data_with_region(bus_data_kwargs: Dict[str, str]):

@@ -1,0 +1,29 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+select ?mrid ?node ?name ?station ?bidzone ?status ?p ?q ?station_group
+where {
+  values ?load_type {cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer}
+  ?_mrid rdf:type ?load_type;
+         cim:IdentifiedObject.mRID ?mrid;
+         cim:IdentifiedObject.name ?name;
+         cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?_substation.
+  ?_substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+               cim:IdentifiedObject.mRID ?station .
+  filter regex(?area, '${region}')
+  optional {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
+  optional {?_mrid cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
+  ?_t_mrid  cim:Terminal.ConductingEquipment ?_mrid .
+  service <${repo}> {
+    ?_t_mrid cim:${ACDCTerminal}.connected ?connected;
+             cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
+  }
+  service <${repo}> {
+    optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}.
+    graph ${ssh_graph} {optional {?_mrid cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q}}
+  }
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  filter (?network_analysis)
+  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  bind(coalesce(?in_service, ?connected) as ?status)
+}

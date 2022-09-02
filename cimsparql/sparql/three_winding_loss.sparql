@@ -1,0 +1,37 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+PREFIX xsd: <${xsd}>
+select ?mrid ?pl_2
+where {
+  ?_p_mrid rdf:type cim:PowerTransformer;
+           ^cim:PowerTransformerEnd.PowerTransformer/cim:IdentifiedObject.mRID ?mrid;
+           cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+  filter(regex(?area, '${region}'))
+  {
+    select  ?_p_mrid (count(distinct ?nr) as ?winding_count)
+    where {
+      ?_p_mrid ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
+    }
+    group by ?_p_mrid
+    having (?winding_count = 3)
+  }
+  { select ?_p_mrid (sum(xsd:double(str(?sv_p))) / sum(?nr_connected) as ?pl_2)
+    where
+    {
+      ?_p_mrid ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.Terminal ?_t_mrid .
+      service <${repo}> {
+        optional {
+          ?_t_mrid cim:${ACDCTerminal}.connected ?connected;
+                   ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?_sv_p
+        }
+      }
+      bind(coalesce(if(?connected, 1, 0), 0) as ?nr_connected) .
+      bind(coalesce(?_sv_p, xsd:double(0.0)) as ?sv_p)
+    }
+    group by ?_p_mrid
+  }
+  optional {?_p_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  filter(?network_analysis)
+  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+}

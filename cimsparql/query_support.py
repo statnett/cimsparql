@@ -18,7 +18,7 @@ from cimsparql.typehints import Region
 
 
 def graph(url: Optional[str], query: str) -> str:
-    return f"graph <{url}> {{{query}}}" if url else query
+    return f"graph {url} {{{query}}}" if url else query
 
 
 def base_voltage(mrid: str, var: str) -> str:
