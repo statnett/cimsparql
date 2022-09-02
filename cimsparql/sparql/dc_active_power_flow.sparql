@@ -1,0 +1,67 @@
+PREFIX cim:<${cim}>
+PREFIX rdf:<${rdf}>
+PREFIX xsd:<${xsd}>
+select ?mrid ?p ?direction
+where {
+  {
+    select ?_mrid ?p ?nr ?_region
+    where {
+      values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator} .
+      ?_mrid rdf:type ?rdf_type;
+             cim:Equipment.EquipmentContainer/cim:Line.Region ?_region .
+      ?_t_mrid rdf:type cim:Terminal;
+               cim:Terminal.ConductingEquipment ?_mrid;
+               cim:ACDCTerminal.sequenceNumber ?nr .
+      service <${repo}> {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
+    }
+  }
+  union
+  {
+    select ?_mrid ?p ?nr ?_region
+    where {
+      {
+        select ?_p_mrid (count(distinct ?nr) as ?winding_count)
+        where {
+          ?_p_mrid rdf:type cim:PowerTransformer;
+                   ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
+        }
+        group by ?_p_mrid
+        having (?winding_count = 2)
+      } .
+      ?_p_mrid cim:Equipment.EquipmentContainer/cim:Substation.Region ?_region .
+      ?_w_mrid rdf:type cim:PowerTransformerEnd;
+               cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+               cim:TransformerEnd.Terminal ?_t_mrid;
+               cim:TransformerEnd.endNumber ?nr .
+      ?_mrid rdf:type cim:PowerTransformerEnd;
+             cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+             cim:TransformerEnd.endNumber 1 .
+      service <${repo}> {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
+    }
+  }
+  union
+  {
+    select ?_mrid ?p (1 as ?nr) ?_region
+    where {
+      {
+        {
+          select ?_p_mrid (count(distinct ?nr) as ?winding_count)
+          where {
+            ?_p_mrid rdf:type cim:PowerTransformer;
+                     ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr;
+                   }
+          group by ?_p_mrid
+          having (?winding_count = 3)
+        } .
+        ?_p_mrid cim:Equipment.EquipmentContainer/cim:Substation.Region ?_region .
+        ?_mrid cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+               cim:TransformerEnd.Terminal ?_t_mrid .
+        service <${repo}> {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
+      }
+    }
+  }
+  ?_region cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?region .
+  ?_mrid cim:IdentifiedObject.mRID ?mrid .
+  filter(regex(?region, '${region}'))
+  bind(if (?nr = 1, 1, -1) as ?direction)
+}

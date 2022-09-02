@@ -2,13 +2,13 @@ import json
 import logging
 import os
 import pathlib
-from typing import Dict, Optional, Set
+from typing import Dict, Generator, Optional, Set
 
 import pandas as pd
 import pytest
 import requests
 
-from cimsparql.constants import CIM_TYPES_WITH_MRID, con_mrid_str
+from cimsparql.constants import CIM_TYPES_WITH_MRID
 from cimsparql.graphdb import (
     GraphDBClient,
     RestApi,
@@ -18,22 +18,13 @@ from cimsparql.graphdb import (
     new_repo,
     new_repo_blazegraph,
 )
-from cimsparql.model import CimModel, get_cim_model
+from cimsparql.model import CimModel, ModelConfig, get_cim_model
 from cimsparql.type_mapper import TypeMapper
-from cimsparql.url import GraphDbConfig
 
 this_dir = pathlib.Path(__file__).parent
 
-ssh_repo = "current"
-eq_repo = "20190521T0030Z"
-
-cim_date = "20190522_070618"
-
 logger = logging.getLogger(__name__)
-
-
-def local_server() -> str:
-    return os.getenv("GRAPHDB_LOCAL_TEST_SERVER", "127.0.0.2:7200")
+ssh_graph = "<http://entsoe.eu/CIM/SteadyStateHypothesis/1/1>"
 
 
 @pytest.fixture(scope="session")
@@ -42,53 +33,31 @@ def n_samples() -> int:
 
 
 @pytest.fixture(scope="session")
-def local_graphdb_config():
-    return GraphDbConfig(local_server(), protocol="http")
+def graphdb_service() -> ServiceConfig:
+    return ServiceConfig(repo="abot_combined")
 
 
 @pytest.fixture(scope="session")
-def gcli_eq():
-    return get_cim_model(local_server(), cim_date, "", protocol="http")
+def model(graphdb_service: ServiceConfig) -> CimModel:
+    system_state_repo = f"repository:{graphdb_service.repo}"
+    return get_cim_model(graphdb_service, ModelConfig(system_state_repo, ssh_graph))
 
 
 @pytest.fixture(scope="session")
-def gcli_ssh():
-    return get_cim_model(local_server(), cim_date, "", protocol="http")
+def micro_t1_nl_graphdb() -> Optional[CimModel]:
+    repo = os.getenv("GRAPHDB_MICRO_NL_REPO", "abot-micro-nl")
+    return (
+        get_cim_model(ServiceConfig(repo=repo), ModelConfig(system_state_repo=f"repository:{repo}"))
+        if os.getenv("GRAPHDB_SERVER")
+        else None
+    )
 
 
 @pytest.fixture(scope="session")
-def gcli_cim():
-    return get_cim_model(local_server(), cim_date, "", protocol="http")
-
-
-@pytest.fixture(scope="session")
-def root_dir():
-    return this_dir
-
-
-@pytest.fixture(scope="session")
-def server():
-    return os.getenv("GRAPHDB_API", None)
-
-
-@pytest.fixture(scope="session")
-def graphdb_repo() -> str:
-    return os.getenv("GRAPHDB_REPO", "LATEST")
-
-
-@pytest.fixture(scope="session")
-def graphdb_path(graphdb_repo: str) -> str:
-    return "services/pgm/equipment/" if graphdb_repo == "LATEST" else ""
-
-
-@pytest.fixture(scope="session")
-def graphdb_service(server, graphdb_repo, graphdb_path) -> ServiceConfig:
-    return ServiceConfig(graphdb_repo, "https", server, graphdb_path)
-
-
-@pytest.fixture(scope="session")
-def cim_model(server, graphdb_repo, graphdb_path) -> CimModel:
-    return get_cim_model(server, graphdb_repo, graphdb_path)
+def model_sep() -> CimModel:
+    repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
+    system_state_repo = f"repository:{os.getenv('GRAPHDB_STATE', 'abot_20220825T1621Z')}"
+    return get_cim_model(ServiceConfig(repo), ModelConfig(system_state_repo, ssh_graph))
 
 
 @pytest.fixture
@@ -153,17 +122,8 @@ def data_row():
 
 
 @pytest.fixture(scope="session")
-def disconnectors(cim_model: CimModel, n_samples: int) -> pd.DataFrame:
-    return cim_model.connections(
-        rdf_types="cim:Disconnector", limit=n_samples, connectivity=con_mrid_str
-    )
-
-
-@pytest.fixture(scope="module")
-def breakers(cim_model: CimModel, n_samples: int) -> pd.DataFrame:
-    return cim_model.connections(
-        rdf_types="cim:Breaker", limit=n_samples, connectivity=con_mrid_str
-    )
+def connections(model: CimModel, n_samples: int) -> pd.DataFrame:
+    return model.connections(limit=n_samples)
 
 
 @pytest.fixture(scope="session")
@@ -209,7 +169,7 @@ def initialized_rdf4j_repo(service_url: str) -> GraphDBClient:
 
 
 @pytest.fixture
-def rdf4j_gdb(rdf4j_url: str) -> Optional[GraphDBClient]:
+def rdf4j_gdb(rdf4j_url: str) -> Generator[Optional[GraphDBClient], None, None]:
     client = None
     try:
         client = initialized_rdf4j_repo(rdf4j_url)
@@ -229,8 +189,8 @@ def init_test_cim_model(rdf4j_url: str, name: str, repo_name_suffix: str = ""):
     repo_name = name + repo_name_suffix
     config = config_bytes_from_template(template, {"repo": repo_name})
     client = new_repo(rdf4j_url, repo_name, config, allow_exist=False, protocol="http")
-    client.upload_rdf(nq_file, "n-quads")
-
+    graph = "<http://mygraph.com/demo/1/1>"
+    client.upload_rdf(nq_file, "n-quads", {"context": graph})
     ns_file = confpath() / "namespaces.json"
     with open(ns_file, "r") as infile:
         ns = json.load(infile)
@@ -240,34 +200,39 @@ def init_test_cim_model(rdf4j_url: str, name: str, repo_name_suffix: str = ""):
     return client
 
 
-def init_cim_blazegraph(url: str, name: str, suffix: str = ""):
+def init_test_cim_blazegraph(url: str, name: str, suffix: str = ""):
     repo = f"{name}{suffix}"
     client = new_repo_blazegraph(url, repo, "http")
     nq_file = pathlib.Path(__file__).parent / f"tests/data/{name}.nq"
-    client.upload_rdf(nq_file, "n-quads")
+    graph = "http://mygraph.com/demo/1/1"
+    client.upload_rdf(nq_file, "n-quads", {"context-uri": graph})
     return client
 
 
 def cim_client(url: str, repo_name: str, repo_name_suffix: str, rest_api: RestApi) -> GraphDBClient:
     if rest_api == RestApi.BLAZEGRAPH:
-        return init_cim_blazegraph(url, repo_name, repo_name_suffix)
+        return init_test_cim_blazegraph(url, repo_name, repo_name_suffix)
     return init_test_cim_model(url, repo_name, repo_name_suffix)
 
 
 def init_cim_model(
-    url: str, repo_name: str, repo_name_suffix: str = "", rest_api: RestApi = RestApi.RDF4J
+    url: str,
+    repo_name: str,
+    repo_name_suffix: str = "",
+    rest_api: RestApi = RestApi.RDF4J,
+    config: Optional[ModelConfig] = None,
 ) -> Optional[CimModel]:
     try:
         client = cim_client(url, repo_name, repo_name_suffix, rest_api)
         mapper = TypeMapper(client)
-        return CimModel(mapper, client)
+        return CimModel(mapper, client, config)
     except Exception as exc:
         logger.error(f"{exc}")
         return None
 
 
 @pytest.fixture(scope="session")
-def micro_t1_nl(rdf4j_url: str) -> Optional[CimModel]:
+def micro_t1_nl(rdf4j_url: str) -> Generator[Optional[CimModel], None, None]:
     model = init_cim_model(rdf4j_url, "micro_t1_nl")
     try:
         yield model
@@ -277,7 +242,7 @@ def micro_t1_nl(rdf4j_url: str) -> Optional[CimModel]:
 
 
 @pytest.fixture(scope="session")
-def micro_t1_nl_bg(blazegraph_url: str) -> Optional[CimModel]:
+def micro_t1_nl_bg(blazegraph_url: str) -> Generator[Optional[CimModel], None, None]:
     model = init_cim_model(blazegraph_url, "micro_t1_nl", rest_api=RestApi.BLAZEGRAPH)
     try:
         yield model
@@ -286,14 +251,14 @@ def micro_t1_nl_bg(blazegraph_url: str) -> Optional[CimModel]:
             model.client.delete_repo()
 
 
-def apply_custom_modifications(model: Optional[CimModel]):
+def apply_custom_modifications(model: Optional[CimModel]) -> None:
     if model:
         for rdf_type in CIM_TYPES_WITH_MRID:
             model.add_mrid(f"cim:{rdf_type}")
 
 
 @pytest.fixture(scope="session")
-def micro_t1_nl_adapted(rdf4j_url: str) -> Optional[CimModel]:
+def micro_t1_nl_adapted(rdf4j_url: str) -> Generator[Optional[CimModel], None, None]:
     """
     Fixture that uses the micro_t1_nl model with some adaptions
     """
@@ -310,7 +275,7 @@ def micro_t1_nl_adapted(rdf4j_url: str) -> Optional[CimModel]:
 
 
 @pytest.fixture(scope="session")
-def micro_t1_nl_adapted_bg(blazegraph_url: str) -> Optional[CimModel]:
+def micro_t1_nl_adapted_bg(blazegraph_url: str) -> Generator[Optional[CimModel], None, None]:
     """
     Fixture that uses the micro_t1_nl model with some adaptions
     """
@@ -328,14 +293,19 @@ def micro_t1_nl_adapted_bg(blazegraph_url: str) -> Optional[CimModel]:
 
 @pytest.fixture(scope="session")
 def micro_t1_nl_models(
-    micro_t1_nl_adapted, micro_t1_nl_adapted_bg
+    micro_t1_nl_adapted, micro_t1_nl_adapted_bg, micro_t1_nl_graphdb
 ) -> Dict[str, Optional[CimModel]]:
-    return {"rdf4j": micro_t1_nl_adapted, "blazegraph": micro_t1_nl_adapted_bg}
+    return {
+        "rdf4j": micro_t1_nl_adapted,
+        "blazegraph": micro_t1_nl_adapted_bg,
+        "graphdb": micro_t1_nl_graphdb,
+    }
 
 
 def small_grid_model(url: str, api: RestApi):
     tpsvssh_mod = init_cim_model(url, "smallgrid_tpsvssh", "", api)
-    eq_mod = init_cim_model(url, "smallgrid_eq", "", api)
+    config = ModelConfig(tpsvssh_mod.client.service_cfg.url) if tpsvssh_mod else ModelConfig()
+    eq_mod = init_cim_model(url, "smallgrid_eq", "", api, config)
     try:
         apply_custom_modifications(tpsvssh_mod)
         apply_custom_modifications(eq_mod)
@@ -351,15 +321,23 @@ def small_grid_model(url: str, api: RestApi):
 
 
 @pytest.fixture(scope="session")
-def small_grid_model_rdf4j(rdf4j_url) -> Optional[CimModel]:
+def small_grid_model_rdf4j(rdf4j_url) -> Generator[Optional[CimModel], None, None]:
     yield from small_grid_model(rdf4j_url, RestApi.RDF4J)
 
 
 @pytest.fixture(scope="session")
-def small_grid_model_bg(blazegraph_url) -> Optional[CimModel]:
+def small_grid_model_bg(blazegraph_url) -> Generator[Optional[CimModel], None, None]:
     yield from small_grid_model(blazegraph_url, RestApi.BLAZEGRAPH)
 
 
 @pytest.fixture(scope="session")
 def smallgrid_models(small_grid_model_rdf4j, small_grid_model_bg):
-    return {"rdf4j": small_grid_model_rdf4j, "blazegraph": small_grid_model_bg}
+    if graphdb_server := os.getenv("GRAPHDB_SERVER"):
+        small_grid = os.getenv("SMALL_GRID", "abot-smallgrid")
+        model = get_cim_model(
+            ServiceConfig(f"{small_grid}_eq", server=graphdb_server),
+            ModelConfig(system_state_repo=f"repository:{small_grid}_tpsvssh", ssh_graph=ssh_graph),
+        )
+    else:
+        model = None
+    return {"rdf4j": small_grid_model_rdf4j, "blazegraph": small_grid_model_bg, "graphdb": model}

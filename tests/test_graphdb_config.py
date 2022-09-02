@@ -1,16 +1,9 @@
 import os
 
-import pytest
 import requests
 from mock import MagicMock, patch
 
 from cimsparql.url import GraphDbConfig, service
-from conftest import local_server
-
-
-@pytest.fixture(scope="module")
-def config() -> GraphDbConfig:
-    return GraphDbConfig(os.getenv("GRAPHDB_SERVER"))
 
 
 @patch("cimsparql.url.requests.get")
@@ -27,10 +20,10 @@ def test_set_repos_no_response(get_mock):
     assert config.repos == []
 
 
-def test_local_graphdb_config_service(local_graphdb_config: GraphDbConfig):
-    assert local_graphdb_config._service == service(
-        server=local_server(), repo=None, protocol="http"
-    )
+def test_local_graphdb_config_service():
+    server = os.getenv("GRAPHDB_SERVER")
+    config = GraphDbConfig(server)
+    assert config._service == service(server=server)
 
 
 def test_local_graphdb_config_raise_connection_exception():

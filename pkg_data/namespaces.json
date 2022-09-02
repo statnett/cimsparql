@@ -1,13 +1,14 @@
 {
+    "ALG": "http://www.alstom.com/grid/CIM-schema-cim15-extension#",
+    "SN": "http://SN#",
     "cim": "http://iec.ch/TC57/2013/CIM-schema-cim16#",
     "cims": "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#",
+    "dc": "http://purl.org/dc/elements/1.1/",
     "entsoe": "http://entsoe.eu/CIM/SchemaExtension/3/1#",
+    "foaf": "http://xmlns.com/foaf/0.1/",
     "md": "http://iec.ch/TC57/61970-552/ModelDescription/1#",
+    "owl": "http://www.w3.org/2002/07/owl#",
     "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
     "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-    "xsd": "http://www.w3.org/2001/XMLSchema#",
-    "owl": "http://www.w3.org/2002/07/owl#",
-    "foaf": "http://xmlns.com/foaf/0.1/",
-    "dc": "http://purl.org/dc/elements/1.1/"
-
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
 }

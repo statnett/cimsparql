@@ -1,0 +1,42 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+PREFIX xsd: <${xsd}>
+select ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?rateNormal ?pl_1 ?pl_2 ?node_1 ?node_2 ?bidzone_1 ?bidzone_2
+where {
+  # TODO: Check if SN:Equipment.networkAnalysisEnable is on it's way into the standard
+  # Assume π equivalent with at least r,x and b shunt.
+  ?_mrid rdf:type cim:ACLineSegment;
+         cim:IdentifiedObject.mRID ?mrid;
+         cim:IdentifiedObject.name ?name;
+         cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
+         cim:Conductor.length ?length;
+         cim:ACLineSegment.r ?r;
+         cim:ACLineSegment.x ?x;
+         cim:ACLineSegment.bch ?bch.
+  optional {?_mrid cim:ACLineSegment.gch ?gch .}
+  optional {
+    ?_limNormal cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_mrid;
+                rdf:type cim:ActivePowerLimit;
+                cim:IdentifiedObject.name 'Normal@20';
+                cim:ActivePowerLimit.value ?rateNormal .
+  } .
+  optional { # Search for acline SV status will be combined with SSH connected
+    service <${repo}>
+    {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
+  } .
+  # Search terminal nr side SSH/TP/SV. See acline_terminal.sparql which provides ?_mrid ?connected_{nr} ?p_{nr}
+  { ${acline_terminal_1} } .
+  { ${acline_terminal_2} } .
+  optional
+  { # Add branch loss on recieving end.
+    bind((xsd:double(str(?p_1)) + xsd:double(str(?p_2))) as ?pl)
+    bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?pl_2)
+    bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?pl_1)
+  }
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+  filter(?analysis_enabled)
+  bind(coalesce(?in_service, ?connected_1 && ?connected_2, True) as ?status)
+  filter(?node_1 != ?node_2)   # We don't need lines connecting nodes to themselves
+}

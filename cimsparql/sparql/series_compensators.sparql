@@ -1,0 +1,85 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX rdf: <${rdf}>
+PREFIX xsd: <${xsd}>
+select ?mrid ?name ?r ?x ?status ?un ?rateNormal ?pl_1 ?pl_2 ?node_1 ?node_2 ?bidzone_1 ?bidzone_2
+where {
+  # Assume π equivalent with at least r,x and b shunt.
+  ?_mrid rdf:type cim:SeriesCompensator;
+         cim:IdentifiedObject.mRID ?mrid;
+         cim:IdentifiedObject.name ?name;
+         cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
+         cim:SeriesCompensator.r ?r;
+         cim:SeriesCompensator.x ?x .
+  optional {
+    ?_limNormal cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_mrid;
+                rdf:type cim:CurrentLimit;
+                cim:IdentifiedObject.name 'Normal@20';
+                cim:CurrentLimit.value ?_rateNormal .
+    # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
+    bind(1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rateNormal)) / 1000.0 as ?rateNormal)
+  } .
+  optional { # Search for acline SV status will be combined with SSH connected
+    service <${repo}>
+    {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}
+  } .
+  { # Search terminal 1 side SSH/TP/SV
+    select ?_mrid (?connected as ?connected_1) (?p as ?p_1) ?node_1 (?bidzone as ?bidzone_1)
+    where
+    {
+      ?_mrid rdf:type cim:SeriesCompensator .
+      ?_t_mrid rdf:type cim:Terminal;
+               cim:IdentifiedObject.mRID ?t_mrid;
+               cim:Terminal.ConductingEquipment ?_mrid;
+               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation;
+               cim:${ACDCTerminal}.sequenceNumber 1 .
+      ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+      optional {
+        ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
+      }
+      filter(regex(?area, '${region}'))
+      service <${repo}>
+      {
+        ?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node;
+                 cim:${ACDCTerminal}.connected ?connected .
+        optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
+      }.
+      bind(coalesce(?node, ?t_mrid) as ?node_1)
+    }
+  } .
+  { # Search terminal 2 side SSH/TP/SV
+    select ?_mrid (?connected as ?connected_2) (?p as ?p_2) ?node_2 (?bidzone as ?bidzone_2)
+    where
+    {
+      ?_mrid rdf:type cim:SeriesCompensator .
+      ?_t_mrid rdf:type cim:Terminal;
+               cim:IdentifiedObject.mRID ?t_mrid;
+               cim:Terminal.ConductingEquipment ?_mrid;
+               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation;
+               cim:${ACDCTerminal}.sequenceNumber 2 .
+      ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+      optional {
+        ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
+      }
+      filter(regex(?area, '${region}'))
+      service <${repo}>
+      {
+        ?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node;
+                 cim:${ACDCTerminal}.connected ?connected.
+        optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
+      }.
+      bind(coalesce(?node, ?t_mrid) as ?node_2)
+    }
+  } .
+  optional
+  { # Add branch loss on recieving end.
+    bind((xsd:double(str(?p_1)) + xsd:double(str(?p_2))) as ?pl)
+    bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?pl_2)
+    bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?pl_1)
+  }
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  filter(?network_analysis)
+  filter(?node_1 != ?node_2) .  # We don't need lines connecting nodes to themselves
+  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status) .
+}

@@ -1,0 +1,26 @@
+PREFIX cim:<${cim}>
+PREFIX rdf:<${rdf}>
+PREFIX SN:<${SN}>
+select  ?name ?mrid ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2 ?market_code
+where {
+  ?_mrid rdf:type cim:ACLineSegment;
+         cim:IdentifiedObject.mRID ?mrid;
+         cim:IdentifiedObject.name ?name.
+  optional {?_mrid cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code} .
+  ?_t_mrid_1  rdf:type cim:Terminal;
+              cim:Terminal.ConductingEquipment ?_mrid;
+              cim:${ACDCTerminal}.sequenceNumber 1;
+              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1;
+              cim:IdentifiedObject.mRID ?t_mrid_1 .
+  ?_t_mrid_2  rdf:type cim:Terminal;
+              cim:Terminal.ConductingEquipment ?_mrid;
+              cim:${ACDCTerminal}.sequenceNumber 2;
+              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 ;
+              cim:IdentifiedObject.mRID ?t_mrid_2 .
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  filter(?analysis_enabled)
+  filter (?area_1 != ?area_2)
+  filter (regex(?area_1, '${region}') || regex(?area_2, '${region}'))
+  filter (!regex(?name, 'HVDC'))
+  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+}

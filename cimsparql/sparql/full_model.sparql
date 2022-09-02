@@ -1,0 +1,31 @@
+PREFIX md:<${md}>
+select ?model ?time ?profile ?version ?description
+where
+{
+  {
+    select ?model (min(?have_dependency) as ?dependencies_available)
+    where
+    {
+      # Check dependency in provided in either (remote) <repo> or (local)
+      service <${repo}> {
+        ?model md:Model.DependentOn ?depend_on .
+        optional {?depend_on md:Model.created ?created_remote}
+      } .
+      optional {?depend_on md:Model.created ?created_local}
+      bind(coalesce(?created_remote, ?created_local) as ?_have_dependency)
+      bind(bound(?_have_dependency) as ?have_dependency)
+    }
+    # Using min() in grouping as false < true (all() does not exist),
+    # thus if one is false the resulting is false.
+    group by ?model
+    having (?dependencies_available)
+  }.
+  # Only interested in the models of remote repo (should include SV/TP and SSH).
+  service <${repo}>
+  {
+    ?model md:Model.profile ?profile;
+           md:Model.scenarioTime ?time;
+           md:Model.version ?version;
+           md:Model.description ?description .
+  }
+}

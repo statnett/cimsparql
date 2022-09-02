@@ -2,27 +2,7 @@ from typing import Iterable, List
 
 from cimsparql.constants import union_split
 from cimsparql.enums import Power
-from cimsparql.query_support import acdc_terminal, combine_statements, group_query
-
-
-def disconnected(cim_version: int) -> str:
-    disconnector = [
-        "?mrid ?p cim:Disconnector",
-        "?mrid cim:Switch.open ?status",
-        "filter (?status = True)",
-    ]
-
-    terminal = [
-        "?mrid ?p cim:Terminal",
-        f"?mrid cim:{acdc_terminal(cim_version)}.connected ?connected",
-        "filter (?connected = False)",
-    ]
-
-    where_list = group_query(
-        [combine_statements(*comp, group=True, split=" .\n") for comp in [disconnector, terminal]],
-        split=union_split,
-    )
-    return combine_statements("select ?mrid", where_list)
+from cimsparql.query_support import combine_statements, group_query
 
 
 def synchronous_machines() -> str:

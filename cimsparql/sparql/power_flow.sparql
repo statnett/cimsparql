@@ -1,0 +1,12 @@
+PREFIX cim:<${cim}>
+PREFIX rdf:<${rdf}>
+select  ?mrid ?p ?q ?in_service
+where {
+  ?_s rdf:type cim:SvPowerFlow;
+      cim:SvPowerFlow.Terminal ?_mrid;
+      cim:SvPowerFlow.p ?p;
+      cim:SvPowerFlow.q ?q .
+  ?_mrid cim:IdentifiedObject.mRID ?mrid .
+  optional {?_mrid cim:Terminal.ConductingEquipment/^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service}
+  bind(coalesce(?_in_service, True) as ?in_service)
+}

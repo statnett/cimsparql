@@ -188,34 +188,34 @@ class GraphDBClient:
             return True
 
     def get_prefixes(self) -> Dict[str, str]:
+        prefixes = default_namespaces()
+
         if self.service_cfg.rest_api == RestApi.BLAZEGRAPH:
             # Blazegraph does not expose prefixes over API
             # When using Blazegraph custom prefixes must be added via `update_prefixes`
             # By default we load a pre-defined set of prefixes
-            return default_namespaces()
+            return prefixes
 
-        prefixes = {}
         auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
         response = requests.get(self.service_cfg.url + "/namespaces", auth=auth)
         if response.ok:
-            prefixes = parse_namespaces_rdf4j(response)
-        else:
-            msg = (
-                "Could not fetch namespaces and prefixes from graphdb "
-                "Verify that user and password are correctly set in the "
-                "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
-            )
-            raise RuntimeError(
-                f"{msg} Status code: {response.status_code} Reason: {response.reason}"
-            )
-        return prefixes
+            prefixes.update(parse_namespaces_rdf4j(response))
+            return prefixes
+        msg = (
+            "Could not fetch namespaces and prefixes from graphdb "
+            "Verify that user and password are correctly set in the "
+            "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
+        )
+        raise RuntimeError(f"{msg} Status code: {response.status_code} Reason: {response.reason}")
 
-    def delete_repo(self):
+    def delete_repo(self) -> None:
         endpoint = delete_repo_endpoint(self.service_cfg)
         response = requests.delete(endpoint)
         response.raise_for_status()
 
-    def upload_rdf(self, fname: Path, rdf_format: str, params: Optional[Dict[str, str]] = None):
+    def upload_rdf(
+        self, fname: Path, rdf_format: str, params: Optional[Dict[str, str]] = None
+    ) -> None:
         """
         Upload data in RDF format to a srevice
 
@@ -236,7 +236,7 @@ class GraphDBClient:
         )
         response.raise_for_status()
 
-    def update_query(self, query: str):
+    def update_query(self, query: str) -> None:
         """
         Function that passes a query via a post API call
         """
@@ -250,7 +250,7 @@ class GraphDBClient:
         response.raise_for_status()
 
     @require_rdf4j
-    def set_namespace(self, prefix: str, value: str):
+    def set_namespace(self, prefix: str, value: str) -> None:
         auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
         response = requests.put(
             self.service_cfg.url + f"/namespaces/{prefix}",
@@ -277,7 +277,7 @@ def get_graphdb_client(
 ):
     from cimsparql.model import get_cim_model
 
-    return get_cim_model(server, graphdb_repo, graphdb_path, protocol)
+    return get_cim_model(ServiceConfig(graphdb_repo, protocol, server, graphdb_path))
 
 
 @dataclass

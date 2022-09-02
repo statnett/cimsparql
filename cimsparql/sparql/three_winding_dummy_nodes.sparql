@@ -1,0 +1,29 @@
+PREFIX rdf:<${rdf}>
+PREFIX cim:<${cim}>
+PREFIX SN:<${SN}>
+select ?node ?name (?name as ?busname) ?un ?station ?bidzone
+where
+{
+  {
+    select  ?_p_mrid (count(distinct ?nr) as ?winding_count)
+    where {
+      ?_p_mrid rdf:type cim:PowerTransformer;
+               cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+               ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr.
+      filter(regex(?area, '${region}'))
+    }
+    group by ?_p_mrid
+    having (?winding_count = 3)
+  } .
+  ?_p_mrid cim:IdentifiedObject.mRID ?node;
+           cim:IdentifiedObject.name ?name;
+           cim:Equipment.EquipmentContainer ?Substation .
+  ?_mrid cim:TransformerEnd.endNumber 1;
+         cim:PowerTransformerEnd.ratedU ?un;
+         cim:PowerTransformerEnd.PowerTransformer ?_p_mrid .
+  ?Substation cim:IdentifiedObject.mRID ?station .
+  optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone}
+  optional {?_p_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  filter(?network_analysis)
+  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+}

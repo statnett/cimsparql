@@ -1,0 +1,17 @@
+PREFIX cim:<${cim}>
+PREFIX rdf:<${rdf}>
+select  ?container ?substation ?v
+where {
+  ?_container rdf:type cim:VoltageLevel;
+              cim:IdentifiedObject.mRID ?container;
+              cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?v;
+              cim:VoltageLevel.Substation ?_substation .
+  { select  (max(?volt) as ?v) ?_substation
+    where {
+      ?_container rdf:type cim:VoltageLevel;
+                  cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?volt;
+                  cim:VoltageLevel.Substation ?_substation .
+    } group by ?_substation
+  } .
+  ?_substation cim:IdentifiedObject.mRID ?substation
+}

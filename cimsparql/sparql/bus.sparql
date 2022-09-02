@@ -1,0 +1,20 @@
+PREFIX cim:<${cim}>
+PREFIX SN:<${SN}>
+PREFIX rdf:<${rdf}>
+select  ?node ?name ?busname ?un ?station ?bidzone
+where {
+  service <${repo}> {
+    ?_node rdf:type cim:TopologicalNode;
+           cim:IdentifiedObject.mRID ?node;
+           cim:IdentifiedObject.name ?busname;
+           cim:TopologicalNode.BaseVoltage ?_un;
+           cim:TopologicalNode.ConnectivityNodeContainer ?container .
+  }
+  ?_un cim:BaseVoltage.nominalVoltage ?un .
+  ?container cim:IdentifiedObject.name ?name;
+             cim:VoltageLevel.Substation ?Substation .
+  ?Substation cim:IdentifiedObject.mRID ?station;
+              cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+  optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
+  FILTER regex(?area, '${region}')
+}

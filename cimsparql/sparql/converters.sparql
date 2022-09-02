@@ -1,0 +1,33 @@
+PREFIX rdf:<${rdf}>
+PREFIX cim:<${cim}>
+PREFIX xsd:<${xsd}>
+PREFIX SN:<${SN}>
+select ?mrid ?name ?alias ?p ?q ?station ?status ?node
+where {
+  ?_mrid cim:IdentifiedObject.mRID ?mrid;
+         cim:IdentifiedObject.name ?name;
+         cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?_substation .
+  optional {?_mrid cim:IdentifiedObject.aliasName ?alias .}
+  ?_substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+               cim:IdentifiedObject.mRID ?station .
+  ?_t_mrid cim:Terminal.ConductingEquipment ?_mrid;
+           cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
+  filter regex(?area, '${region}')
+  service <${repo}> {
+    ?_t_mrid cim:${ACDCTerminal}.connected ?connected;
+             cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
+  }
+  service <${repo}> {
+    values ?converter {cim:VsConverter cim:DCConvertUnit cim:CsConverter}
+    graph ${ssh_graph} {
+      ?_mrid rdf:type ?converter;
+             cim:ACDCConverter.p ?p;
+             cim:ACDCConverter.q ?q .
+    }
+    optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
+  }
+  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+  filter(?analysis_enabled)
+  bind(coalesce(?in_service, ?connected) as ?status)
+}

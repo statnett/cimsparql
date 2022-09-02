@@ -1,0 +1,27 @@
+PREFIX cim: <${cim}>
+PREFIX rdf: <${rdf}>
+PREFIX SN: <${SN}>
+select  ?name ?p_mrid ?w_mrid ?endNumber ?un ?t_mrid ?r ?x ?rate
+where {
+  ?_p_mrid rdf:type cim:PowerTransformer;
+           cim:IdentifiedObject.mRID ?p_mrid;
+           cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+  ?_w_mrid cim:IdentifiedObject.mRID ?w_mrid;
+           cim:IdentifiedObject.name ?name;
+           cim:TransformerEnd.endNumber ?endNumber;
+           cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid;
+           cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+           cim:PowerTransformerEnd.ratedU ?un;
+           cim:PowerTransformerEnd.r ?r;
+           cim:PowerTransformerEnd.x ?x .
+  filter regex(?area, '${region}') .
+  optional {
+    ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_p_mrid;
+           rdf:type cim:ActivePowerLimit;
+           cim:IdentifiedObject.name 'Normal@20';
+           cim:ActivePowerLimit.value ?rate
+  }
+  optional {?_p_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  filter(?analysis_enabled)
+  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+}

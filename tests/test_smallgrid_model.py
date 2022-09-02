@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Dict, Optional
 
 import pandas as pd
 import pytest
@@ -15,8 +15,8 @@ def check_service_available(model: Optional[CimModel]):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph"])
-def test_eq_query(smallgrid_models, server):
+@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+def test_eq_query(smallgrid_models: Dict[str, CimModel], server):
     model = smallgrid_models[server]
     check_service_available(model)
 
@@ -27,12 +27,12 @@ def test_eq_query(smallgrid_models, server):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph"])
+@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
 def test_tpsv_query(smallgrid_models, server):
     model = smallgrid_models[server]
     check_service_available(model)
 
-    url = model.client.service_cfg.url.replace("smallgrid_eq", "smallgrid_tpsvssh")
-    query = f"SELECT * WHERE {{SERVICE <{url}> {{?s rdf:type cim:TopologicalNode}}}}"
+    repo = model.config.system_state_repo
+    query = f"select * where {{service <{repo}> {{?s rdf:type cim:TopologicalNode}}}}"
     df = model.get_table_and_convert(query)
     assert df.shape == (115, 1)
