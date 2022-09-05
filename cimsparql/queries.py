@@ -255,7 +255,7 @@ def load_query(
         sup.terminal_where_query(
             cim_version, connectivity, nodes, mrid_subject, with_sequence_number
         ),
-        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid1",
+        f"?_t_mrid {ID_OBJ}.mRID ?t_mrid",
         f"{mrid_subject} {ID_OBJ}.mRID ?mrid",
         f"{mrid_subject} {ID_OBJ}.name ?name",
     ]
