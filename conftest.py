@@ -256,7 +256,7 @@ def cim_client(url: str, repo_name: str, repo_name_suffix: str, rest_api: RestAp
     return init_test_cim_model(url, repo_name, repo_name_suffix)
 
 
-def get_micro_t1_nl(
+def init_cim_model(
     url: str, repo_name: str, repo_name_suffix: str = "", rest_api: RestApi = RestApi.RDF4J
 ) -> Optional[CimModel]:
     try:
@@ -270,7 +270,7 @@ def get_micro_t1_nl(
 
 @pytest.fixture(scope="session")
 def micro_t1_nl(rdf4j_url: str) -> Optional[CimModel]:
-    model = get_micro_t1_nl(rdf4j_url, "micro_t1_nl")
+    model = init_cim_model(rdf4j_url, "micro_t1_nl")
     try:
         yield model
     finally:
@@ -280,7 +280,7 @@ def micro_t1_nl(rdf4j_url: str) -> Optional[CimModel]:
 
 @pytest.fixture(scope="session")
 def micro_t1_nl_bg(blazegraph_url: str) -> Optional[CimModel]:
-    model = get_micro_t1_nl(blazegraph_url, "micro_t1_nl", rest_api=RestApi.BLAZEGRAPH)
+    model = init_cim_model(blazegraph_url, "micro_t1_nl", rest_api=RestApi.BLAZEGRAPH)
     try:
         yield model
     finally:
@@ -299,7 +299,7 @@ def micro_t1_nl_adapted(rdf4j_url: str) -> Optional[CimModel]:
     """
     Fixture that uses the micro_t1_nl model with some adaptions
     """
-    model = get_micro_t1_nl(rdf4j_url, "micro_t1_nl", "_adapted")
+    model = init_cim_model(rdf4j_url, "micro_t1_nl", "_adapted")
     try:
         apply_custom_modifications(model)
         yield model
@@ -316,7 +316,7 @@ def micro_t1_nl_adapted_bg(blazegraph_url: str) -> Optional[CimModel]:
     """
     Fixture that uses the micro_t1_nl model with some adaptions
     """
-    model = get_micro_t1_nl(blazegraph_url, "micro_t1_nl", "_adapted", RestApi.BLAZEGRAPH)
+    model = init_cim_model(blazegraph_url, "micro_t1_nl", "_adapted", RestApi.BLAZEGRAPH)
     try:
         apply_custom_modifications(model)
         yield model
