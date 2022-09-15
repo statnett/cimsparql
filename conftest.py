@@ -333,3 +333,35 @@ def micro_t1_nl_models(
     micro_t1_nl_adapted, micro_t1_nl_adapted_bg
 ) -> Dict[str, Optional[CimModel]]:
     return {"rdf4j": micro_t1_nl_adapted, "blazegraph": micro_t1_nl_adapted_bg}
+
+
+def small_grid_model(url: str, api: RestApi):
+    tpsvssh_mod = init_cim_model(url, "smallgrid_tpsvssh", "", api)
+    eq_mod = init_cim_model(url, "smallgrid_eq", "", api)
+    try:
+        apply_custom_modifications(tpsvssh_mod)
+        apply_custom_modifications(eq_mod)
+        yield eq_mod
+    except Exception as exc:
+        logger.error(f"{exc}")
+        yield None
+    finally:
+        if eq_mod:
+            eq_mod.client.delete_repo()
+        if tpsvssh_mod:
+            tpsvssh_mod.client.delete_repo()
+
+
+@pytest.fixture(scope="session")
+def small_grid_model_rdf4j(rdf4j_url) -> Optional[CimModel]:
+    yield from small_grid_model(rdf4j_url, RestApi.RDF4J)
+
+
+@pytest.fixture(scope="session")
+def small_grid_model_bg(blazegraph_url) -> Optional[CimModel]:
+    yield from small_grid_model(blazegraph_url, RestApi.BLAZEGRAPH)
+
+
+@pytest.fixture(scope="session")
+def smallgrid_models(small_grid_model_rdf4j, small_grid_model_bg):
+    return {"rdf4j": small_grid_model_rdf4j, "blazegraph": small_grid_model_bg}
