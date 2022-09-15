@@ -26,7 +26,6 @@ from cimsparql.enums import (
     LoadTypes,
     Power,
     Rates,
-    SvPowerFlow,
     SvStatus,
     SvTapStep,
     SynchronousMachine,
@@ -183,31 +182,7 @@ def full_model() -> str:
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
-def node_delta_power(node: str, cim_version: int, p: str) -> str:
-    """Calculate the sum of node injections (should be zero)."""
-    variables = [f"?_{node} (-sum(xsd:float(str(?p))) as {p})"]
-    where_list = [
-        common_subject(
-            "?_t_mrid",
-            [
-                "rdf:type cim:Terminal",
-                f"cim:Terminal.TopologicalNode ?_{node}",
-                f"cim:{sup.acdc_terminal(cim_version)}.connected True",
-            ],
-        ),
-        common_subject("?_obj", [f"{SvPowerFlow.Terminal} ?_t_mrid", f"{SvPowerFlow.p} ?p"]),
-    ]
-    return sup.groupby(variables, where_list, f"?_{node}")
-
-
-def bus_data(
-    region: Region,
-    sub_region: bool,
-    with_market: bool,
-    container: str,
-    cim_version: int,
-    delta_power: bool,
-) -> str:
+def bus_data(region: Region, sub_region: bool, with_market: bool, container: str) -> str:
     node = "node"
     mrid_subject = f"?_{node}"
     bus_name = "?busname"
@@ -229,14 +204,6 @@ def bus_data(
         ),
         f"?Substation {ID_OBJ}.mRID ?station",
     ]
-    if delta_power:
-        variables.append("?delta_p")
-        where_list.extend(
-            [
-                f"optional {{{node_delta_power(node, cim_version, '?_delta_p')}}}",
-                "bind(coalesce(?_delta_p, xsd:float(0.0)) as ?delta_p)",
-            ]
-        )
 
     if container:
         where_list.append(f"?cont {ID_OBJ}.mRID {container}")
@@ -253,12 +220,7 @@ def bus_data(
 
 
 def three_winding_dummy_bus(
-    region: Region,
-    sub_region: bool,
-    with_market: bool,
-    container: str,
-    network_analysis: bool,
-    delta_power: bool,
+    region: Region, sub_region: bool, with_market: bool, container: str, network_analysis: bool
 ) -> str:
     name = "?name"
     variables = ["?node", name, f"({name} as ?busname)", "?un", "?station"]
@@ -278,10 +240,6 @@ def three_winding_dummy_bus(
         f"?Substation {ID_OBJ}.mRID ?station",
         number_of_windings("?_p_mrid", 3),
     ]
-
-    if delta_power:
-        variables.append("?delta_p")
-        where_list.append("bind(0.0 as ?delta_p)")
 
     if network_analysis:
         where_list.append("?_p_mrid SN:Equipment.networkAnalysisEnable True")
