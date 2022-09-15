@@ -20,6 +20,11 @@ class GeneratorTypes(StrEnum):
     Wind = auto()
 
 
+class IdentifiedObject(CimStrEnum):
+    name = "cim:IdentifiedObject.name"
+    mRID = "cim:IdentifiedObject.mRID"
+
+
 class ConverterTypes(CimStrEnum):
     VoltageSourceConverter = "ALG:VoltageSourceConverter"
     DCConverter = "ALG:DCConverter"
@@ -78,6 +83,12 @@ class SvPowerFlow(CimStrEnum):
     q = "cim:SvPowerFlow.q"
 
 
+class SvVoltage(CimStrEnum):
+    TopologicalNode = "cim:SvVoltage.TopologicalNode"
+    v = "cim:SvVoltage.v"
+    angle = "cim:SvVoltage.angle"
+
+
 class GeneratingUnit(CimStrEnum):
     marketCode = "SN:GeneratingUnit.marketCode"
     maxOperatingP = "cim:GeneratingUnit.maxOperatingP"
@@ -102,3 +113,13 @@ class VoltageLevel(CimStrEnum):
 
 class BaseVoltage(CimStrEnum):
     nominalVoltage = "cim:BaseVoltage.nominalVoltage"
+
+
+class TransformerEnd(CimStrEnum):
+    Terminal = "cim:TransformerEnd.Terminal"
+    endNumber = "cim:TransformerEnd.endNumber"
+
+
+class PowerTransformerEnd(CimStrEnum):
+    PowerTransformer = "cim:PowerTransformerEnd.PowerTransformer"
+    phaseAngleClock = "cim:PowerTransformerEnd.phaseAngleClock"
