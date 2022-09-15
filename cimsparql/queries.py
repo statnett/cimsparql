@@ -1,6 +1,8 @@
 from operator import eq, ne
 from typing import Callable, Iterable, List, Optional, Union
 
+from deprecated import deprecated
+
 import cimsparql.query_support as sup
 from cimsparql.cim import (
     CNODE_CONTAINER,
@@ -162,23 +164,27 @@ def phase_tap_changer_query(
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
+@deprecated(version="1.10.0", reason="Use cimsparql.template.FULL_MODEL")
 def full_model() -> str:
     variables = ["?model", "?time", "?profile", "?description", "?version", "?created", "?dependon"]
-    where_list = [
-        common_subject(
-            "?model",
-            [
-                sup.rdf_type_tripler("", "md:FullModel"),
-                "md:Model.profile ?profile",
-                "md:Model.scenarioTime ?time",
-                "md:Model.description ?description",
-                "md:Model.version ?version",
-                "md:Model.created ?created",
-                "md:Model.DependentOn ?dependon",
-            ],
-        ),
-        "?dependon rdf:type md:FullModel",
-    ]
+    required = common_subject(
+        "?model",
+        [
+            sup.rdf_type_tripler("", "md:FullModel"),
+            "md:Model.scenarioTime ?time",
+            "md:Model.created ?created",
+        ],
+    )
+    optional = common_subject(
+        "?model",
+        [
+            "md:Model.profile ?profile",
+            "md:Model.description ?description",
+            "md:Model.version ?version",
+            "md:Model.DependentOn ?dependon",
+        ],
+    )
+    where_list = [required, f"optional {{{optional}}}"]
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
 
@@ -433,7 +439,7 @@ def synchronous_machines_query(
                 sup.get_name("", "?st_gr_n", alias=True),
             ],
         ),
-        "bind(xsd:float(str(?apctmax))*xsd:float(str(?maxP)) / 100.0 as ?allocationmax)",
+        "bind(xsd:double(str(?apctmax))*xsd:double(str(?maxP)) / 100.0 as ?allocationmax)",
     ]
 
     if station_group:
@@ -482,7 +488,7 @@ def wind_generating_unit_query(network_analysis: bool) -> str:
                 f"{GeneratingUnit.ScheduleResource}/SN:ScheduleResource.marketCode ?station_group",
             ],
         ),
-        "bind(xsd:float(str(?apctmax))*xsd:float(str(?maxP)) / 100.0 as ?allocationmax)",
+        "bind(xsd:double(str(?apctmax))*xsd:double(str(?maxP)) / 100.0 as ?allocationmax)",
     ]
 
     if network_analysis:
@@ -540,7 +546,7 @@ def two_winding_transformer_query(
             f"optional {{{tap_phase_angle('?w_mrid_2', '?_angle')}}}",
             f"optional {{{in_service}}}",
             "bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)",
-            "bind(coalesce (?_angle+xsd:float(30.0)*?angleclock, xsd:float(0.0)) as ?angle)",
+            "bind(coalesce (?_angle+xsd:double(30.0)*?angleclock, xsd:double(0.0)) as ?angle)",
         ]
     )
 
@@ -566,7 +572,7 @@ def tap_phase_angle(mrid: str = "?mrid", angle: str = "?angle") -> str:
                 f"cim:PhaseTapChanger.TransformerEnd {mrid}",
             ],
         ),
-        f"bind(((?position-?normalstep)*xsd:float(str(?inc))) as {angle})",
+        f"bind(((?position-?normalstep)*xsd:double(str(?inc))) as {angle})",
     ]
     return sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
 
