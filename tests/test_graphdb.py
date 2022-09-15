@@ -11,7 +11,7 @@ import requests
 
 from cimsparql.cim import ID_OBJ
 from cimsparql.constants import con_mrid_str
-from cimsparql.enums import ConverterTypes
+from cimsparql.enums import ConverterTypes, LoadTypes
 from cimsparql.graphdb import (
     GraphDBClient,
     ServiceConfig,
@@ -47,14 +47,14 @@ load_columns = [con_mrid_str, "t_mrid", "bidzone", "p", "q", "name", "station"]
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_conform_load(cim_model: CimModel, n_samples: int):
-    load = cim_model.loads(load_type=["ConformLoad"], limit=n_samples)
+    load = cim_model.loads(load_type=[LoadTypes.ConformLoad], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_non_conform_load(cim_model: CimModel, n_samples: int):
-    load = cim_model.loads(load_type=["NonConformLoad"], limit=n_samples)
+    load = cim_model.loads(load_type=[LoadTypes.NonConformLoad], limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 
@@ -79,7 +79,7 @@ def test_phase_tap_changer(cim_model: CimModel):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_API", None) is None, reason="Need graphdb server to run")
 def test_conform_and_non_conform_load(cim_model: CimModel, n_samples: int):
-    load = cim_model.loads(load_type=["ConformLoad", "NonConformLoad"], limit=n_samples)
+    load = cim_model.loads(load_type=LoadTypes, limit=n_samples)
     assert len(load) == n_samples
     assert set(load.columns).issubset(load_columns)
 

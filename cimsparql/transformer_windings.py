@@ -11,6 +11,7 @@ from cimsparql.cim import (
     TR_WINDING,
 )
 from cimsparql.enums import SvPowerFlow
+from cimsparql.line_queries import line_loss
 
 
 def _end_number(nr: int, lock_end_number: bool) -> List[str]:
@@ -44,7 +45,7 @@ def number_of_windings(mrid: str, winding_count: int, with_loss: bool = False) -
         ),
     ]
     if with_loss:
-        variables.append("(sum(xsd:float(str(?sv_p))) / sum(?nr_connected) as ?pl)")
+        variables.append("(sum(xsd:double(str(?sv_p))) / sum(?nr_connected) as ?pl)")
         sv_flow = sup.common_subject(
             "?_sv_t", [f"{SvPowerFlow.Terminal} ?p_t_mrid", f"{SvPowerFlow.p} ?_sv_p"]
         )
@@ -54,7 +55,7 @@ def number_of_windings(mrid: str, winding_count: int, with_loss: bool = False) -
                 "optional{?p_t_mrid cim:ACDCTerminal.connected ?connected}",
                 "bind(coalesce(if(?connected, 1, 0), 0) as ?nr_connected)",
                 f"optional {{{sv_flow}}}",
-                "bind(coalesce(?_sv_p, xsd:float(0.0)) as ?sv_p)",
+                "bind(coalesce(?_sv_p, xsd:double(0.0)) as ?sv_p)",
             ]
         )
     select = sup.combine_statements(sup.select_statement(variables), sup.group_query(where_list))
@@ -96,19 +97,19 @@ def transformer_common(
         variables.append("?p_mrid")
     if with_loss:
         if winding_count == 2:
-            variables.append("(?pl as ?pl_1) (?pl as ?pl_2)")
+            line_loss(variables, where_list)
         elif winding_count == 3:
-            variables.append("(xsd:float(0.0) as ?pl_1) (?pl as ?pl_2)")
+            variables.append("(xsd:double(0.0) as ?pl_1) (?pl as ?pl_2)")
     where_list.extend(
         [
             sup.get_name("?_p_mrid", name),
             sup.common_subject("?w_mrid_1", [f"{TR_WINDING}.ratedU ?un", f"{ID_OBJ}.mRID ?mrid"]),
-            number_of_windings("?_p_mrid", winding_count, with_loss),
+            number_of_windings("?_p_mrid", winding_count, with_loss and winding_count == 3),
         ]
     )
     if winding_count == 2:
         for z in impedance:
-            variables.append(f"(xsd:float(str(?{z}_1)) + xsd:float(str(?{z}_2)) as ?{z})")
+            variables.append(f"(xsd:double(str(?{z}_1)) + xsd:double(str(?{z}_2)) as ?{z})")
         for nr in [1, 2]:
             where_list.extend(
                 sup.predicate_list(

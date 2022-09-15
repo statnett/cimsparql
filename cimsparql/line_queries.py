@@ -3,9 +3,21 @@ from typing import Iterable, List, Optional, Tuple, Union
 import cimsparql.query_support as sup
 from cimsparql.cim import CNODE_CONTAINER, EQUIP_CONTAINER, GEO_REG, ID_OBJ, SUBSTATION, LineTypes
 from cimsparql.constants import sequence_numbers, union_split
-from cimsparql.enums import Impedance, Rates
+from cimsparql.enums import IdentifiedObject, Impedance, Rates
 from cimsparql.sv_queries import sv_status, sv_terminal_injection
 from cimsparql.typehints import Region
+
+
+def line_loss(variables: List[str], where_list: List[str]) -> None:
+    variables.extend(["?pl_1", "?pl_2"])
+    terminal_injection = [sv_terminal_injection(nr) for nr in [1, 2]]
+    loss_list = [
+        "bind((xsd:double(str(?p_1)) + xsd:double(str(?p_2))) as ?pl)",
+        "bind(if(xsd:double(str(?p_1))>xsd:double(str(?p_2)),?pl,xsd:double(0.0)) as ?pl_2)",
+        "bind(if(xsd:double(str(?p_1))<xsd:double(str(?p_2)),?pl,xsd:double(0.0)) as ?pl_1)",
+    ]
+    terminal_injection.extend(loss_list)
+    where_list.append(sup.group_query(terminal_injection, command="optional"))
 
 
 def _line_query(
@@ -52,10 +64,7 @@ def _line_query(
         )
 
     if with_loss:
-        variables.append("(?pl as ?pl_1) (?pl as ?pl_2)")
-        loss_list = [sv_terminal_injection(nr) for nr in [1, 2]]
-        loss_list.append("bind((xsd:float(str(?sv_p_1)) + xsd:float(str(?sv_p_2)) ) / 2 as ?pl)")
-        where_list.append(sup.group_query(loss_list, command="OPTIONAL"))
+        line_loss(variables, where_list)
 
     if network_analysis:
         where_list.append(f"{mrid_subject} SN:Equipment.networkAnalysisEnable {network_analysis}")
@@ -64,7 +73,7 @@ def _line_query(
         limit_type = "ActivePowerLimit" if line_type == LineTypes.ACLineSegment else "CurrentLimit"
         variables.extend([f"?rate{rate}" for rate in rates])
         where_rate = [sup.operational_limit(mrid_subject, rate, limit_type) for rate in rates]
-        where_list.append(sup.group_query(where_rate, command="OPTIONAL"))
+        where_list.append(sup.group_query(where_rate, command="optional"))
     return variables, where_list, mrid_subject
 
 
@@ -107,7 +116,7 @@ def ac_line_query(
                 "cim:VoltageLevel.Substation",
                 "cim:Substation.Region",
                 "cim:SubGeographicalRegion.Region",
-                "cim:IdentifiedObject.name",
+                IdentifiedObject.name,
             ]
         )
         where_list.extend(
@@ -256,7 +265,7 @@ def exchange_query(
     where_list.extend(
         ["bind((?connected_1 && ?connected_2) as ?status)", f"?_{nodes}_1 {ID_OBJ}.mRID ?{nodes}"]
     )
-    variables.append("(?sv_p_1 as ?p)")
+    variables.append("(?p_1 as ?p)")
     where_list.append(sv_terminal_injection(1))
 
     if with_market_code:
