@@ -63,3 +63,15 @@ def test_namespaces(rdf4j_gdb):
     rdf4j_gdb.set_namespace("myns", ns)
     fetched_ns = rdf4j_gdb.get_namespace("myns")
     assert ns == fetched_ns
+
+
+def test_upload_with_context(rdf4j_gdb):
+    if skip_rdf4j_test(rdf4j_gdb):
+        pytest.skip("Require access to RDF4J service")
+
+    xml_file = Path(__file__).parent / "data/demo.xml"
+    graph = "<http://mygraph.com/demo/1/1>"
+    rdf4j_gdb.upload_rdf(xml_file, "rdf/xml", {"context": graph})
+
+    df = rdf4j_gdb.exec_query(f"SELECT * WHERE {{GRAPH {graph} {{?s rdf:type md:FullModel}}}}")
+    assert len(df) == 1

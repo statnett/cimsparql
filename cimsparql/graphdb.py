@@ -203,13 +203,23 @@ class GraphDBClient:
         response = requests.delete(endpoint)
         response.raise_for_status()
 
-    def upload_rdf(self, fname: Path, rdf_format: str):
+    def upload_rdf(self, fname: Path, rdf_format: str, params: Optional[Dict[str, str]] = None):
+        """
+        Upload data in RDF format to a srevice
+
+        Args
+            fname: Filename to the RDF file to upload
+            rdf_format: RDF file type (e.g. rdf/xml, rdf/json etc. Consult the RDF4J rest api
+                doc for a complete list of available options)
+            params: Additional parameters passed to the post request
+        """
         with open(fname, "rb") as infile:
             xml_content = infile.read()
 
         response = requests.post(
             self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
             data=xml_content,
+            params=params,
             headers={"Content-Type": MIME_TYPE_RDF_FORMATS[rdf_format]},
         )
         response.raise_for_status()
