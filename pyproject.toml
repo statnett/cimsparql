@@ -16,9 +16,7 @@ include = ["pkg_data/*"]
 [tool.poetry.dependencies]
 SPARQLWrapper = "*"
 StrEnum = "*"
-defusedxml = {version = "*", optional = true}
 deprecated = "*"
-lxml = {version = "*", optional = true}
 networkx = "*"
 numpy = "*"
 pandas = "*"
@@ -28,8 +26,8 @@ requests = "*"
 tables = "*"
 
 [tool.poetry.dev-dependencies]
-autopep8 = "*"
 asyncio = "*"
+autopep8 = "*"
 black = { version = "*", allow-prereleases = true }
 coverage = { version = "*", extras = ['toml'] }
 flake8 = "*"
