@@ -1,11 +1,3 @@
-# Allowed
-union_split = "} union {"
-sequence_numbers = [1, 2]
-
-# Default variable names
-con_mrid_str = "connectivity_mrid"
-
-
 # Tuple with all cim-types where cimsparql assumes mRID exists
 CIM_TYPES_WITH_MRID = (
     "ACDCConverterDCTerminal",

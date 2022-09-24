@@ -8,7 +8,6 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 import requests
-from deprecated import deprecated
 from SPARQLWrapper import JSON, SPARQLWrapper
 from strenum import StrEnum
 
@@ -266,18 +265,6 @@ class GraphDBClient:
         response = requests.get(self.service_cfg.url + f"/namespaces/{prefix}", auth=auth)
         response.raise_for_status()
         return response.text
-
-
-@deprecated(version="1.11", reason="Use cimsparqel.model.get_cim_model instead")
-def get_graphdb_client(
-    server: str,
-    graphdb_repo: str,
-    graphdb_path: str = "services/pgm/equipment/",
-    protocol: str = "https",
-):
-    from cimsparql.model import get_cim_model
-
-    return get_cim_model(ServiceConfig(graphdb_repo, protocol, server, graphdb_path))
 
 
 @dataclass

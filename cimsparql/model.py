@@ -1,6 +1,5 @@
 """The cimsparql.model module contains the base class CimModel."""
 
-import re
 from dataclasses import dataclass
 from functools import cached_property
 from string import Template
@@ -10,8 +9,11 @@ import pandas as pd
 
 from cimsparql import templates
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
-from cimsparql.query_support import acdc_terminal
 from cimsparql.type_mapper import TypeMapper
+
+
+def acdc_terminal(cim_version: int) -> str:
+    return "ACDCTerminal" if cim_version > 15 else "Terminal"
 
 
 @dataclass
@@ -50,19 +52,6 @@ class Model:
         if self._mapper is None and "rdfs" in self.prefixes:
             return TypeMapper(self)
         return self._mapper
-
-    @staticmethod
-    def _assign_column_types(
-        result: pd.DataFrame, columns: Dict[str, Union[bool, str, float, int]]
-    ) -> None:
-        for column, column_type in columns.items():
-            if column_type is str:
-                continue
-            if column_type is bool:
-                result[column] = result[column].str.contains("true", flags=re.IGNORECASE)
-            else:
-                result.loc[result[column] == "None", column] = ""
-                result[column] = pd.to_numeric(result[column], errors="coerce").astype(column_type)
 
     @classmethod
     def col_map(cls, data_row, columns: Dict[str, str]) -> Dict[str, str]:
@@ -112,15 +101,6 @@ class Model:
 
 class CimModel(Model):
     """Used to query with sparql queries (typically CIM)."""
-
-    def __init__(
-        self,
-        mapper: Optional[TypeMapper],
-        client: GraphDBClient,
-        config: Optional[ModelConfig] = None,
-    ) -> None:
-        super().__init__(mapper, client, config)
-        self._date_version = None
 
     @property
     def cim_version(self) -> int:

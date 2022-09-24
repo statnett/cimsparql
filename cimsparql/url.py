@@ -6,7 +6,7 @@ variables ("GRAPHDB_USER" & "GRAPHDB_USER_PASSWD").
 """
 import os
 import re
-from typing import Dict, ItemsView, Iterable, List, Optional
+from typing import Dict, ItemsView, List, Optional
 
 import requests
 
@@ -76,9 +76,6 @@ class Prefix:
 
     def update(self, pref: Dict[str, str]):
         self.prefixes.update(pref)
-
-    def in_prefixes(self, variables: Iterable) -> Iterable:
-        return {variable for variable in variables if variable.split(":")[0] in self.prefixes}
 
     def header_str(self, query: str) -> str:
         """Build header string, for sparql queries, with list of prefixes.
