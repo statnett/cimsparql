@@ -3,12 +3,12 @@ from __future__ import annotations
 import warnings
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import pandas as pd
 
 from cimsparql.graphdb import GraphDBClient
-from cimsparql.query_support import combine_statements, unionize
+from cimsparql.templates import TYPE_MAPPER_QUERY
 
 # Type-caster that can be used with pandas. It can be python types, numpy dtypes or string
 # value. Examples: float, "int", int, "string"
@@ -30,10 +30,6 @@ def to_timedelta(duration: str) -> datetime.timedelta:
         raise ValueError("Cimsparql uses pandas to convert duration. Y not supported")
 
     return pd.to_timedelta(duration)
-
-
-def identity(x):
-    return x
 
 
 XSD_TYPE_MAP = {
@@ -77,58 +73,12 @@ def build_type_map(prefixes: Dict[PREFIX, URI]) -> Dict[SPARQL_TYPE, TYPE_CASTER
     return type_map
 
 
-class TypeMapperQueries:
-    def __init__(self, prefixes: Dict[PREFIX, URI]):
-        self.prefixes = prefixes
-
-    @property
-    def type_queries(self) -> List[List[str]]:
-        queries = [
-            ["?sparql_type rdf:type rdfs:Datatype;owl:equivalentClass ?range"],
-            ["?sparql_type owl:equivalentClass ?range"],
-        ]
-
-        if "cims" in self.prefixes:
-            queries += self.cims_queries
-        return queries
-
-    @property
-    def cims_queries(self) -> List[List[str]]:
-        """
-        Return queries that require that cims namespace. We must distinguish between types
-        that is of type 'Primitive' and types that are of type 'CIMdatatype'. In the latter case
-        we must find the type of the 'value' attribute
-        """
-        return [
-            [
-                "?datatypevalue rdfs:domain ?sparql_type",
-                "?datatypevalue cims:dataType ?range",
-                '?range cims:stereotype "Primitive"',
-            ],
-            [
-                "?datatypevalue rdfs:domain ?sparql_type",
-                "?datatypevalue cims:dataType ?CIMdtype",
-                '?CIMdtype cims:stereotype "CIMDatatype"',
-                "?CIMdtypeValue rdfs:domain ?CIMdtype",
-                '?CIMdtypeValue rdfs:label "value"@en',
-                "?CIMdtypeValue cims:dataType ?range",
-            ],
-        ]
-
-    @property
-    def query(self) -> str:
-        select_query = "SELECT ?sparql_type ?range"
-        grouped = [combine_statements(*g, split=" .") for g in self.type_queries]
-        union = unionize(*grouped)
-        return f"{select_query} where {{{union}}}"
-
-
 class TypeMapper:
     def __init__(
         self, client: GraphDBClient, custom_additions: Optional[Dict[str, Any]] = None
     ) -> None:
         self.prefixes = client.prefixes.prefixes
-        self.queries = TypeMapperQueries(self.prefixes)
+        self.query = TYPE_MAPPER_QUERY.substitute(self.prefixes)
         custom_additions = custom_additions or {}
         self.prim_type_map = build_type_map(self.prefixes)
         self.map = sparql_type_map | self.get_map(client) | self.prim_type_map | custom_additions
@@ -151,7 +101,7 @@ class TypeMapper:
             sparql-type -> python type map
 
         """
-        df = client.get_table(self.queries.query)[0]
+        df = client.get_table(self.query, add_prefixes=False)[0]
         if df.empty:
             return {}
         return self.type_map(df)

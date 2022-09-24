@@ -2,11 +2,10 @@ import json
 import logging
 import os
 import pathlib
-from typing import Dict, Generator, Optional, Set
+from typing import Dict, Generator, Optional
 
 import pandas as pd
 import pytest
-import requests
 
 from cimsparql.constants import CIM_TYPES_WITH_MRID
 from cimsparql.graphdb import (
@@ -107,7 +106,7 @@ def sparql_data_types() -> pd.DataFrame:
 
 @pytest.fixture
 def prefixes():
-    return {"cim": "cim#", "xsd": "xsd#"}
+    return {"cim": "cim#", "cims": "cims#", "xsd": "xsd#", "rdf": "rdf#", "rdfs": "rdfs#"}
 
 
 @pytest.fixture
@@ -141,18 +140,6 @@ def blazegraph_url() -> str:
         # Running on GitHub
         return "localhost:9999/blazegraph/namespace"
     return os.getenv("BLAZEGRAPH_URL", "")
-
-
-def upload_ttl_to_repo(
-    url: str, fname: pathlib.Path, ignored_error_codes: Optional[Set[int]] = None
-):
-    ignored_error_codes = ignored_error_codes or set()
-    with open(fname, "rb") as infile:
-        data_bytes = infile.read()
-
-    response = requests.put(url, data=data_bytes, headers={"Content-Type": "text/turtle"})
-    if response.status_code not in ignored_error_codes:
-        response.raise_for_status()
 
 
 def initialized_rdf4j_repo(service_url: str) -> GraphDBClient:

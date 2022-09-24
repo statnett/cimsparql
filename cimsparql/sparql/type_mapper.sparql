@@ -1,0 +1,17 @@
+PREFIX rdf:<${rdf}>
+PREFIX rdfs:<${rdfs}>
+PREFIX cims:<${cims}>
+select distinct ?sparql_type ?range
+where {
+  {
+    ?sparql_type ^rdfs:domain/cims:dataType ?range .
+    ?range cims:stereotype "Primitive"
+  }
+  union {
+    ?sparql_type ^rdfs:domain/cims:dataType ?_dtype .
+    ?_dtype cims:stereotype "CIMDatatype" .
+    ?_dtype_value rdfs:domain ?_dtype;
+                  rdfs:label "value"@en;
+                  cims:dataType ?range
+  }
+}

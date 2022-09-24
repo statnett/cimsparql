@@ -5,7 +5,6 @@ from typing import List, Set
 import pytest
 import requests
 
-from cimsparql.cim import ID_OBJ
 from cimsparql.graphdb import (
     GraphDBClient,
     ServiceConfig,
@@ -16,7 +15,9 @@ from cimsparql.graphdb import (
     repos,
 )
 from cimsparql.model import CimModel
-from cimsparql.type_mapper import TypeMapperQueries
+from cimsparql.type_mapper import TypeMapper
+
+ID_OBJ = "cim:IdentifiedObject"
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
@@ -68,11 +69,6 @@ def gen_columns() -> List[str]:
 @pytest.fixture()
 def synchronous_machines_columns(gen_columns: Set[str]) -> Set[str]:
     return gen_columns | {"bidzone", "p", "q", "sn", "t_mrid", "station"}
-
-
-@pytest.fixture()
-def wind_units_machines_columns(gen_columns: Set[str]) -> Set[str]:
-    return gen_columns | {"plant_mrid", "allocationWeight"}
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
@@ -154,8 +150,8 @@ def test_data_row_missing_column():
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
 def test_dtypes(model: CimModel):
-    queries = TypeMapperQueries(model.client.prefixes.prefixes)
-    df = model.client.get_table(queries.query)[0]
+    mapper = TypeMapper(model.client)
+    df = model.client.get_table(mapper.query, add_prefixes=False)[0]
     assert df["sparql_type"].isna().sum() == 0
 
 
