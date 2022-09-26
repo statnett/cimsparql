@@ -22,7 +22,7 @@ where {
       ?_p_mrid ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.Terminal ?_t_mrid .
       service <${repo}> {
         optional {
-          ?_t_mrid cim:${ACDCTerminal}.connected ?connected;
+          ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
                    ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?_sv_p
         }
       }

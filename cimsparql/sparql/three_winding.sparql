@@ -18,7 +18,7 @@ where {
          cim:PowerTransformerEnd.x ?x .
   optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   service <${repo}> {
-    ?_t_mrid cim:${ACDCTerminal}.connected ?connected;
+    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
              cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .
   } .
   service <${repo}> {

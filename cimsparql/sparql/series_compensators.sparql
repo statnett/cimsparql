@@ -32,7 +32,7 @@ where {
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?_mrid;
                cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation;
-               cim:${ACDCTerminal}.sequenceNumber 1 .
+               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
       ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
       optional {
         ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
@@ -41,7 +41,7 @@ where {
       service <${repo}>
       {
         ?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node;
-                 cim:${ACDCTerminal}.connected ?connected .
+                 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
         optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
       }.
       bind(coalesce(?node, ?t_mrid) as ?node_1)
@@ -56,7 +56,7 @@ where {
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?_mrid;
                cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation;
-               cim:${ACDCTerminal}.sequenceNumber 2 .
+               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2 .
       ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
       optional {
         ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
@@ -65,7 +65,7 @@ where {
       service <${repo}>
       {
         ?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node;
-                 cim:${ACDCTerminal}.connected ?connected.
+                 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
         optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
       }.
       bind(coalesce(?node, ?t_mrid) as ?node_2)

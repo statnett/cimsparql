@@ -9,12 +9,12 @@ where {
   optional {?_mrid cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code} .
   ?_t_mrid_1  rdf:type cim:Terminal;
               cim:Terminal.ConductingEquipment ?_mrid;
-              cim:${ACDCTerminal}.sequenceNumber 1;
+              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1;
               cim:IdentifiedObject.mRID ?t_mrid_1 .
   ?_t_mrid_2  rdf:type cim:Terminal;
               cim:Terminal.ConductingEquipment ?_mrid;
-              cim:${ACDCTerminal}.sequenceNumber 2;
+              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 ;
               cim:IdentifiedObject.mRID ?t_mrid_2 .
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}

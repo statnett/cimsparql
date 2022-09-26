@@ -12,10 +12,6 @@ from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.type_mapper import TypeMapper
 
 
-def acdc_terminal(cim_version: int) -> str:
-    return "ACDCTerminal" if cim_version > 15 else "Terminal"
-
-
 @dataclass
 class ModelConfig:
     system_state_repo: Optional[str] = None
@@ -155,11 +151,7 @@ class CimModel(Model):
         )
 
     def loads_query(self, region: Optional[str] = None) -> str:
-        substitutes = {
-            "region": region or ".*",
-            "ACDCTerminal": acdc_terminal(self.cim_version),
-            "ssh_graph": self.config.ssh_graph,
-        }
+        substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
         return self.template_to_query(templates.LOADS_QUERY, substitutes)
 
     def loads(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
@@ -196,11 +188,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
 
     def synchronous_machines_query(self, region: Optional[str] = None) -> str:
-        substitutes = {
-            "region": region or ".*",
-            "ACDCTerminal": acdc_terminal(self.cim_version),
-            "ssh_graph": self.config.ssh_graph,
-        }
+        substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
         return self.template_to_query(templates.SYNCHRONOUS_MACHINES_QUERY, substitutes)
 
     def synchronous_machines(
@@ -210,7 +198,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
 
     def connections_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONNECTIONS_QUERY, substitutes)
 
     def connections(
@@ -239,7 +227,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
 
     def borders_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BORDERS_QUERY, substitutes)
 
     def borders(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
@@ -253,7 +241,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
 
     def exchange_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.EXCHANGE_QUERY, substitutes)
 
     def exchange(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
@@ -270,11 +258,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
 
     def converters_query(self, region: Optional[str] = None) -> str:
-        substitutes = {
-            "region": region or ".*",
-            "ACDCTerminal": acdc_terminal(self.cim_version),
-            "ssh_graph": self.config.ssh_graph,
-        }
+        substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
         return self.template_to_query(templates.CONVERTERS_QUERY, substitutes)
 
     def converters(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
@@ -300,7 +284,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
 
     def ac_lines_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.AC_LINE_QUERY, substitutes)
 
     def ac_lines(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
@@ -320,7 +304,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
 
     def series_compensators_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.SERIES_COMPENSATORS_QUERY, substitutes)
 
     def series_compensators(
@@ -354,11 +338,11 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, add_prefixes=False)
 
     def two_winding_transformers_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.TWO_WINDING_QUERY, substitutes)
 
     def two_winding_angle_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.TWO_WINDING_ANGLE_QUERY, substitutes)
 
     def two_winding_transformers(
@@ -385,11 +369,11 @@ class CimModel(Model):
         return data
 
     def three_winding_loss_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_LOSS_QUERY, substitutes)
 
     def three_winding_transformers_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_QUERY, substitutes)
 
     def three_winding_transformers(
@@ -422,8 +406,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="substation", add_prefixes=False)
 
     def disconnected_query(self) -> str:
-        substitutes = {"ACDCTerminal": acdc_terminal(self.cim_version)}
-        return self.template_to_query(templates.DISCONNECTED_QUERY, substitutes)
+        return self.template_to_query(templates.DISCONNECTED_QUERY)
 
     def disconnected(self, limit: Optional[int] = None) -> pd.DataFrame:
         """Query disconneced status from ssh profile (not available in GraphDB)
@@ -467,7 +450,7 @@ class CimModel(Model):
         return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
 
     def dc_active_flow_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ACDCTerminal": acdc_terminal(self.cim_version)}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.DC_ACTIVE_POWER_FLOW_QUERY, substitutes)
 
     def dc_active_flow(

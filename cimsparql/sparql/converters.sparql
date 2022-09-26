@@ -14,7 +14,7 @@ where {
            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
   filter regex(?area, '${region}')
   service <${repo}> {
-    ?_t_mrid cim:${ACDCTerminal}.connected ?connected;
+    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
              cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
   }
   service <${repo}> {

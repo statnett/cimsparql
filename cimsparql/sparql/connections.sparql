@@ -7,10 +7,10 @@ where {
   ?_mrid rdf:type ?connector;
          cim:IdentifiedObject.mRID ?mrid .
   ?_t_mrid_1  cim:Terminal.ConductingEquipment ?_mrid;
-              cim:${ACDCTerminal}.sequenceNumber 1;
+              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
               cim:IdentifiedObject.mRID ?t_mrid_1 .
   ?_t_mrid_2  cim:Terminal.ConductingEquipment ?_mrid;
-              cim:${ACDCTerminal}.sequenceNumber 2;
+              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
               cim:IdentifiedObject.mRID ?t_mrid_2
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
