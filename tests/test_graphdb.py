@@ -26,9 +26,8 @@ def test_cimversion(model: CimModel):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
-def test_load(model: CimModel, n_samples: int):
-    load = model.loads(limit=n_samples)
-    assert len(load) == n_samples
+def test_load(model: CimModel):
+    load = model.loads()
     assert set(load.columns).issubset(
         {"node", "name", "bidzone", "p", "q", "station", "station_group", "status"}
     )
@@ -36,14 +35,13 @@ def test_load(model: CimModel, n_samples: int):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
 def test_power_flow(model: CimModel):
-    data = model.powerflow()
-    assert not data.empty
+    assert not model.powerflow.empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
 def test_series_compensator(model: CimModel):
-    compensators = model.series_compensators(region="NO", limit=3)
-    assert compensators.shape == (3, 12)
+    compensators = model.series_compensators(region="NO")
+    assert compensators.shape[1] == 12
 
 
 @pytest.fixture()
@@ -72,24 +70,21 @@ def synchronous_machines_columns(gen_columns: Set[str]) -> Set[str]:
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
-def test_synchronous_machines(
-    model: CimModel, synchronous_machines_columns: Set[str], n_samples: int
-):
-    synchronous_machines = model.synchronous_machines(limit=n_samples)
-    assert len(synchronous_machines) == n_samples
+def test_synchronous_machines(model: CimModel, synchronous_machines_columns: Set[str]):
+    synchronous_machines = model.synchronous_machines()
+    assert not synchronous_machines.empty
     assert set(synchronous_machines.columns).difference(synchronous_machines_columns) == set()
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
-def test_wind_generating_units(model: CimModel, n_samples: int):
-    wind_units_machines = model.wind_generating_units(limit=n_samples)
-    assert len(wind_units_machines) == n_samples
+def test_wind_generating_units(model: CimModel):
+    wind_units_machines = model.wind_generating_units()
+    assert not wind_units_machines.empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
-def test_connections(model: CimModel, n_samples: int):
-    connections = model.connections(limit=n_samples)
-    assert len(connections) == n_samples
+def test_connections(model: CimModel):
+    assert not model.connections().empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
@@ -98,9 +93,9 @@ def test_regions(model: CimModel):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
-def test_ac_lines(model: CimModel, n_samples: int):
-    lines = model.ac_lines(limit=n_samples)
-    assert lines.shape == (n_samples, 15)
+def test_ac_lines(model: CimModel):
+    lines = model.ac_lines()
+    assert lines.shape[1] == 15
     assert all(lines[["x", "un"]].dtypes == float)
 
 
@@ -114,23 +109,23 @@ def test_windings(model: CimModel):
 def test_transformer_connected_to_converters(model: CimModel):
     transformers = model.transformers_connected_to_converter(region="NO")
     assert set(transformers.columns) == {"t_mrid", "name", "converter_mrid"}
-    assert len(transformers) == 26
+    assert not transformers.empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
 def test_borders_no(model: CimModel):
-    borders = model.borders(region="NO", limit=10)
+    borders = model.borders(region="NO")
     assert {"name", "t_mrid_1", "t_mrid_2", "area_1", "area_2", "market_code"}.issuperset(
         borders.columns
     )
-    assert len(borders) == 10
+    assert not borders.empty
     assert (borders[["area_1", "area_2"]] == "NO").any(axis=1).all()
     assert (borders["area_1"] != borders["area_2"]).all()
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
 def test_substation_voltage_level(model: CimModel):
-    voltage_level = model.substation_voltage_level()
+    voltage_level = model.substation_voltage_level
     assert {"container", "v"}.difference(voltage_level.columns) == set()
 
 
@@ -151,7 +146,7 @@ def test_data_row_missing_column():
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
 def test_dtypes(model: CimModel):
     mapper = TypeMapper(model.client)
-    df = model.client.get_table(mapper.query, add_prefixes=False)[0]
+    df = model.client.get_table(mapper.query)[0]
     assert df["sparql_type"].isna().sum() == 0
 
 
@@ -214,8 +209,8 @@ def test_add_mrid(micro_t1_nl):
 def test_update_prefixes(monkeypatch):
     monkeypatch.setattr(GraphDBClient, "get_prefixes", lambda *args: {})
     client = GraphDBClient(ServiceConfig(server="some-server"))
-    assert client.prefixes.prefixes == {}
+    assert client.prefixes == {}
 
     new_pref = {"eq": "http://eq"}
     client.update_prefixes(new_pref)
-    assert client.prefixes.prefixes == new_pref
+    assert client.prefixes == new_pref

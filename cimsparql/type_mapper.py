@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import contextmanager
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Generator, Optional, Union
 
 import pandas as pd
 
@@ -60,6 +61,16 @@ sparql_type_map = {
 }
 
 
+@contextmanager
+def enforce_no_limit(client: GraphDBClient) -> Generator[GraphDBClient, None, None]:
+    orig_limit = client.service_cfg.limit
+    client.service_cfg.limit = None
+    try:
+        yield client
+    finally:
+        client.service_cfg.limit = orig_limit
+
+
 def build_type_map(prefixes: Dict[PREFIX, URI]) -> Dict[SPARQL_TYPE, TYPE_CASTER]:
     short_map = {"xsd": XSD_TYPE_MAP, "cim": CIM_TYPE_MAP}
 
@@ -77,7 +88,7 @@ class TypeMapper:
     def __init__(
         self, client: GraphDBClient, custom_additions: Optional[Dict[str, Any]] = None
     ) -> None:
-        self.prefixes = client.prefixes.prefixes
+        self.prefixes = client.prefixes
         self.query = TYPE_MAPPER_QUERY.substitute(self.prefixes)
         custom_additions = custom_additions or {}
         self.prim_type_map = build_type_map(self.prefixes)
@@ -101,7 +112,9 @@ class TypeMapper:
             sparql-type -> python type map
 
         """
-        df = client.get_table(self.query, add_prefixes=False)[0]
+
+        with enforce_no_limit(client) as c:
+            df = c.get_table(self.query)[0]
         if df.empty:
             return {}
         return self.type_map(df)

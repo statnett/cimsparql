@@ -1,4 +1,5 @@
 import os
+from string import Template
 from typing import Dict, Optional
 
 import pandas as pd
@@ -7,20 +8,24 @@ import pytest
 from cimsparql.model import CimModel
 
 
-def check_service_available(model: Optional[CimModel]):
-    if model is None and os.getenv("CI"):
-        pytest.fail("Service should always be available in CI")
-    elif model is None:
-        pytest.skip("Require access to external Graph service")
+def check_service_available(model: Optional[CimModel], server: str):
+    if model is None:
+        if os.getenv("CI") and server != "graphdb":
+            pytest.fail("Service should always be available in CI")
+        else:
+            pytest.skip("Require access to external Graph service")
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
 def test_eq_query(smallgrid_models: Dict[str, CimModel], server):
     model = smallgrid_models[server]
-    check_service_available(model)
-
-    query = "SELECT ?voltage {?s rdf:type cim:BaseVoltage; cim:BaseVoltage.nominalVoltage ?voltage}"
+    check_service_available(model, server)
+    query_template = Template(
+        "PREFIX rdf:<${rdf}>\nPREFIX cim:<${cim}>\n"
+        "SELECT ?voltage {?s rdf:type cim:BaseVoltage; cim:BaseVoltage.nominalVoltage ?voltage}"
+    )
+    query = model.template_to_query(query_template)
     df = model.get_table_and_convert(query).sort_values("voltage").reset_index(drop=True)
     expect = pd.DataFrame({"voltage": [33.0, 132.0, 220.0]})
     pd.testing.assert_frame_equal(df, expect)
@@ -30,9 +35,12 @@ def test_eq_query(smallgrid_models: Dict[str, CimModel], server):
 @pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
 def test_tpsv_query(smallgrid_models, server):
     model = smallgrid_models[server]
-    check_service_available(model)
-
+    check_service_available(model, server)
     repo = model.config.system_state_repo
-    query = f"select * where {{service <{repo}> {{?s rdf:type cim:TopologicalNode}}}}"
+    query_template = Template(
+        "PREFIX rdf:<${rdf}>\nPREFIX cim:<${cim}>\n"
+        f"select * where {{service <{repo}> {{?s rdf:type cim:TopologicalNode}}}}"
+    )
+    query = model.template_to_query(query_template)
     df = model.get_table_and_convert(query)
     assert df.shape == (115, 1)

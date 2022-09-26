@@ -135,7 +135,7 @@ def test_aclines(micro_t1_nl_models: MOD_TYPE, server: str):
     if skip(model, server):
         pytest.skip(skip_msg(server))
 
-    data = model.ac_lines(region=".*", limit=None)
+    data = model.ac_lines(region=".*")
 
     # TODO (@davidkleiven) relies on cim:Terminal.sequenceNumber <--
     # cim:ACDCTerminal.sequenceNumber. It should not be empty, but all sequenceNumbers are 1.
@@ -201,8 +201,8 @@ def test_disconnected(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
     if skip(model, server):
         pytest.skip(skip_msg(server))
-    data = model.disconnected()
-    assert len(data) == 2
+    data = model.disconnected
+    assert len(model.disconnected) == 2
 
     # For convenience just test parts of mrids exists
     expected_partial_mrids = ["9f984b04", "f04ec73"]
@@ -215,7 +215,7 @@ def test_powerflow(micro_t1_nl_models: MOD_TYPE, server: str):
     if skip(model, server):
         pytest.skip(skip_msg(server))
 
-    data = model.powerflow()
+    data = model.powerflow
     assert len(data) == 12
 
 
