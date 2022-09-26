@@ -7,22 +7,23 @@
 
 # CIMSPARQL Query CIM data using sparql
 
-This Python package provides functionality for reading/parsing cim data from
-either xml files or GraphDB into Python memory as pandas dataframes.
+This Python package provides functionality for reading cim data from
+tripple stores such as GraphDB, BlazeGraph or Rdf4j into Python memory
+as pandas dataframes.
 
-The package provides a set of predefined functions/queries to load CIM data
-such generator or branch data, though the user can easiliy extend or define
-their own queries.
+The package provides a set of predefined functions/queries to load CIM
+data such as generator, demand or branch data, though the user can
+easiliy define their own queries.
 
 ## Usage
 
 ### Load data using predefined functions/queries
 
 ```python
->>> from cimsparql.graphdb import GraphDBClient
->>> from cimsparql.url import service
->>> gdbc = GraphDBClient(service(repo='<repo>', server=127.0.0.1:7200))
->>> ac_lines = gdbc.ac_lines(limit=3)
+>>> from cimsparql.graphdb import ServiceConfig
+>>> from cimsparql.model import get_cim_model
+>>> model = get_cim_model(ServiceConfig(limit=3))
+>>> ac_lines = model.ac_lines()
 >>> print(ac_lines[['name', 'x', 'r', 'bch']])
          name       x       r       bch
 0  <branch 1>  1.9900  0.8800  0.000010
@@ -35,24 +36,14 @@ In the example above the client will query repo "<repo>" in the default server
 
 ### Inspect/view predefined queries
 
-To see the actual sparql use the `dry_run` option:
-
-```python
->>> from cimsparql.queries import ac_line_query
->>> print(ac_line_query(limit=3, dry_run=True))
-```
-
-The resulting string contains all the prefix's available in the Graphdb repo
-making it easier to copy and past to graphdb. Note that the prefixes are *not*
-required in the user specified quires described below.
-
-The `dry_run` option is available for all the predefined queries.
+See the sparql templates folder (`cimsparql/sparql`) to the query used.
 
 ### Load data using user specified queries
 
 ```python
->>> query = 'SELECT ?mrid where { ?mrid rdf:type cim:ACLineSegment } limit 2'
->>> query_result = gdbc.get_table(query)
+>>> from string import Template
+>>> query = 'PREFIX cim:<${cim}>\nPREFIX rdf: <${rdf}>\nSELECT ?mrid where {?mrid rdf:type cim:ACLineSegment}'
+>>> query_result = model.get_table_and_convert(model.template_to_query(Template(query)))
 >>> print(query_result)
 ```
 
@@ -69,7 +60,7 @@ Available namespace for current graphdb client (`gdbc` in the examples above),
 which can be used in queries (such as `rdf` and `cim`) can by found by
 
 ```python
->>> print(gdbc.ns)
+>>> print(model.prefixes)
 {'wgs': 'http://www.w3.org/2003/01/geo/wgs84_pos#',
  'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
  'owl': 'http://www.w3.org/2002/07/owl#',
