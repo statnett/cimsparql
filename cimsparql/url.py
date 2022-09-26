@@ -5,8 +5,7 @@ variables ("GRAPHDB_USER" & "GRAPHDB_USER_PASSWD").
 
 """
 import os
-import re
-from typing import Dict, ItemsView, List, Optional
+from typing import Dict, List, Optional
 
 import requests
 
@@ -68,44 +67,3 @@ class GraphDbConfig:
         if self._repos:
             return [repo["id"]["value"] for repo in self._repos]
         return []
-
-
-class Prefix:
-    def __init__(self, prefixes: Dict[str, str]) -> None:
-        self.prefixes = prefixes
-
-    def update(self, pref: Dict[str, str]):
-        self.prefixes.update(pref)
-
-    def header_str(self, query: str) -> str:
-        """Build header string, for sparql queries, with list of prefixes.
-
-        The list of available prefixes should be provided by the source (such as GraphDB).
-
-        """
-        names_in_query = set(re.findall(r"(\w+):\w+", query))
-        return "\n".join(
-            f"PREFIX {name}:<{self.prefixes[name]}>"
-            for name in names_in_query
-            if name in self.prefixes
-        )
-
-    def items(self) -> ItemsView[str, str]:
-        """Get an itemsview of prefixes in graphdb instance."""
-        return self.prefixes.items()
-
-    @property
-    def cim_version(self) -> int:
-        """CIM version on server/repo"""
-        m = re.search("cim(\\d+)", self.prefixes["cim"])
-        return int(m.group(1))
-
-    @property
-    def ns(self) -> Dict[str, str]:
-        """Return namespace as dict"""
-        return dict(self.items())
-
-    @property
-    def inverse_ns(self) -> Dict[str, str]:
-        """Return inverse namespace as dict"""
-        return {url: name for name, url in self.items()}

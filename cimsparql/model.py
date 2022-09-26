@@ -1,9 +1,10 @@
 """The cimsparql.model module contains the base class CimModel."""
 
+import re
 from dataclasses import dataclass
 from functools import cached_property
 from string import Template
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import pandas as pd
 
@@ -58,18 +59,13 @@ class Model:
 
     @property
     def map_data_types(self) -> bool:
-        pref = self.client.prefixes.prefixes
+        pref = self.client.prefixes
         return "cim" in pref and self.mapper.have_cim_version(pref["cim"])
 
     def get_table_and_convert(
-        self,
-        query: str,
-        limit: Optional[int] = None,
-        index: Optional[str] = None,
-        columns: Optional[Dict[str, str]] = None,
-        add_prefixes: bool = True,
+        self, query: str, index: Optional[str] = None, columns: Optional[Dict[str, str]] = None
     ) -> pd.DataFrame:
-        result, data_row = self.client.get_table(query, limit, add_prefixes)
+        result, data_row = self.client.get_table(query)
 
         if self.mapper is not None:
             col_map = self.col_map(data_row, columns)
@@ -91,16 +87,16 @@ class Model:
             substitutes = {}
 
         return template.safe_substitute(
-            {"repo": self.state_repo} | substitutes | self.client.prefixes.ns
+            {"repo": self.state_repo} | substitutes | self.client.prefixes
         )
 
 
 class CimModel(Model):
     """Used to query with sparql queries (typically CIM)."""
 
-    @property
+    @cached_property
     def cim_version(self) -> int:
-        return self.client.prefixes.cim_version
+        return int(re.search("cim(\\d+)", self.client.prefixes["cim"]).group(1))
 
     @property
     def full_model_query(self) -> str:
@@ -117,7 +113,7 @@ class CimModel(Model):
         Example:
         >> model.full_model()
         """
-        return self.get_table_and_convert(self.full_model_query, index="model", add_prefixes=False)
+        return self.get_table_and_convert(self.full_model_query, index="model")
 
     @property
     def market_dates_query(self) -> str:
@@ -126,7 +122,7 @@ class CimModel(Model):
 
     @cached_property
     def market_dates(self) -> pd.DataFrame:
-        return self.get_table_and_convert(self.market_dates_query, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(self.market_dates_query, index="mrid")
 
     def bus_data_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
@@ -136,16 +132,15 @@ class CimModel(Model):
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_DUMMY_NODES_QUERY, substitutes)
 
-    def bus_data(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
+    def bus_data(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query name of topological nodes (TP query).
 
         Args:
            region: Limit to region (use None to get all)
-           limit: return first 'limit' number of rows
         """
         return pd.concat(
             [
-                self.get_table_and_convert(query(region), limit, index="node", add_prefixes=False)
+                self.get_table_and_convert(query(region), index="node")
                 for query in [self.bus_data_query, self.three_winding_dummy_nodes_query]
             ]
         )
@@ -154,56 +149,48 @@ class CimModel(Model):
         substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
         return self.template_to_query(templates.LOADS_QUERY, substitutes)
 
-    def loads(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
+    def loads(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query load data.
 
         Args:
            region: regexp that limits to region
-           limit: return first 'limit' number of rows
         """
         query = self.loads_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def wind_generating_units_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.WIND_GENERATING_UNITS_QUERY, substitutes)
 
-    def wind_generating_units(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def wind_generating_units(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query wind generating units.
 
         Args:
            region:
-           limit: return first 'limit' number of rows
 
         Example:
             >>> from cimsparql.model import get_cim_model
             >>> server_url = "127.0.0.1:7200"
             >>> model = get_cim_model(server_url, "LATEST")
-            >>> model.wind_generating_units(limit=10)
+            >>> model.wind_generating_units()
 
         """
         query = self.wind_generating_units_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def synchronous_machines_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
         return self.template_to_query(templates.SYNCHRONOUS_MACHINES_QUERY, substitutes)
 
-    def synchronous_machines(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def synchronous_machines(self, region: Optional[str] = None) -> pd.DataFrame:
         query = self.synchronous_machines_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def connections_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONNECTIONS_QUERY, substitutes)
 
-    def connections(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def connections(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query connectors
 
         Args:
@@ -212,25 +199,21 @@ class CimModel(Model):
 
         Example:
            region: Limit to region
-           sub_region: Assume region is a sub_region
-           limit: return first 'limit' number of rows
-           connectivity: Include connectivity mrids
-           dry_run: return string with sql query
 
         Example:
             >>> from cimsparql.model import get_cim_model
             >>> server_url = "127.0.0.1:7200"
             >>> model = get_cim_model(server_url, "LATEST")
-            >>> model.connections(limit=10)
+            >>> model.connections()
         """
         query = self.connections_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def borders_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BORDERS_QUERY, substitutes)
 
-    def borders(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
+    def borders(self, region: Optional[str] = None) -> pd.DataFrame:
         """Retrieve ACLineSegments where one terminal is inside and the other is outside the region
 
         Args:
@@ -238,32 +221,31 @@ class CimModel(Model):
             limit: return first 'limit' number of rows
         """
         query = self.borders_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def exchange_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.EXCHANGE_QUERY, substitutes)
 
-    def exchange(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
+    def exchange(self, region: Optional[str] = None) -> pd.DataFrame:
         """Retrieve ACLineSegments where one terminal is inside and the other is outside the region.
 
         Args:
             region: Inside area
-            limit: return first 'limit' number of rows
         """
 
         if region is None:
             return pd.DataFrame([], columns=["name", "node", "status", "p", "market_code"])
         query = self.exchange_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def converters_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
         return self.template_to_query(templates.CONVERTERS_QUERY, substitutes)
 
-    def converters(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
+    def converters(self, region: Optional[str] = None) -> pd.DataFrame:
         query = self.converters_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def transformers_connected_to_converter_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
@@ -271,9 +253,7 @@ class CimModel(Model):
             templates.TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY, substitutes
         )
 
-    def transformers_connected_to_converter(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def transformers_connected_to_converter(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query list of transformer connected at a converter (Voltage source or DC)
 
         Args:
@@ -281,61 +261,52 @@ class CimModel(Model):
 
         """
         query = self.transformers_connected_to_converter_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def ac_lines_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.AC_LINE_QUERY, substitutes)
 
-    def ac_lines(self, region: Optional[str] = None, limit: Optional[int] = None) -> pd.DataFrame:
+    def ac_lines(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query ac line segments
 
         Args:
            region: Limit to region
-           limit: return first 'limit' number of rows
 
         Example:
             >>> from cimsparql.model import get_cim_model
             >>> server_url = "127.0.0.1:7200"
             >>> model = get_cim_model(server_url, "LATEST")
-            >>> model.ac_lines(limit=10)
+            >>> model.ac_lines()
         """
         query = self.ac_lines_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def series_compensators_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.SERIES_COMPENSATORS_QUERY, substitutes)
 
-    def series_compensators(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def series_compensators(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query series compensators
 
         Args:
            region: Limit to region
-           sub_region: Assume region is a sub_region
-           limit: return first 'limit' number of rows
         """
         query = self.series_compensators_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def transformers_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.TRANSFORMERS_QUERY, substitutes)
 
-    def transformers(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def transformers(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query transformer windings.
 
         Args:
            region: Limit to region
-           sub_region: Assume region is a sub_region
-           limit: return first 'limit' number of rows
         """
         query = self.transformers_query(region)
-        return self.get_table_and_convert(query, limit, add_prefixes=False)
+        return self.get_table_and_convert(query)
 
     def two_winding_transformers_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
@@ -345,25 +316,22 @@ class CimModel(Model):
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.TWO_WINDING_ANGLE_QUERY, substitutes)
 
-    def two_winding_transformers(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def two_winding_transformers(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query two-winding transformer.
 
         Args:
            region: Limit to region
-           limit: return first 'limit' number of rows
 
         Example:
             >>> from cimsparql.model import get_cim_model
             >>> server_url = "127.0.0.1:7200"
             >>> model = get_cim_model(server_url, "LATEST")
-            >>> model.two_winding_transformers(limit=10)
+            >>> model.two_winding_transformers()
         """
         query = self.two_winding_transformers_query(region)
         query_angle = self.two_winding_angle_query(region)
-        data = self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
-        angle = self.get_table_and_convert(query_angle, limit, index="mrid", add_prefixes=False)
+        data = self.get_table_and_convert(query, index="mrid")
+        angle = self.get_table_and_convert(query_angle, index="mrid")
         if not angle.empty:
             data["angle"] += angle.reindex(index=data.index, fill_value=0.0).squeeze()
         return data
@@ -376,88 +344,64 @@ class CimModel(Model):
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_QUERY, substitutes)
 
-    def three_winding_transformers(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def three_winding_transformers(self, region: Optional[str] = None) -> pd.DataFrame:
         """Query three-winding transformer. Return as three two-winding transformers.
-
-        Args:
-           region: Limit to region
-           limit: return first 'limit' number of rows
-           dry_run: return string with sql query
 
         Example:
             >>> from cimsparql.model import get_cim_model
             >>> server_url = "127.0.0.1:7200"
             >>> model = get_cim_model(server_url, "LATEST")
-            >>> model.two_winding_transformers(limit=10)
+            >>> model.two_winding_transformers()
         """
         query = self.three_winding_transformers_query(region)
-        data = self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        data = self.get_table_and_convert(query, index="mrid")
         query_loss = self.three_winding_loss_query(region)
-        loss = self.get_table_and_convert(query_loss, index="mrid", add_prefixes=False)
+        loss = self.get_table_and_convert(query_loss, index="mrid")
         return pd.concat([data.assign(pl_1=0.0), loss.loc[data.index]], axis=1)
 
+    @property
     def substation_voltage_level_query(self) -> str:
         return self.template_to_query(templates.SUBSTATION_VOLTAGE_LEVEL_QUERY)
 
-    def substation_voltage_level(self, limit: Optional[int] = None) -> pd.DataFrame:
-        query = self.substation_voltage_level_query()
-        return self.get_table_and_convert(query, limit, index="substation", add_prefixes=False)
+    @cached_property
+    def substation_voltage_level(self) -> pd.DataFrame:
+        query = self.substation_voltage_level_query
+        return self.get_table_and_convert(query, index="substation")
 
+    @property
     def disconnected_query(self) -> str:
         return self.template_to_query(templates.DISCONNECTED_QUERY)
 
-    def disconnected(self, limit: Optional[int] = None) -> pd.DataFrame:
-        """Query disconneced status from ssh profile (not available in GraphDB)
-
-        Args:
-           index: Column to use as index
-           limit: return first 'limit' number of rows
-           dry_run: return string with sql query
-        """
-        query = self.disconnected_query()
-        return self.get_table_and_convert(query, limit, add_prefixes=False)
+    @cached_property
+    def disconnected(self) -> pd.DataFrame:
+        """Query disconneced status from ssh profile (not available in GraphDB)."""
+        return self.get_table_and_convert(self.disconnected_query)
 
     @property
     def powerflow_query(self) -> str:
         return self.template_to_query(templates.POWER_FLOW_QUERY)
 
-    def powerflow(self, limit: Optional[int] = None) -> pd.DataFrame:
-        """Query powerflow from sv profile (not available in GraphDB)
-
-        Args:
-           limit: return first 'limit' number of rows
-        """
-        return self.get_table_and_convert(
-            self.powerflow_query, limit, index="mrid", add_prefixes=False
-        )
+    @cached_property
+    def powerflow(self) -> pd.DataFrame:
+        """Query powerflow from sv profile (not available in GraphDB)."""
+        return self.get_table_and_convert(self.powerflow_query, index="mrid")
 
     def branch_node_withdraw_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BRANCH_NODE_WITHDRAW_QUERY, substitutes)
 
-    def branch_node_withdraw(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> Union[pd.DataFrame, pd.Series]:
-        """Query branch flow from sv profile.
-
-        Args:
-           limit: return first 'limit' number of rows
-           dry_run: return string with sql query
-        """
+    def branch_node_withdraw(self, region: Optional[str] = None) -> pd.DataFrame:
+        """Query branch flow from sv profile."""
         query = self.branch_node_withdraw_query(region)
-        return self.get_table_and_convert(query, limit, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(query, index="mrid")
 
     def dc_active_flow_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.DC_ACTIVE_POWER_FLOW_QUERY, substitutes)
 
-    def dc_active_flow(
-        self, region: Optional[str] = None, limit: Optional[int] = None
-    ) -> pd.DataFrame:
+    def dc_active_flow(self, region: Optional[str] = None) -> pd.DataFrame:
         query = self.dc_active_flow_query(region)
-        data = self.get_table_and_convert(query, limit, add_prefixes=False)
+        data = self.get_table_and_convert(query)
         # Unable to group on max within the sparql query so we do it here.
         data = data.iloc[data.groupby("mrid")["p"].idxmax()].set_index("mrid")
         return data.eval("p * direction").rename("p")
@@ -481,7 +425,7 @@ class CimModel(Model):
         """
         # TODO: Probably deprecate this property in the future. But keep for now.
         # We need to find a solution for custom namespaces in queries
-        return self.get_table_and_convert(self.regions_query, index="mrid", add_prefixes=False)
+        return self.get_table_and_convert(self.regions_query, index="mrid")
 
     def add_mrid_query(self, rdf_type: Optional[str] = None, graph: Optional[str] = None) -> str:
         substitutes = {"rdf_type": rdf_type or "?rdf_type", "g": graph or "?g"}

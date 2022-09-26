@@ -27,11 +27,6 @@ ssh_graph = "<http://entsoe.eu/CIM/SteadyStateHypothesis/1/1>"
 
 
 @pytest.fixture(scope="session")
-def n_samples() -> int:
-    return 40
-
-
-@pytest.fixture(scope="session")
 def graphdb_service() -> ServiceConfig:
     return ServiceConfig(repo="abot_combined")
 
@@ -121,8 +116,8 @@ def data_row():
 
 
 @pytest.fixture(scope="session")
-def connections(model: CimModel, n_samples: int) -> pd.DataFrame:
-    return model.connections(limit=n_samples)
+def connections(model: CimModel) -> pd.DataFrame:
+    return model.connections()
 
 
 @pytest.fixture(scope="session")

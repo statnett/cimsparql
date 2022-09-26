@@ -7,14 +7,13 @@ from mock import MagicMock
 from pandas.testing import assert_frame_equal
 
 from cimsparql import type_mapper
-from cimsparql.url import Prefix
 
 
 @pytest.fixture
 def mocked_graphdb(sparql_data_types, prefixes):
     cli = MagicMock()
     cli.get_table.return_value = (sparql_data_types, {})
-    cli.configure_mock(prefixes=Prefix(prefixes))
+    cli.configure_mock(prefixes=prefixes)
     return cli
 
 

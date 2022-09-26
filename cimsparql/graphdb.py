@@ -4,14 +4,14 @@ import os
 from dataclasses import dataclass, field
 from enum import auto
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 import requests
 from SPARQLWrapper import JSON, SPARQLWrapper
 from strenum import StrEnum
 
-from cimsparql.url import Prefix, service, service_blazegraph
+from cimsparql.url import service, service_blazegraph
 
 
 def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
@@ -56,6 +56,14 @@ class ServiceConfig:
     passwd: str = field(default=os.getenv("GRAPHDB_USER_PASSWD"))
     rest_api: RestApi = field(default=os.getenv("SPARQL_REST_API", RestApi.RDF4J))
 
+    # Parameters for rest api
+    # https://rdf4j.org/documentation/reference/rest-api/
+    distinct: bool = False
+    infer: bool = False
+    limit: Optional[int] = None
+    offset: Optional[int] = None
+    timout: Optional[int] = None
+
     def __post_init__(self):
         if self.rest_api not in RestApi:
             raise ValueError(f"rest_api must be one of {RestApi}")
@@ -65,6 +73,15 @@ class ServiceConfig:
         if self.rest_api == RestApi.BLAZEGRAPH:
             return service_blazegraph(self.server, self.repo, self.protocol)
         return service(self.repo, self.server, self.protocol, self.path)
+
+    @property
+    def parameters(self) -> Dict[str, Union[bool, int]]:
+        return {
+            "distinct": self.distinct,
+            "infer": self.infer,
+            "limit": self.limit,
+            "offset": self.offset,
+        }
 
 
 # Available formats from RDF4J API
@@ -96,9 +113,7 @@ def require_rdf4j(f):
 
 
 class GraphDBClient:
-    def __init__(
-        self, service_cfg: Optional[ServiceConfig] = None, infer: bool = False, sameas: bool = True
-    ) -> None:
+    def __init__(self, service_cfg: Optional[ServiceConfig] = None) -> None:
         """GraphDB client
 
         Args:
@@ -111,9 +126,13 @@ class GraphDBClient:
         self.sparql = SPARQLWrapper(self.service_cfg.url)
         self.sparql.setReturnFormat(JSON)
         self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
-        self.set_parameter("infer", str(infer))
-        self.set_parameter("sameAs", str(sameas))
+        self._update_sparql_parameters()
         self._prefixes = None
+
+    def _update_sparql_parameters(self):
+        for key, value in self.service_cfg.parameters.items():
+            if value:
+                self.set_parameter(key, str(value))
 
     def set_parameter(self, key: str, value: str) -> None:
         self.sparql.clearParameter(key)
@@ -124,10 +143,9 @@ class GraphDBClient:
         self.sparql.endpoint = self.service_cfg.url
 
     @property
-    def prefixes(self) -> Prefix:
+    def prefixes(self) -> Dict[str, str]:
         if self._prefixes is None:
-            pref = self.get_prefixes()
-            self._prefixes = Prefix(pref)
+            self._prefixes = self.get_prefixes()
         return self._prefixes
 
     def update_prefixes(self, pref: Dict[str, str]):
@@ -139,16 +157,9 @@ class GraphDBClient:
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service_cfg.url}>"
 
-    def query_with_header(self, query: str, add_prefixes: bool, limit: Optional[int] = None) -> str:
-        if add_prefixes:
-            query = "\n".join([self.prefixes.header_str(query), query])
-        if limit is not None:
-            query += f" limit {limit}"
-        return query
-
-    def _exec_query(self, query: str, limit: Optional[int], add_prefixes: bool):
-        self.sparql.setQuery(self.query_with_header(query, add_prefixes, limit))
-
+    def _exec_query(self, query: str):
+        self.sparql.setQuery(query)
+        self._update_sparql_parameters()
         processed_results = self.sparql.queryAndConvert()
 
         cols = processed_results["head"]["vars"]
@@ -156,13 +167,11 @@ class GraphDBClient:
         out = [{c: row.get(c, {}).get("value") for c in cols} for row in data]
         return out, data_row(cols, data)
 
-    def exec_query(self, query: str, limit: Optional[int] = None) -> List[Dict[str, str]]:
-        out, _ = self._exec_query(query, limit)
+    def exec_query(self, query: str) -> List[Dict[str, str]]:
+        out, _ = self._exec_query(query)
         return out
 
-    def get_table(
-        self, query: str, limit: Optional[int] = None, add_prefixes: bool = True
-    ) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    def get_table(self, query: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
         """
         Args:
            query: to sparql server
@@ -174,14 +183,14 @@ class GraphDBClient:
            >>> query = 'select * where { ?subject ?predicate ?object }'
            >>> gdbc.get_table(query, limit=10)
         """
-        out, data_row = self._exec_query(query, limit, add_prefixes)
+        out, data_row = self._exec_query(query)
         return pd.DataFrame(out), data_row
 
     @property
     def empty(self) -> bool:
         """Identify empty GraphDB repo"""
         try:
-            self.get_table("select * where {?s ?p ?o}", limit=1)
+            self.get_table("select * where {?s ?p ?o} limit 1")
             return False
         except IndexError:
             return True
