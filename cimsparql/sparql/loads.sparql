@@ -15,7 +15,7 @@ where {
   optional {?_mrid cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
   ?_t_mrid  cim:Terminal.ConductingEquipment ?_mrid .
   service <${repo}> {
-    ?_t_mrid cim:${ACDCTerminal}.connected ?connected;
+    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
              cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
   }
   service <${repo}> {

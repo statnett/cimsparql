@@ -7,7 +7,7 @@ select ?mrid where
           cim:Switch.open True .
   } union {
     ?mrid rdf:type cim:Terminal;
-          cim:${ACDCTerminal}.connected False .
+          cim:Terminal.connected|cim:ACDCTerminal.connected False .
 
   }
 }

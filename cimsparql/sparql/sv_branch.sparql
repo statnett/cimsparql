@@ -20,12 +20,12 @@ where {
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?_mrid;
                cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-               cim:${ACDCTerminal}.sequenceNumber 1 .
+               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
       filter(regex(?area, '${region}'))
       service <${repo}>
       {
         ?_t_mrid cim:Terminal.TopologicalNode ?_node;
-                 cim:${ACDCTerminal}.connected ?connected .
+                 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
         optional
         {
           ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
@@ -47,12 +47,12 @@ where {
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?_mrid;
                cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-               cim:${ACDCTerminal}.sequenceNumber 2.
+               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2.
       filter(regex(?area, '${region}'))
       service <${repo}>
       {
         ?_t_mrid cim:Terminal.TopologicalNode ?_node;
-                 cim:${ACDCTerminal}.connected ?connected.
+                 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected.
         optional
         {
           ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
