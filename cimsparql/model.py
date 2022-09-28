@@ -22,13 +22,13 @@ class ModelConfig:
 class Model:
     def __init__(
         self,
-        mapper: Optional[TypeMapper],
         client: GraphDBClient,
         config: Optional[ModelConfig] = None,
+        mapper: Optional[TypeMapper] = None,
     ) -> None:
-        self._mapper = mapper
         self.client = client
         self.config = config or ModelConfig()
+        self.mapper = mapper or TypeMapper(client)
 
     @staticmethod
     def _col_map(data_row) -> Dict[str, str]:
@@ -36,19 +36,6 @@ class Model:
             column: data.get("datatype", data.get("type", None))
             for column, data in data_row.items()
         }
-
-    @cached_property
-    def mapper(self) -> Optional[TypeMapper]:
-        """Mapper used to convert str → type described by ontology in Graphdb
-
-        Getter:
-           Returns a mapper that can be used by self or other instances
-        Setter:
-           Sets mapper for self. Query GraphDB if not provided (None)
-        """
-        if self._mapper is None and "rdfs" in self.prefixes:
-            return TypeMapper(self)
-        return self._mapper
 
     @classmethod
     def col_map(cls, data_row, columns: Dict[str, str]) -> Dict[str, str]:
@@ -67,9 +54,8 @@ class Model:
     ) -> pd.DataFrame:
         result, data_row = self.client.get_table(query)
 
-        if self.mapper is not None:
-            col_map = self.col_map(data_row, columns)
-            result = self.mapper.map_data_types(result, col_map)
+        col_map = self.col_map(data_row, columns)
+        result = self.mapper.map_data_types(result, col_map)
 
         if index and not result.empty:
             return result.set_index(index)
@@ -449,5 +435,4 @@ def get_cim_model(
 ) -> CimModel:
     """Get a CIM Model."""
     client = GraphDBClient(service_cfg)
-    mapper = TypeMapper(client)
-    return CimModel(mapper, client, model_cfg)
+    return CimModel(client, model_cfg)
