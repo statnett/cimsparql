@@ -18,7 +18,6 @@ from cimsparql.graphdb import (
     new_repo_blazegraph,
 )
 from cimsparql.model import CimModel, ModelConfig, get_cim_model
-from cimsparql.type_mapper import TypeMapper
 
 this_dir = pathlib.Path(__file__).parent
 
@@ -206,8 +205,7 @@ def init_cim_model(
 ) -> Optional[CimModel]:
     try:
         client = cim_client(url, repo_name, repo_name_suffix, rest_api)
-        mapper = TypeMapper(client)
-        return CimModel(mapper, client, config)
+        return CimModel(client, config)
     except Exception as exc:
         logger.error(f"{exc}")
         return None

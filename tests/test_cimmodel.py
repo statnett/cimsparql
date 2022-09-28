@@ -5,7 +5,7 @@ from cimsparql.model import Model
 
 def test_map_data_types(monkeypatch):
     def cim_init(self, *args):
-        self._mapper = Mock(have_cim_version=Mock(return_value=True))
+        self.mapper = Mock(have_cim_version=Mock(return_value=True))
         self.client = Mock(prefixes={"cim": None})
 
     monkeypatch.setattr(Model, "__init__", cim_init)
