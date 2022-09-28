@@ -336,7 +336,7 @@ def new_repo_blazegraph(url: str, repo: str, protocol: str = "https") -> GraphDB
     config = config_bytes_from_template(template, {"repo": repo})
 
     response = requests.post(
-        f"http://{url}", data=config, headers={"Content-type": "application/xml"}
+        f"{protocol}://{url}", data=config, headers={"Content-type": "application/xml"}
     )
     response.raise_for_status()
     client = GraphDBClient(ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH))
