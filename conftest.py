@@ -39,15 +39,20 @@ def model(graphdb_service: ServiceConfig) -> CimModel:
 @pytest.fixture(scope="session")
 def micro_t1_nl_graphdb() -> Optional[CimModel]:
     repo = os.getenv("GRAPHDB_MICRO_NL_REPO", "abot-micro-nl")
-    return (
-        get_cim_model(ServiceConfig(repo=repo), ModelConfig(system_state_repo=f"repository:{repo}"))
-        if os.getenv("GRAPHDB_SERVER")
-        else None
-    )
+    model = None
+    try:
+        s_cfg = ServiceConfig(repo=repo)
+        m_cfg = ModelConfig(system_state_repo=f"repository:{repo}")
+        if os.getenv("GRAPHDB_SERVER"):
+            model = get_cim_model(s_cfg, m_cfg)
+    except Exception as exc:
+        logger.error(f"{exc}")
+        model = None
+    return model
 
 
 @pytest.fixture(scope="session")
-def model_sep() -> CimModel:
+def model_sep() -> Optional[CimModel]:
     repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
     system_state_repo = f"repository:{os.getenv('GRAPHDB_STATE', 'abot_20220825T1621Z')}"
     return get_cim_model(ServiceConfig(repo), ModelConfig(system_state_repo, ssh_graph))
@@ -312,12 +317,17 @@ def small_grid_model_bg(blazegraph_url) -> Generator[Optional[CimModel], None, N
 
 @pytest.fixture(scope="session")
 def smallgrid_models(small_grid_model_rdf4j, small_grid_model_bg):
+    small_grid = os.getenv("SMALL_GRID", "abot-smallgrid")
     if graphdb_server := os.getenv("GRAPHDB_SERVER"):
-        small_grid = os.getenv("SMALL_GRID", "abot-smallgrid")
-        model = get_cim_model(
-            ServiceConfig(f"{small_grid}_eq", server=graphdb_server),
-            ModelConfig(system_state_repo=f"repository:{small_grid}_tpsvssh", ssh_graph=ssh_graph),
+        s_cfg = ServiceConfig(f"{small_grid}_eq", server=graphdb_server)
+        m_cfg = ModelConfig(
+            system_state_repo=f"repository:{small_grid}_tpsvssh", ssh_graph=ssh_graph
         )
+        try:
+            model = get_cim_model(s_cfg, m_cfg)
+        except Exception as exc:
+            logger.error(f"{exc}")
+            model = None
     else:
         model = None
     return {"rdf4j": small_grid_model_rdf4j, "blazegraph": small_grid_model_bg, "graphdb": model}
