@@ -137,7 +137,7 @@ class GraphDBClient:
 
     def _update_sparql_parameters(self):
         for key, value in self.service_cfg.parameters.items():
-            if value:
+            if value is not None:
                 self.set_parameter(key, str(value))
 
     def set_parameter(self, key: str, value: str) -> None:
