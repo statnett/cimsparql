@@ -1,7 +1,7 @@
 PREFIX rdf:<${rdf}>
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select  ?mrid ?name ?station_group ?market_code ?min_p ?max_p ?plant_mrid
+select  ?mrid ?name ?market_code ?station_group  ?min_p ?max_p ?plant_mrid
 where {
   ?_mrid rdf:type cim:WindGeneratingUnit;
          cim:IdentifiedObject.mRID ?mrid;

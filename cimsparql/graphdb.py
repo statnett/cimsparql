@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass, field
 from enum import auto
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, TypedDict, Union
 
 import pandas as pd
 import requests
@@ -12,6 +12,12 @@ from SPARQLWrapper import JSON, SPARQLWrapper
 from strenum import StrEnum
 
 from cimsparql.url import service, service_blazegraph
+
+
+class SparqlResult(TypedDict):
+    cols: List[str]
+    data: List[Dict[str, Dict[str, str]]]
+    out: List[Dict[str, str]]
 
 
 def data_row(cols: List[str], rows: List[Dict[str, str]]) -> Dict[str, str]:
@@ -157,7 +163,7 @@ class GraphDBClient:
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service_cfg.url}>"
 
-    def _exec_query(self, query: str):
+    def _exec_query(self, query: str) -> SparqlResult:
         self.sparql.setQuery(query)
         self._update_sparql_parameters()
         processed_results = self.sparql.queryAndConvert()
@@ -165,11 +171,11 @@ class GraphDBClient:
         cols = processed_results["head"]["vars"]
         data = processed_results["results"]["bindings"]
         out = [{c: row.get(c, {}).get("value") for c in cols} for row in data]
-        return out, data_row(cols, data)
+        return {"out": out, "cols": cols, "data": data}
 
     def exec_query(self, query: str) -> List[Dict[str, str]]:
-        out, _ = self._exec_query(query)
-        return out
+        out = self._exec_query(query)
+        return out["out"]
 
     def get_table(self, query: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
         """
@@ -183,8 +189,9 @@ class GraphDBClient:
            >>> query = 'select * where { ?subject ?predicate ?object }'
            >>> gdbc.get_table(query, limit=10)
         """
-        out, data_row = self._exec_query(query)
-        return pd.DataFrame(out), data_row
+        res = self._exec_query(query)
+        df = pd.DataFrame(res["out"]) if len(res["out"]) else pd.DataFrame(columns=res["cols"])
+        return df, data_row(res["cols"], res["data"])
 
     @property
     def empty(self) -> bool:

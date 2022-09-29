@@ -2,13 +2,13 @@ PREFIX rdf:<${rdf}>
 PREFIX ALG:<${ALG}>
 PREFIX SN: <${SN}>
 PREFIX cim:<${cim}>
-select ?mrid ?t_mrid ?converter_mrid ?name
+select ?mrid ?name ?t_mrid ?p_mrid
 where {
   values ?converters {cim:VsConverter cim:CsConverter cim:DCConvertUnit ALG:VoltageSourceConverter ALG:DCConverter }
   ?volt rdf:type ?converters;
-        cim:IdentifiedObject.mRID ?converter_mrid .
+        cim:IdentifiedObject.mRID ?mrid .
   ?_mrid rdf:type cim:PowerTransformer;
-         cim:IdentifiedObject.mRID ?mrid;
+         cim:IdentifiedObject.mRID ?p_mrid;
          cim:IdentifiedObject.aliasName ?name;
          cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
          ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?volt .
