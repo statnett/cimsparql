@@ -2,7 +2,7 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
-select ?node_1 ?node_2 ?status ?name ?mrid ?un ?pl_1 ?pl_2 ?r ?x ?b ?g ?angle ?rateNormal ?bidzone_1 ?bidzone_2
+select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rateNormal ?status ?un ?x ?b ?g ?angle
 where
 {
   {
@@ -67,8 +67,8 @@ where
   }
   optional {
     bind((xsd:double(str(?p_1)) + xsd:double(str(?p_2))) as ?pl)
-    bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?pl_2)
-    bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?pl_1)
+    bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_2)
+    bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_1)
   }
   service <${repo}> {optional {?_p_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}}
   optional {?_p_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}

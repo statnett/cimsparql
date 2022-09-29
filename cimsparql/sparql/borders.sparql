@@ -1,7 +1,7 @@
 PREFIX cim:<${cim}>
 PREFIX rdf:<${rdf}>
 PREFIX SN:<${SN}>
-select  ?name ?mrid ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2 ?market_code
+select  ?mrid ?name ?market_code ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2
 where {
   ?_mrid rdf:type cim:ACLineSegment;
          cim:IdentifiedObject.mRID ?mrid;

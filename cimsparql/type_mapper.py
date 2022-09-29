@@ -162,6 +162,8 @@ class TypeMapper:
             mapped DataFrame
 
         """
+        if df.empty:
+            return df
         type_caster = self.build_type_caster(col_map)
         df = map_base_types(df, type_caster)
         df = map_exceptions(df, type_caster)

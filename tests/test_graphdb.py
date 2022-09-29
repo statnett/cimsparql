@@ -108,7 +108,7 @@ def test_windings(model: CimModel):
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 def test_transformer_connected_to_converters(model: CimModel):
     transformers = model.transformers_connected_to_converter(region="NO")
-    assert set(transformers.columns) == {"t_mrid", "name", "converter_mrid"}
+    assert set(transformers.columns) == {"t_mrid", "name", "p_mrid"}
     assert not transformers.empty
 
 

@@ -2,7 +2,7 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?pl_2
+select ?mrid ?ploss_2
 where {
   ?_p_mrid rdf:type cim:PowerTransformer;
            ^cim:PowerTransformerEnd.PowerTransformer/cim:IdentifiedObject.mRID ?mrid;
@@ -16,7 +16,7 @@ where {
     group by ?_p_mrid
     having (?winding_count = 3)
   }
-  { select ?_p_mrid (sum(xsd:double(str(?sv_p))) / sum(?nr_connected) as ?pl_2)
+  { select ?_p_mrid (sum(xsd:double(str(?sv_p))) / sum(?nr_connected) as ?ploss_2)
     where
     {
       ?_p_mrid ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.Terminal ?_t_mrid .

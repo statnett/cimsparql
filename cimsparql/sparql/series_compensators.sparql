@@ -2,7 +2,7 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?r ?x ?status ?un ?rateNormal ?pl_1 ?pl_2 ?node_1 ?node_2 ?bidzone_1 ?bidzone_2
+select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rateNormal ?status ?un ?x
 where {
   # Assume π equivalent with at least r,x and b shunt.
   ?_mrid rdf:type cim:SeriesCompensator;
@@ -74,8 +74,8 @@ where {
   optional
   { # Add branch loss on recieving end.
     bind((xsd:double(str(?p_1)) + xsd:double(str(?p_2))) as ?pl)
-    bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?pl_2)
-    bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?pl_1)
+    bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_2)
+    bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_1)
   }
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)

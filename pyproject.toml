@@ -19,6 +19,7 @@ StrEnum = "*"
 deprecated = "*"
 networkx = "*"
 numpy = "*"
+pandera = "*"
 pandas = "*"
 pendulum = {version = "*", optional = true}
 python = "^3.9"
