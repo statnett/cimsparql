@@ -16,15 +16,10 @@ include = ["pkg_data/*"]
 [tool.poetry.dependencies]
 SPARQLWrapper = "*"
 StrEnum = "*"
-deprecated = "*"
-networkx = "*"
-numpy = "*"
 pandera = "*"
 pandas = "*"
-pendulum = {version = "*", optional = true}
 python = "^3.9"
 requests = "*"
-tables = "*"
 
 [tool.poetry.dev-dependencies]
 asyncio = "*"
