@@ -156,6 +156,7 @@ class TransformersSchema(JsonSchemaOut):
 
 class TwoWindingTransformerSchema(ShuntComponentSchema):
     angle: Series[float] = pa.Field(coerce=True)
+    ratio: Series[float] = pa.Field(coerce=True)
 
 
 class SubstationVoltageSchema(JsonSchemaOut):

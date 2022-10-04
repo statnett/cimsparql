@@ -2,7 +2,7 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rateNormal ?status ?un ?x ?b ?g ?angle
+select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rateNormal ?status (?un_1 as ?un) ?x ?b ?g ?angle ?ratio
 where
 {
   {
@@ -20,11 +20,11 @@ where
   filter(regex(?area, '${region}'))
   optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   { # Search for winding 1 side
-    select ?_p_mrid ?mrid ?r ?x ?b ?g (?connected as ?connected_1) (?p as ?p_1) ?node_1 ?rateNormal ?un
+    select ?_p_mrid ?mrid (?un as ?un_1) (?ubase as ?ubase_1) ?r ?x ?b ?g ?connected_1 (?p as ?p_1) ?node_1 ?rateNormal
     where
     {
       ?w_mrid cim:TransformerEnd.Terminal ?_t_mrid;
-              cim:PowerTransformerEnd.ratedU ?un;
+              cim:PowerTransformerEnd.ratedU ?ubase;
               cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
               cim:PowerTransformerEnd.r ?r;
               cim:PowerTransformerEnd.x ?x;
@@ -32,7 +32,9 @@ where
               cim:PowerTransformerEnd.g ?g;
               cim:IdentifiedObject.mRID ?mrid;
               cim:TransformerEnd.endNumber 1 .
-      ?_t_mrid cim:IdentifiedObject.mRID ?t_mrid .
+      ?_t_mrid cim:IdentifiedObject.mRID ?t_mrid;
+               cim:Terminal.ConnectivityNode ?_node .
+      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
       optional {
         ?p_limNormal cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?_t_mrid;
                      rdf:type cim:ActivePowerLimit;
@@ -48,14 +50,17 @@ where
     }
   } .
   { # Search for winding 2 side
-    select ?_p_mrid (?connected as ?connected_2) (?p as ?p_2) ?node_2 ?angle
+    select ?_p_mrid (?un as ?un_2) (?ubase as ?ubase_2) ?connected_2 (?p as ?p_2) ?node_2 ?angle
     where
     {
       ?w_mrid cim:TransformerEnd.Terminal ?_t_mrid;
+              cim:PowerTransformerEnd.ratedU ?ubase;
               cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
               cim:PowerTransformerEnd.phaseAngleClock ?angleclock;
               cim:TransformerEnd.endNumber 2 .
-      ?_t_mrid cim:IdentifiedObject.mRID ?t_mrid .
+      ?_t_mrid cim:IdentifiedObject.mRID ?t_mrid;
+               cim:Terminal.ConnectivityNode ?_node.
+      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
       service <${repo}> {
         ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
                  cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
@@ -75,6 +80,7 @@ where
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   filter(?network_analysis)
   bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)
+  bind((xsd:double(str(?ubase_1)) / xsd:double(str(?un_1))) / (xsd:double(str(?ubase_2)) / xsd:double(str(?un_2))) as ?ratio)
   bind(?bidzone as ?bidzone_1)
   bind(?bidzone as ?bidzone_2)
 }
