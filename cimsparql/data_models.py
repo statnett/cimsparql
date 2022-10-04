@@ -12,7 +12,7 @@ class JsonSchemaOut(pa.SchemaModel):
 
 
 class FullModelSchema(JsonSchemaOut):
-    model: Index[pd.StringDtype] = pa.Field(unique=True)
+    model: Series[pd.StringDtype] = pa.Field(coerce=True)
     time: Series[pd.StringDtype] = pa.Field(coerce=True)
     profile: Series[pd.StringDtype] = pa.Field(coerce=True)
     version: Series[pd.StringDtype] = pa.Field(coerce=True)

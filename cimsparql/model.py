@@ -122,7 +122,7 @@ class CimModel(Model):
         Example:
         >> model.full_model()
         """
-        df = self.get_table_and_convert(self.full_model_query, index="model")
+        df = self.get_table_and_convert(self.full_model_query)
         return FullModelSchema(df)
 
     @property

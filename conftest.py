@@ -243,46 +243,12 @@ def apply_custom_modifications(model: Optional[CimModel]) -> None:
 
 
 @pytest.fixture(scope="session")
-def micro_t1_nl_adapted(rdf4j_url: str) -> Generator[Optional[CimModel], None, None]:
-    """
-    Fixture that uses the micro_t1_nl model with some adaptions
-    """
-    model = init_cim_model(rdf4j_url, "micro_t1_nl", "_adapted")
-    try:
-        apply_custom_modifications(model)
-        yield model
-    except Exception as exc:
-        logger.error(f"{exc}")
-        yield None
-    finally:
-        if model:
-            model.client.delete_repo()
-
-
-@pytest.fixture(scope="session")
-def micro_t1_nl_adapted_bg(blazegraph_url: str) -> Generator[Optional[CimModel], None, None]:
-    """
-    Fixture that uses the micro_t1_nl model with some adaptions
-    """
-    model = init_cim_model(blazegraph_url, "micro_t1_nl", "_adapted", RestApi.BLAZEGRAPH)
-    try:
-        apply_custom_modifications(model)
-        yield model
-    except Exception as exc:
-        logger.error(f"{exc}")
-        yield None
-    finally:
-        if model:
-            model.client.delete_repo()
-
-
-@pytest.fixture(scope="session")
 def micro_t1_nl_models(
-    micro_t1_nl_adapted, micro_t1_nl_adapted_bg, micro_t1_nl_graphdb
+    micro_t1_nl, micro_t1_nl_bg, micro_t1_nl_graphdb
 ) -> Dict[str, Optional[CimModel]]:
     return {
-        "rdf4j": micro_t1_nl_adapted,
-        "blazegraph": micro_t1_nl_adapted_bg,
+        "rdf4j": micro_t1_nl,
+        "blazegraph": micro_t1_nl_bg,
         "graphdb": micro_t1_nl_graphdb,
     }
 
