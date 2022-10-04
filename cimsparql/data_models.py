@@ -126,7 +126,7 @@ class BranchComponentSchema(NamedResourceSchema):
     ploss_1: Series[float] = pa.Field(nullable=True, coerce=True)
     ploss_2: Series[float] = pa.Field(nullable=True, coerce=True)
     r: Series[float] = pa.Field(coerce=True)
-    rateNormal: Series[float] = pa.Field(nullable=True, coerce=True)
+    rate: Series[float] = pa.Field(nullable=True, coerce=True)
     status: Series[bool] = pa.Field(coerce=True)
     un: Series[float] = pa.Field(coerce=True)
     x: Series[float] = pa.Field(coerce=True)
@@ -151,7 +151,7 @@ class TransformersSchema(JsonSchemaOut):
     t_mrid: Series[pd.StringDtype] = pa.Field(coerce=True)
     r: Series[float] = pa.Field(coerce=True)
     x: Series[float] = pa.Field(coerce=True)
-    rateNormal: Series[float] = pa.Field(nullable=True, coerce=True)
+    rate: Series[float] = pa.Field(nullable=True, coerce=True)
 
 
 class TwoWindingTransformerSchema(ShuntComponentSchema):

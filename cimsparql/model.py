@@ -288,11 +288,11 @@ class CimModel(Model):
         df = self.get_table_and_convert(query, index="mrid")
         return TransfConToConverterSchema(df)
 
-    def ac_lines_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*"}
+    def ac_lines_query(self, region: Optional[str] = None, rate: Optional[str] = None) -> str:
+        substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.AC_LINE_QUERY, substitutes)
 
-    def ac_lines(self, region: Optional[str] = None) -> AcLinesSchema:
+    def ac_lines(self, region: Optional[str] = None, rate: Optional[str] = None) -> AcLinesSchema:
         """Query ac line segments
 
         Args:
@@ -304,47 +304,57 @@ class CimModel(Model):
             >>> model = get_cim_model(server_url, "LATEST")
             >>> model.ac_lines()
         """
-        query = self.ac_lines_query(region)
+        query = self.ac_lines_query(region, rate)
         df = self.get_table_and_convert(query, index="mrid")
         return AcLinesSchema(df)
 
-    def series_compensators_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*"}
+    def series_compensators_query(
+        self, region: Optional[str] = None, rate: Optional[str] = None
+    ) -> str:
+        substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.SERIES_COMPENSATORS_QUERY, substitutes)
 
-    def series_compensators(self, region: Optional[str] = None) -> BranchComponentSchema:
+    def series_compensators(
+        self, region: Optional[str] = None, rate: Optional[str] = None
+    ) -> BranchComponentSchema:
         """Query series compensators
 
         Args:
            region: Limit to region
         """
-        query = self.series_compensators_query(region)
+        query = self.series_compensators_query(region, rate)
         df = self.get_table_and_convert(query, index="mrid")
         return BranchComponentSchema(df)
 
-    def transformers_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*"}
+    def transformers_query(self, region: Optional[str] = None, rate: Optional[str] = None) -> str:
+        substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.TRANSFORMERS_QUERY, substitutes)
 
-    def transformers(self, region: Optional[str] = None) -> TransformersSchema:
+    def transformers(
+        self, region: Optional[str] = None, rate: Optional[str] = None
+    ) -> TransformersSchema:
         """Query transformer windings.
 
         Args:
            region: Limit to region
         """
-        query = self.transformers_query(region)
+        query = self.transformers_query(region, rate)
         df = self.get_table_and_convert(query)
         return TransformersSchema(df)
 
-    def two_winding_transformers_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*"}
+    def two_winding_transformers_query(
+        self, region: Optional[str] = None, rate: Optional[str] = None
+    ) -> str:
+        substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.TWO_WINDING_QUERY, substitutes)
 
     def two_winding_angle_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.TWO_WINDING_ANGLE_QUERY, substitutes)
 
-    def two_winding_transformers(self, region: Optional[str] = None) -> TwoWindingTransformerSchema:
+    def two_winding_transformers(
+        self, region: Optional[str] = None, rate: Optional[str] = None
+    ) -> TwoWindingTransformerSchema:
         """Query two-winding transformer.
 
         Args:
@@ -356,7 +366,7 @@ class CimModel(Model):
             >>> model = get_cim_model(server_url, "LATEST")
             >>> model.two_winding_transformers()
         """
-        query = self.two_winding_transformers_query(region)
+        query = self.two_winding_transformers_query(region, rate)
         query_angle = self.two_winding_angle_query(region)
         data = self.get_table_and_convert(query, index="mrid")
         angle = self.get_table_and_convert(query_angle, index="mrid")
@@ -368,11 +378,15 @@ class CimModel(Model):
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_LOSS_QUERY, substitutes)
 
-    def three_winding_transformers_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*"}
+    def three_winding_transformers_query(
+        self, region: Optional[str] = None, rate: Optional[str] = None
+    ) -> str:
+        substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.THREE_WINDING_QUERY, substitutes)
 
-    def three_winding_transformers(self, region: Optional[str] = None) -> BranchComponentSchema:
+    def three_winding_transformers(
+        self, region: Optional[str] = None, rate: Optional[str] = None
+    ) -> BranchComponentSchema:
         """Query three-winding transformer. Return as three two-winding transformers.
 
         Example:
@@ -381,7 +395,7 @@ class CimModel(Model):
             >>> model = get_cim_model(server_url, "LATEST")
             >>> model.two_winding_transformers()
         """
-        query = self.three_winding_transformers_query(region)
+        query = self.three_winding_transformers_query(region, rate)
         data = self.get_table_and_convert(query, index="mrid")
         query_loss = self.three_winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")

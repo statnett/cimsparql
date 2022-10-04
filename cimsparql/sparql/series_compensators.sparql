@@ -2,7 +2,7 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rateNormal ?status ?un ?x
+select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status ?un ?x
 where {
   # Assume π equivalent with at least r,x and b shunt.
   ?_mrid rdf:type cim:SeriesCompensator;
@@ -12,10 +12,10 @@ where {
          cim:SeriesCompensator.r ?r;
          cim:SeriesCompensator.x ?x .
   optional {
-    ?_limNormal cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_mrid;
-                rdf:type cim:CurrentLimit;
-                cim:IdentifiedObject.name 'Normal@20';
-                cim:CurrentLimit.value ?_rateNormal .
+    ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_mrid;
+          rdf:type cim:CurrentLimit;
+          cim:IdentifiedObject.name '${rate}';
+          cim:CurrentLimit.value ?_rate .
     # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
     bind(1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rateNormal)) / 1000.0 as ?rateNormal)
   } .

@@ -1,7 +1,7 @@
 PREFIX cim: <${cim}>
 PREFIX rdf: <${rdf}>
 PREFIX SN: <${SN}>
-select  ?name ?p_mrid ?w_mrid ?endNumber ?un ?t_mrid ?r ?x ?rateNormal
+select  ?name ?p_mrid ?w_mrid ?endNumber ?un ?t_mrid ?r ?x ?rate
 where {
   ?_p_mrid rdf:type cim:PowerTransformer;
            cim:IdentifiedObject.mRID ?p_mrid;
@@ -18,8 +18,8 @@ where {
   optional {
     ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_p_mrid;
            rdf:type cim:ActivePowerLimit;
-           cim:IdentifiedObject.name 'Normal@20';
-           cim:ActivePowerLimit.value ?rateNormal
+           cim:IdentifiedObject.name '${rate}';
+           cim:ActivePowerLimit.value ?rate
   }
   optional {?_p_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   filter(?analysis_enabled)
