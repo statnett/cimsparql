@@ -183,7 +183,6 @@ class BranchWithdrawSchema(MridResourceSchema):
 
 class DcActiveFlowSchema(MridResourceSchema):
     p: Series[float] = pa.Field(coerce=True)
-    direction: Series[int] = pa.Field(coerce=True, isin=(-1, 1))
 
 
 class RegionsSchema(MridResourceSchema):

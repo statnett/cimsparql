@@ -452,7 +452,7 @@ class CimModel(Model):
         # Unable to group on max within the sparql query so we do it here.
         data = data.iloc[data.groupby("mrid")["p"].idxmax()].set_index("mrid")
         df = data.eval("p * direction").rename("p")
-        return DcActiveFlowSchema(df)
+        return DcActiveFlowSchema(df.to_frame())
 
     @property
     def regions_query(self) -> str:
