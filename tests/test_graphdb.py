@@ -1,5 +1,4 @@
 import os
-from string import Template
 from typing import List, Set
 
 import pytest
@@ -189,21 +188,6 @@ def test_create_delete_repo(rdf4j_url):
     client.delete_repo()
     current_repos = repos(service_cfg)
     assert "test_repo" not in [i.repo_id for i in current_repos]
-
-
-def test_add_mrid(micro_t1_nl):
-    if not micro_t1_nl and not os.getenv("CI"):
-        pytest.skip("Require RDF4J access")
-
-    query = micro_t1_nl.template_to_query(
-        Template("PREFIX cim: <${cim}>\nSELECT ?mrid WHERE {?s cim:IdentifiedObject.mRID ?mrid}")
-    )
-    res = micro_t1_nl.client.exec_query(query)
-    assert len(res) == 0
-
-    micro_t1_nl.add_mrid("cim:TopologicalNode")
-    res = micro_t1_nl.client.exec_query(query)
-    assert len(res) == 5
 
 
 def test_update_prefixes(monkeypatch):
