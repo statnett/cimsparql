@@ -12,6 +12,7 @@ where {
   filter(regex(?area, '${region}'))
   service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
   service <${repo}> {
+    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
     ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
            cim:SvPowerFlow.p ?p;
            cim:SvPowerFlow.q ?q .
@@ -19,4 +20,5 @@ where {
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
   filter(?analysis_enabled)
+  filter(?connected)
 }
