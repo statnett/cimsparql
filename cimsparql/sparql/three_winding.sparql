@@ -2,24 +2,28 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
-select  ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?rate (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2)
+select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2) ?angle ?ratio
 where {
   # Use mrid of transformer as dummy node
   ?_p_mrid cim:IdentifiedObject.mRID ?node_2;
            cim:Equipment.EquipmentContainer ?Substation;
            cim:IdentifiedObject.name ?name .
-  ?Substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area.
+  ?Substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   filter(regex(?area, '${region}'))
   ?_mrid cim:TransformerEnd.Terminal ?_t_mrid;
          cim:IdentifiedObject.mRID ?mrid;
          cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
-         cim:PowerTransformerEnd.ratedU ?un;
+         cim:PowerTransformerEnd.phaseAngleClock ?angleclock;
+         cim:PowerTransformerEnd.ratedU ?ubase;
          cim:PowerTransformerEnd.r ?r;
-         cim:PowerTransformerEnd.x ?x .
-  ?_t_mrid cim:Terminal.ConnectivityNode ?_node.
+         cim:PowerTransformerEnd.x ?x;
+         cim:PowerTransformerEnd.b ?b;
+         cim:PowerTransformerEnd.g ?g .
+  ?_t_mrid cim:Terminal.ConnectivityNode ?_node .
+  ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
   optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .}
-  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .} .
+  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
   optional {service <${repo}> {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}} .
   {
     select  ?_p_mrid (count(distinct ?nr) as ?winding_count)
@@ -39,4 +43,6 @@ where {
   filter(?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   bind(coalesce(?in_service, ?connected) as ?status)
+  bind(xsd:double(str(?un)) / xsd:double(str(?ubase)) as ?ratio)
+  bind(xsd:double(30.0) * ?angleclock as ?angle)
 }

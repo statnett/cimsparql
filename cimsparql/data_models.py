@@ -154,7 +154,7 @@ class TransformersSchema(JsonSchemaOut):
     rate: Series[float] = pa.Field(nullable=True, coerce=True)
 
 
-class TwoWindingTransformerSchema(ShuntComponentSchema):
+class TransformerWindingSchema(ShuntComponentSchema):
     angle: Series[float] = pa.Field(coerce=True)
     ratio: Series[float] = pa.Field(coerce=True)
 

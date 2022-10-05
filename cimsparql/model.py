@@ -29,7 +29,7 @@ from cimsparql.data_models import (
     SynchronousMachinesSchema,
     TransfConToConverterSchema,
     TransformersSchema,
-    TwoWindingTransformerSchema,
+    TransformerWindingSchema,
     WindGeneratingUnitsSchema,
 )
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
@@ -354,7 +354,7 @@ class CimModel(Model):
 
     def two_winding_transformers(
         self, region: Optional[str] = None, rate: Optional[str] = None
-    ) -> TwoWindingTransformerSchema:
+    ) -> TransformerWindingSchema:
         """Query two-winding transformer.
 
         Args:
@@ -372,7 +372,7 @@ class CimModel(Model):
         angle = self.get_table_and_convert(query_angle, index="mrid")
         if not angle.empty:
             data["angle"] += angle.reindex(index=data.index, fill_value=0.0).squeeze()
-        return TwoWindingTransformerSchema(data)
+        return TransformerWindingSchema(data)
 
     def three_winding_loss_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
@@ -386,7 +386,7 @@ class CimModel(Model):
 
     def three_winding_transformers(
         self, region: Optional[str] = None, rate: Optional[str] = None
-    ) -> BranchComponentSchema:
+    ) -> TransformerWindingSchema:
         """Query three-winding transformer. Return as three two-winding transformers.
 
         Example:
@@ -400,7 +400,7 @@ class CimModel(Model):
         query_loss = self.three_winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")
         df = pd.concat([data.assign(ploss_1=0.0), loss.loc[data.index]], axis=1)
-        return BranchComponentSchema(df)
+        return TransformerWindingSchema(df)
 
     @property
     def substation_voltage_level_query(self) -> str:
