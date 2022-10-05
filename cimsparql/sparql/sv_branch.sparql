@@ -19,21 +19,31 @@ where {
       ?_t_mrid rdf:type cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?_mrid;
-               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+               cim:Terminal.ConnectivityNode ?_node;
                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
+      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
       filter(regex(?area, '${region}'))
       service <${repo}>
       {
-        ?_t_mrid cim:Terminal.TopologicalNode ?_node;
-                 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+        select ?_node ?node ?v ?angle
+        where
+        {
+          ?_node cim:ConnectivityNode.TopologicalNode ?node .
+          optional {
+            ?_sv_n cim:SvVoltage.TopologicalNode ?node;
+                   cim:SvVoltage.v ?v;
+                   cim:SvVoltage.angle ?angle .
+          }
+        }
+      }
+      service <${repo}>
+      {
+        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
         optional
         {
           ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
                  cim:SvPowerFlow.p ?p;
                  cim:SvPowerFlow.q ?q.
-          ?_sv_n cim:SvVoltage.TopologicalNode ?_node;
-                 cim:SvVoltage.v ?v;
-                 cim:SvVoltage.angle ?angle .
         }
       }.
     }
@@ -42,25 +52,35 @@ where {
     select ?_mrid (?connected as ?connected_2) (?p as ?p_2) (?q as ?q_2) (?v as ?v_2) (?angle as ?angle_2)
     where
     {
-      ?_mrid rdf:type cim:ACLineSegment.
+      ?_mrid rdf:type cim:ACLineSegment .
       ?_t_mrid rdf:type cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?_mrid;
-               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2.
+               cim:Terminal.ConnectivityNode ?_node;
+               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2 .
+      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
       filter(regex(?area, '${region}'))
       service <${repo}>
       {
-        ?_t_mrid cim:Terminal.TopologicalNode ?_node;
-                 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected.
+        select ?_node ?node ?v ?angle
+        where
+        {
+          ?_node cim:ConnectivityNode.TopologicalNode ?node .
+          optional {
+            ?_sv_n cim:SvVoltage.TopologicalNode ?node;
+                   cim:SvVoltage.v ?v;
+                   cim:SvVoltage.angle ?angle .
+          }
+        }
+      }
+      service <${repo}>
+      {
+        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
         optional
         {
           ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
                  cim:SvPowerFlow.p ?p;
                  cim:SvPowerFlow.q ?q.
-          ?_sv_n cim:SvVoltage.TopologicalNode ?_node;
-                 cim:SvVoltage.v ?v;
-                 cim:SvVoltage.angle ?angle .
         }
       }.
     }

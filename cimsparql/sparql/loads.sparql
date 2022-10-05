@@ -13,14 +13,15 @@ where {
   filter regex(?area, '${region}')
   optional {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   optional {?_mrid cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
-  ?_t_mrid  cim:Terminal.ConductingEquipment ?_mrid .
-  service <${repo}> {
-    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
-             cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
-  }
-  service <${repo}> {
-    optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}.
-    graph ${ssh_graph} {optional {?_mrid cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q}}
+  ?_t_mrid  cim:Terminal.ConductingEquipment ?_mrid;
+            cim:Terminal.ConnectivityNode ?_node .
+  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
+  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+  optional {
+    service <${repo}> {
+      optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
+      graph ${ssh_graph} {optional {?_mrid cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q}}
+    }
   }
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter (?network_analysis)

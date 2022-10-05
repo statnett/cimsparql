@@ -1,16 +1,17 @@
 PREFIX cim:<${cim}>
 PREFIX rdf:<${rdf}>
 PREFIX SN:<${SN}>
-select  ?mrid ?node ?p ?q
+select ?mrid ?node ?p ?q
 where {
   values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer} .
-  ?_mrid rdf:type ?rdf_type;
-         cim:IdentifiedObject.mRID ?mrid .
+  ?_mrid rdf:type ?rdf_type .
   ?_t_mrid cim:Terminal.ConductingEquipment ?_mrid;
-           cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+           cim:IdentifiedObject.mRID ?mrid;
+           cim:Terminal.ConnectivityNode ?_node.
+  ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   filter(regex(?area, '${region}'))
+  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
   service <${repo}> {
-    ?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
     ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
            cim:SvPowerFlow.p ?p;
            cim:SvPowerFlow.q ?q .

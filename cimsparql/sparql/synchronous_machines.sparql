@@ -10,6 +10,7 @@ where {
          cim:IdentifiedObject.mRID ?mrid;
          ^cim:Terminal.ConductingEquipment ?_t_mrid;
          cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?_substation .
+  ?_t_mrid cim:Terminal.ConnectivityNode ?_node .
   ?_substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
                cim:IdentifiedObject.mRID ?station .
   optional {
@@ -34,10 +35,8 @@ where {
                         cim:IdentifiedObject.name ?station_group_name .
     }
   }
-  service <${repo}> {
-    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
-             cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
-  }
+  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
+  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
   service <${repo}> {
     optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
     graph ${ssh_graph} {optional {?_mrid cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}}

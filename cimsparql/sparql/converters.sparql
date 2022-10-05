@@ -11,12 +11,11 @@ where {
   ?_substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
                cim:IdentifiedObject.mRID ?station .
   ?_t_mrid cim:Terminal.ConductingEquipment ?_mrid;
+           cim:Terminal.ConnectivityNode ?_node;
            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
   filter regex(?area, '${region}')
-  service <${repo}> {
-    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
-             cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
-  }
+  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
+  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
   service <${repo}> {
     values ?converter {cim:VsConverter cim:DCConvertUnit cim:CsConverter}
     graph ${ssh_graph} {

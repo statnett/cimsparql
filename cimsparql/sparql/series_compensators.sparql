@@ -19,10 +19,7 @@ where {
     # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
     bind(1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rateNormal)) / 1000.0 as ?rateNormal)
   } .
-  optional { # Search for acline SV status will be combined with SSH connected
-    service <${repo}>
-    {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}
-  } .
+  optional {service <${repo}> {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}} .
   { # Search terminal 1 side SSH/TP/SV
     select ?_mrid (?connected as ?connected_1) (?p as ?p_1) ?node_1 (?bidzone as ?bidzone_1)
     where
@@ -31,19 +28,19 @@ where {
       ?_t_mrid rdf:type cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?_mrid;
-               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation;
+               cim:Terminal.ConnectivityNode ?_node;
                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
+      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
       ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
       optional {
         ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
       }
       filter(regex(?area, '${region}'))
-      service <${repo}>
-      {
-        ?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node;
-                 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-        optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
-      }.
+      service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+      service <${repo}> {
+        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+        optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
+      }
       bind(coalesce(?node, ?t_mrid) as ?node_1)
     }
   } .
@@ -55,19 +52,19 @@ where {
       ?_t_mrid rdf:type cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?_mrid;
-               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation;
+               cim:Terminal.ConnectivityNode ?_node;
                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2 .
+      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
       ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
       optional {
         ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
       }
       filter(regex(?area, '${region}'))
-      service <${repo}>
-      {
-        ?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node;
-                 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-        optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
-      }.
+      service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+      service <${repo}> {
+        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+        optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
+      }
       bind(coalesce(?node, ?t_mrid) as ?node_2)
     }
   } .

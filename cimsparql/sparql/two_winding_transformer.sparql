@@ -41,11 +41,11 @@ where
                cim:IdentifiedObject.name '${rate}';
                cim:ActivePowerLimit.value ?rate
       } .
+      service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
       service <${repo}> {
-        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
-                 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
+        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1 .
         optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
-      } .
+      }
       bind(coalesce(?node, ?t_mrid) as ?node_1)
     }
   } .
@@ -61,9 +61,9 @@ where
       ?_t_mrid cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConnectivityNode ?_node.
       ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
+      service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
       service <${repo}> {
-        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
-                 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node .
+        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_2 .
         optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p . }
       }
       bind(coalesce(?node, ?t_mrid) as ?node_2)
@@ -80,7 +80,8 @@ where
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   filter(?network_analysis)
   bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)
-  bind((xsd:double(str(?ubase_1)) / xsd:double(str(?un_1))) / (xsd:double(str(?ubase_2)) / xsd:double(str(?un_2))) as ?ratio)
+  #  ratio: n = Us / Up (secondary (2) / primary (1))
+  bind((xsd:double(str(?ubase_2)) / xsd:double(str(?un_2))) / (xsd:double(str(?ubase_1)) / xsd:double(str(?un_1))) as ?ratio)
   bind(?bidzone as ?bidzone_1)
   bind(?bidzone as ?bidzone_2)
 }

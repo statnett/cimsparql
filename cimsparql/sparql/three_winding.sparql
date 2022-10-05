@@ -16,14 +16,11 @@ where {
          cim:PowerTransformerEnd.ratedU ?un;
          cim:PowerTransformerEnd.r ?r;
          cim:PowerTransformerEnd.x ?x .
+  ?_t_mrid cim:Terminal.ConnectivityNode ?_node.
   optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
-  service <${repo}> {
-    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected;
-             cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .
-  } .
-  service <${repo}> {
-    optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}
-  } .
+  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .}
+  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .} .
+  optional {service <${repo}> {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}} .
   {
     select  ?_p_mrid (count(distinct ?nr) as ?winding_count)
     where {
