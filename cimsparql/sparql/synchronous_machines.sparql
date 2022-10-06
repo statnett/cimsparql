@@ -2,7 +2,7 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?market_code ?allocationmax ?node ?status ?station_group ?station_group_name ?station ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
+select distinct ?mrid ?name ?market_code ?allocationmax ?node ?status ?station_group ?station_group_name ?station ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
 where {
   ?_mrid rdf:type cim:SynchronousMachine;
          cim:IdentifiedObject.name ?name;

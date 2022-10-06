@@ -1,7 +1,7 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
-select ?mrid ?name ?node ?station ?bidzone ?status ?p ?q ?station_group
+select distinct ?mrid ?name ?node ?station ?bidzone ?status ?p ?q ?station_group
 where {
   values ?load_type {cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer}
   ?_mrid rdf:type ?load_type;
