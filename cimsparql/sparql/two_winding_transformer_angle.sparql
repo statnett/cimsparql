@@ -16,5 +16,5 @@ where {
                cim:TapChanger.normalStep ?normalstep;
                cim:PhaseTapChanger.TransformerEnd ?_mrid_2 .
   service <${repo}> {?_tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?position}
-  bind((?position - ?normalstep) * xsd:double(str(?inc)) as ?angle)
+  bind((xsd:double(str(?position)) - xsd:double(str(?normalstep))) * xsd:double(str(?inc)) as ?angle)
 }
