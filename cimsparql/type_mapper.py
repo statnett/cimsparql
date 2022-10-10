@@ -152,8 +152,8 @@ class TypeMapper:
     def map_data_types(
         self, df: pd.DataFrame, col_map: Dict[COL_NAME, SPARQL_TYPE]
     ) -> pd.DataFrame:
-        """Maps the dtypes of a DataFrame to the python-corresponding types of the sparql-types from the
-        source data
+        """Maps the dtypes of a DataFrame to the python-corresponding types of the sparql-types from
+        the source data
 
         Args:
             df: DataFrame with columns to be converted
