@@ -26,8 +26,7 @@ where {
     select ?_unit ?market_code ?MO ?apctmax ?station_group ?station_group_name
     where
     {
-      ?_unit cim:GeneratingUnit.maxOperatingP ?maxP;
-             SN:GeneratingUnit.marketCode ?market_code;
+      ?_unit SN:GeneratingUnit.marketCode ?market_code;
              SN:GeneratingUnit.groupAllocationWeight ?MO;
              SN:GeneratingUnit.ScheduleResource ?ScheduleResource;
              SN:GeneratingUnit.groupAllocationMax ?apctmax .
