@@ -11,7 +11,7 @@ where {
              cim:Equipment.EquipmentContainer/cim:Line.Region ?_region .
       ?_t_mrid rdf:type cim:Terminal;
                cim:Terminal.ConductingEquipment ?_mrid;
-               cim:ACDCTerminal.sequenceNumber ?nr .
+               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
       service <${repo}> {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
     }
   }
