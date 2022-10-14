@@ -34,14 +34,18 @@ where {
                         cim:IdentifiedObject.name ?station_group_name .
     }
   }
-  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
-  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+  service <${repo}> {
+    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+    optional {?_t_mrid cim:Terminal.TopologyNode/cim:IdentifiedObject.mRID ?_t_node}
+  } .
+  optional { service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?_c_node .}}
   service <${repo}> {
     optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
     graph ${ssh_graph} {optional {?_mrid cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}}
   }
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)
+  bind(coalesce(?_c_node, ?_t_node, ?_t_mrid) as ?node)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   bind(coalesce(?in_service, ?connected) as ?status)
   bind(xsd:double(str(?apctmax)) * xsd:double(str(?maxP)) / 100.0 as ?allocationmax)

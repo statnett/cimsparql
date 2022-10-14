@@ -10,15 +10,17 @@ where {
            cim:Terminal.ConnectivityNode ?_node.
   ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   filter(regex(?area, '${region}'))
-  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+  optional {service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?c_node .}}
   service <${repo}> {
     ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+    optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?t_node .}
     ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
            cim:SvPowerFlow.p ?p;
            cim:SvPowerFlow.q ?q .
   }
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+  bind(coalesce(?c_node, ?t_node, ?mrid) as ?node)
   filter(?analysis_enabled)
   filter(?connected)
 }

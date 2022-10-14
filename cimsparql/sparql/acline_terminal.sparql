@@ -17,13 +17,14 @@ where
     ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone .
   }
   filter(regex(?area, '${region}'))
-  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+  optional { service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}}
   service <${repo}> {
     ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+    optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?_t_node} .
     optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
   }
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   filter(?analysis_enabled)
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  bind(coalesce(?node, ?t_mrid) as ?node_${nr})
+  bind(coalesce(?node, ?_t_node, ?t_mrid) as ?node_${nr})
 }

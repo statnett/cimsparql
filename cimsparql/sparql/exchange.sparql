@@ -19,10 +19,11 @@ where
              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .
   filter ((regex(?area_1, '${region}') && !regex(?area_2, '${region}')) || (regex(?area_1, '${region}') && !regex(?area_2, '${region}')))
-  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+  optional {service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?c_node .}}
   service <${repo}> {
     ?_t_mrid_1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p;
                cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1
+    optional {?_t_mrid_1 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?t_node .}
   } .
   service <${repo}> {?_t_mrid_2 cim:ACDCTerminal.connected ?connected_2 . }
   service <${repo}>
@@ -37,4 +38,5 @@ where
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
   filter(?analysis_enabled)
   bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)
+  bind(coalesce(?c_node, ?t_node) as ?node)
 }

@@ -13,10 +13,14 @@ where {
   filter regex(?area, '${region}')
   optional {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   optional {?_mrid cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
-  ?_t_mrid  cim:Terminal.ConductingEquipment ?_mrid;
-            cim:Terminal.ConnectivityNode ?_node .
-  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
-  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+  ?_t_mrid cim:Terminal.ConductingEquipment ?_mrid;
+           cim:IdentifiedObject.mRID ?t_mrid;
+           cim:Terminal.ConnectivityNode ?_node .
+  service <${repo}> {
+    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+    optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?t_node}
+  }
+  optional {service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?c_node .}}
   optional {
     service <${repo}> {
       optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
@@ -27,4 +31,5 @@ where {
   filter (?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   bind(coalesce(?in_service, ?connected) as ?status)
+  bind(coalesce(?c_node, ?t_node, ?t_mrid) as ?node)
 }

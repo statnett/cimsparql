@@ -41,12 +41,13 @@ where
                cim:IdentifiedObject.name '${rate}';
                cim:ActivePowerLimit.value ?rate
       } .
-      service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+      optional { service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}}
       service <${repo}> {
-        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1 .
+        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1;
+        optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?_t_node .}
         optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
       }
-      bind(coalesce(?node, ?t_mrid) as ?node_1)
+      bind(coalesce(?node, ?_t_node, ?t_mrid) as ?node_1)
     }
   } .
   { # Search for winding 2 side
@@ -61,12 +62,13 @@ where
       ?_t_mrid cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConnectivityNode ?_node.
       ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
-      service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+      optional { service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}}
       service <${repo}> {
         ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_2 .
+        optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?_t_node .}
         optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p . }
       }
-      bind(coalesce(?node, ?t_mrid) as ?node_2)
+      bind(coalesce(?node, ?_t_node, ?t_mrid) as ?node_2)
       bind(xsd:double(30.0) * ?angleclock as ?angle)
     }
   }

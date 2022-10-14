@@ -11,11 +11,15 @@ where {
   ?_substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
                cim:IdentifiedObject.mRID ?station .
   ?_t_mrid cim:Terminal.ConductingEquipment ?_mrid;
+           cim:IdentifiedObject.mRID ?t_mrid;
            cim:Terminal.ConnectivityNode ?_node;
            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
   filter regex(?area, '${region}')
-  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
-  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+  service <${repo}> {
+    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+    optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?t_node}
+  }
+  optional {service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?c_node .}}
   service <${repo}> {
     values ?converter {cim:VsConverter cim:DCConvertUnit cim:CsConverter}
     graph ${ssh_graph} {
@@ -26,6 +30,7 @@ where {
     optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
   }
   optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  bind(coalesce(?c_node, ?t_node, ?t_mrid) as ?node)
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
   filter(?analysis_enabled)
   bind(coalesce(?in_service, ?connected) as ?status)
