@@ -17,7 +17,7 @@ where {
           cim:IdentifiedObject.name '${rate}';
           cim:CurrentLimit.value ?_rate .
     # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
-    bind(1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rateNormal)) / 1000.0 as ?rateNormal)
+    bind(1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rate)) / 1000.0 as ?rate)
   } .
   optional {service <${repo}> {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}} .
   { # Search terminal 1 side SSH/TP/SV
