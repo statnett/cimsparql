@@ -35,10 +35,8 @@ flake8-eradicate = "*"
 flake8-mutable = "*"
 flake8-simplify = "*"
 isort = ">= 5"
-lxml = "*"
 mock = "*"
 mypy-ls = "*"
-pendulum = "*"
 pre-commit = "*"
 pylint = "*"
 pyls-flake8 = "*"
@@ -49,8 +47,6 @@ pytest-cov = "*"
 pytest-integration = "*"
 pytest-profiling = "*"
 
-[tool.poetry.extras]
-parse_xml = ["lxml", "defusedxml", "pendulum"]
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -107,9 +103,6 @@ norecursedirs = "_build tmp*  __pycache__ src prof wheel_files"
 markers = [
   "integration: Mark test as an integration test",
   "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-]
-filterwarnings = [
-  "ignore: defusedxml.lxml is no longer supported and will be removed"
 ]
 
 
