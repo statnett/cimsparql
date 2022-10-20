@@ -23,9 +23,6 @@ jobs:
         with:
           poetry-version: 1.2.1
 
-      - name: Install dynamic versioning
-        run: poetry self add "poetry-dynamic-versioning[plugin]"
-
       - name: Set poetry virtualenv to local
         run: poetry config virtualenvs.in-project true
 
@@ -79,6 +76,9 @@ jobs:
         uses: abatilo/actions-poetry@v2.1.6
         with:
           poetry-version: ${{ matrix.poetry-version }}
+
+      - name: Install dynamic versioning
+        run: poetry self add "poetry-dynamic-versioning[plugin]"
 
       - name: Set poetry virtualenv to local
         run: poetry config virtualenvs.in-project true
