@@ -1,2 +1,2 @@
 """Library for CIM sparql queries"""
-__version__ = "1.12.1"
+__version__ = "2.0.0"
