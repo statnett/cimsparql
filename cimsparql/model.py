@@ -17,6 +17,7 @@ from cimsparql.data_models import (
     BusDataSchema,
     ConnectionsSchema,
     ConvertersSchema,
+    CoordinatesSchema,
     DcActiveFlowSchema,
     DisconnectedSchema,
     ExchangeSchema,
@@ -431,6 +432,14 @@ class CimModel(Model):
         """Query powerflow from sv profile (not available in GraphDB)."""
         df = self.get_table_and_convert(self.powerflow_query, index="mrid")
         return PowerFlowSchema(df)
+
+    @property
+    def coordinates_query(self) -> str:
+        return self.template_to_query(templates.COORDINATES_QUERY)
+
+    @property
+    def coordinates(self) -> CoordinatesSchema:
+        return CoordinatesSchema(self.get_table_and_convert(self.coordinates_query))
 
     def branch_node_withdraw_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}

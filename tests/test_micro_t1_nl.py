@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, Optional, Set
 
+import pandas as pd
 import pytest
 
 from cimsparql.model import CimModel
@@ -259,3 +260,22 @@ def test_regions(micro_t1_nl_models: MOD_TYPE, server: str):
         pytest.skip(skip_msg(server))
 
     assert set(model.regions["region"]) == {"BE", "EU", "NL"}
+
+
+@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+def test_coordinates(micro_t1_nl_models: MOD_TYPE, server: str):
+    model = micro_t1_nl_models[server]
+    if skip(model, server):
+        pytest.skip(skip_msg(server))
+    pd.testing.assert_index_equal(
+        model.coordinates["epsg"].cat.categories, pd.Index(["4326"], dtype="string")
+    )
+    cim = model.client.prefixes["cim"]
+    categories = {f"{cim}ACLineSegment", f"{cim}Substation"}
+    assert model.coordinates["rdf_type"].cat.categories.difference(categories).empty
+
+    assert len(model.coordinates) == 49
+    coordinates = model.coordinates.astype({"x": float, "y": float})
+
+    assert ((coordinates["x"] > 4.0) & (coordinates["x"] < 6.0)).all()
+    assert ((coordinates["y"] > 50.0) & (coordinates["y"] < 53.0)).all()

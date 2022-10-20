@@ -119,6 +119,14 @@ class TransfConToConverterSchema(NamedResourceSchema):
     p_mrid: Series[pd.StringDtype] = pa.Field(coerce=True)
 
 
+class CoordinatesSchema(JsonSchemaOut):
+    mrid: Series[pd.StringDtype] = pa.Field()
+    x: Series[pd.StringDtype] = pa.Field()
+    y: Series[pd.StringDtype] = pa.Field()
+    epsg: Series[pd.CategoricalDtype] = pa.Field(coerce=True)
+    rdf_type: Series[pd.CategoricalDtype] = pa.Field(coerce=True)
+
+
 class BranchComponentSchema(NamedResourceSchema):
     bidzone_1: Series[pd.StringDtype] = pa.Field(nullable=True, coerce=True)
     bidzone_2: Series[pd.StringDtype] = pa.Field(nullable=True, coerce=True)
