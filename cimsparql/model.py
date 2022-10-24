@@ -26,6 +26,7 @@ from cimsparql.data_models import (
     MarketDatesSchema,
     PowerFlowSchema,
     RegionsSchema,
+    StationGroupCodeNameSchema,
     SubstationVoltageSchema,
     SynchronousMachinesSchema,
     TransfConToConverterSchema,
@@ -440,6 +441,15 @@ class CimModel(Model):
     @property
     def coordinates(self) -> CoordinatesSchema:
         return CoordinatesSchema(self.get_table_and_convert(self.coordinates_query))
+
+    @property
+    def st_group_codes_names_query(self) -> str:
+        return self.template_to_query(templates.STATION_GROUP_CODE_NAME_QUERY)
+
+    @property
+    def station_group_codes_and_names(self) -> StationGroupCodeNameSchema:
+        df = self.get_table_and_convert(self.st_group_codes_names_query)
+        return StationGroupCodeNameSchema(df.set_index("station_group"))
 
     def branch_node_withdraw_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}

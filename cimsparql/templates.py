@@ -45,6 +45,9 @@ MARKET_DATES_QUERY = _read_template(sparql_folder / "market_dates.sparql")
 POWER_FLOW_QUERY = _read_template(sparql_folder / "power_flow.sparql")
 REGIONS_QUERY = _read_template(sparql_folder / "regions.sparql")
 SERIES_COMPENSATORS_QUERY = _read_template(sparql_folder / "series_compensators.sparql")
+STATION_GROUP_CODE_NAME_QUERY = _read_template(
+    sparql_folder / "station_group_code_and_names.sparql"
+)
 SUBSTATION_VOLTAGE_LEVEL_QUERY = _read_template(sparql_folder / "substation_voltage_level.sparql")
 SV_BRANCH_QUERY = _read_template(sparql_folder / "sv_branch.sparql")
 SYNCHRONOUS_MACHINES_QUERY = _read_template(sparql_folder / "synchronous_machines.sparql")
