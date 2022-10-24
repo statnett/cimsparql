@@ -129,6 +129,12 @@ def test_substation_voltage_level(model: CimModel):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
+def test_station_group_codes_and_names(model: CimModel):
+    st_group_names = model.station_group_codes_and_names
+    assert not st_group_names.empty
+
+
+@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 def test_data_row():
     cols = ["a", "b", "c", "d", "e"]
     rows = [{"a": 1, "b": 2}, {"c": 3, "d": 4}, {"a": 5, "b": 6}, {"e": 7}]

@@ -200,3 +200,9 @@ class RegionsSchema(MridResourceSchema):
     name: Series[pd.StringDtype] = pa.Field(coerce=True)
     alias_name: Series[pd.StringDtype] = pa.Field(nullable=True, coerce=True)
     region_name: Series[pd.StringDtype] = pa.Field(nullable=True, coerce=True)
+
+
+class StationGroupCodeNameSchema(JsonSchemaOut):
+    station_group: Index[pd.StringDtype] = pa.Field(unique=True)
+    name: Series[pd.StringDtype] = pa.Field()
+    alias_name: Series[pd.StringDtype] = pa.Field(nullable=True, coerce=True)

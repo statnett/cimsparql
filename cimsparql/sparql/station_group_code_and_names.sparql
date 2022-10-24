@@ -1,0 +1,9 @@
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+select ?station_group ?name ?alias_name where {
+    # SN is not made optional here because then there is no filtering left.
+    # TODO: Is ScheduleResource available in a another namespace?
+    ?s SN:ScheduleResource.marketCode ?station_group;
+       cim:IdentifiedObject.name ?name;
+       optional{?s cim:IdentifiedObject.aliasName ?alias_name}
+}
