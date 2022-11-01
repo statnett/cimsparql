@@ -279,3 +279,13 @@ def test_coordinates(micro_t1_nl_models: MOD_TYPE, server: str):
 
     assert ((coordinates["x"] > 4.0) & (coordinates["x"] < 6.0)).all()
     assert ((coordinates["y"] > 50.0) & (coordinates["y"] < 53.0)).all()
+
+
+@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+def test_empty_dc_active_flow(micro_t1_nl_models: MOD_TYPE, server: str):
+    model = micro_t1_nl_models[server]
+    if skip(model, server):
+        pytest.skip(skip_msg(server))
+
+    df = model.dc_active_flow()
+    assert df.empty

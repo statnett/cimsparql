@@ -467,11 +467,11 @@ class CimModel(Model):
 
     def dc_active_flow(self, region: Optional[str] = None) -> DcActiveFlowSchema:
         query = self.dc_active_flow_query(region)
-        data = self.get_table_and_convert(query)
+        df = self.get_table_and_convert(query)
         # Unable to group on max within the sparql query so we do it here.
-        data = data.iloc[data.groupby("mrid")["p"].idxmax()].set_index("mrid")
-        df = data.eval("p * direction").rename("p")
-        return DcActiveFlowSchema(df.to_frame())
+        df = df.iloc[df.groupby("mrid")["p"].idxmax()].set_index("mrid")
+        df["p"] *= df["direction"]
+        return DcActiveFlowSchema(df.drop(columns="direction"))
 
     @property
     def regions_query(self) -> str:

@@ -135,6 +135,12 @@ def test_station_group_codes_and_names(model: CimModel):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
+def test_dc_active_flow(model: CimModel):
+    flow = model.dc_active_flow()
+    assert not flow.empty
+
+
+@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 def test_data_row():
     cols = ["a", "b", "c", "d", "e"]
     rows = [{"a": 1, "b": 2}, {"c": 3, "d": 4}, {"a": 5, "b": 6}, {"e": 7}]
