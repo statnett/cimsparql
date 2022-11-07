@@ -69,7 +69,7 @@ class ServiceConfig:
     infer: bool = False
     limit: Optional[int] = None
     offset: Optional[int] = None
-    timout: Optional[int] = None
+    timeout: Optional[int] = None
 
     def __post_init__(self):
         if self.rest_api not in RestApi:
@@ -137,6 +137,8 @@ class GraphDBClient:
     def _init_sparql_wrapper(self):
         self.sparql.setReturnFormat(JSON)
         self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
+        if self.service_cfg.timeout:
+            self.sparql.setTimeout(self.service_cfg.timeout)
         self._update_sparql_parameters()
 
     def _update_sparql_parameters(self):
