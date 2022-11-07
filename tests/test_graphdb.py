@@ -25,21 +25,25 @@ def test_cimversion(model: CimModel):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_load(model: CimModel):
-    load = model.loads()
+@pytest.mark.asyncio
+async def test_load(model: CimModel):
+    load = await model.loads()
     assert set(load.columns).issubset(
         {"node", "name", "bidzone", "p", "q", "station", "station_group", "status"}
     )
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_power_flow(model: CimModel):
-    assert not model.powerflow.empty
+@pytest.mark.asyncio
+async def test_power_flow(model: CimModel):
+    power_flow = await model.powerflow()
+    assert not power_flow.empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_series_compensator(model: CimModel):
-    compensators = model.series_compensators(region="NO")
+@pytest.mark.asyncio
+async def test_series_compensator(model: CimModel):
+    compensators = await model.series_compensators(region="NO")
     assert compensators.shape[1] == 12
 
 
@@ -69,51 +73,61 @@ def synchronous_machines_columns(gen_columns: Set[str]) -> Set[str]:
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_synchronous_machines(model: CimModel, synchronous_machines_columns: Set[str]):
-    synchronous_machines = model.synchronous_machines()
+@pytest.mark.asyncio
+async def test_synchronous_machines(model: CimModel, synchronous_machines_columns: Set[str]):
+    synchronous_machines = await model.synchronous_machines()
     assert not synchronous_machines.empty
     assert set(synchronous_machines.columns).difference(synchronous_machines_columns) == set()
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_wind_generating_units(model: CimModel):
-    wind_units_machines = model.wind_generating_units()
+@pytest.mark.asyncio
+async def test_wind_generating_units(model: CimModel):
+    wind_units_machines = await model.wind_generating_units()
     assert not wind_units_machines.empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_connections(model: CimModel):
-    assert not model.connections().empty
+@pytest.mark.asyncio
+async def test_connections(model: CimModel):
+    con = await model.connections()
+    assert not con.empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_regions(model: CimModel):
-    assert model.regions.groupby("region").count().loc["NO", "name"] > 16
+@pytest.mark.asyncio
+async def test_regions(model: CimModel):
+    regions = await model.regions()
+    assert regions.groupby("region").count().loc["NO", "name"] > 16
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_ac_lines(model: CimModel):
-    lines = model.ac_lines()
+@pytest.mark.asyncio
+async def test_ac_lines(model: CimModel):
+    lines = await model.ac_lines()
     assert lines.shape[1] == 15
     assert all(lines[["x", "un"]].dtypes == float)
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_windings(model: CimModel):
-    windings = model.transformers(region="NO")
+@pytest.mark.asyncio
+async def test_windings(model: CimModel):
+    windings = await model.transformers(region="NO")
     assert windings.shape[1] == 9
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_transformer_connected_to_converters(model: CimModel):
-    transformers = model.transformers_connected_to_converter(region="NO")
+@pytest.mark.asyncio
+async def test_transformer_connected_to_converters(model: CimModel):
+    transformers = await model.transformers_connected_to_converter(region="NO")
     assert set(transformers.columns) == {"t_mrid", "name", "p_mrid"}
     assert not transformers.empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_borders_no(model: CimModel):
-    borders = model.borders(region="NO")
+@pytest.mark.asyncio
+async def test_borders_no(model: CimModel):
+    borders = await model.borders(region="NO")
     assert {"name", "t_mrid_1", "t_mrid_2", "area_1", "area_2", "market_code"}.issuperset(
         borders.columns
     )
@@ -123,20 +137,23 @@ def test_borders_no(model: CimModel):
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_substation_voltage_level(model: CimModel):
-    voltage_level = model.substation_voltage_level
+@pytest.mark.asyncio
+async def test_substation_voltage_level(model: CimModel):
+    voltage_level = await model.substation_voltage_level()
     assert {"container", "v"}.difference(voltage_level.columns) == set()
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_station_group_codes_and_names(model: CimModel):
-    st_group_names = model.station_group_codes_and_names
+@pytest.mark.asyncio
+async def test_station_group_codes_and_names(model: CimModel):
+    st_group_names = await model.station_group_codes_and_names()
     assert not st_group_names.empty
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-def test_dc_active_flow(model: CimModel):
-    flow = model.dc_active_flow()
+@pytest.mark.asyncio
+async def test_dc_active_flow(model: CimModel):
+    flow = await model.dc_active_flow()
     assert not flow.empty
 
 

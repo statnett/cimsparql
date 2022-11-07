@@ -186,7 +186,7 @@ class GraphDBClient:
         out = self._exec_query(query)
         return out["out"]
 
-    def _convert_query_result_to_df(res: dict) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    def _convert_query_result_to_df(self, res: dict) -> Tuple[pd.DataFrame, Dict[str, str]]:
         df = pd.DataFrame(res["out"]) if len(res["out"]) else pd.DataFrame(columns=res["cols"])
         return df, data_row(res["cols"], res["data"])
 

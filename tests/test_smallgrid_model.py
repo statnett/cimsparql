@@ -17,8 +17,9 @@ def check_service_available(model: Optional[CimModel], server: str):
 
 
 @pytest.mark.slow
+@pytest.mark.asyncio
 @pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
-def test_eq_query(smallgrid_models: Dict[str, CimModel], server):
+async def test_eq_query(smallgrid_models: Dict[str, CimModel], server):
     model = smallgrid_models[server]
     check_service_available(model, server)
     query_template = Template(
@@ -26,14 +27,16 @@ def test_eq_query(smallgrid_models: Dict[str, CimModel], server):
         "SELECT ?voltage {?s rdf:type cim:BaseVoltage; cim:BaseVoltage.nominalVoltage ?voltage}"
     )
     query = model.template_to_query(query_template)
-    df = model.get_table_and_convert(query).sort_values("voltage").reset_index(drop=True)
+    df = await model.get_table_and_convert(query)
+    df = df.sort_values("voltage").reset_index(drop=True)
     expect = pd.DataFrame({"voltage": [33.0, 132.0, 220.0]})
     pd.testing.assert_frame_equal(df, expect)
 
 
 @pytest.mark.slow
+@pytest.mark.asyncio
 @pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
-def test_tpsv_query(smallgrid_models, server):
+async def test_tpsv_query(smallgrid_models, server):
     model = smallgrid_models[server]
     check_service_available(model, server)
     repo = model.config.system_state_repo
@@ -42,5 +45,5 @@ def test_tpsv_query(smallgrid_models, server):
         f"select * where {{service <{repo}> {{?s rdf:type cim:TopologicalNode}}}}"
     )
     query = model.template_to_query(query_template)
-    df = model.get_table_and_convert(query)
+    df = await model.get_table_and_convert(query)
     assert df.shape == (115, 1)
