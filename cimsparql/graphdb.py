@@ -11,6 +11,7 @@ import requests
 from SPARQLWrapper import JSON, SPARQLWrapper
 from strenum import StrEnum
 
+from cimsparql.async_sparql_wrapper import AsyncSparqlWrapper
 from cimsparql.url import service, service_blazegraph
 
 
@@ -130,10 +131,13 @@ class GraphDBClient:
         """
         self.service_cfg = service_cfg or ServiceConfig()
         self.sparql = SPARQLWrapper(self.service_cfg.url)
+        self._init_sparql_wrapper()
+        self._prefixes = None
+
+    def _init_sparql_wrapper(self):
         self.sparql.setReturnFormat(JSON)
         self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
         self._update_sparql_parameters()
-        self._prefixes = None
 
     def _update_sparql_parameters(self):
         for key, value in self.service_cfg.parameters.items():
@@ -163,19 +167,28 @@ class GraphDBClient:
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service_cfg.url}>"
 
-    def _exec_query(self, query: str) -> SparqlResult:
+    def _prep_query(self, query: str):
         self.sparql.setQuery(query)
         self._update_sparql_parameters()
-        processed_results = self.sparql.queryAndConvert()
 
-        cols = processed_results["head"]["vars"]
-        data = processed_results["results"]["bindings"]
+    def _process_result(self, results: dict) -> dict:
+        cols = results["head"]["vars"]
+        data = results["results"]["bindings"]
         out = [{c: row.get(c, {}).get("value") for c in cols} for row in data]
         return {"out": out, "cols": cols, "data": data}
+
+    def _exec_query(self, query: str) -> SparqlResult:
+        self._prep_query(query)
+        results = self.sparql.queryAndConvert()
+        return self._process_result(results)
 
     def exec_query(self, query: str) -> List[Dict[str, str]]:
         out = self._exec_query(query)
         return out["out"]
+
+    def _convert_query_result_to_df(res: dict) -> Tuple[pd.DataFrame, Dict[str, str]]:
+        df = pd.DataFrame(res["out"]) if len(res["out"]) else pd.DataFrame(columns=res["cols"])
+        return df, data_row(res["cols"], res["data"])
 
     def get_table(self, query: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
         """
@@ -190,8 +203,7 @@ class GraphDBClient:
            >>> gdbc.get_table(query, limit=10)
         """
         res = self._exec_query(query)
-        df = pd.DataFrame(res["out"]) if len(res["out"]) else pd.DataFrame(columns=res["cols"])
-        return df, data_row(res["cols"], res["data"])
+        return self._convert_query_result_to_df(res)
 
     @property
     def empty(self) -> bool:
@@ -385,3 +397,41 @@ def delete_repo_endpoint(config: ServiceConfig) -> str:
         # Remove /sparql at the end
         return config.url.rpartition("/")[0]
     return config.url
+
+
+class AsyncGraphDBClient(GraphDBClient):
+    def __init__(self, service_cfg: Optional[ServiceConfig] = None) -> None:
+        super().__init__(service_cfg)
+        self.sparql = AsyncSparqlWrapper(self.service_cfg.url)
+        self._init_sparql_wrapper()
+
+    async def _exec_query(self, query: str) -> SparqlResult:
+        self._prep_query(query)
+        results = await self.sparql.queryAndConvert()
+        return self._process_result(results)
+
+    async def exec_query(self, query: str) -> List[Dict[str, str]]:
+        out = await self._exec_query(query)
+        return out["out"]
+
+    async def get_table(self, query: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
+        """
+        Args:
+           query: to sparql server
+           limit: limit number of resulting rows
+        Example:
+           >>> from cimsparql.graphdb import GraphDBClient
+           >>> from cimsparql.url import service
+           >>> gdbc = GraphDBClient(service('LATEST'))
+           >>> query = 'select * where { ?subject ?predicate ?object }'
+           >>> gdbc.get_table(query, limit=10)
+        """
+        res = await self._exec_query(query)
+        return self._convert_query_result_to_df(res)
+
+
+def make_async(client: GraphDBClient) -> AsyncGraphDBClient:
+    """
+    Convenience function that creates a new async graph db client from an existing client
+    """
+    return AsyncGraphDBClient(client.service_cfg)

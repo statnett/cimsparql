@@ -20,6 +20,7 @@ pandera = "*"
 pandas = "*"
 python = "^3.9"
 requests = "*"
+httpx = "*"
 
 [tool.poetry.dev-dependencies]
 asyncio = "*"
