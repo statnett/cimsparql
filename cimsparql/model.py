@@ -520,8 +520,18 @@ class CimModel(Model):
 
 
 def get_cim_model(
-    service_cfg: Optional[ServiceConfig] = None, model_cfg: Optional[ModelConfig] = None
+    service_cfg: Optional[ServiceConfig] = None,
+    model_cfg: Optional[ModelConfig] = None,
+    async_sparql_wrapper: bool = False,
 ) -> CimModel:
-    """Get a CIM Model."""
-    client = GraphDBClient(service_cfg)
-    return CimModel(client, model_cfg)
+    """Get a CIM Model.
+
+
+    Args:
+        service_cfg: Configurations for the triple store service
+        model_cfg: Conifugrations for the CIM mode
+        async_sparql_wrapper: If True http calls are made via asynchronous requests.
+            If False, the native SparqlWrapper sends requests via urllib
+    """
+    c = AsyncGraphDBClient(service_cfg) if async_sparql_wrapper else GraphDBClient(service_cfg)
+    return CimModel(c, model_cfg)
