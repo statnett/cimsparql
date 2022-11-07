@@ -208,11 +208,7 @@ class GraphDBClient:
     @property
     def empty(self) -> bool:
         """Identify empty GraphDB repo"""
-        try:
-            self.get_table("select * where {?s ?p ?o} limit 1")
-            return False
-        except IndexError:
-            return True
+        return self.get_table("select * where {?s ?p ?o} limit 1")[0].empty
 
     def get_prefixes(self) -> Dict[str, str]:
         prefixes = default_namespaces()
