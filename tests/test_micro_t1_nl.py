@@ -1,9 +1,12 @@
+import contextlib
 import os
+from copy import deepcopy
 from typing import Any, Dict, Optional, Set
 
 import pandas as pd
 import pytest
 
+from cimsparql.graphdb import GraphDBClient, make_async
 from cimsparql.model import CimModel
 
 
@@ -20,14 +23,30 @@ def skip(micro_t1_nl: Optional[CimModel], server: str) -> bool:
 MOD_TYPE = Dict[str, Optional[CimModel]]
 
 
+@contextlib.contextmanager
+def tmp_client(model: CimModel, new_client: GraphDBClient):
+    orig_client = deepcopy(model.client)
+    try:
+        model.client = new_client
+        yield model
+    finally:
+        model.client = orig_client
+
+
 @pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [False, True])
 @pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
-async def test_bus_data_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str):
+async def test_bus_data_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str, use_async: bool):
     model = micro_t1_nl_models[server]
     if skip(model, server):
         pytest.skip(skip_msg(server))
 
-    data = await model.bus_data()
+    client = model.client
+    if use_async:
+        client = make_async(client)
+
+    with tmp_client(model, client):
+        data = await model.bus_data()
 
     assert len(data) == 12
     assert data.index.name == "node"
