@@ -47,6 +47,7 @@ pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-integration = "*"
 pytest-profiling = "*"
+pytest-httpserver = "*"
 
 
 [tool.poetry-dynamic-versioning]

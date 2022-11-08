@@ -1,11 +1,15 @@
 import os
+import re
+from base64 import b64encode
 from typing import List, Set
 
 import pytest
 import requests
+from pytest_httpserver import HeaderValueMatcher
 
 from cimsparql.graphdb import (
     GraphDBClient,
+    RepoInfo,
     ServiceConfig,
     config_bytes_from_template,
     confpath,
@@ -198,25 +202,63 @@ def test_conf_bytes_from_template():
     assert 'rep:repositoryID "test_repo"' in conf_str
 
 
-def test_create_delete_repo(rdf4j_url):
+@pytest.mark.asyncio
+async def test_create_delete_repo(rdf4j_url):
     if not rdf4j_url:
         pytest.skip("require rdf4j")
     repo = "test_repo"
     template = confpath() / "native_store_config_template.ttl"
     conf_bytes = config_bytes_from_template(template, {"repo": repo})
     service_cfg = ServiceConfig(repo, "http", rdf4j_url)
-    current_repos = repos(service_cfg)
+    current_repos = await repos(service_cfg)
 
     assert "test_repo" not in [i.repo_id for i in current_repos]
 
     # protocol is added internally. Thus, skip from rdf4j_url
     client = new_repo(rdf4j_url, repo, conf_bytes, protocol="http")
-    current_repos = repos(service_cfg)
+    current_repos = await repos(service_cfg)
     assert "test_repo" in [i.repo_id for i in current_repos]
 
     client.delete_repo()
-    current_repos = repos(service_cfg)
+    current_repos = await repos(service_cfg)
     assert "test_repo" not in [i.repo_id for i in current_repos]
+
+
+@pytest.mark.asyncio
+async def test_repos_with_auth(httpserver):
+
+    response_json = {
+        "results": {
+            "bindings": [
+                {
+                    "uri": {"value": "uri"},
+                    "id": {"value": "id"},
+                    "title": {"value": "title"},
+                    "readable": {"value": "true"},
+                    "writable": {"value": "false"},
+                }
+            ]
+        }
+    }
+
+    matcher = HeaderValueMatcher({"authorization": lambda value, expect: expect == value})
+    user, password = "user", "password"
+    encoded_user_passwd = b64encode(bytes(f"{user}:{password}", "utf8")).decode("utf8")
+    httpserver.expect_request(
+        "/repositories",
+        headers={"authorization": f"Basic {encoded_user_passwd}"},
+        header_value_matcher=matcher,
+    ).respond_with_json(response_json)
+    url = httpserver.url_for("/repositories")
+
+    matches = re.match(r"^([a-z]+):\/\/([a-z:0-9]+)", url)
+    protocol, server = matches.groups()
+
+    cfg = ServiceConfig("repo", server=server, protocol=protocol, user=user, passwd=password)
+    repo_info = await repos(cfg)
+
+    expect = RepoInfo("uri", "id", "title", True, False)
+    assert repo_info == [expect]
 
 
 def test_update_prefixes(monkeypatch):
