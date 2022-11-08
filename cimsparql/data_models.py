@@ -2,7 +2,7 @@ import datetime as dt
 
 import pandas as pd
 import pandera as pa
-from pandera.typing import Index, Series
+from pandera.typing import DataFrame, Index, Series
 
 
 class JsonSchemaOut(pa.SchemaModel):
@@ -17,6 +17,10 @@ class FullModelSchema(JsonSchemaOut):
     profile: Series[pd.StringDtype] = pa.Field(coerce=True)
     version: Series[pd.StringDtype] = pa.Field(coerce=True)
     description: Series[pd.StringDtype] = pa.Field(coerce=True)
+
+    @pa.dataframe_check
+    def unique_time(cls, df: DataFrame) -> bool:
+        return len(df["time"].unique()) == 1
 
 
 class MridResourceSchema(JsonSchemaOut):
