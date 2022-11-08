@@ -177,7 +177,7 @@ def test_data_row_missing_column():
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 def test_dtypes(model: CimModel):
-    mapper = TypeMapper(model.client)
+    mapper = TypeMapper(model.client.service_cfg)
     df = model.client.get_table(mapper.query)[0]
     assert df["sparql_type"].isna().sum() == 0
 

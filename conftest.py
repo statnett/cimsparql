@@ -58,67 +58,6 @@ def model_sep() -> Optional[CimModel]:
     return get_cim_model(ServiceConfig(repo), ModelConfig(system_state_repo, ssh_graph))
 
 
-@pytest.fixture
-def type_dataframe():
-    return pd.DataFrame(
-        {
-            "str_col": ["a", "b", "c"],
-            "int_col": [1.0, 2.0, 3.0],
-            "float_col": ["2.2", "3.3", "4.4"],
-            "prefixed_col": ["prefix_a", "prefix_b", "prefix_c"],
-            "boolean_col": ["True", "True", "False"],
-        }
-    )
-
-
-@pytest.fixture
-def type_dataframe_ref():
-    return pd.DataFrame(
-        {
-            "str_col": ["a", "b", "c"],
-            "int_col": [1, 2, 3],
-            "float_col": [2.2, 3.3, 4.4],
-            "prefixed_col": ["prefix_a", "prefix_b", "prefix_c"],
-            "boolean_col": [True, True, False],
-        }
-    ).astype({"int_col": int, "str_col": "string", "prefixed_col": "string"})
-
-
-def datatypes_url(datatype: str) -> str:
-    return {
-        "Stage.priority": "http://www.alstom.com/grid/CIM-schema-cim15-extension",
-        "PerCent": "http://iec.ch/TC57/2010/CIM-schema-cim15",
-        "AsynchronousMachine.converterFedDrive": "http://entsoe.eu/Secretariat/ProfileExtension/1",
-    }[datatype] + f"#{datatype}"
-
-
-@pytest.fixture
-def sparql_data_types() -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "sparql_type": [f"{datatypes_url(key)}" for key in ["Stage.priority", "PerCent"]]
-            + ["http://flag"],
-            "range": ["cim#Integer", "xsd#float", "xsd#boolean"],
-        }
-    )
-
-
-@pytest.fixture
-def prefixes():
-    return {"cim": "cim#", "cims": "cims#", "xsd": "xsd#", "rdf": "rdf#", "rdfs": "rdfs#"}
-
-
-@pytest.fixture
-def data_row():
-    return {
-        "str_col": {"type": "literal", "value": "a"},
-        "int_col": {"datatype": datatypes_url("Stage.priority"), "type": "literal", "value": "1"},
-        "float_col": {"datatype": datatypes_url("PerCent"), "type": "literal", "value": "2.2"},
-        "prefixed_col": {"type": "uri", "value": "prefixed_a"},
-        "boolean_col": {"datatype": "http://flag"},
-    }
-
-
 @pytest.fixture(scope="session")
 def connections(model: CimModel) -> pd.DataFrame:
     return model.connections()
