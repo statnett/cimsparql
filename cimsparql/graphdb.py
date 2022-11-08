@@ -6,6 +6,7 @@ from enum import auto
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, TypedDict, Union
 
+import httpx
 import pandas as pd
 import requests
 from SPARQLWrapper import JSON, SPARQLWrapper
@@ -302,16 +303,21 @@ class RepoInfo:
     writable: bool
 
 
-def repos(service_cfg: Optional[ServiceConfig] = None) -> List[RepoInfo]:
+async def repos(service_cfg: Optional[ServiceConfig] = None) -> List[RepoInfo]:
     """
     List available repositories
     """
 
     service_cfg = service_cfg or ServiceConfig()
-    auth = requests.auth.HTTPBasicAuth(service_cfg.user, service_cfg.passwd)
+
+    auth = None
+    if service_cfg.user and service_cfg.passwd:
+        auth = httpx.BasicAuth(service_cfg.user, service_cfg.passwd)
 
     url = f"{service_cfg.protocol}://{service_cfg.server}/repositories"
-    response = requests.get(url, auth=auth, headers={"Accept": "application/json"})
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, auth=auth, headers={"Accept": "application/json"})
     response.raise_for_status()
 
     def _repo_info(repo):

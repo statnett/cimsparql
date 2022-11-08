@@ -702,7 +702,7 @@ test = ["pytest (<5.4)", "pytest-cov"]
 
 [[package]]
 name = "mypy"
-version = "0.982"
+version = "0.990"
 description = "Optional static typing for Python"
 category = "dev"
 optional = false
@@ -715,6 +715,7 @@ typing-extensions = ">=3.10"
 
 [package.extras]
 dmypy = ["psutil (>=4.0)"]
+install-types = ["pip"]
 python2 = ["typed-ast (>=1.4.0,<2)"]
 reports = ["lxml"]
 
@@ -1150,6 +1151,17 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "six", "pytest-xdist", "virtualenv"]
 
 [[package]]
+name = "pytest-httpserver"
+version = "1.0.6"
+description = "pytest-httpserver is a httpserver for pytest"
+category = "dev"
+optional = false
+python-versions = ">=3.7,<4.0"
+
+[package.dependencies]
+Werkzeug = ">=2.0.0"
+
+[[package]]
 name = "pytest-integration"
 version = "0.2.2"
 description = "Organizing pytests by integration or not"
@@ -1495,6 +1507,20 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "werkzeug"
+version = "2.2.2"
+description = "The comprehensive WSGI web application library."
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+MarkupSafe = ">=2.1.1"
+
+[package.extras]
+watchdog = ["watchdog"]
+
+[[package]]
 name = "wrapt"
 version = "1.14.1"
 description = "Module for decorators, wrappers and monkey patching."
@@ -1517,7 +1543,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "d72809ef65a09189e1d40b2b7465022a0e17d287b0ac8cc3d718020a9cde57f3"
+content-hash = "8afd44b0b1b572d92c1dfdfdc931516ac4a6b0a996b6daa61d9cc91f5cce4997"
 
 [metadata.files]
 anyio = []
@@ -1612,6 +1638,7 @@ pyrsistent = []
 pytest = []
 pytest-asyncio = []
 pytest-cov = []
+pytest-httpserver = []
 pytest-integration = []
 pytest-profiling = []
 python-dateutil = []
@@ -1641,5 +1668,6 @@ ujson = []
 urllib3 = []
 virtualenv = []
 webencodings = []
+werkzeug = []
 wrapt = []
 zipp = []
