@@ -54,7 +54,7 @@ class Model:
     ) -> None:
         self.client = client
         self.config = config or ModelConfig()
-        self.mapper = mapper or TypeMapper(client)
+        self.mapper = mapper or TypeMapper(client.service_cfg)
 
     @staticmethod
     def _col_map(data_row) -> Dict[str, str]:

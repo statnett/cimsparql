@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Generator, Optional, Union
 
 import pandas as pd
 
-from cimsparql.graphdb import GraphDBClient
+from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.templates import TYPE_MAPPER_QUERY
 
 # Type-caster that can be used with pandas. It can be python types, numpy dtypes or string
@@ -86,13 +86,16 @@ def build_type_map(prefixes: Dict[PREFIX, URI]) -> Dict[SPARQL_TYPE, TYPE_CASTER
 
 class TypeMapper:
     def __init__(
-        self, client: GraphDBClient, custom_additions: Optional[Dict[str, Any]] = None
+        self,
+        service_cfg: Optional[ServiceConfig] = None,
+        custom_additions: Optional[Dict[str, Any]] = None,
     ) -> None:
-        self.prefixes = client.prefixes
-        self.query = TYPE_MAPPER_QUERY.substitute(self.prefixes)
+        self.client = GraphDBClient(service_cfg)
+
+        self.query = TYPE_MAPPER_QUERY.substitute(self.client.prefixes)
         custom_additions = custom_additions or {}
-        self.prim_type_map = build_type_map(self.prefixes)
-        self.map = sparql_type_map | self.get_map(client) | self.prim_type_map | custom_additions
+        self.prim_type_map = build_type_map(self.client.prefixes)
+        self.map = sparql_type_map | self.get_map() | self.prim_type_map | custom_additions
 
     def have_cim_version(self, cim) -> bool:
         return any(cim in val for val in self.map.keys())
@@ -102,7 +105,7 @@ class TypeMapper:
             row.sparql_type: self.prim_type_map.get(row.range, "string") for row in df.itertuples()
         }
 
-    def get_map(self, client: GraphDBClient) -> Dict[str, Any]:
+    def get_map(self) -> Dict[str, Any]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
 
         Args:
@@ -113,8 +116,9 @@ class TypeMapper:
 
         """
 
-        with enforce_no_limit(client) as c:
-            df = c.get_table(self.query)[0]
+        with enforce_no_limit(self.client) as c:
+            res = c.get_table(self.query)
+            df = res[0]
         if df.empty:
             return {}
         return self.type_map(df)
@@ -139,7 +143,10 @@ class TypeMapper:
         try:
             return self.map[sparql_type]
         except KeyError:
-            warnings.warn(f"{col}:{sparql_type} not found in the sparql -> python type map")
+            warnings.warn(
+                f"{col}:{sparql_type} not found in the sparql -> python type map. Using 'string'"
+            )
+        return "string"
 
     def build_type_caster(
         self, col_map: Dict[COL_NAME, SPARQL_TYPE]
