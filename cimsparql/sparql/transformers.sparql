@@ -16,7 +16,7 @@ where {
            cim:PowerTransformerEnd.x ?x .
   filter regex(?area, '${region}') .
   optional {
-    ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_p_mrid;
+    ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_w_mrid;
            rdf:type cim:ActivePowerLimit;
            cim:IdentifiedObject.name '${rate}';
            cim:ActivePowerLimit.value ?rate
