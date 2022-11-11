@@ -52,7 +52,7 @@ class MarketDatesSchema(NamedResourceSchema):
 
 
 class BusDataSchema(JsonSchemaOut):
-    node: Index[pd.StringDtype] = pa.Field(unique=True)
+    node: Index[pd.StringDtype] = pa.Field(unique=True, coerce=True)
     name: Series[pd.StringDtype] = pa.Field(coerce=True)
     busname: Series[pd.StringDtype] = pa.Field(coerce=True)
     un: Series[float] = pa.Field(coerce=True)
