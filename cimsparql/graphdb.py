@@ -219,10 +219,9 @@ class GraphDBClient:
     def get_prefixes(self) -> Dict[str, str]:
         prefixes = default_namespaces()
 
-        if self.service_cfg.rest_api == RestApi.BLAZEGRAPH:
-            # Blazegraph does not expose prefixes over API
-            # When using Blazegraph custom prefixes must be added via `update_prefixes`
-            # By default we load a pre-defined set of prefixes
+        if self.service_cfg.rest_api in (RestApi.BLAZEGRAPH, RestApi.DIRECT_SPARQL_ENDPOINT):
+            # These APis does not expose prefixes. Custom prefixes must be added
+            # via `update_prefixes`. By default we load a pre-defined set of prefixes
             return prefixes
 
         auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
