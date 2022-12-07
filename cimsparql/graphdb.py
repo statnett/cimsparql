@@ -44,6 +44,7 @@ def data_row(cols: List[str], rows: List[Dict[str, Dict[str, str]]]) -> Dict[str
 class RestApi(StrEnum):
     RDF4J = auto()
     BLAZEGRAPH = auto()
+    DIRECT_SPARQL_ENDPOINT = auto()
 
 
 def parse_namespaces_rdf4j(response: requests.Response) -> Dict[str, str]:
@@ -80,6 +81,8 @@ class ServiceConfig:
     def url(self) -> str:
         if self.rest_api == RestApi.BLAZEGRAPH:
             return service_blazegraph(self.server, self.repo, self.protocol)
+        elif self.rest_api == RestApi.DIRECT_SPARQL_ENDPOINT:
+            return self.server
         return service(self.repo, self.server, self.protocol, self.path)
 
     @property
