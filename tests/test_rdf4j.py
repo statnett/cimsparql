@@ -1,11 +1,12 @@
 import os
+from copy import deepcopy
 from pathlib import Path
 from string import Template
 from typing import Optional
 
 import pytest
 
-from cimsparql.graphdb import GraphDBClient
+from cimsparql.graphdb import GraphDBClient, RestApi
 
 
 def skip_rdf4j_test(rdf4j_gdb: Optional[GraphDBClient]):
@@ -84,3 +85,18 @@ def test_upload_with_context(rdf4j_gdb):
         f"{prefixes}\nSELECT * WHERE {{GRAPH {graph} {{?s rdf:type md:FullModel}}}}"
     )
     assert len(df) == 1
+
+
+def test_direct_sparql_endpoint(rdf4j_gdb):
+    if skip_rdf4j_test(rdf4j_gdb):
+        pytest.skip("Require access to RDF4J service")
+
+    service_cfg_direct = deepcopy(rdf4j_gdb.service_cfg)
+    service_cfg_direct.server = rdf4j_gdb.service_cfg.url
+    service_cfg_direct.rest_api = RestApi.DIRECT_SPARQL_ENDPOINT
+
+    gdb_direct = GraphDBClient(service_cfg_direct)
+    query = "SELECT * {?s ?p ?o}"
+    res_direct = gdb_direct.exec_query(query)
+    res_rdf4j = rdf4j_gdb.exec_query(query)
+    assert res_direct == res_rdf4j
