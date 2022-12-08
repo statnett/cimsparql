@@ -19,7 +19,7 @@ jobs:
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
       - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v2.1.6
+        uses: abatilo/actions-poetry@v2.2.0
         with:
           poetry-version: 1.2.1
 
@@ -73,7 +73,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v2.1.6
+        uses: abatilo/actions-poetry@v2.2.0
         with:
           poetry-version: ${{ matrix.poetry-version }}
 
