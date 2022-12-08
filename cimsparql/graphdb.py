@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Tuple, TypedDict, Union
 import httpx
 import pandas as pd
 import requests
-from SPARQLWrapper import JSON, SPARQLWrapper
+from SPARQLWrapper import JSON, POST, SPARQLWrapper
 from strenum import StrEnum
 
 from cimsparql.async_sparql_wrapper import AsyncSparqlWrapper
@@ -140,6 +140,7 @@ class GraphDBClient:
 
     def _init_sparql_wrapper(self):
         self.sparql.setReturnFormat(JSON)
+        self.sparql.setMethod(POST)
         self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
         if self.service_cfg.timeout:
             self.sparql.setTimeout(self.service_cfg.timeout)
