@@ -1,3 +1,4 @@
+# Name: Type mapper
 PREFIX rdf:<${rdf}>
 PREFIX rdfs:<${rdfs}>
 PREFIX cims:<${cims}>

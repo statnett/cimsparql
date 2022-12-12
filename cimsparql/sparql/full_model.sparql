@@ -1,3 +1,4 @@
+# Name: Full model
 PREFIX md:<${md}>
 select ?model ?time ?profile ?version ?description
 where
