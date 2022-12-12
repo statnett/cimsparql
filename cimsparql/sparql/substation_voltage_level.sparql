@@ -1,3 +1,4 @@
+# Name: Substation voltage level
 PREFIX cim:<${cim}>
 PREFIX rdf:<${rdf}>
 select  ?container ?substation ?v

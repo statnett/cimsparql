@@ -1,3 +1,4 @@
+# Name: Power flow
 PREFIX cim:<${cim}>
 PREFIX rdf:<${rdf}>
 select  ?mrid ?p ?q ?in_service

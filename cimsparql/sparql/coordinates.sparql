@@ -1,3 +1,4 @@
+# Name: Coordinates
 PREFIX cim: <${cim}>
 PREFIX rdf: <${rdf}>
 select ?mrid ?x ?y ?epsg ?rdf_type

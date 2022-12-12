@@ -1,3 +1,4 @@
+# Name: Station group code and names
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 select ?station_group ?name ?alias_name where {

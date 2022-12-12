@@ -1,3 +1,4 @@
+# Name: Add MRID
 PREFIX cim: <${cim}>
 PREFIX rdf: <${rdf}>
 insert {graph ${g} {?s cim:IdentifiedObject.mRID ?mrid}}
