@@ -4,18 +4,27 @@ PREFIX SN:<${SN}>
 PREFIX rdf:<${rdf}>
 select ?node ?name ?busname ?un ?station ?bidzone
 where {
+  # Extract propertoes from the TP/SV/SSH profile for each topological node
   service <${repo}> {
-    ?_node rdf:type cim:TopologicalNode;
+    ?top_node rdf:type cim:TopologicalNode;
            cim:IdentifiedObject.mRID ?node;
            cim:IdentifiedObject.name ?busname;
-           cim:TopologicalNode.BaseVoltage ?_un;
+           cim:TopologicalNode.BaseVoltage ?base_voltage;
            cim:TopologicalNode.ConnectivityNodeContainer ?container .
   }
-  ?_un cim:BaseVoltage.nominalVoltage ?un .
+
+  # Find the nominal voltage from the base voltage associated with the topological node
+  ?base_voltage cim:BaseVoltage.nominalVoltage ?un .
+
+  # Extract properties from the connectivity node container associated with each topoligical node
   ?container cim:IdentifiedObject.name ?name;
-             cim:VoltageLevel.Substation ?Substation .
-  ?Substation cim:IdentifiedObject.mRID ?station;
+             cim:VoltageLevel.Substation ?substation .
+
+  # Extract information about the substation associated with the connectivity node container
+  ?substation cim:IdentifiedObject.mRID ?station;
               cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-  optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
+
+  # Extract the bidzone of each substation if it exists
+  optional {?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   FILTER regex(?area, '${region}')
 }

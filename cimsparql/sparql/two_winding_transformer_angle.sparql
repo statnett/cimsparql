@@ -4,18 +4,14 @@ PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select ?mrid ?angle
 where {
-  ?_p_mrid rdf:type cim:PowerTransformer.
-  ?_mrid_1 rdf:type cim:PowerTransformerEnd;
-           cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
-           cim:IdentifiedObject.mRID ?mrid;
-           cim:TransformerEnd.endNumber 1 .
-  ?_mrid_2 rdf:type cim:PowerTransformerEnd;
-           cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
-           cim:TransformerEnd.endNumber 2 .
-  ?_tap_changer rdf:type cim:PhaseTapChangerLinear;
-               cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc;
+  ?winding1 cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
+            cim:IdentifiedObject.mRID ?mrid;
+            cim:TransformerEnd.endNumber 1 .
+  ?winding2 cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
+            cim:TransformerEnd.endNumber 2 .
+  ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc;
                cim:TapChanger.normalStep ?normalstep;
-               cim:PhaseTapChanger.TransformerEnd ?_mrid_2 .
-  service <${repo}> {?_tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?position}
+               cim:PhaseTapChanger.TransformerEnd ?winding2 .
+  service <${repo}> {?tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?position}
   bind((xsd:double(str(?position)) - xsd:double(str(?normalstep))) * xsd:double(str(?inc)) as ?angle)
 }

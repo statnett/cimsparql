@@ -4,33 +4,57 @@ PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 select distinct ?mrid ?name ?node ?station ?bidzone ?status ?p ?q ?station_group
 where {
+  # Declare which load types to consider
   values ?load_type {cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer}
-  ?_mrid rdf:type ?load_type;
+
+  # Extract mRID, name and substation for each load
+  ?load rdf:type ?load_type;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
-         cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?_substation.
-  ?_substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+         cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation.
+
+  # Extract area and mRID (referred to as 'station') for the substation of each load
+  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
                cim:IdentifiedObject.mRID ?station .
   filter regex(?area, '${region}')
-  optional {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
-  optional {?_mrid cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
-  ?_t_mrid cim:Terminal.ConductingEquipment ?_mrid;
+
+  # Optionally extract bidzone for each substation and station_group for each load
+  optional {?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
+  optional {?load cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
+
+  # Extract mRID and connectivity node for each terminal associated with a load
+  ?terminal cim:Terminal.ConductingEquipment ?load;
            cim:IdentifiedObject.mRID ?t_mrid;
-           cim:Terminal.ConnectivityNode ?_node .
+           cim:Terminal.ConnectivityNode ?con_node .
+
+  # Extrcact connected flag and optionally the mRID of the topological node associated with the terminal
   service <${repo}> {
-    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-    optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?t_node}
+    ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+    optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
   }
-  optional {service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?c_node .}}
+
+  # Optionally extract the mRID of the topological node for the connectivity node associated with each terminal
+  optional {service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
+
+  # Optionally extract in_service flag and active and reactive energy consumption for each load
   optional {
     service <${repo}> {
-      optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
-      graph ${ssh_graph} {optional {?_mrid cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q}}
+      optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
+      graph ${ssh_graph} {optional {?load cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q}}
     }
   }
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  optional {?load SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter (?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
+
+  # Assign status flag for load. The status flag is set to the first existing of
+  # 1) in_service flag
+  # 2) connected flag the terminal
   bind(coalesce(?in_service, ?connected) as ?status)
-  bind(coalesce(?c_node, ?t_node, ?t_mrid) as ?node)
+
+  # Assign mRID to the ?node variable. The mRID is set to the first existing of
+  # 1) mRID of the topoligical node associated with a connectivity node for the terminal for each load
+  # 2) mRID of the topological node associated with the terminal for each load
+  # 3) mRID of the terminal for each load
+  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node)
 }

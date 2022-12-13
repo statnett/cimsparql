@@ -5,20 +5,26 @@ PREFIX SN: <${SN}>
 PREFIX cim:<${cim}>
 select ?mrid ?name ?t_mrid ?p_mrid
 where {
-  values ?converters {cim:VsConverter cim:CsConverter cim:DCConvertUnit ALG:VoltageSourceConverter ALG:DCConverter }
-  ?volt rdf:type ?converters;
+  values ?converter_type {cim:VsConverter cim:CsConverter cim:DCConvertUnit ALG:VoltageSourceConverter ALG:DCConverter }
+
+  # Extract mRID for the converters
+  ?converter rdf:type ?converter_type;
         cim:IdentifiedObject.mRID ?mrid .
-  ?_mrid rdf:type cim:PowerTransformer;
+
+  # Extract mRID name for the power transformer associated with the converter
+  ?p_transformer rdf:type cim:PowerTransformer;
          cim:IdentifiedObject.mRID ?p_mrid;
          cim:IdentifiedObject.aliasName ?name;
          cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
-         ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?volt .
-  ?_winding cim:PowerTransformerEnd.PowerTransformer ?_mrid;
+         ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter .
+
+  # Extract the mRID of the terminal associated with the first winding on each power transformer
+  ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
             cim:TransformerEnd.endNumber 1;
             cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid .
   FILTER regex(?area, '${region}')
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_transformer_analysis_enabled .}
-  optional {?volt SN:Equipment.networkAnalysisEnable ?_converter_analysis_enabled .}
+  optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_transformer_analysis_enabled .}
+  optional {?converter SN:Equipment.networkAnalysisEnable ?_converter_analysis_enabled .}
   bind(coalesce(?_transformer_analysis_enabled, True) as ?transformer_analysis_enabled)
   bind(coalesce(?_converter_analysis_enabled, True) as ?converter_analysis_enabled)
   filter(?transformer_analysis_enabled)

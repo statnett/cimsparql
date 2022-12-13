@@ -6,43 +6,61 @@ PREFIX xsd: <${xsd}>
 select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2) ?angle ?ratio
 where {
   # Use mrid of transformer as dummy node
-  ?_p_mrid cim:IdentifiedObject.mRID ?node_2;
+  ?p_transformer cim:IdentifiedObject.mRID ?node_2;
            cim:Equipment.EquipmentContainer ?Substation;
            cim:IdentifiedObject.name ?name .
   ?Substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   filter(regex(?area, '${region}'))
-  ?_mrid cim:TransformerEnd.Terminal ?_t_mrid;
+
+  # Extract properties for the windings associated with p_transformer
+  ?winding cim:TransformerEnd.Terminal ?terminal;
          cim:IdentifiedObject.mRID ?mrid;
-         cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+         cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
          cim:PowerTransformerEnd.phaseAngleClock ?angleclock;
          cim:PowerTransformerEnd.ratedU ?ubase;
          cim:PowerTransformerEnd.r ?r;
          cim:PowerTransformerEnd.x ?x;
          cim:PowerTransformerEnd.b ?b;
          cim:PowerTransformerEnd.g ?g .
-  ?_t_mrid cim:Terminal.ConnectivityNode ?_node .
-  ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
+
+  # Extract the connectivity node for each termina, and find the nominal voltage from the connectivity node
+  ?terminal cim:Terminal.ConnectivityNode ?con_node .
+  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
+
+  # Optionally extract bidzone for substations
   optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
-  service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .}
-  service <${repo}> {?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
-  optional {service <${repo}> {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}} .
+
+  # Assign the mRID of the topological node for the connectivity nodes to node_1
+  service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .}
+
+  # Exxtract eonnected status for terminal and optionally in_service flag for windings
+  service <${repo}> {?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
+  optional {service <${repo}> {?winding ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}} .
+
+  # Extract three winding transformers
   {
-    select  ?_p_mrid (count(distinct ?nr) as ?winding_count)
+    select  ?p_transformer (count(distinct ?nr) as ?winding_count)
     where {
-      ?_p_mrid ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr
+      ?p_transformer ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr
     }
-    group by ?_p_mrid
+    group by ?p_transformer
     having (?winding_count = 3)
   } .
+
+  # Optionally extract active power limits
   optional {
     ?_lim rdf:type cim:ActivePowerLimit;
-          cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?_t_mrid;
+          cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?terminal;
           cim:IdentifiedObject.name '${rate}';
           cim:ActivePowerLimit.value ?rate .
   }
-  optional {?_p_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
+
+  # Assign status flag to the transformer. The first that exists is used
+  # 1) in_service flag on the transformer
+  # 2) Connected flag for the terminal
   bind(coalesce(?in_service, ?connected) as ?status)
   bind(xsd:double(str(?un)) / xsd:double(str(?ubase)) as ?ratio)
   bind(xsd:double(30.0) * ?angleclock as ?angle)

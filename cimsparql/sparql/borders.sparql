@@ -4,24 +4,30 @@ PREFIX rdf:<${rdf}>
 PREFIX SN:<${SN}>
 select  ?mrid ?name ?market_code ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2
 where {
-  ?_mrid rdf:type cim:ACLineSegment;
+  # Extract mRID, name and optionally market_code for aclines
+  ?acline rdf:type cim:ACLineSegment;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name.
-  optional {?_mrid cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code} .
-  ?_t_mrid_1  rdf:type cim:Terminal;
-              cim:Terminal.ConductingEquipment ?_mrid;
+  optional {?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code} .
+  optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+
+  # Extract properties for the terminal connected to one end of the acline (sequenceNumber 1)
+  ?terminal1  rdf:type cim:Terminal;
+              cim:Terminal.ConductingEquipment ?acline;
               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1;
               cim:IdentifiedObject.mRID ?t_mrid_1 .
-  ?_t_mrid_2  rdf:type cim:Terminal;
-              cim:Terminal.ConductingEquipment ?_mrid;
+
+  # Extract properties for the terminal connected to the other end of the acline (sequenceNumber 2)
+  ?terminal2  rdf:type cim:Terminal;
+              cim:Terminal.ConductingEquipment ?acline;
               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 ;
               cim:IdentifiedObject.mRID ?t_mrid_2 .
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
-  filter(?analysis_enabled)
+
   filter (?area_1 != ?area_2)
   filter (regex(?area_1, '${region}') || regex(?area_2, '${region}'))
-  filter (!regex(?name, 'HVDC'))
+  filter (!regex(?name, 'HVDC'))  # Ignore HVDC
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+  filter(?analysis_enabled)
 }

@@ -3,29 +3,43 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
-select ?_mrid (?connected as ?connected_${nr}) (?p as ?p_${nr}) ?node_${nr} (?bidzone as ?bidzone_${nr})
+select ?acline (?connected as ?connected_${nr}) (?p as ?p_${nr}) ?node_${nr} (?bidzone as ?bidzone_${nr})
 where
 {
-  ?_mrid rdf:type cim:ACLineSegment .
-  ?_t_mrid rdf:type cim:Terminal;
+  # Extract properties for all terminals where conducting equipment is of type ACLineSegment
+  ?acline rdf:type cim:ACLineSegment .
+  ?terminal rdf:type cim:Terminal;
            cim:IdentifiedObject.mRID ?t_mrid;
-           cim:Terminal.ConductingEquipment ?_mrid;
-           cim:Terminal.ConnectivityNode ?_node;
+           cim:Terminal.ConductingEquipment ?acline;
+           cim:Terminal.ConnectivityNode ?con_node;
            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ${nr} .
-  ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
+
+  # Find substation of each connectivity node of the terminals above
+  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
+
+  # Find area and optionally bidzone for each substation
   ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   optional {
     ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone .
   }
   filter(regex(?area, '${region}'))
-  optional { service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}}
+
+  # Find the mRID for the toplogical node of each connectivity node
+  optional { service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
+
+  # Find properties in TP/SV/SSH profile for each terminal.
   service <${repo}> {
-    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-    optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?_t_node} .
-    optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
+    ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+    optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid} .
+    optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
   }
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   filter(?analysis_enabled)
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  bind(coalesce(?node, ?_t_node, ?t_mrid) as ?node_${nr})
+
+  # Assign an mrid to the ?node_<nr> variable. The mrid is set to the first that exist
+  # 1) mRID of the topological node of the connectivity node for each terminal
+  # 2) mRID of the topological node of each terminal
+  # 3) mrID of the terminal
+  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node_${nr})
 }

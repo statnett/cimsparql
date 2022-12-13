@@ -7,7 +7,8 @@ select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?r
 where {
   # TODO: Check if SN:Equipment.networkAnalysisEnable is on it's way into the standard
   # Assume π equivalent with at least r,x and b shunt.
-  ?_mrid rdf:type cim:ACLineSegment;
+  # Extract properties for ACLineSegments
+  ?acline rdf:type cim:ACLineSegment;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
@@ -15,27 +16,31 @@ where {
          cim:ACLineSegment.r ?r;
          cim:ACLineSegment.x ?x;
          cim:ACLineSegment.bch ?b.
-  optional {?_mrid cim:ACLineSegment.gch ?g .}
+  optional {?acline cim:ACLineSegment.gch ?g .}
+  optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+
+  # If exists, extract active power limit for acline
   optional {
-    ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?_mrid;
+    ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?acline;
           rdf:type cim:ActivePowerLimit;
           cim:IdentifiedObject.name '${rate}';
           cim:ActivePowerLimit.value ?rate .
   } .
   optional { # Search for acline SV status will be combined with SSH connected
     service <${repo}>
-    {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
+    {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
   } .
-  # Search terminal nr side SSH/TP/SV. See acline_terminal.sparql which provides ?_mrid ?connected_{nr} ?p_{nr}
+
+  # Search terminal nr side SSH/TP/SV. See acline_terminal.sparql which provides ?acline ?connected_{nr} ?p_{nr}
   { ${acline_terminal_1} } .
   { ${acline_terminal_2} } .
+
   optional
   { # Add branch loss on recieving end.
     bind((xsd:double(str(?p_1)) + xsd:double(str(?p_2))) as ?pl)
     bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_2)
     bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_1)
   }
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
   filter(?analysis_enabled)
   bind(coalesce(?in_service, ?connected_1 && ?connected_2, True) as ?status)
