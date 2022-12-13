@@ -6,70 +6,80 @@ PREFIX xsd: <${xsd}>
 select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status (?un_1 as ?un) ?x ?b ?g ?angle ?ratio
 where
 {
+  # Extract two winding transformers
   {
-    select  ?_p_mrid (count(distinct ?nr) as ?winding_count)
+    select  ?p_transformer (count(distinct ?nr) as ?winding_count)
     where {
-      ?_p_mrid rdf:type cim:PowerTransformer;
+      ?p_transformer rdf:type cim:PowerTransformer;
                ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
     }
-    group by ?_p_mrid
+    group by ?p_transformer
     having (?winding_count = 2)
   } .
-  ?_p_mrid cim:IdentifiedObject.name ?name;
+  ?p_transformer cim:IdentifiedObject.name ?name;
            cim:Equipment.EquipmentContainer ?Substation;
            cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   filter(regex(?area, '${region}'))
   optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   { # Search for winding 1 side
-    select ?_p_mrid ?mrid (?un as ?un_1) (?ubase as ?ubase_1) ?r ?x ?b ?g ?connected_1 (?p as ?p_1) ?node_1 ?rate
+    select ?p_transformer ?mrid (?un as ?un_1) (?ubase as ?ubase_1) ?r ?x ?b ?g ?connected_1 (?p as ?p_1) ?node_1 ?rate
     where
     {
-      ?w_mrid cim:TransformerEnd.Terminal ?_t_mrid;
+      ?winding cim:TransformerEnd.Terminal ?terminal;
               cim:PowerTransformerEnd.ratedU ?ubase;
-              cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+              cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
               cim:PowerTransformerEnd.r ?r;
               cim:PowerTransformerEnd.x ?x;
               cim:PowerTransformerEnd.b ?b;
               cim:PowerTransformerEnd.g ?g;
               cim:IdentifiedObject.mRID ?mrid;
               cim:TransformerEnd.endNumber 1 .
-      ?_t_mrid cim:IdentifiedObject.mRID ?t_mrid;
-               cim:Terminal.ConnectivityNode ?_node .
-      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
+      ?terminal cim:IdentifiedObject.mRID ?t_mrid;
+               cim:Terminal.ConnectivityNode ?con_node .
+      ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
       optional {
-        ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?_t_mrid;
+        ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?terminal;
                rdf:type cim:ActivePowerLimit;
                cim:IdentifiedObject.name '${rate}';
                cim:ActivePowerLimit.value ?rate
       } .
-      optional { service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}}
+
+      # Extract mRID of the topological node associated with connectivity node
+      optional { service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
+
+      # Extract connected flag, opertionally power flow as well as optionally mRID of the topological node associated with the terminal
       service <${repo}> {
-        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1;
-        optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?_t_node .}
-        optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
+        ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1;
+        optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
+        optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
       }
-      bind(coalesce(?node, ?_t_node, ?t_mrid) as ?node_1)
+
+      # Assign mRID to ?node_1. Use the first existing
+      # 1) mRID of the topological node associated with the connectivity node for each terminal
+      # 2) mRID of the topological node associated with the terminal
+      # 3) mRID of the terminal
+      bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node_1)
     }
   } .
   { # Search for winding 2 side
-    select ?_p_mrid (?un as ?un_2) (?ubase as ?ubase_2) ?connected_2 (?p as ?p_2) ?node_2 ?angle
+    select ?p_transformer (?un as ?un_2) (?ubase as ?ubase_2) ?connected_2 (?p as ?p_2) ?node_2 ?angle
     where
     {
-      ?w_mrid cim:TransformerEnd.Terminal ?_t_mrid;
+      ?winding cim:TransformerEnd.Terminal ?terminal;
               cim:PowerTransformerEnd.ratedU ?ubase;
-              cim:PowerTransformerEnd.PowerTransformer ?_p_mrid;
+              cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
               cim:PowerTransformerEnd.phaseAngleClock ?angleclock;
               cim:TransformerEnd.endNumber 2 .
-      ?_t_mrid cim:IdentifiedObject.mRID ?t_mrid;
-               cim:Terminal.ConnectivityNode ?_node.
-      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
-      optional { service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}}
+      ?terminal cim:IdentifiedObject.mRID ?t_mrid;
+               cim:Terminal.ConnectivityNode ?con_node.
+      ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
+      optional { service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
       service <${repo}> {
-        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_2 .
-        optional {?_t_mrid cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?_t_node .}
-        optional {?_t_mrid ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p . }
+        ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_2 .
+        optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
+        optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p . }
       }
-      bind(coalesce(?node, ?_t_node, ?t_mrid) as ?node_2)
+      bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node_2)
       bind(xsd:double(30.0) * ?angleclock as ?angle)
     }
   }
@@ -78,8 +88,8 @@ where
     bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_2)
     bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_1)
   }
-  service <${repo}> {optional {?_p_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}}
-  optional {?_p_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  service <${repo}> {optional {?p_transformer ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}}
+  optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   filter(?network_analysis)
   bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)

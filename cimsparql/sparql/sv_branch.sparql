@@ -4,32 +4,40 @@ PREFIX SN: <${SN}>
 PREFIX rdf: <${rdf}>
 select ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?p_1 ?q_1 ?p_2 ?q_2 ?v_1 ?angle_1 ?v_2 ?angle_2
 where {
-  ?_mrid cim:IdentifiedObject.mRID ?mrid;
-         cim:IdentifiedObject.name ?name;
-         cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
-         cim:ACLineSegment.r ?r;
-         cim:ACLineSegment.x ?x;
-         cim:ACLineSegment.bch ?bch;
-         cim:ACLineSegment.gch ?gch;
-  service <${repo}> {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
+  # Extract key properties for ACLineSegment
+  ?acline cim:ACLineSegment.r ?r;
+          cim:ACLineSegment.x ?x;
+          cim:ACLineSegment.bch ?bch;
+          cim:ACLineSegment.gch ?gch;
+          cim:IdentifiedObject.mRID ?mrid;
+          cim:IdentifiedObject.name ?name;
+          cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
+
+  # Extract in_service flag for each acline
+  service <${repo}> {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
+
   { # Search terminal 1 side SSH/TP/SV
-    select ?_mrid (?connected as ?connected_1) (?p as ?p_1) (?q as ?q_1) (?v as ?v_1) (?angle as ?angle_1)
+    select ?acline (?connected as ?connected_1) (?p as ?p_1) (?q as ?q_1) (?v as ?v_1) (?angle as ?angle_1)
     where
     {
-      ?_mrid rdf:type cim:ACLineSegment .
-      ?_t_mrid rdf:type cim:Terminal;
+      ?acline rdf:type cim:ACLineSegment .
+      ?terminal rdf:type cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
-               cim:Terminal.ConductingEquipment ?_mrid;
-               cim:Terminal.ConnectivityNode ?_node;
+               cim:Terminal.ConductingEquipment ?acline;
+               cim:Terminal.ConnectivityNode ?con_node;
                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
-      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+
+      # Extract area based for connectivity node associated with each terminal
+      ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
       filter(regex(?area, '${region}'))
+
+      # Extract connectivity node, topological node, voltage ang angle
       service <${repo}>
       {
-        select ?_node ?node ?v ?angle
+        select ?con_node ?node ?v ?angle
         where
         {
-          ?_node cim:ConnectivityNode.TopologicalNode ?node .
+          ?con_node cim:ConnectivityNode.TopologicalNode ?node .
           optional {
             ?_sv_n cim:SvVoltage.TopologicalNode ?node;
                    cim:SvVoltage.v ?v;
@@ -37,12 +45,14 @@ where {
           }
         }
       }
+
+      # Extract conencted flag and active and reactive power for each temrinal
       service <${repo}>
       {
-        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+        ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
         optional
         {
-          ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
+          ?_sv_t cim:SvPowerFlow.Terminal ?terminal;
                  cim:SvPowerFlow.p ?p;
                  cim:SvPowerFlow.q ?q.
         }
@@ -50,23 +60,23 @@ where {
     }
   } .
   { # Search terminal 2 side SSH/TP/SV
-    select ?_mrid (?connected as ?connected_2) (?p as ?p_2) (?q as ?q_2) (?v as ?v_2) (?angle as ?angle_2)
+    select ?acline (?connected as ?connected_2) (?p as ?p_2) (?q as ?q_2) (?v as ?v_2) (?angle as ?angle_2)
     where
     {
-      ?_mrid rdf:type cim:ACLineSegment .
-      ?_t_mrid rdf:type cim:Terminal;
+      ?acline rdf:type cim:ACLineSegment .
+      ?terminal rdf:type cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
-               cim:Terminal.ConductingEquipment ?_mrid;
-               cim:Terminal.ConnectivityNode ?_node;
+               cim:Terminal.ConductingEquipment ?acline;
+               cim:Terminal.ConnectivityNode ?con_node;
                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2 .
-      ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+      ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
       filter(regex(?area, '${region}'))
       service <${repo}>
       {
-        select ?_node ?node ?v ?angle
+        select ?con_node ?node ?v ?angle
         where
         {
-          ?_node cim:ConnectivityNode.TopologicalNode ?node .
+          ?con_node cim:ConnectivityNode.TopologicalNode ?node .
           optional {
             ?_sv_n cim:SvVoltage.TopologicalNode ?node;
                    cim:SvVoltage.v ?v;
@@ -76,18 +86,22 @@ where {
       }
       service <${repo}>
       {
-        ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+        ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
         optional
         {
-          ?_sv_t cim:SvPowerFlow.Terminal ?_t_mrid;
+          ?_sv_t cim:SvPowerFlow.Terminal ?terminal;
                  cim:SvPowerFlow.p ?p;
                  cim:SvPowerFlow.q ?q.
         }
       }.
     }
   } .
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  optional {?acline SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
+
+  # Assign status flag for each branch. It is set to the first that exist of
+  # 1) in_service flag for each acline
+  # 2) Connected flags of the two terminals. Status is set to False if at least one of the terminals are disconnected
   bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status) .
 }

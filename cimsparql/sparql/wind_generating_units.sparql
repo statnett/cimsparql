@@ -4,17 +4,17 @@ PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 select  ?mrid ?name ?market_code ?station_group  ?min_p ?max_p ?plant_mrid
 where {
-  ?_mrid rdf:type cim:WindGeneratingUnit;
+  ?wind_gen_unit rdf:type cim:WindGeneratingUnit;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:GeneratingUnit.maxOperatingP ?max_p;
          cim:GeneratingUnit.minOperatingP ?min_p .
   optional{
-    ?_mrid SN:WindGeneratingUnit.WindPowerPlant/cim:IdentifiedObject.mRID ?plant_mrid;
+    ?wind_gen_unit SN:WindGeneratingUnit.WindPowerPlant/cim:IdentifiedObject.mRID ?plant_mrid;
            SN:GeneratingUnit.marketCode ?market_code;
            SN:GeneratingUnit.ScheduleResource/SN:ScheduleResource.marketCode ?station_group .
   }
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  optional {?wind_gen_unit SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
 }

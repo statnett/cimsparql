@@ -5,39 +5,69 @@ PREFIX rdf: <${rdf}>
 select ?name ?node ?mrid ?status ?p ?market_code
 where
 {
-  ?_mrid cim:IdentifiedObject.name ?name;
-         rdf:type cim:ACLineSegment;
-         cim:IdentifiedObject.mRID ?mrid .
+  # Extract name and mrid for aclines
+  ?acline rdf:type cim:ACLineSegment;
+    cim:IdentifiedObject.name ?name;
+    cim:IdentifiedObject.mRID ?mrid .
   filter (!regex(?name, 'HVDC')) .
-  optional {?_mrid cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code . }
-  ?_t_mrid_1 rdf:type cim:Terminal;
-             cim:Terminal.ConductingEquipment ?_mrid;
+  optional {?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code . }
+
+  # Extract properties for the terminal at sequenceNumber 1 for the acline
+  ?terminal1 rdf:type cim:Terminal;
+             cim:Terminal.ConductingEquipment ?acline;
              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
-             cim:Terminal.ConnectivityNode ?_node .
-  ?_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 .
-  ?_t_mrid_2 rdf:type cim:Terminal;
-             cim:Terminal.ConductingEquipment ?_mrid;
+             cim:Terminal.ConnectivityNode ?con_node .
+
+  # Extract from the connectivity node of terminal1
+  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 .
+
+  # Extract propertoes for the terminal at squenceNumber 2 for the acline
+  ?terminal2 rdf:type cim:Terminal;
+             cim:Terminal.ConductingEquipment ?acline;
              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .
+
+  # When a region is provided: only keep results that satisfy either
+  # 1) area_1 = region and area_2 != region
+  # 2) area_2 = region and area_1 != region
   filter ((regex(?area_1, '${region}') && !regex(?area_2, '${region}')) || (regex(?area_1, '${region}') && !regex(?area_2, '${region}')))
-  optional {service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?c_node .}}
+
+  # Extract the mRID of the topological node associated with the connectivity node for one of the terminals
+  optional {service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
+
+  # Extract power, connected and the mRID of the topoligical node associated with the terminal (if exists)
   service <${repo}> {
-    ?_t_mrid_1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p;
+    ?terminal1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p;
                cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1
-    optional {?_t_mrid_1 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?t_node .}
+    optional {?terminal1 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
   } .
-  service <${repo}> {?_t_mrid_2 cim:ACDCTerminal.connected ?connected_2 . }
+
+  # Extract connection flag for the second terminal
+  service <${repo}> {?terminal2 cim:ACDCTerminal.connected ?connected_2 . }
+
+  # Extract a connection flag that is composed of the inService flag for all conducting equipment connected
+  # to an acline. If one or more of the conducting equipment is not in service, the acline will be considered
+  # out of service as well
   service <${repo}>
   { optional
-    { select ?_mrid (min(?_in_service) as ?in_service)
+    { select ?acline (min(?_in_service) as ?in_service)
       where
-      {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service . }
-      group by ?_mrid
+      {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service . }
+      group by ?acline
     }
   }
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+
+  optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
   filter(?analysis_enabled)
+
+  # Assign an overall status. The status is derived from the first existing entry of
+  # 1) The computed in_service flag for each acline
+  # 2) The connected status for the terminals. If one of the terminals is off, the status is False
   bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)
-  bind(coalesce(?c_node, ?t_node) as ?node)
+
+  # Assign mRID to the ?node variable. The mRID is set to the first existing entry of
+  # 1) mRID of the topological node associated with the connectivity node of the first terminal
+  # 2) mRID of the toplogical node associated with the first terminal
+  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid) as ?node)
 }

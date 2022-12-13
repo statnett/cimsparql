@@ -5,29 +5,39 @@ PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select distinct ?mrid ?name ?market_code ?allocationmax ?node ?status ?station_group ?station_group_name ?station ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
 where {
-  ?_mrid rdf:type cim:SynchronousMachine;
+  # Extract properties for synchronous machines.
+  ?machine rdf:type cim:SynchronousMachine;
          cim:IdentifiedObject.name ?name;
          cim:RotatingMachine.ratedS ?sn;
          cim:IdentifiedObject.mRID ?mrid;
-         ^cim:Terminal.ConductingEquipment ?_t_mrid;
-         cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?_substation .
-  ?_t_mrid cim:Terminal.ConnectivityNode ?_node .
-  ?_substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+         ^cim:Terminal.ConductingEquipment ?terminal;
+         cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
+  ?terminal cim:Terminal.ConnectivityNode ?con_node;
+            cim:IdentifiedObject.mRID ?t_mrid .
+
+  # Extract area and mrid for the substation associated with a sync machine
+  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
                cim:IdentifiedObject.mRID ?station .
+
+  # Optionally extract min/max operating power for each machin
   optional {
-    ?_mrid cim:SynchronousMachine.GeneratingUnit ?_unit.
-    ?_unit cim:GeneratingUnit.minOperatingP ?minP;
+    ?machine cim:SynchronousMachine.GeneratingUnit ?gen_unit.
+    ?gen_unit cim:GeneratingUnit.minOperatingP ?minP;
            cim:GeneratingUnit.maxOperatingP ?maxP .
   }
   filter regex(?area, '${region}')
+
+  # Optionally extract bidzone for the substation associated with the sync machin
   optional {
-    ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
+    ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
   } .
+
+  # Opionally extract non-CIM standard properties generating units
   optional {
-    select ?_unit ?market_code ?MO ?apctmax ?station_group ?station_group_name
+    select ?gen_unit ?market_code ?MO ?apctmax ?station_group ?station_group_name
     where
     {
-      ?_unit SN:GeneratingUnit.marketCode ?market_code;
+      ?gen_unit SN:GeneratingUnit.marketCode ?market_code;
              SN:GeneratingUnit.groupAllocationWeight ?MO;
              SN:GeneratingUnit.ScheduleResource ?ScheduleResource;
              SN:GeneratingUnit.groupAllocationMax ?apctmax .
@@ -35,19 +45,33 @@ where {
                         cim:IdentifiedObject.name ?station_group_name .
     }
   }
+
+  # Extract connected flag and optionally mRID for the topological node associated with each terminal
   service <${repo}> {
-    ?_t_mrid cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-    optional {?_t_mrid cim:Terminal.TopologyNode/cim:IdentifiedObject.mRID ?_t_node}
+    ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+    optional {?terminal cim:Terminal.TopologyNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
   } .
-  optional { service <${repo}> {?_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?_c_node .}}
+
+  # Optionally extract the mRID of the toplogical node associated with the connectivity node for each sync machine
+  optional { service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
+
+  # Optinoally extract in_service flag for each macchine, as well as active and reactive power
   service <${repo}> {
-    optional {?_mrid ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
-    graph ${ssh_graph} {optional {?_mrid cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}}
+    optional {?machine ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
+    graph ${ssh_graph} {optional {?machine cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}}
   }
-  optional {?_mrid SN:Equipment.networkAnalysisEnable ?_network_analysis}
+  optional {?machine SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)
-  bind(coalesce(?_c_node, ?_t_node, ?_t_mrid) as ?node)
+
+  # Assign a node mRID for each sync machine. It is set as the first existing of
+  # 1) mRID of the topological node associated with the connectivity node for the terminal associated
+  #    with the sync machine
+  # 2) mRID of the toplogical node associated with the terminal for the sync machine
+  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
+
+  # Assign a status flag. If exists, the in_service flag for the sync machine is used. Otherwise,
+  # the connected flag of the terminal associated with the sync machine is used
   bind(coalesce(?in_service, ?connected) as ?status)
   bind(xsd:double(str(?apctmax)) * xsd:double(str(?maxP)) / 100.0 as ?allocationmax)
 }
