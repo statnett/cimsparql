@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import pathlib
+from copy import deepcopy
 from typing import Dict, Generator, Optional
 
 import pandas as pd
@@ -17,7 +18,13 @@ from cimsparql.graphdb import (
     new_repo,
     new_repo_blazegraph,
 )
-from cimsparql.model import CimModel, ModelConfig, get_cim_model
+from cimsparql.model import (
+    CimModel,
+    ModelConfig,
+    MultiClientCimModel,
+    get_cim_model,
+    get_federated_cim_model,
+)
 
 this_dir = pathlib.Path(__file__).parent
 
@@ -33,7 +40,8 @@ def graphdb_service() -> ServiceConfig:
 @pytest.fixture(scope="session")
 def model(graphdb_service: ServiceConfig) -> CimModel:
     system_state_repo = f"repository:{graphdb_service.repo}"
-    return get_cim_model(graphdb_service, ModelConfig(system_state_repo, ssh_graph))
+    eq_repo = f"repository:{graphdb_service.repo}"
+    return get_cim_model(graphdb_service, ModelConfig(system_state_repo, ssh_graph, eq_repo))
 
 
 @pytest.fixture(scope="session")
@@ -42,7 +50,7 @@ def micro_t1_nl_graphdb() -> Optional[CimModel]:
     model = None
     try:
         s_cfg = ServiceConfig(repo=repo)
-        m_cfg = ModelConfig(system_state_repo=f"repository:{repo}")
+        m_cfg = ModelConfig(system_state_repo=f"repository:{repo}", eq_repo=f"repository:{repo}")
         if os.getenv("GRAPHDB_SERVER"):
             model = get_cim_model(s_cfg, m_cfg)
     except Exception as exc:
@@ -52,10 +60,23 @@ def micro_t1_nl_graphdb() -> Optional[CimModel]:
 
 
 @pytest.fixture(scope="session")
-def model_sep() -> Optional[CimModel]:
-    repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
-    system_state_repo = f"repository:{os.getenv('GRAPHDB_STATE', 'abot_20220825T1621Z')}"
-    return get_cim_model(ServiceConfig(repo), ModelConfig(system_state_repo, ssh_graph))
+def model_sep() -> Optional[MultiClientCimModel]:
+    eq_repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
+    system_state_repo = os.getenv("GRAPHDB_STATE", "abot_20220825T1621Z")
+    eq_client_cfg = ServiceConfig(eq_repo)
+    tpsvssh_client_cfg = ServiceConfig(system_state_repo)
+    eq_client = GraphDBClient(eq_client_cfg)
+    tpsvssh_client = GraphDBClient(tpsvssh_client_cfg)
+
+    m_cfg = ModelConfig(f"repository:{system_state_repo}", ssh_graph, f"repository:{eq_repo}")
+    return get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
+
+
+@pytest.fixture(scope="session")
+def graphdb_real_data_models(
+    model: CimModel, model_sep: MultiClientCimModel
+) -> Dict[str, MultiClientCimModel]:
+    return {"model": model, "model_sep": model_sep}
 
 
 @pytest.fixture(scope="session")
@@ -233,6 +254,24 @@ def smallgrid_models(small_grid_model_rdf4j, small_grid_model_bg):
         except Exception as exc:
             logger.error(f"{exc}")
             model = None
+
+        # Add MultiClient varianet for graphdb
+        tpsv_cfg = ServiceConfig(repo=f"{small_grid}_tpsvssh")
+        eq_client = GraphDBClient(s_cfg)
+        tpsvssh_client = GraphDBClient(tpsv_cfg)
+        m_cfg = deepcopy(m_cfg)
+        m_cfg.eq_repo = f"repository:{small_grid}_eq"
+        try:
+            sep_model = get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
+        except Exception as exc:
+            logger.error(f"{exc}")
+            sep_model = None
     else:
         model = None
-    return {"rdf4j": small_grid_model_rdf4j, "blazegraph": small_grid_model_bg, "graphdb": model}
+        sep_model = None
+    return {
+        "rdf4j": small_grid_model_rdf4j,
+        "blazegraph": small_grid_model_bg,
+        "graphdb": model,
+        "graphdb_sep": sep_model,
+    }

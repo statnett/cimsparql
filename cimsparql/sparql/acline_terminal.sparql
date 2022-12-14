@@ -7,6 +7,7 @@ select ?acline (?connected as ?connected_${nr}) (?p as ?p_${nr}) ?node_${nr} (?b
 where
 {
   # Extract properties for all terminals where conducting equipment is of type ACLineSegment
+  service <${eq_repo}> {
   ?acline rdf:type cim:ACLineSegment .
   ?terminal rdf:type cim:Terminal;
            cim:IdentifiedObject.mRID ?t_mrid;
@@ -23,16 +24,15 @@ where
     ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone .
   }
   filter(regex(?area, '${region}'))
+  }
 
   # Find the mRID for the toplogical node of each connectivity node
-  optional { service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
+  optional { ?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
 
   # Find properties in TP/SV/SSH profile for each terminal.
-  service <${repo}> {
-    ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-    optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid} .
-    optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
-  }
+  ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
+  optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid} .
+  optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
   optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   filter(?analysis_enabled)
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)

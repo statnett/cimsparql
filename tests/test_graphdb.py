@@ -1,7 +1,7 @@
 import os
 import re
 from base64 import b64encode
-from typing import List, Set
+from typing import Dict, List, Set
 
 import pytest
 import requests
@@ -17,7 +17,7 @@ from cimsparql.graphdb import (
     new_repo,
     repos,
 )
-from cimsparql.model import CimModel
+from cimsparql.model import CimModel, MultiClientCimModel
 from cimsparql.type_mapper import TypeMapper
 
 ID_OBJ = "cim:IdentifiedObject"
@@ -30,7 +30,9 @@ def test_cimversion(model: CimModel):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 @pytest.mark.asyncio
-async def test_load(model: CimModel):
+@pytest.mark.parametrize("model_name", ["model", "model_sep"])
+async def test_load(model_name: str, graphdb_real_data_models: Dict[str, MultiClientCimModel]):
+    model = graphdb_real_data_models[model_name]
     load = await model.loads()
     assert set(load.columns).issubset(
         {"node", "name", "bidzone", "p", "q", "station", "station_group", "status"}
@@ -107,7 +109,9 @@ async def test_regions(model: CimModel):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 @pytest.mark.asyncio
-async def test_ac_lines(model: CimModel):
+@pytest.mark.parametrize("model_name", ["model", "model_sep"])
+async def test_ac_lines(model_name: str, graphdb_real_data_models: Dict[str, MultiClientCimModel]):
+    model = graphdb_real_data_models[model_name]
     lines = await model.ac_lines()
     assert lines.shape[1] == 15
     assert all(lines[["x", "un"]].dtypes == float)

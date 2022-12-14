@@ -1,14 +1,15 @@
 import pytest
 from mock import Mock
 
-from cimsparql.model import Model
+from cimsparql.graphdb import GraphDBClient
+from cimsparql.model import Model, ModelConfig, get_federated_cim_model, query_name
 from cimsparql.templates import sparql_folder
 
 
 def test_map_data_types(monkeypatch):
     def cim_init(self, *args):
         self.mapper = Mock(have_cim_version=Mock(return_value=True))
-        self.client = Mock(prefixes={"cim": None})
+        self.clients = {"default": Mock(prefixes={"cim": None})}
 
     monkeypatch.setattr(Model, "__init__", cim_init)
     cim_model = Model()
@@ -18,7 +19,7 @@ def test_map_data_types(monkeypatch):
 def test_not_map_data_types(monkeypatch):
     def cim_init(self, *args):
         self.mapper = Mock(have_cim_version=Mock(return_value=False))
-        self.client = Mock(prefixes={"cim": None})
+        self.clients = {"default": Mock(prefixes={"cim": None})}
 
     monkeypatch.setattr(Model, "__init__", cim_init)
     cim_model = Model()
@@ -39,3 +40,35 @@ def test_unique_headers():
             headers.append(infile.readline())
 
     assert len(headers) == len(set(headers))
+
+
+def test_query_name():
+    query = """# Name: name of the query
+    select * {?s ?p ?o}
+    """
+    assert query_name(query) == "name of the query"
+
+
+def test_query_without_name():
+    query = "select * {?s ?p ?o}"
+    assert query_name(query) == ""
+
+
+def test_multi_client_model_defined_clients_exist():
+    class MockTypeMapper:
+        pass
+
+    eq = GraphDBClient()
+    tpsv = GraphDBClient()
+    m_cfg = ModelConfig()
+    model = get_federated_cim_model(eq, tpsv, m_cfg, MockTypeMapper())
+
+    query_names = []
+    for f in sparql_folder.glob("*.sparql"):
+        with open(f, "r") as infile:
+            query_names.append(query_name(infile.read()))
+
+    queries_with_client = set(model.clients.keys())
+
+    # Verify that all queries with a special client is one of the pre-defined queries
+    assert queries_with_client.issubset(query_names)

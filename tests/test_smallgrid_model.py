@@ -10,7 +10,7 @@ from cimsparql.model import CimModel
 
 def check_service_available(model: Optional[CimModel], server: str):
     if model is None:
-        if os.getenv("CI") and server != "graphdb":
+        if os.getenv("CI") and server not in ("graphdb", "graphdb_sep"):
             pytest.fail("Service should always be available in CI")
         else:
             pytest.skip("Require access to external Graph service")
@@ -35,7 +35,7 @@ async def test_eq_query(smallgrid_models: Dict[str, CimModel], server):
 
 @pytest.mark.slow
 @pytest.mark.asyncio
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb", "graphdb_sep"])
 async def test_tpsv_query(smallgrid_models, server):
     model = smallgrid_models[server]
     check_service_available(model, server)
