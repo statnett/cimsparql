@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
 from string import Template
@@ -43,18 +44,34 @@ from cimsparql.type_mapper import TypeMapper
 class ModelConfig:
     system_state_repo: Optional[str] = None
     ssh_graph: str = "?ssh_graph"
+    eq_repo: Optional[str] = None
 
 
 class Model:
     def __init__(
         self,
-        client: GraphDBClient,
+        clients: Dict[str, GraphDBClient],
         config: Optional[ModelConfig] = None,
         mapper: Optional[TypeMapper] = None,
     ) -> None:
-        self.client = client
+        self.clients = clients
         self.config = config or ModelConfig()
-        self.mapper = mapper or TypeMapper(client.service_cfg)
+        self.mapper = mapper or TypeMapper(self.get_client("Type mapper").service_cfg)
+
+    def get_client(self, query_name: str) -> GraphDBClient:
+        """
+        Return the corret graph db client to execute a query. By default
+        there is only one client so the same client is returned in all cases
+        """
+        return self.clients[query_name]
+
+    @property
+    def client(self) -> GraphDBClient:
+        return self.get_client("default")
+
+    @client.setter
+    def client(self, default_client: GraphDBClient):
+        self.clients["default"] = default_client
 
     @staticmethod
     def _col_map(data_row) -> Dict[str, str]:
@@ -92,15 +109,13 @@ class Model:
     async def get_table_and_convert(
         self, query: str, index: Optional[str] = None, columns: Optional[Dict[str, str]] = None
     ) -> pd.DataFrame:
-        if isinstance(self.client, AsyncGraphDBClient):
-            result, data_row = await self.client.get_table(query)
+        name = query_name(query)
+        client = self.get_client(name)
+        if isinstance(client, AsyncGraphDBClient):
+            result, data_row = await client.get_table(query)
         else:
-            result, data_row = self.client.get_table(query)
+            result, data_row = client.get_table(query)
         return self._convert_result(result, data_row, index, columns)
-
-    @property
-    def state_repo(self) -> str:
-        return self.config.system_state_repo or self.client.service_cfg.url
 
     def template_to_query(
         self, template: Template, substitutes: Optional[Dict[str, str]] = None
@@ -109,12 +124,19 @@ class Model:
         if substitutes is None:
             substitutes = {}
 
+        # Extract name from the query. We don't need to perform actual substitutions to do this,
+        # we just let placeholder be left
+        name = query_name(template.safe_substitute())
+        client = self.get_client(name)
+        state_repo = self.config.system_state_repo or client.service_cfg.url
+        eq_repo = self.config.eq_repo or client.service_cfg.url
+
         return template.safe_substitute(
-            {"repo": self.state_repo} | substitutes | self.client.prefixes
+            {"repo": state_repo, "eq_repo": eq_repo} | substitutes | self.client.prefixes
         )
 
 
-class CimModel(Model):
+class MultiClientCimModel(Model):
     """Used to query with sparql queries (typically CIM)."""
 
     @cached_property
@@ -506,17 +528,36 @@ class CimModel(Model):
         substitutes = {"rdf_type": rdf_type or "?rdf_type", "g": graph or "?g"}
         return self.template_to_query(templates.ADD_MRID_QUERY, substitutes)
 
-    def add_mrid(self, rdf_type: Optional[str] = None, graph: Optional[str] = None) -> None:
+    def add_mrid(
+        self,
+        rdf_type: Optional[str] = None,
+        graph: Optional[str] = None,
+        client: Optional[GraphDBClient] = None,
+    ) -> None:
         """
         Add cim:IdentifiedObject.mRID to all records. It is copied from rdf:about (or rdf:ID) if
-        replace is not specified
+        replace is not specified. The query is executed with the passed client. If not given,
+        the default client is used.
 
         Args:
             graph: Name of graph where mrids should be added. Note, mrid is added to all objects
                 in the graph.
             rdf_type: RDF type where ID should be added
+            client: Client used to execute the query
         """
-        self.client.update_query(self.add_mrid_query(rdf_type, graph))
+        client = client or self.client
+        client.update_query(self.add_mrid_query(rdf_type, graph))
+
+
+class CimModel(MultiClientCimModel):
+    def __init__(
+        self,
+        client: GraphDBClient,
+        config: Optional[ModelConfig] = None,
+        mapper: Optional[TypeMapper] = None,
+    ) -> None:
+        clients = defaultdict(lambda: client)
+        super().__init__(clients, config, mapper)
 
 
 def get_cim_model(
@@ -535,3 +576,35 @@ def get_cim_model(
     """
     c = AsyncGraphDBClient(service_cfg) if async_sparql_wrapper else GraphDBClient(service_cfg)
     return CimModel(c, model_cfg)
+
+
+def query_name(query: str) -> str:
+    """
+    Extract the name of the query provided that the first line starts with # Name: <name>.
+    If no match is found, an empty string is returned
+    """
+    m = re.search("^# Name: ([a-zA-Z0-9 ]+)", query)
+    return m.group(1) if m else ""
+
+
+def get_federated_cim_model(
+    eq_client: GraphDBClient,
+    tpsvssh_client: GraphDBClient,
+    model_cfg: ModelConfig,
+    mapper: Optional[TypeMapper] = None,
+) -> MultiClientCimModel:
+    """
+    Return a CIM model where the equipment profile is located in one repo and the topology,
+    state variables and steady state hypothesis profile is located in another.
+
+    Args:
+        eq_client: Client that executes queries from the EQ repository
+        tpsvhssh_client: Client that executes queries from the TP/SV/SSH repository
+        model_cfg: Mode configurations that provides extra information
+    """
+    clients = defaultdict(lambda: eq_client)  # By default queries are executed from the EQ repo
+
+    # Setup client based on # Name in the pre-defined queries
+    clients["AC Lines"] = tpsvssh_client
+    clients["AC Line Terminal"] = tpsvssh_client
+    return MultiClientCimModel(clients, model_cfg, mapper)

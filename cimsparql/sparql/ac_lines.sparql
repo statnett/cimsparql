@@ -8,6 +8,7 @@ where {
   # TODO: Check if SN:Equipment.networkAnalysisEnable is on it's way into the standard
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for ACLineSegments
+  service <${eq_repo}> {
   ?acline rdf:type cim:ACLineSegment;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
@@ -25,11 +26,9 @@ where {
           rdf:type cim:ActivePowerLimit;
           cim:IdentifiedObject.name '${rate}';
           cim:ActivePowerLimit.value ?rate .
-  } .
-  optional { # Search for acline SV status will be combined with SSH connected
-    service <${repo}>
-    {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
-  } .
+  }} .
+  # Search for acline SV status will be combined with SSH connected
+  optional {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service } .
 
   # Search terminal nr side SSH/TP/SV. See acline_terminal.sparql which provides ?acline ?connected_{nr} ?p_{nr}
   { ${acline_terminal_1} } .
