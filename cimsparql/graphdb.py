@@ -324,11 +324,14 @@ async def repos(service_cfg: Optional[ServiceConfig] = None) -> List[RepoInfo]:
     response.raise_for_status()
 
     def _repo_info(repo):
-        uri = repo["uri"]["value"]
-        repo_id = repo["id"]["value"]
-        title = repo["title"]["value"]
-        readable = repo["readable"]["value"] == "true"
-        writable = repo["writable"]["value"] == "true"
+        def get(key, default=""):
+            return repo.get(key, {}).get("value", default)
+
+        uri = get("uri")
+        repo_id = get("id")
+        title = get("title")
+        readable = get("readable", "false") == "true"
+        writable = get("writable", "false") == "true"
         return RepoInfo(uri, repo_id, title, readable, writable)
 
     return [_repo_info(repo) for repo in response.json()["results"]["bindings"]]
