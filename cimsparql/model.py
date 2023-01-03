@@ -24,6 +24,8 @@ from cimsparql.data_models import (
     DisconnectedSchema,
     ExchangeSchema,
     FullModelSchema,
+    HVDCBidzonesDataFrame,
+    HVDCBidzonesSchema,
     LoadsSchema,
     MarketDatesSchema,
     PowerFlowSchema,
@@ -523,6 +525,18 @@ class MultiClientCimModel(Model):
         # We need to find a solution for custom namespaces in queries
         df = await self.get_table_and_convert(self.regions_query, index="mrid")
         return RegionsSchema(df)
+
+    @property
+    def hvdc_converter_bidzone_query(self) -> str:
+        return self.template_to_query(templates.HVDC_CONVERTER_BIDZONES)
+
+    async def hvdc_converter_bidzones(self) -> HVDCBidzonesDataFrame:
+        """
+        Fetching mrid of converters placed on HVDC exchange corridors together with
+        to/from bidzone
+        """
+        df = await self.get_table_and_convert(self.hvdc_converter_bidzone_query, index="mrid")
+        return HVDCBidzonesSchema(df)
 
     def add_mrid_query(self, rdf_type: Optional[str] = None, graph: Optional[str] = None) -> str:
         substitutes = {"rdf_type": rdf_type or "?rdf_type", "g": graph or "?g"}
