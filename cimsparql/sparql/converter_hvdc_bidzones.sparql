@@ -1,0 +1,23 @@
+# Name: Converter HVDC bidzones
+PREFIX rdf:<${rdf}>
+PREFIX cim:<${cim}>
+PREFIX SN:<${SN}>
+PREFIX xsd:<${xsd}>
+
+select distinct ?mrid ?from_area ?to_area
+where
+{
+  # Find all converters and the corresponding substation
+  ?converter cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation;
+             cim:IdentifiedObject.mRID ?mrid ;
+             rdf:type cim:VsConverter .
+
+  # Find market delivery point for the substation
+  ?substation SN:Substation.MarketDeliveryPoint ?delivery_point .
+  ?delivery_point SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?from_area .
+
+  # Extract the destination point from the line that has one end matching from_area
+  ?line SN:Line.FromMarketDeliveryPoint ?delivery_point;
+        SN:Line.ToMarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?to_area
+  filter(?from_area != ?to_area)
+}

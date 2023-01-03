@@ -109,6 +109,18 @@ async def test_regions(model: CimModel):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 @pytest.mark.asyncio
+async def test_hvdc_converters_bidzones(model: CimModel):
+    df = await model.hvdc_converter_bidzones()
+    corridors = set(zip(df["from_area"], df["to_area"]))
+
+    # TODO: For some reason NO2-NL is not present in this result
+    # Check data quality in the models
+    expect_corridors = {("SE4", "SE3"), ("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB")}
+    assert expect_corridors.issubset(corridors)
+
+
+@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
+@pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", ["model", "model_sep"])
 async def test_ac_lines(model_name: str, graphdb_real_data_models: Dict[str, MultiClientCimModel]):
     model = graphdb_real_data_models[model_name]

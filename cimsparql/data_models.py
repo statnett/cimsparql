@@ -213,3 +213,11 @@ class StationGroupCodeNameSchema(JsonSchemaOut):
     station_group: Index[pd.StringDtype] = pa.Field(unique=True)
     name: Series[pd.StringDtype] = pa.Field()
     alias_name: Series[pd.StringDtype] = pa.Field(nullable=True)
+
+
+class HVDCBidzonesSchema(MridResourceSchema):
+    from_area: Series[pd.StringDtype] = pa.Field()
+    to_area: Series[pd.StringDtype] = pa.Field()
+
+
+HVDCBidzonesDataFrame = DataFrame[HVDCBidzonesSchema]
