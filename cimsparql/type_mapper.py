@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from contextlib import contextmanager
 from datetime import datetime
 from decimal import Decimal
@@ -123,38 +122,13 @@ class TypeMapper:
             return {}
         return self.type_map(df)
 
-    def get_type(self, sparql_type: str, col: str = ""):
-        """Gets the python type/function to apply on columns of the sparql_type
-
-        Args:
-            sparql_type:
-            missing_return: returns the identity-function if python- type/function is not found,
-                else returns None
-
-            custom_maps: dictionary on the form {'sparql_data_type': function/datatype} overwrites
-                the default types gained from the graphdb. Applies the function/datatype on all
-                columns in the DataFrame that are of the sparql_data_type
-
-        Returns:
-            python datatype or function to apply on DataFrame columns
-
-        """
-
-        try:
-            return self.map[sparql_type]
-        except KeyError:
-            warnings.warn(
-                f"{col}:{sparql_type} not found in the sparql -> python type map. Using 'string'"
-            )
-        return "string"
-
     def build_type_caster(
         self, col_map: Dict[COL_NAME, SPARQL_TYPE]
     ) -> Dict[COL_NAME, TYPE_CASTER]:
         """
         Construct a direct mapping from column names to a type caster from the
         """
-        return {col: self.get_type(dtype, col) for col, dtype in col_map.items()}
+        return {col: self.map.get(dtype, "string") for col, dtype in col_map.items()}
 
     def map_data_types(
         self, df: pd.DataFrame, col_map: Dict[COL_NAME, SPARQL_TYPE]

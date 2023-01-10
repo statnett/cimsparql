@@ -99,9 +99,3 @@ def test_have_cim_version(monkeypatch, cim_version: int, have_cim_version: bool)
     apply_mp(monkeypatch)
     tm = type_mapper.TypeMapper()
     assert tm.have_cim_version(cim_version) == have_cim_version
-
-
-def test_type_missing_key(monkeypatch):
-    apply_mp(monkeypatch)
-    tm = type_mapper.TypeMapper()
-    assert tm.get_type("non-existent-type", "col") == "string"
