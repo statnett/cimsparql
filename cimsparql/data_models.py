@@ -221,3 +221,12 @@ class HVDCBidzonesSchema(MridResourceSchema):
 
 
 HVDCBidzonesDataFrame = DataFrame[HVDCBidzonesSchema]
+
+
+class TransformerWindingsSchema(JsonSchemaOut):
+    mrid: Series[pd.StringDtype] = pa.Field()
+    end_number: Series[int] = pa.Field(gt=0)
+    w_mrid: Index[pd.StringDtype] = pa.Field(unique=True)
+
+
+TransformerWindingsDataFrame = DataFrame[TransformerWindingsSchema]

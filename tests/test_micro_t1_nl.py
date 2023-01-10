@@ -327,3 +327,15 @@ async def test_empty_dc_active_flow(micro_t1_nl_models: MOD_TYPE, server: str):
 
     df = await model.dc_active_flow()
     assert df.empty
+
+
+@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.asyncio
+async def test_transformer_windings(micro_t1_nl_models: MOD_TYPE, server: str):
+    model = micro_t1_nl_models[server]
+    if skip(model, server):
+        pytest.skip(skip_msg(server))
+
+    df = await model.transformer_windings()
+
+    assert len(df) == 15

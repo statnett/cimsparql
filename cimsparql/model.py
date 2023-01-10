@@ -36,6 +36,8 @@ from cimsparql.data_models import (
     TransfConToConverterSchema,
     TransformersSchema,
     TransformerWindingSchema,
+    TransformerWindingsDataFrame,
+    TransformerWindingsSchema,
     WindGeneratingUnitsSchema,
 )
 from cimsparql.graphdb import AsyncGraphDBClient, GraphDBClient, ServiceConfig
@@ -467,6 +469,15 @@ class MultiClientCimModel(Model):
         """Query powerflow from sv profile (not available in GraphDB)."""
         df = await self.get_table_and_convert(self.powerflow_query, index="mrid")
         return PowerFlowSchema(df)
+
+    @property
+    def transformer_windings_query(self) -> str:
+        return self.template_to_query(templates.TRANSFORMER_WINDINGS_QUERY)
+
+    async def transformer_windings(self) -> TransformerWindingsDataFrame:
+        """Query windings from EQ profile."""
+        df = await self.get_table_and_convert(self.transformer_windings_query, index="w_mrid")
+        return TransformerWindingsSchema(df)
 
     @property
     def coordinates_query(self) -> str:
