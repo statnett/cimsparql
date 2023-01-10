@@ -2,7 +2,7 @@
 PREFIX cim: <${cim}>
 PREFIX rdf: <${rdf}>
 PREFIX SN: <${SN}>
-select  ?name ?p_mrid ?w_mrid ?endNumber ?un ?t_mrid ?r ?x ?rate
+select  ?name ?p_mrid ?w_mrid ?end_number ?un ?t_mrid ?r ?x ?rate
 where {
   # Extract mRID for each power transformer
   ?p_transformer rdf:type cim:PowerTransformer;
@@ -14,7 +14,7 @@ where {
            cim:PowerTransformerEnd.x ?x;
            cim:IdentifiedObject.mRID ?w_mrid;
            cim:IdentifiedObject.name ?name;
-           cim:TransformerEnd.endNumber ?endNumber;
+           cim:TransformerEnd.endNumber ?end_number;
            cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid;
 
   filter regex(?area, '${region}') .

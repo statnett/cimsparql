@@ -162,7 +162,7 @@ class TransformersSchema(JsonSchemaOut):
     name: Series[pd.StringDtype] = pa.Field()
     p_mrid: Series[pd.StringDtype] = pa.Field()
     w_mrid: Series[pd.StringDtype] = pa.Field()
-    endNumber: Series[int] = pa.Field()
+    end_number: Series[int] = pa.Field()
     un: Series[float] = pa.Field()
     t_mrid: Series[pd.StringDtype] = pa.Field()
     r: Series[float] = pa.Field()

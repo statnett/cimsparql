@@ -213,7 +213,7 @@ async def test_transformers(micro_t1_nl_models: MOD_TYPE, params: Dict[str, Any]
 
     data = await model.transformers(params["region"])
     assert len(data) == params["num"]
-    end_num_count = data["endNumber"].value_counts()
+    end_num_count = data["end_number"].value_counts()
     assert sorted(list(end_num_count)) == params["end_num_count"]
     assert set(data["name"].unique()) == params["expect_names"]
 
