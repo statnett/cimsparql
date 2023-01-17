@@ -1,25 +1,24 @@
 # Name: Borders
 PREFIX cim:<${cim}>
-PREFIX rdf:<${rdf}>
 PREFIX SN:<${SN}>
 select  ?mrid ?name ?market_code ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2
 where {
   # Extract mRID, name and optionally market_code for aclines
-  ?acline rdf:type cim:ACLineSegment;
+  ?acline a cim:ACLineSegment;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name.
   optional {?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code} .
   optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
 
   # Extract properties for the terminal connected to one end of the acline (sequenceNumber 1)
-  ?terminal1  rdf:type cim:Terminal;
+  ?terminal1  a cim:Terminal;
               cim:Terminal.ConductingEquipment ?acline;
               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1;
               cim:IdentifiedObject.mRID ?t_mrid_1 .
 
   # Extract properties for the terminal connected to the other end of the acline (sequenceNumber 2)
-  ?terminal2  rdf:type cim:Terminal;
+  ?terminal2  a cim:Terminal;
               cim:Terminal.ConductingEquipment ?acline;
               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 ;

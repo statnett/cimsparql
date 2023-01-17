@@ -1,12 +1,11 @@
 # Name: Bus
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-PREFIX rdf:<${rdf}>
 select ?node ?name ?busname ?un ?station ?bidzone
 where {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
   service <${repo}> {
-    ?top_node rdf:type cim:TopologicalNode;
+    ?top_node a cim:TopologicalNode;
            cim:IdentifiedObject.mRID ?node;
            cim:IdentifiedObject.name ?busname;
            cim:TopologicalNode.BaseVoltage ?base_voltage;

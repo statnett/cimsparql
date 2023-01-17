@@ -1,7 +1,6 @@
 # Name: Sv branch
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 select ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?p_1 ?q_1 ?p_2 ?q_2 ?v_1 ?angle_1 ?v_2 ?angle_2
 where {
   # Extract key properties for ACLineSegment
@@ -20,8 +19,8 @@ where {
     select ?acline (?connected as ?connected_1) (?p as ?p_1) (?q as ?q_1) (?v as ?v_1) (?angle as ?angle_1)
     where
     {
-      ?acline rdf:type cim:ACLineSegment .
-      ?terminal rdf:type cim:Terminal;
+      ?acline a cim:ACLineSegment .
+      ?terminal a cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?acline;
                cim:Terminal.ConnectivityNode ?con_node;
@@ -63,8 +62,8 @@ where {
     select ?acline (?connected as ?connected_2) (?p as ?p_2) (?q as ?q_2) (?v as ?v_2) (?angle as ?angle_2)
     where
     {
-      ?acline rdf:type cim:ACLineSegment .
-      ?terminal rdf:type cim:Terminal;
+      ?acline a cim:ACLineSegment .
+      ?terminal a cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?acline;
                cim:Terminal.ConnectivityNode ?con_node;

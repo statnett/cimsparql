@@ -1,5 +1,4 @@
 # Name: Connections
-PREFIX rdf:<${rdf}>
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 select ?mrid ?t_mrid_1 ?t_mrid_2
@@ -8,7 +7,7 @@ where {
   values ?connector_type {cim:Breaker cim:Disconnector}
 
   # Extact mRID for each connector
-  ?connector rdf:type ?connector_type;
+  ?connector a ?connector_type;
          cim:IdentifiedObject.mRID ?mrid .
 
   # Extract properties for the terminal connected to sequenceNumber 1

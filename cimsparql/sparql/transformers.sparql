@@ -1,11 +1,10 @@
 # Name: Transformers
 PREFIX cim: <${cim}>
-PREFIX rdf: <${rdf}>
 PREFIX SN: <${SN}>
 select  ?name ?p_mrid ?w_mrid ?end_number ?un ?t_mrid ?r ?x ?rate
 where {
   # Extract mRID for each power transformer
-  ?p_transformer rdf:type cim:PowerTransformer;
+  ?p_transformer a cim:PowerTransformer;
            cim:IdentifiedObject.mRID ?p_mrid;
            cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
@@ -20,7 +19,7 @@ where {
   filter regex(?area, '${region}') .
   optional {
     ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?winding;
-           rdf:type cim:ActivePowerLimit;
+           a cim:ActivePowerLimit;
            cim:IdentifiedObject.name '${rate}';
            cim:ActivePowerLimit.value ?rate
   }

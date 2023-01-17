@@ -1,5 +1,4 @@
 # Name: Converters
-PREFIX rdf:<${rdf}>
 PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
 PREFIX SN:<${SN}>
@@ -11,7 +10,7 @@ where {
 
     # Extract active and reactive power for the converter
     graph ${ssh_graph} {
-      ?converter rdf:type ?converter_type;
+      ?converter a ?converter_type;
              cim:ACDCConverter.p ?p;
              cim:ACDCConverter.q ?q .
     }

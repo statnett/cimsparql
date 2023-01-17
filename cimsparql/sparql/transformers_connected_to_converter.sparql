@@ -1,5 +1,4 @@
 # Name: Transforers connected to converter
-PREFIX rdf:<${rdf}>
 PREFIX ALG:<${ALG}>
 PREFIX SN: <${SN}>
 PREFIX cim:<${cim}>
@@ -8,11 +7,11 @@ where {
   values ?converter_type {cim:VsConverter cim:CsConverter cim:DCConvertUnit ALG:VoltageSourceConverter ALG:DCConverter }
 
   # Extract mRID for the converters
-  ?converter rdf:type ?converter_type;
+  ?converter a ?converter_type;
         cim:IdentifiedObject.mRID ?mrid .
 
   # Extract mRID name for the power transformer associated with the converter
-  ?p_transformer rdf:type cim:PowerTransformer;
+  ?p_transformer a cim:PowerTransformer;
          cim:IdentifiedObject.mRID ?p_mrid;
          cim:IdentifiedObject.aliasName ?name;
          cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;

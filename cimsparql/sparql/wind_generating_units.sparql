@@ -1,10 +1,9 @@
 # Name: Wind generating units
-PREFIX rdf:<${rdf}>
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 select  ?mrid ?name ?market_code ?station_group  ?min_p ?max_p ?plant_mrid
 where {
-  ?wind_gen_unit rdf:type cim:WindGeneratingUnit;
+  ?wind_gen_unit a cim:WindGeneratingUnit;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:GeneratingUnit.maxOperatingP ?max_p;

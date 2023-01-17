@@ -1,19 +1,18 @@
 # Name: Exchange
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 select ?name ?node ?mrid ?status ?p ?market_code
 where
 {
   # Extract name and mrid for aclines
-  ?acline rdf:type cim:ACLineSegment;
+  ?acline a cim:ACLineSegment;
     cim:IdentifiedObject.name ?name;
     cim:IdentifiedObject.mRID ?mrid .
   filter (!regex(?name, 'HVDC')) .
   optional {?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code . }
 
   # Extract properties for the terminal at sequenceNumber 1 for the acline
-  ?terminal1 rdf:type cim:Terminal;
+  ?terminal1 a cim:Terminal;
              cim:Terminal.ConductingEquipment ?acline;
              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
              cim:Terminal.ConnectivityNode ?con_node .
@@ -22,7 +21,7 @@ where
   ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 .
 
   # Extract propertoes for the terminal at squenceNumber 2 for the acline
-  ?terminal2 rdf:type cim:Terminal;
+  ?terminal2 a cim:Terminal;
              cim:Terminal.ConductingEquipment ?acline;
              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .

@@ -1,7 +1,6 @@
 # Name: Three winding
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2) ?angle ?ratio
 where {
@@ -49,7 +48,7 @@ where {
 
   # Optionally extract active power limits
   optional {
-    ?_lim rdf:type cim:ActivePowerLimit;
+    ?_lim a cim:ActivePowerLimit;
           cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?terminal;
           cim:IdentifiedObject.name '${rate}';
           cim:ActivePowerLimit.value ?rate .

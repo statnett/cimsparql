@@ -1,12 +1,11 @@
 # Name: Synchronous machines
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select distinct ?mrid ?name ?market_code ?allocationmax ?node ?status ?station_group ?station_group_name ?station ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
 where {
   # Extract properties for synchronous machines.
-  ?machine rdf:type cim:SynchronousMachine;
+  ?machine a cim:SynchronousMachine;
          cim:IdentifiedObject.name ?name;
          cim:RotatingMachine.ratedS ?sn;
          cim:IdentifiedObject.mRID ?mrid;

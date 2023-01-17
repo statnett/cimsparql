@@ -1,13 +1,12 @@
 # Name: Series compensators
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status ?un ?x
 where {
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for series compensator
-  ?compensator rdf:type cim:SeriesCompensator;
+  ?compensator a cim:SeriesCompensator;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
@@ -17,7 +16,7 @@ where {
   # Optionally extract current limits
   optional {
     ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?compensator;
-          rdf:type cim:CurrentLimit;
+          a cim:CurrentLimit;
           cim:IdentifiedObject.name '${rate}';
           cim:CurrentLimit.value ?_rate .
     # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
@@ -30,8 +29,8 @@ where {
     select ?compensator (?connected as ?connected_1) (?p as ?p_1) ?node_1 (?bidzone as ?bidzone_1)
     where
     {
-      ?compensator rdf:type cim:SeriesCompensator .
-      ?terminal rdf:type cim:Terminal;
+      ?compensator a cim:SeriesCompensator .
+      ?terminal a cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?compensator;
                cim:Terminal.ConnectivityNode ?con_node;
@@ -58,8 +57,8 @@ where {
     select ?compensator (?connected as ?connected_2) (?p as ?p_2) ?node_2 (?bidzone as ?bidzone_2)
     where
     {
-      ?compensator rdf:type cim:SeriesCompensator .
-      ?terminal rdf:type cim:Terminal;
+      ?compensator a cim:SeriesCompensator .
+      ?terminal a cim:Terminal;
                cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConductingEquipment ?compensator;
                cim:Terminal.ConnectivityNode ?con_node;

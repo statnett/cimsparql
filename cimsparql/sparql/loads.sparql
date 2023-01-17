@@ -1,14 +1,13 @@
 # Name: Loads
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 select distinct ?mrid ?name ?node ?station ?bidzone ?status ?p ?q ?station_group
 where {
   # Declare which load types to consider
   values ?load_type {cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer}
 
   # Extract mRID, name and substation for each load
-  ?load rdf:type ?load_type;
+  ?load a ?load_type;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation.
