@@ -59,7 +59,7 @@ jobs:
           - 8080:8080
       blazegraph:
         # Docker Hub image
-        image: openkbs/blazegraph
+        image: openkbs/blazegraph-docker
         ports:
           - 9999:9999
 
