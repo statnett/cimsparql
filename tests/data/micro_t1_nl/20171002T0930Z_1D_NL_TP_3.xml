@@ -1,4 +1,4 @@
-<rdf:RDF xmlns:md="http://iec.ch/TC57/61970-552/ModelDescription/1#" xmlns:cim="http://iec.ch/TC57/2013/CIM-schema-cim16#" xmlns:ns3="http://entsoe.eu/CIM/SchemaExtension/3/1#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xml:base="http://iec.ch/TC57/2013/CIM-schema-cim16">
+<rdf:RDF xmlns:md="http://iec.ch/TC57/61970-552/ModelDescription/1#" xmlns:cim="http://iec.ch/TC57/2013/CIM-schema-cim16#" xmlns:ns3="http://entsoe.eu/CIM/SchemaExtension/3/1#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xml:base="urn:uuid#">
   <md:FullModel rdf:about="urn:uuid:3a4b6367-7c3e-4946-a1a1-c3a43c58fad3">
     <md:Model.created>2014-10-24T14:27:49</md:Model.created>
     <md:Model.scenarioTime>2017-10-02T09:30:00Z</md:Model.scenarioTime>
