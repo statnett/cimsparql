@@ -1,9 +1,8 @@
 # Name: Power flow
 PREFIX cim:<${cim}>
-PREFIX rdf:<${rdf}>
 select  ?mrid ?p ?q ?in_service
 where {
-  ?_s rdf:type cim:SvPowerFlow;
+  ?_s a cim:SvPowerFlow;
       cim:SvPowerFlow.Terminal ?terminal;
       cim:SvPowerFlow.p ?p;
       cim:SvPowerFlow.q ?q .

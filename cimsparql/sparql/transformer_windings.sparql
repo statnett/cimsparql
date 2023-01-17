@@ -1,9 +1,8 @@
 # Name: Transformer Windings
 PREFIX cim: <${cim}>
-PREFIX rdf: <${rdf}>
 select ?mrid ?end_number ?w_mrid
 where {
-  ?power_transformer rdf:type cim:PowerTransformer;
+  ?power_transformer a cim:PowerTransformer;
                      cim:IdentifiedObject.mRID ?mrid .
   ?winding cim:IdentifiedObject.mRID ?w_mrid;
            cim:PowerTransformerEnd.PowerTransformer ?power_transformer;

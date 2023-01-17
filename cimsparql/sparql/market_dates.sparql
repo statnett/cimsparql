@@ -1,10 +1,9 @@
 # Name: Market dates
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 select  ?mrid ?name ?activation_date
 where {
-  ?_set rdf:type SN:MarketDefinitionSet;
+  ?_set a SN:MarketDefinitionSet;
         cim:IdentifiedObject.mRID ?mrid;
         cim:IdentifiedObject.name ?name;
         SN:MarketDefinitionSet.activationDate ?activation_date

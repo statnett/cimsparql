@@ -1,6 +1,5 @@
 # Name: Coordinates
 PREFIX cim: <${cim}>
-PREFIX rdf: <${rdf}>
 select ?mrid ?x ?y ?epsg ?rdf_type
 where {
   ?s cim:PositionPoint.Location ?location;
@@ -9,7 +8,7 @@ where {
      cim:PositionPoint.yPosition ?y.
   ?location cim:Location.PowerSystemResources ?_mrid;
             cim:Location.CoordinateSystem/cim:CoordinateSystem.crsUrn ?co.
-  ?_mrid rdf:type ?_rdf_type;
+  ?_mrid a ?_rdf_type;
          cim:IdentifiedObject.mRID ?mrid.
   bind(strafter(?co, 'EPSG::') as ?epsg)
   bind(concat(str(?mrid), str(?nr)) as ?sequence)

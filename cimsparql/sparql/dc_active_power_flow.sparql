@@ -1,6 +1,5 @@
 # Name: DC Active Power Flow
 PREFIX cim:<${cim}>
-PREFIX rdf:<${rdf}>
 PREFIX xsd:<${xsd}>
 select ?mrid ?p ?direction
 where {
@@ -9,11 +8,11 @@ where {
     where {
       # Declare components we are interested in
       values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator} .
-      ?component rdf:type ?rdf_type;
+      ?component a ?rdf_type;
              cim:Equipment.EquipmentContainer/(cim:Line.Region|cim:VoltageLevel.Substation/cim:Substation.Region) ?region .
 
       # Extract properties for the terminal associated with the component
-      ?terminal rdf:type cim:Terminal;
+      ?terminal a cim:Terminal;
                cim:Terminal.ConductingEquipment ?component;
                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
       service <${repo}> {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
@@ -27,7 +26,7 @@ where {
       {
         select ?p_transformer (count(distinct ?nr) as ?winding_count)
         where {
-          ?p_transformer rdf:type cim:PowerTransformer;
+          ?p_transformer a cim:PowerTransformer;
                    ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
         }
         group by ?p_transformer
@@ -38,13 +37,13 @@ where {
       ?p_transformer cim:Equipment.EquipmentContainer/cim:Substation.Region ?region .
 
       # Extract information from the windings associated with the power transformer
-      ?winding rdf:type cim:PowerTransformerEnd;
+      ?winding a cim:PowerTransformerEnd;
                cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
                cim:TransformerEnd.Terminal ?terminal;
                cim:TransformerEnd.endNumber ?nr .
 
       # For power transformer extract the winding corresponding to endNumber 1
-      ?component rdf:type cim:PowerTransformerEnd;
+      ?component a cim:PowerTransformerEnd;
              cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
              cim:TransformerEnd.endNumber 1 .
       service <${repo}> {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
@@ -59,7 +58,7 @@ where {
         {
           select ?p_transformer (count(distinct ?nr) as ?winding_count)
           where {
-            ?p_transformer rdf:type cim:PowerTransformer;
+            ?p_transformer a cim:PowerTransformer;
                      ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr;
                    }
           group by ?p_transformer

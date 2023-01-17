@@ -1,7 +1,6 @@
 # Name: AC Lines
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status ?un ?x ?b ?g ?length
 where {
@@ -9,7 +8,7 @@ where {
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for ACLineSegments
   service <${eq_repo}> {
-  ?acline rdf:type cim:ACLineSegment;
+  ?acline a cim:ACLineSegment;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
@@ -23,7 +22,7 @@ where {
   # If exists, extract active power limit for acline
   optional {
     ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?acline;
-          rdf:type cim:ActivePowerLimit;
+          a cim:ActivePowerLimit;
           cim:IdentifiedObject.name '${rate}';
           cim:ActivePowerLimit.value ?rate .
   }} .

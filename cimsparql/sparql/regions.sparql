@@ -1,10 +1,9 @@
 # Name: Regions
 PREFIX cim:<${cim}>
-PREFIX rdf:<${rdf}>
 PREFIX SN:<${SN}>
 select  ?mrid ?region ?short_name ?name ?alias_name ?region_name
 where {
-  ?subGeoRegion rdf:type cim:SubGeographicalRegion;
+  ?subGeoRegion a cim:SubGeographicalRegion;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:SubGeographicalRegion.Region ?subgeoreg .

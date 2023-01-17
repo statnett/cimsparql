@@ -1,5 +1,4 @@
 # Name: Three winding with dummy nodes
-PREFIX rdf:<${rdf}>
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 select ?node ?name (?name as ?busname) ?un ?station ?bidzone
@@ -9,7 +8,7 @@ where
   {
     select  ?p_transformer (count(distinct ?nr) as ?winding_count)
     where {
-      ?p_transformer rdf:type cim:PowerTransformer;
+      ?p_transformer a cim:PowerTransformer;
                cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
                ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr.
       filter(regex(?area, '${region}'))

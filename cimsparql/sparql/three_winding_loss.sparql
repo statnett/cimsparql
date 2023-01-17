@@ -1,13 +1,12 @@
 # Name: Three winding loss
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select ?mrid ?ploss_2
 where {
 
   # Extract mRID and area for each power transformer
-  ?p_transformer rdf:type cim:PowerTransformer;
+  ?p_transformer a cim:PowerTransformer;
            ^cim:PowerTransformerEnd.PowerTransformer/cim:IdentifiedObject.mRID ?mrid;
            cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   filter(regex(?area, '${region}'))
