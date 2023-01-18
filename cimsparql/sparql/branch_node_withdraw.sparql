@@ -3,29 +3,29 @@ PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 select ?mrid ?node ?p ?q
 where {
-  # Specify components wer are interested in
-  values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer} .
-  ?component a ?rdf_type .
-  optional {?component SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
-  ?terminal cim:Terminal.ConductingEquipment ?component;
-           cim:IdentifiedObject.mRID ?mrid;
-           cim:Terminal.ConnectivityNode ?con_node.
-
-  # Find area for the connectivity node of the terminal
-  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-  filter(regex(?area, '${region}'))
-
-  # Extract the mRID for the topological node of the connectivity node associated with each terminal
-  optional {service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
-
   # Extract properties of each terminal from the SV/TP/SSH profile.
   # If exists, the mRID of the topological node associated with the terminal is etracted
-  service <${repo}> {
-    ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-    optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
-    ?_sv_t cim:SvPowerFlow.Terminal ?terminal;
-           cim:SvPowerFlow.p ?p;
-           cim:SvPowerFlow.q ?q .
+  ?terminal cim:ACDCTerminal.connected ?connected .
+  optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
+  ?_sv_t cim:SvPowerFlow.Terminal ?terminal;
+          cim:SvPowerFlow.p ?p;
+          cim:SvPowerFlow.q ?q .
+
+  # Extract the mRID for the topological node of the connectivity node associated with each terminal
+  optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
+
+  service <${eq_repo}> {
+    # Specify components wer are interested in
+    values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer} .
+    ?component a ?rdf_type .
+    optional {?component SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+    ?terminal cim:Terminal.ConductingEquipment ?component;
+            cim:IdentifiedObject.mRID ?mrid;
+            cim:Terminal.ConnectivityNode ?con_node.
+
+    # Find area for the connectivity node of the terminal
+    ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+    filter(regex(?area, '${region}'))
   }
 
   # Assign analysis enabled (all True if not exist)
