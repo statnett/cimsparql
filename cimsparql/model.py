@@ -630,7 +630,7 @@ def get_federated_cim_model(
     clients = defaultdict(lambda: eq_client)  # By default queries are executed from the EQ repo
 
     # Setup client based on # Name in the pre-defined queries
-    clients["AC Lines"] = tpsvssh_client
-    clients["AC Line Terminal"] = tpsvssh_client
-    clients["Loads"] = tpsvssh_client
+    exec_from_tpssvssh = ("AC Lines", "AC Line Terminal", "Loads", "Branch node withdraw")
+    for query in exec_from_tpssvssh:
+        clients[query] = tpsvssh_client
     return MultiClientCimModel(clients, model_cfg, mapper)
