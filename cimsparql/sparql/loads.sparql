@@ -1,8 +1,21 @@
 # Name: Loads
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select distinct ?mrid ?name ?node ?station ?bidzone ?status ?p ?q ?station_group
+select ?mrid ?name ?node ?station ?bidzone ?status ?p ?q ?station_group
 where {
+
+  # Extrcact connected flag and optionally the mRID of the topological node associated with the terminal
+  ?terminal cim:ACDCTerminal.connected ?connected .
+  optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
+
+  # Optionally extract the mRID of the topological node for the connectivity node associated with each terminal
+  optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
+
+  # Optionally extract in_service flag and active and reactive energy consumption for each load
+  optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service }.
+  graph ${ssh_graph} {?load cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q}
+
+  service <${eq_repo}> {
   # Declare which load types to consider
   values ?load_type {cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer}
 
@@ -20,31 +33,16 @@ where {
   # Optionally extract bidzone for each substation and station_group for each load
   optional {?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   optional {?load cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
+  optional {?load SN:Equipment.networkAnalysisEnable ?_network_analysis} .
+  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  filter (?network_analysis)
 
   # Extract mRID and connectivity node for each terminal associated with a load
   ?terminal cim:Terminal.ConductingEquipment ?load;
            cim:IdentifiedObject.mRID ?t_mrid;
            cim:Terminal.ConnectivityNode ?con_node .
-
-  # Extrcact connected flag and optionally the mRID of the topological node associated with the terminal
-  service <${repo}> {
-    ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-    optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
   }
 
-  # Optionally extract the mRID of the topological node for the connectivity node associated with each terminal
-  optional {service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
-
-  # Optionally extract in_service flag and active and reactive energy consumption for each load
-  optional {
-    service <${repo}> {
-      optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
-      graph ${ssh_graph} {optional {?load cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q}}
-    }
-  }
-  optional {?load SN:Equipment.networkAnalysisEnable ?_network_analysis}
-  filter (?network_analysis)
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
 
   # Assign status flag for load. The status flag is set to the first existing of
   # 1) in_service flag

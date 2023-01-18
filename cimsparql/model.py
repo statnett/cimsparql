@@ -632,4 +632,5 @@ def get_federated_cim_model(
     # Setup client based on # Name in the pre-defined queries
     clients["AC Lines"] = tpsvssh_client
     clients["AC Line Terminal"] = tpsvssh_client
+    clients["Loads"] = tpsvssh_client
     return MultiClientCimModel(clients, model_cfg, mapper)

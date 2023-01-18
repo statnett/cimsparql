@@ -39,8 +39,8 @@ def graphdb_service() -> ServiceConfig:
 
 @pytest.fixture(scope="session")
 def model(graphdb_service: ServiceConfig) -> CimModel:
-    system_state_repo = f"repository:{graphdb_service.repo}"
-    eq_repo = f"repository:{graphdb_service.repo}"
+    system_state_repo = f"repository:{graphdb_service.repo},infer=false"
+    eq_repo = f"repository:{graphdb_service.repo},infer=false"
     return get_cim_model(graphdb_service, ModelConfig(system_state_repo, ssh_graph, eq_repo))
 
 
@@ -68,7 +68,11 @@ def model_sep() -> Optional[MultiClientCimModel]:
     eq_client = GraphDBClient(eq_client_cfg)
     tpsvssh_client = GraphDBClient(tpsvssh_client_cfg)
 
-    m_cfg = ModelConfig(f"repository:{system_state_repo}", ssh_graph, f"repository:{eq_repo}")
+    m_cfg = ModelConfig(
+        f"repository:{system_state_repo},infer=false",
+        ssh_graph,
+        f"repository:{eq_repo},infer=false",
+    )
     return get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
 
 
