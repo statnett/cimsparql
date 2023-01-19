@@ -3,82 +3,67 @@ PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
 select ?mrid ?p ?direction
 where {
-  {
-    select ?component ?p ?nr ?region
-    where {
-      # Declare components we are interested in
-      values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator} .
-      ?component a ?rdf_type;
-             cim:Equipment.EquipmentContainer/(cim:Line.Region|cim:VoltageLevel.Substation/cim:Substation.Region) ?region .
+  ?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .
+  service <${eq_repo}> {
+  {{
+    # Declare components we are interested in
+    values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator} .
+    ?component a ?rdf_type;
+            cim:Equipment.EquipmentContainer/(cim:Line.Region|cim:VoltageLevel.Substation/cim:Substation.Region) ?region .
 
-      # Extract properties for the terminal associated with the component
-      ?terminal a cim:Terminal;
-               cim:Terminal.ConductingEquipment ?component;
-               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
-      service <${repo}> {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
-    }
+    # Extract properties for the terminal associated with the component
+    ?terminal cim:Terminal.ConductingEquipment ?component;
+              cim:ACDCTerminal.sequenceNumber ?nr .
   }
   union
   {
-    select ?component ?p ?nr ?region
-    where {
-      # Extract all two winding transformers
       {
-        select ?p_transformer (count(distinct ?nr) as ?winding_count)
+        select ?p_transformer
         where {
-          ?p_transformer a cim:PowerTransformer;
-                   ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
+          ?p_transformer ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
         }
         group by ?p_transformer
-        having (?winding_count = 2)
+        having (count(*) = 2)
       } .
 
       # Extract region pf the power trasnformer
       ?p_transformer cim:Equipment.EquipmentContainer/cim:Substation.Region ?region .
 
       # Extract information from the windings associated with the power transformer
-      ?winding a cim:PowerTransformerEnd;
-               cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
+      ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
                cim:TransformerEnd.Terminal ?terminal;
                cim:TransformerEnd.endNumber ?nr .
 
       # For power transformer extract the winding corresponding to endNumber 1
-      ?component a cim:PowerTransformerEnd;
-             cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-             cim:TransformerEnd.endNumber 1 .
-      service <${repo}> {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
-    }
+      ?component cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
+                 cim:TransformerEnd.endNumber 1 .
   }
   union
   {
-    select ?component ?p (1 as ?nr) ?region
-    where {
+      # Extract all three winding transformers
       {
-        # Extract all three winding transformers
-        {
-          select ?p_transformer (count(distinct ?nr) as ?winding_count)
-          where {
-            ?p_transformer a cim:PowerTransformer;
-                     ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr;
-                   }
-          group by ?p_transformer
-          having (?winding_count = 3)
-        } .
+        select ?p_transformer
+        where {
+          ?p_transformer ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr;
+                  }
+        group by ?p_transformer
+        having (count(*) = 3)
+      } .
 
-        # Extract the region for the transformer
-        ?p_transformer cim:Equipment.EquipmentContainer/cim:Substation.Region ?region .
+      # Extract the region for the transformer
+      ?p_transformer cim:Equipment.EquipmentContainer/cim:Substation.Region ?region .
 
-        # For each power transformer extract all windngs and terminal
-        ?component cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-               cim:TransformerEnd.Terminal ?terminal .
-        service <${repo}> {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p}
-      }
+      # For each power transformer extract all windngs and terminal
+      ?component cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
+              cim:TransformerEnd.Terminal ?terminal .
+      bind (1 as ?nr)
     }
-  }
+  } .
   ?region cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?regionName .
 
   # Extract the mRID for the component
   ?component cim:IdentifiedObject.mRID ?mrid .
   filter(regex(?regionName, '${region}'))
   bind(if (?nr = 1, 1, -1) as ?direction)
+  }
 }
