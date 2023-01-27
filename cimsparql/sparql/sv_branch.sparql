@@ -1,100 +1,66 @@
-# Name: Sv branch
+# Name: SV branch
+#
+# Extract data from both EQ/TP/SV for ACLineSegment used to verify
+# results from state estimator where both current and voltage has been
+# defined as state variables.
+#
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 select ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?p_1 ?q_1 ?p_2 ?q_2 ?v_1 ?angle_1 ?v_2 ?angle_2
 where {
   # Extract key properties for ACLineSegment
-  ?acline cim:ACLineSegment.r ?r;
-          cim:ACLineSegment.x ?x;
-          cim:ACLineSegment.bch ?bch;
-          cim:ACLineSegment.gch ?gch;
-          cim:IdentifiedObject.mRID ?mrid;
-          cim:IdentifiedObject.name ?name;
-          cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
+  service <${eq_repo}>{
+    ?acline cim:ACLineSegment.r ?r;
+            cim:ACLineSegment.x ?x;
+            cim:ACLineSegment.bch ?bch;
+            cim:ACLineSegment.gch ?gch;
+            cim:IdentifiedObject.mRID ?mrid;
+            cim:IdentifiedObject.name ?name;
+            cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
 
+    ?terminal_1 a cim:Terminal;
+                cim:Terminal.ConductingEquipment ?acline;
+                cim:Terminal.ConnectivityNode ?con_node_1;
+                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
+
+    ?terminal_2 a cim:Terminal;
+                cim:Terminal.ConductingEquipment ?acline;
+                cim:Terminal.ConnectivityNode ?con_node_2;
+                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2 .
+  }
   # Extract in_service flag for each acline
-  service <${repo}> {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
+  ?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .
 
-  { # Search terminal 1 side SSH/TP/SV
-    select ?acline (?connected as ?connected_1) (?p as ?p_1) (?q as ?q_1) (?v as ?v_1) (?angle as ?angle_1)
-    where
-    {
-      ?acline a cim:ACLineSegment .
-      ?terminal a cim:Terminal;
-               cim:IdentifiedObject.mRID ?t_mrid;
-               cim:Terminal.ConductingEquipment ?acline;
-               cim:Terminal.ConnectivityNode ?con_node;
-               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
+  # Extract connectivity node, topological node, voltage ang angle
+  ?con_node_1 cim:ConnectivityNode.TopologicalNode ?node_1 .
+  optional {
+    ?_sv_n_1 cim:SvVoltage.TopologicalNode ?node_1;
+             cim:SvVoltage.v ?v_1;
+             cim:SvVoltage.angle ?angle_1 .
+  }
 
-      # Extract area based for connectivity node associated with each terminal
-      ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-      filter(regex(?area, '${region}'))
+  # Extract conencted flag and active and reactive power for each terminal
+  ?terminal_1 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1 .
+  optional
+  {
+    ?_sv_t_1 cim:SvPowerFlow.Terminal ?terminal_1;
+             cim:SvPowerFlow.p ?p_1;
+             cim:SvPowerFlow.q ?q_1.
+  }.
 
-      # Extract connectivity node, topological node, voltage ang angle
-      service <${repo}>
-      {
-        select ?con_node ?node ?v ?angle
-        where
-        {
-          ?con_node cim:ConnectivityNode.TopologicalNode ?node .
-          optional {
-            ?_sv_n cim:SvVoltage.TopologicalNode ?node;
-                   cim:SvVoltage.v ?v;
-                   cim:SvVoltage.angle ?angle .
-          }
-        }
-      }
-
-      # Extract conencted flag and active and reactive power for each temrinal
-      service <${repo}>
-      {
-        ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-        optional
-        {
-          ?_sv_t cim:SvPowerFlow.Terminal ?terminal;
-                 cim:SvPowerFlow.p ?p;
-                 cim:SvPowerFlow.q ?q.
-        }
-      }.
-    }
-  } .
-  { # Search terminal 2 side SSH/TP/SV
-    select ?acline (?connected as ?connected_2) (?p as ?p_2) (?q as ?q_2) (?v as ?v_2) (?angle as ?angle_2)
-    where
-    {
-      ?acline a cim:ACLineSegment .
-      ?terminal a cim:Terminal;
-               cim:IdentifiedObject.mRID ?t_mrid;
-               cim:Terminal.ConductingEquipment ?acline;
-               cim:Terminal.ConnectivityNode ?con_node;
-               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2 .
-      ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-      filter(regex(?area, '${region}'))
-      service <${repo}>
-      {
-        select ?con_node ?node ?v ?angle
-        where
-        {
-          ?con_node cim:ConnectivityNode.TopologicalNode ?node .
-          optional {
-            ?_sv_n cim:SvVoltage.TopologicalNode ?node;
-                   cim:SvVoltage.v ?v;
-                   cim:SvVoltage.angle ?angle .
-          }
-        }
-      }
-      service <${repo}>
-      {
-        ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-        optional
-        {
-          ?_sv_t cim:SvPowerFlow.Terminal ?terminal;
-                 cim:SvPowerFlow.p ?p;
-                 cim:SvPowerFlow.q ?q.
-        }
-      }.
-    }
-  } .
+  ?con_node_2 cim:ConnectivityNode.TopologicalNode ?node_2 .
+  optional {
+    ?_sv_n_2 cim:SvVoltage.TopologicalNode ?node_2;
+             cim:SvVoltage.v ?v_2;
+             cim:SvVoltage.angle ?angle_2 .
+  }
+  ?terminal_2 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_2 .
+  optional
+  {
+    ?_sv_t_2 cim:SvPowerFlow.Terminal ?terminal_2;
+             cim:SvPowerFlow.p ?p_2;
+             cim:SvPowerFlow.q ?q_2.
+  }
   optional {?acline SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
