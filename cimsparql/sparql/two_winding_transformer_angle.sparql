@@ -11,7 +11,7 @@ where {
             cim:TransformerEnd.endNumber 2 .
   ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc;
                cim:TapChanger.normalStep ?normalstep;
-               cim:PhaseTapChanger.TransformerEnd ?winding2 .
+               ^cim:PhaseTapChanger.TransformerEnd/cim:PowerTransformerEnd.PowerTransformer ?p_transformer .
   service <${repo}> {?tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?position}
   bind((xsd:double(str(?position)) - xsd:double(str(?normalstep))) * xsd:double(str(?inc)) as ?angle)
 }
