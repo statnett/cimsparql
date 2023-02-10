@@ -27,7 +27,9 @@ class AsyncSparqlWrapper(SPARQLWrapper):
         method = request.get_method()
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.request(method, url, headers=request.headers, data=request.data)
+            response = await client.request(
+                method, url, headers=request.headers, content=request.data
+            )
 
         status = response.status_code
         if status != 200:
