@@ -13,11 +13,11 @@ class JsonSchemaOut(pa.SchemaModel):
 
 
 class FullModelSchema(JsonSchemaOut):
-    model: Series[pd.StringDtype] = pa.Field()
-    time: Series[pd.StringDtype] = pa.Field()
-    profile: Series[pd.StringDtype] = pa.Field()
-    version: Series[pd.StringDtype] = pa.Field()
-    description: Series[pd.StringDtype] = pa.Field()
+    model: Series[str] = pa.Field()
+    time: Series[str] = pa.Field()
+    profile: Series[str] = pa.Field()
+    version: Series[str] = pa.Field()
+    description: Series[str] = pa.Field()
 
     @pa.dataframe_check
     def unique_time(cls, df: DataFrame) -> bool:
@@ -29,7 +29,7 @@ class MridResourceSchema(JsonSchemaOut):
     Common class for resources with an mrid as index
     """
 
-    mrid: Index[pd.StringDtype] = pa.Field(unique=True)
+    mrid: Index[str] = pa.Field(unique=True)
 
 
 class NamedResourceSchema(MridResourceSchema):
@@ -37,7 +37,7 @@ class NamedResourceSchema(MridResourceSchema):
     Common class for resources with an mrid and a name
     """
 
-    name: Series[pd.StringDtype] = pa.Field()
+    name: Series[str] = pa.Field()
 
 
 class NamedMarketResourceSchema(NamedResourceSchema):
@@ -45,7 +45,7 @@ class NamedMarketResourceSchema(NamedResourceSchema):
     Common class for named resources with an (optional) associated market_code
     """
 
-    market_code: Series[pd.StringDtype] = pa.Field(nullable=True)
+    market_code: Series[str] = pa.Field(nullable=True)
 
 
 class MarketDatesSchema(NamedResourceSchema):
@@ -53,92 +53,92 @@ class MarketDatesSchema(NamedResourceSchema):
 
 
 class BusDataSchema(JsonSchemaOut):
-    node: Index[pd.StringDtype] = pa.Field(
+    node: Index[str] = pa.Field(
         unique=True,
     )
-    name: Series[pd.StringDtype] = pa.Field()
-    busname: Series[pd.StringDtype] = pa.Field()
+    name: Series[str] = pa.Field()
+    busname: Series[str] = pa.Field()
     un: Series[float] = pa.Field()
-    station: Series[pd.StringDtype] = pa.Field()
-    bidzone: Series[pd.StringDtype] = pa.Field(nullable=True)
+    station: Series[str] = pa.Field()
+    bidzone: Series[str] = pa.Field(nullable=True)
 
 
 class LoadsSchema(NamedResourceSchema):
-    node: Series[pd.StringDtype] = pa.Field()
-    station: Series[pd.StringDtype] = pa.Field()
-    bidzone: Series[pd.StringDtype] = pa.Field(nullable=True)
+    node: Series[str] = pa.Field()
+    station: Series[str] = pa.Field()
+    bidzone: Series[str] = pa.Field(nullable=True)
     status: Series[bool] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
-    station_group: Series[pd.StringDtype] = pa.Field(nullable=True)
+    station_group: Series[str] = pa.Field(nullable=True)
 
 
 class WindGeneratingUnitsSchema(NamedMarketResourceSchema):
-    station_group: Series[pd.StringDtype] = pa.Field(nullable=True)
+    station_group: Series[str] = pa.Field(nullable=True)
     min_p: Series[float] = pa.Field()
     max_p: Series[float] = pa.Field()
-    plant_mrid: Series[pd.StringDtype] = pa.Field(nullable=True)
+    plant_mrid: Series[str] = pa.Field(nullable=True)
 
 
 class SynchronousMachinesSchema(NamedMarketResourceSchema):
     allocationmax: Series[float] = pa.Field(nullable=True)
-    node: Series[pd.StringDtype] = pa.Field()
+    node: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
-    station_group: Series[pd.StringDtype] = pa.Field(nullable=True)
-    station_group_name: Series[pd.StringDtype] = pa.Field(nullable=True)
-    station: Series[pd.StringDtype] = pa.Field()
+    station_group: Series[str] = pa.Field(nullable=True)
+    station_group_name: Series[str] = pa.Field(nullable=True)
+    station: Series[str] = pa.Field()
     maxP: Series[float] = pa.Field(nullable=True)
     minP: Series[float] = pa.Field(nullable=True)
     MO: Series[float] = pa.Field(nullable=True)
-    bidzone: Series[pd.StringDtype] = pa.Field(nullable=True)
+    bidzone: Series[str] = pa.Field(nullable=True)
     sn: Series[float] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
 
 
 class ConnectionsSchema(MridResourceSchema):
-    t_mrid_1: Series[pd.StringDtype] = pa.Field()
-    t_mrid_2: Series[pd.StringDtype] = pa.Field()
+    t_mrid_1: Series[str] = pa.Field()
+    t_mrid_2: Series[str] = pa.Field()
 
 
 class BordersSchema(NamedMarketResourceSchema):
-    area_1: Series[pd.StringDtype] = pa.Field()
-    area_2: Series[pd.StringDtype] = pa.Field()
-    t_mrid_1: Series[pd.StringDtype] = pa.Field()
-    t_mrid_2: Series[pd.StringDtype] = pa.Field()
+    area_1: Series[str] = pa.Field()
+    area_2: Series[str] = pa.Field()
+    t_mrid_1: Series[str] = pa.Field()
+    t_mrid_2: Series[str] = pa.Field()
 
 
 class ExchangeSchema(NamedMarketResourceSchema):
-    node: Series[pd.StringDtype] = pa.Field()
+    node: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     p: Series[float] = pa.Field()
 
 
 class ConvertersSchema(NamedResourceSchema):
-    alias: Series[pd.StringDtype] = pa.Field(nullable=True)
-    station: Series[pd.StringDtype] = pa.Field()
+    alias: Series[str] = pa.Field(nullable=True)
+    station: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
-    node: Series[pd.StringDtype] = pa.Field()
+    node: Series[str] = pa.Field()
 
 
 class TransfConToConverterSchema(NamedResourceSchema):
-    t_mrid: Series[pd.StringDtype] = pa.Field()
-    p_mrid: Series[pd.StringDtype] = pa.Field()
+    t_mrid: Series[str] = pa.Field()
+    p_mrid: Series[str] = pa.Field()
 
 
 class CoordinatesSchema(JsonSchemaOut):
-    mrid: Series[pd.StringDtype] = pa.Field()
-    x: Series[pd.StringDtype] = pa.Field()
-    y: Series[pd.StringDtype] = pa.Field()
+    mrid: Series[str] = pa.Field()
+    x: Series[str] = pa.Field()
+    y: Series[str] = pa.Field()
     epsg: Series[pd.CategoricalDtype] = pa.Field()
     rdf_type: Series[pd.CategoricalDtype] = pa.Field()
 
 
 class BranchComponentSchema(NamedResourceSchema):
-    bidzone_1: Series[pd.StringDtype] = pa.Field(nullable=True)
-    bidzone_2: Series[pd.StringDtype] = pa.Field(nullable=True)
-    node_1: Series[pd.StringDtype] = pa.Field()
-    node_2: Series[pd.StringDtype] = pa.Field()
+    bidzone_1: Series[str] = pa.Field(nullable=True)
+    bidzone_2: Series[str] = pa.Field(nullable=True)
+    node_1: Series[str] = pa.Field()
+    node_2: Series[str] = pa.Field()
     ploss_1: Series[float] = pa.Field(nullable=True)
     ploss_2: Series[float] = pa.Field(nullable=True)
     r: Series[float] = pa.Field()
@@ -159,12 +159,12 @@ class AcLinesSchema(ShuntComponentSchema):
 
 
 class TransformersSchema(JsonSchemaOut):
-    name: Series[pd.StringDtype] = pa.Field()
-    p_mrid: Series[pd.StringDtype] = pa.Field()
-    w_mrid: Series[pd.StringDtype] = pa.Field()
+    name: Series[str] = pa.Field()
+    p_mrid: Series[str] = pa.Field()
+    w_mrid: Series[str] = pa.Field()
     end_number: Series[int] = pa.Field()
     un: Series[float] = pa.Field()
-    t_mrid: Series[pd.StringDtype] = pa.Field()
+    t_mrid: Series[str] = pa.Field()
     r: Series[float] = pa.Field()
     x: Series[float] = pa.Field()
     rate: Series[float] = pa.Field(nullable=True)
@@ -176,13 +176,13 @@ class TransformerWindingSchema(ShuntComponentSchema):
 
 
 class SubstationVoltageSchema(JsonSchemaOut):
-    substation: Index[pd.StringDtype] = pa.Field()
-    container: Series[pd.StringDtype] = pa.Field()
+    substation: Index[str] = pa.Field()
+    container: Series[str] = pa.Field()
     v: Series[float] = pa.Field()
 
 
 class DisconnectedSchema(JsonSchemaOut):
-    mrid: Series[pd.StringDtype] = pa.Field(unique=True)
+    mrid: Series[str] = pa.Field(unique=True)
 
 
 class PowerFlowSchema(MridResourceSchema):
@@ -192,7 +192,7 @@ class PowerFlowSchema(MridResourceSchema):
 
 
 class BranchWithdrawSchema(MridResourceSchema):
-    node: Series[pd.StringDtype] = pa.Field()
+    node: Series[str] = pa.Field()
     p: Series[float] = pa.Field()
     q: Series[float] = pa.Field()
 
@@ -202,31 +202,31 @@ class DcActiveFlowSchema(MridResourceSchema):
 
 
 class RegionsSchema(MridResourceSchema):
-    region: Series[pd.StringDtype] = pa.Field()
-    short_name: Series[pd.StringDtype] = pa.Field(nullable=True)
-    name: Series[pd.StringDtype] = pa.Field()
-    alias_name: Series[pd.StringDtype] = pa.Field(nullable=True)
-    region_name: Series[pd.StringDtype] = pa.Field(nullable=True)
+    region: Series[str] = pa.Field()
+    short_name: Series[str] = pa.Field(nullable=True)
+    name: Series[str] = pa.Field()
+    alias_name: Series[str] = pa.Field(nullable=True)
+    region_name: Series[str] = pa.Field(nullable=True)
 
 
 class StationGroupCodeNameSchema(JsonSchemaOut):
-    station_group: Index[pd.StringDtype] = pa.Field(unique=True)
-    name: Series[pd.StringDtype] = pa.Field()
-    alias_name: Series[pd.StringDtype] = pa.Field(nullable=True)
+    station_group: Index[str] = pa.Field(unique=True)
+    name: Series[str] = pa.Field()
+    alias_name: Series[str] = pa.Field(nullable=True)
 
 
 class HVDCBidzonesSchema(MridResourceSchema):
-    from_area: Series[pd.StringDtype] = pa.Field()
-    to_area: Series[pd.StringDtype] = pa.Field()
+    from_area: Series[str] = pa.Field()
+    to_area: Series[str] = pa.Field()
 
 
 HVDCBidzonesDataFrame = DataFrame[HVDCBidzonesSchema]
 
 
 class TransformerWindingsSchema(JsonSchemaOut):
-    mrid: Series[pd.StringDtype] = pa.Field()
+    mrid: Series[str] = pa.Field()
     end_number: Series[int] = pa.Field(gt=0)
-    w_mrid: Index[pd.StringDtype] = pa.Field(unique=True)
+    w_mrid: Index[str] = pa.Field(unique=True)
 
 
 TransformerWindingsDataFrame = DataFrame[TransformerWindingsSchema]

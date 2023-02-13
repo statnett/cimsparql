@@ -305,7 +305,7 @@ async def test_coordinates(micro_t1_nl_models: MOD_TYPE, server: str):
     if skip(model, server):
         pytest.skip(skip_msg(server))
     crd = await model.coordinates()
-    pd.testing.assert_index_equal(crd["epsg"].cat.categories, pd.Index(["4326"], dtype="string"))
+    pd.testing.assert_index_equal(crd["epsg"].cat.categories, pd.Index(["4326"], dtype=str))
 
     cim = model.client.prefixes["cim"]
     categories = {f"{cim}ACLineSegment", f"{cim}Substation"}

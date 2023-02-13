@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime
 from decimal import Decimal
 from typing import Any, Callable, Dict, Generator, Optional, Union
 
@@ -18,10 +17,10 @@ COL_NAME = str
 PREFIX = str
 URI = str
 
-as_type_able = [int, float, "string", "Int64", "Int32", "Int16"]
+as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
 
 
-def to_timedelta(duration: str) -> datetime.timedelta:
+def to_timedelta(duration: str) -> pd.Timedelta:
     # Pandas only supports days, hours, minites, seconds
     # not year and month which can be part of
     # https://www.w3.org/TR/xmlschema11-2/#duration
@@ -47,17 +46,14 @@ XSD_TYPE_MAP = {
 
 
 CIM_TYPE_MAP = {
-    "String": "string",
+    "String": str,
     "Integer": int,
     "Boolean": bool,
     "Float": float,
     "Date": pd.to_datetime,
 }
 
-sparql_type_map = {
-    "literal": "string",
-    "uri": "string",
-}
+sparql_type_map = {"literal": str, "uri": str}
 
 
 @contextmanager
@@ -100,9 +96,7 @@ class TypeMapper:
         return any(cim in val for val in self.map.keys())
 
     def type_map(self, df: pd.DataFrame) -> Dict[str, Any]:
-        return {
-            row.sparql_type: self.prim_type_map.get(row.range, "string") for row in df.itertuples()
-        }
+        return {row.sparql_type: self.prim_type_map.get(row.range, str) for row in df.itertuples()}
 
     def get_map(self) -> Dict[str, Any]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
@@ -128,7 +122,7 @@ class TypeMapper:
         """
         Construct a direct mapping from column names to a type caster from the
         """
-        return {col: self.map.get(dtype, "string") for col, dtype in col_map.items()}
+        return {col: self.map.get(dtype, str) for col, dtype in col_map.items()}
 
     def map_data_types(
         self, df: pd.DataFrame, col_map: Dict[COL_NAME, SPARQL_TYPE]
