@@ -1,15 +1,15 @@
 # Name: Bus
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select ?node ?name ?busname ?un ?station ?bidzone
+select ?node ?name ?busname ?un ?station ?bidzone ?sv_voltage
 where {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
   service <${repo}> {
-    ?top_node a cim:TopologicalNode;
+    ?top_node cim:TopologicalNode.BaseVoltage ?base_voltage;
+           cim:TopologicalNode.ConnectivityNodeContainer ?container;
            cim:IdentifiedObject.mRID ?node;
            cim:IdentifiedObject.name ?busname;
-           cim:TopologicalNode.BaseVoltage ?base_voltage;
-           cim:TopologicalNode.ConnectivityNodeContainer ?container .
+           ^cim:SvVoltage.TopologicalNode/cim:SvVoltage.v ?sv_voltage
   }
 
   # Find the nominal voltage from the base voltage associated with the topological node
