@@ -53,14 +53,13 @@ class MarketDatesSchema(NamedResourceSchema):
 
 
 class BusDataSchema(JsonSchemaOut):
-    node: Index[str] = pa.Field(
-        unique=True,
-    )
+    node: Index[str] = pa.Field(unique=True)
     name: Series[str] = pa.Field()
     busname: Series[str] = pa.Field()
     un: Series[float] = pa.Field()
     station: Series[str] = pa.Field()
     bidzone: Series[str] = pa.Field(nullable=True)
+    sv_voltage: Series[float] = pa.Field(nullable=True)
 
 
 class LoadsSchema(NamedResourceSchema):
