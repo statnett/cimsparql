@@ -7,15 +7,23 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from cimsparql import type_mapper
-from cimsparql.graphdb import GraphDBClient, default_namespaces
+from cimsparql.graphdb import RestApi
+from cimsparql.model import ServiceConfig
 
 
-def apply_mp(monkeypatch, sparql_type_df: Optional[pd.DataFrame] = None):
-    if sparql_type_df is None:
-        sparql_type_df = pd.DataFrame()
+def init_triple_store_server(httpserver, sparql_result: Optional[dict] = None) -> ServiceConfig:
+    """
+    Create a triple store server that returns sparql_result_data when a call is made
+    """
+    sparql_result = sparql_result or empty_sparql_result()
+    httpserver.expect_request("/sparql").respond_with_json(sparql_result)
+    return ServiceConfig(
+        server=httpserver.url_for("/sparql"), rest_api=RestApi.DIRECT_SPARQL_ENDPOINT
+    )
 
-    monkeypatch.setattr(GraphDBClient, "get_table", lambda *args: (sparql_type_df, {}))
-    monkeypatch.setattr(GraphDBClient, "get_prefixes", lambda *args: default_namespaces())
+
+def empty_sparql_result():
+    return {"head": {"vars": []}, "results": {"bindings": []}}
 
 
 def test_python_type_map_bool():
@@ -23,23 +31,32 @@ def test_python_type_map_bool():
     assert not type_mapper.XSD_TYPE_MAP["boolean"]("FALSE")
 
 
-def test_get_map_empty_pandas(monkeypatch):
-    apply_mp(monkeypatch)
-    mapper = type_mapper.TypeMapper()
+def test_get_map_empty_pandas(httpserver):
+    service_cfg = init_triple_store_server(httpserver)
+    mapper = type_mapper.TypeMapper(service_cfg)
     assert mapper.get_map() == {}
 
 
-def test_map_data_types(monkeypatch):
-    df = pd.DataFrame(
-        {
-            "sparql_type": ["http://c#Degrees", "http://c#Status", "http://c#Amount"],
-            "range": ["http://x#Float", "http://x#Bool", "http://x#Integer"],
-        }
-    )
-    apply_mp(monkeypatch, df)
+def test_map_data_types(httpserver):
+    results = {
+        "sparql_type": ["http://c#Degrees", "http://c#Status", "http://c#Amount"],
+        "range": ["http://x#Float", "http://x#Bool", "http://x#Integer"],
+    }
+
+    # Represent result as a sparql_result
+    sparql_result = {
+        "head": {"vars": list(results.keys())},
+        "results": {
+            "bindings": [
+                {k: {"type": "literal", "value": v[i]} for k, v in results.items()}
+                for i in range(3)
+            ]
+        },
+    }
+    service_cfg = init_triple_store_server(httpserver, sparql_result)
 
     types = {"http://c#Degrees": float, "http://c#Status": bool, "http://c#Amount": int}
-    tm = type_mapper.TypeMapper(custom_additions=types)
+    tm = type_mapper.TypeMapper(service_cfg, custom_additions=types)
 
     df = pd.DataFrame(
         {
@@ -95,7 +112,7 @@ def test_xsd_types(dtype: str, test: tuple):
         ("16", True),
     ],
 )
-def test_have_cim_version(monkeypatch, cim_version: int, have_cim_version: bool):
-    apply_mp(monkeypatch)
-    tm = type_mapper.TypeMapper()
+def test_have_cim_version(httpserver, cim_version: int, have_cim_version: bool):
+    service_cfg = init_triple_store_server(httpserver)
+    tm = type_mapper.TypeMapper(service_cfg)
     assert tm.have_cim_version(cim_version) == have_cim_version
