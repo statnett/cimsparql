@@ -122,7 +122,7 @@ class TypeMapper:
         """
         Construct a direct mapping from column names to a type caster from the
         """
-        return {col: self.map.get(dtype, str) for col, dtype in col_map.items()}
+        return {col: self.map[dtype] for col, dtype in col_map.items() if dtype in self.map}
 
     def map_data_types(
         self, df: pd.DataFrame, col_map: Dict[COL_NAME, SPARQL_TYPE]

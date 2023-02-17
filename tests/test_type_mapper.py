@@ -2,11 +2,14 @@ import datetime
 from decimal import Decimal
 from typing import Optional
 
+import numpy as np
 import pandas as pd
+import pandera as pa
 import pytest
 from pandas.testing import assert_frame_equal
 
 from cimsparql import type_mapper
+from cimsparql.data_models import JsonSchemaOut
 from cimsparql.graphdb import RestApi
 from cimsparql.model import ServiceConfig
 
@@ -116,3 +119,24 @@ def test_have_cim_version(httpserver, cim_version: int, have_cim_version: bool):
     service_cfg = init_triple_store_server(httpserver)
     tm = type_mapper.TypeMapper(service_cfg)
     assert tm.have_cim_version(cim_version) == have_cim_version
+
+
+class FloatSchema(JsonSchemaOut):
+    float_col: pa.typing.Series[float] = pa.Field(nullable=True)
+
+
+@pytest.mark.parametrize(
+    "in_data, out_data",
+    [
+        ({"float_col": ["1.0", "2.0"]}, {"float_col": [1.0, 2.0]}),
+        ({"float_col": ["1.0", None]}, {"float_col": [1.0, np.nan]}),
+    ],
+)
+def test_coerce_missing_type(httpserver, in_data: dict, out_data: dict):
+    client = init_triple_store_server(httpserver)
+    in_df, out_df = pd.DataFrame(in_data), pd.DataFrame(out_data)
+    mapper = type_mapper.TypeMapper(client)
+
+    col_map = {"float_col": "http://non-existent#type"}
+    df = FloatSchema(mapper.map_data_types(in_df, col_map))
+    pd.testing.assert_frame_equal(df, out_df)
