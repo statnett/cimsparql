@@ -17,7 +17,7 @@ COL_NAME = str
 PREFIX = str
 URI = str
 
-as_type_able = [int, float, str, "Int64", "Int32", "Int16"]
+as_type_able = [int, float, "Int64", "Int32", "Int16"]
 
 
 def to_timedelta(duration: str) -> pd.Timedelta:
@@ -29,6 +29,10 @@ def to_timedelta(duration: str) -> pd.Timedelta:
         raise ValueError("Cimsparql uses pandas to convert duration. Y not supported")
 
     return pd.to_timedelta(duration)
+
+
+def str_preserve_none(x: Any) -> Union[str, None]:
+    return None if pd.isna(x) else str(x)
 
 
 XSD_TYPE_MAP = {
@@ -46,14 +50,14 @@ XSD_TYPE_MAP = {
 
 
 CIM_TYPE_MAP = {
-    "String": str,
+    "String": str_preserve_none,
     "Integer": int,
     "Boolean": bool,
     "Float": float,
     "Date": pd.to_datetime,
 }
 
-sparql_type_map = {"literal": str, "uri": str}
+sparql_type_map = {"literal": str_preserve_none, "uri": str_preserve_none}
 
 
 @contextmanager
@@ -96,7 +100,10 @@ class TypeMapper:
         return any(cim in val for val in self.map.keys())
 
     def type_map(self, df: pd.DataFrame) -> Dict[str, Any]:
-        return {row.sparql_type: self.prim_type_map.get(row.range, str) for row in df.itertuples()}
+        return {
+            row.sparql_type: self.prim_type_map.get(row.range, str_preserve_none)
+            for row in df.itertuples()
+        }
 
     def get_map(self) -> Dict[str, Any]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
@@ -157,7 +164,7 @@ def map_base_types(df: pd.DataFrame, type_map: Dict[COL_NAME, TYPE_CASTER]) -> p
     """
     as_type_able_columns = {c for c, datatype in type_map.items() if datatype in as_type_able}
     if not df.empty:
-        df = df.astype({column: type_map[column] for column in as_type_able_columns})
+        df = df.astype({c: type_map[c] for c in as_type_able_columns})
     return df
 
 

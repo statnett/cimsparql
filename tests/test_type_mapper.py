@@ -140,3 +140,23 @@ def test_coerce_missing_type(httpserver, in_data: dict, out_data: dict):
     col_map = {"float_col": "http://non-existent#type"}
     df = FloatSchema(mapper.map_data_types(in_df, col_map))
     pd.testing.assert_frame_equal(df, out_df)
+
+
+def test_coerce_float_from_literal(httpserver):
+    client = init_triple_store_server(httpserver)
+    mapper = type_mapper.TypeMapper(client)
+
+    # Set the type to literal which could happen if the triple store contains non-typed entries.
+    # The panders schemas should still be able to cast into the correct type
+    col_map = {"float_col": "literal"}
+    df = pd.DataFrame({"float_col": ["1.0", None]})
+
+    # None should now be preserved by the mapper
+    df = mapper.map_data_types(df, col_map)
+    assert df.loc[1, "float_col"] is None
+
+    df = FloatSchema(df)
+
+    # Now the None value should be casted into np.nan
+    missing = df.loc[1, "float_col"]
+    assert missing is not None and pd.isna(missing)
