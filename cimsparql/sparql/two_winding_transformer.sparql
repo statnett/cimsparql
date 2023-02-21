@@ -67,8 +67,9 @@ where
       ?winding cim:TransformerEnd.Terminal ?terminal;
               cim:PowerTransformerEnd.ratedU ?ubase;
               cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-              cim:PowerTransformerEnd.phaseAngleClock ?angleclock;
               cim:TransformerEnd.endNumber 2 .
+      optional{?winding cim:PowerTransformerEnd.phaseAngleClock ?aclock .}
+      bind(coalesce(?aclock, 0.0) as ?angleclock)
       ?terminal cim:IdentifiedObject.mRID ?t_mrid;
                cim:Terminal.ConnectivityNode ?con_node.
       ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .

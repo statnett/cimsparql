@@ -15,12 +15,13 @@ where {
   ?winding cim:TransformerEnd.Terminal ?terminal;
          cim:IdentifiedObject.mRID ?mrid;
          cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-         cim:PowerTransformerEnd.phaseAngleClock ?angleclock;
          cim:PowerTransformerEnd.ratedU ?ubase;
          cim:PowerTransformerEnd.r ?r;
          cim:PowerTransformerEnd.x ?x;
          cim:PowerTransformerEnd.b ?b;
          cim:PowerTransformerEnd.g ?g .
+  optional{?winding cim:PowerTransformerEnd.phaseAngleClock ?aclock .}
+  bind(coalesce(?aclock, 0.0) as ?angleclock)
 
   # Extract the connectivity node for each termina, and find the nominal voltage from the connectivity node
   ?terminal cim:Terminal.ConnectivityNode ?con_node .
