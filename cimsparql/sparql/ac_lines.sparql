@@ -2,22 +2,61 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status ?un ?x ?b ?g ?length
+select
+# Below a lot of max aggregation is performed. For variables without any suffix (_1 og _2) all values within the
+# group are equal and we might as well just pick the maximum value. For variables with the suffix _1 og _2, the
+# value we want to extract either exist as one entry in the group. The other entry is an empty string. Since
+# all strings are greater than the empty string, max-aggregation will pick the value we want. For the boolan
+# value ?connected_1 (or_2), the default value is False. By a similar argument True is larger than False,
+# thus max-aggregation will pick True if it exists in the group
+(max(?mrid) as ?mrid)
+(max(?name) as ?name)
+(max(?bidzone_1) as ?bidzone_1)
+(max(?bidzone_2) as ?bidzone_2)
+(max(?node_1) as ?node_1)
+(max(?node_2) as ?node_2)
+
+# If SvPower at node 1 is smaller than SvPower at node 2, we assign the loss (sum of the two) to node_1. In case
+# SvPower at node 1 is larger than on node 2, the loss is assigned to node_2
+(if (xsd:double(max(?p_1)) < xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_1)
+(if (xsd:double(max(?p_1)) > xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_2)
+(max(?r) as ?r)
+(max(?rate) as ?rate)
+(coalesce(max(?in_service), max(?connected_1) && max(?connected_2), True) as ?status)
+(max(?un) as ?un)
+(max(?x) as ?x)
+(max(?b) as ?b)
+(max(?g) as ?g)
+(max(?length) as ?length)
 where {
   # TODO: Check if SN:Equipment.networkAnalysisEnable is on it's way into the standard
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for ACLineSegments
   service <${eq_repo}> {
-  ?acline a cim:ACLineSegment;
-         cim:IdentifiedObject.mRID ?mrid;
-         cim:IdentifiedObject.name ?name;
-         cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
-         cim:Conductor.length ?length;
-         cim:ACLineSegment.r ?r;
-         cim:ACLineSegment.x ?x;
-         cim:ACLineSegment.bch ?b.
+  ?acline cim:ACLineSegment.r ?r;
+          cim:ACLineSegment.x ?x;
+          cim:ACLineSegment.bch ?b;
+          cim:IdentifiedObject.mRID ?mrid;
+          cim:IdentifiedObject.name ?name;
+          cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
+          cim:Conductor.length ?length .
+
+  ?terminal cim:Terminal.ConductingEquipment ?acline;
+            cim:IdentifiedObject.mRID ?t_mrid;
+            cim:Terminal.ConnectivityNode ?con_node;
+            cim:ACDCTerminal.sequenceNumber ?nr .
+
+  # Find substation of each connectivity node of the terminals above
+  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
+
+  # Find area and optionally bidzone for each substation
+  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+  optional {
+    ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone .
+  }
+
   optional {?acline cim:ACLineSegment.gch ?g .}
-  optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  optional {?acline SN:Equipment.networkAnalysisEnable ?analysis_enabled .}
 
   # If exists, extract active power limit for acline
   optional {
@@ -27,20 +66,33 @@ where {
           cim:ActivePowerLimit.value ?rate .
   }} .
   # Search for acline SV status will be combined with SSH connected
-  optional {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service } .
+  optional {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service . }
+  optional { ?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
 
-  # Search terminal nr side SSH/TP/SV. See acline_terminal.sparql which provides ?acline ?connected_{nr} ?p_{nr}
-  { ${acline_terminal_1} } .
-  { ${acline_terminal_2} } .
+  # Find properties in TP/SV/SSH profile for each terminal.
+  ?terminal cim:ACDCTerminal.connected ?connected .
+  optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid} .
+  optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
 
-  optional
-  { # Add branch loss on recieving end.
-    bind((xsd:double(str(?p_1)) + xsd:double(str(?p_2))) as ?pl)
-    bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_2)
-    bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_1)
-  }
-  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  filter(?analysis_enabled)
-  bind(coalesce(?in_service, ?connected_1 && ?connected_2, True) as ?status)
-  filter(?node_1 != ?node_2)   # We don't need lines connecting nodes to themselves
-}
+  # Assign an mrid to the ?node_<nr> variable. The mrid is set to the first that exist
+  # 1) mRID of the topological node of the connectivity node for each terminal
+  # 2) mRID of the topological node of each terminal
+  # 3) mrID of the terminal
+  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node)
+
+  # Create variables for node 1 and node 2
+  bind(if(?nr = 1, str(?p), '') as ?p_1)
+  bind(if(?nr = 1, ?node, '') as ?node_1)
+  bind(if(?nr = 1, ?connected, False) as ?connected_1)
+  bind(if(?nr = 1, ?bidzone, '') as ?bidzone_1)
+  bind(if(?nr = 2, str(?p), '') as ?p_2)
+  bind(if(?nr = 2, ?node, '') as ?node_2)
+  bind(if(?nr = 2, ?connected, False) as ?connected_2)
+  bind(if(?nr = 2, ?bidzone, '') as  ?bidzone_2)
+  filter(regex(?area, '${region}'))
+} group by ?acline
+# Filtration rules
+# 1) We don't need lines connecting nodes to themselves
+# 2) Only extract lines where at least two nodes exist
+# 3) Only extract lines where SN:Equipment.networkAnalysisEnable is True (if the field exists)
+having((max(?node_1) != max(?node_2)) && (count(*) > 1) && coalesce(max(?analysis_enabled), True))

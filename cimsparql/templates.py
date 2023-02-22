@@ -1,15 +1,5 @@
 import pathlib
-import re
 from string import Template
-from typing import Dict
-
-
-def drop_prefix(query: str) -> str:
-    """Remove PREFIX from query.
-
-    For sub-templates which should also be able to run seperately
-    """
-    return re.sub(r"^PREFIX .*\n?", "", query, flags=re.MULTILINE)
 
 
 def _read_template(filename: pathlib.Path) -> Template:
@@ -17,18 +7,9 @@ def _read_template(filename: pathlib.Path) -> Template:
         return Template(file.read())
 
 
-def _ac_line_terminals(query: Template) -> Dict[str, str]:
-    return {f"acline_terminal_{nr}": drop_prefix(query.safe_substitute(nr=nr)) for nr in [1, 2]}
-
-
 sparql_folder = pathlib.Path(__file__).parent / "sparql"
 
-ACLINE_TERMINAL_QUERY = _read_template(sparql_folder / "acline_terminal.sparql")
-AC_LINE_QUERY = Template(
-    _read_template(sparql_folder / "ac_lines.sparql").safe_substitute(
-        _ac_line_terminals(ACLINE_TERMINAL_QUERY)
-    )
-)
+AC_LINE_QUERY = _read_template(sparql_folder / "ac_lines.sparql")
 ADD_MRID_QUERY = _read_template(sparql_folder / "add_mrid.sparql")
 BORDERS_QUERY = _read_template(sparql_folder / "borders.sparql")
 BRANCH_NODE_WITHDRAW_QUERY = _read_template(sparql_folder / "branch_node_withdraw.sparql")

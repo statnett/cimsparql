@@ -125,8 +125,7 @@ class Model:
         self, template: Template, substitutes: Optional[Dict[str, str]] = None
     ) -> str:
         """Convert provided template to query."""
-        if substitutes is None:
-            substitutes = {}
+        substitutes = substitutes or {}
 
         # Extract name from the query. We don't need to perform actual substitutions to do this,
         # we just let placeholder be left
@@ -632,7 +631,6 @@ def get_federated_cim_model(
     # Setup client based on # Name in the pre-defined queries
     exec_from_tpssvssh = (
         "AC Lines",
-        "AC Line Terminal",
         "Loads",
         "Branch node withdraw",
         "DC Active Power Flow",
