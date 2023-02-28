@@ -2,16 +2,42 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status ?un ?x
+select
+  (max(?mrid) as ?mrid)
+  (max(?name) as ?name)
+  (max(?bidzone_1) as ?bidzone_1)
+  (max(?bidzone_2) as ?bidzone_2)
+  (max(?node_1) as ?node_1)
+  (max(?node_2) as ?node_2)
+  (if (xsd:double(max(?p_1)) < xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_1)
+  (if (xsd:double(max(?p_1)) > xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_2)
+  (max(?r) as ?r)
+  (max(?rate) as ?rate)
+  (coalesce(max(?in_service), max(?connected_1) && max(?connected_2)) as ?status)
+  (max(?un) as ?un)
+  (max(?x) as ?x)
 where {
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for series compensator
-  ?compensator a cim:SeriesCompensator;
+  service <${eq_repo}> {
+  ?compensator cim:SeriesCompensator.r ?r;
+         cim:SeriesCompensator.x ?x;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
-         cim:SeriesCompensator.r ?r;
-         cim:SeriesCompensator.x ?x .
+         ^cim:Terminal.ConductingEquipment ?terminal .
+
+  # Extract terminal properties
+  ?terminal cim:Terminal.ConnectivityNode ?con_node;
+            cim:ACDCTerminal.sequenceNumber ?nr .
+  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
+  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+  optional {
+    ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
+  }
+  optional {?compensator SN:Equipment.networkAnalysisEnable ?network_analysis}
+  filter(regex(?area, '${region}'))
+
 
   # Optionally extract current limits
   optional {
@@ -21,76 +47,27 @@ where {
           cim:CurrentLimit.value ?_rate .
     # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
     bind(1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rate)) / 1000.0 as ?rate)
-  } .
+  }.}
 
+
+   # Extract the mRID of the topological node of the connectivity node
+  ?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_mrid .
   # Optionally extract in_service associated with compensator
-  optional {service <${repo}> {?compensator ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}} .
-  { # Search terminal 1 side SSH/TP/SV. Extract compensator, power, node and bidzone
-    select ?compensator (?connected as ?connected_1) (?p as ?p_1) ?node_1 (?bidzone as ?bidzone_1)
-    where
-    {
-      ?compensator a cim:SeriesCompensator .
-      ?terminal a cim:Terminal;
-               cim:IdentifiedObject.mRID ?t_mrid;
-               cim:Terminal.ConductingEquipment ?compensator;
-               cim:Terminal.ConnectivityNode ?con_node;
-               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
-      ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
-      ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-      optional {
-        ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
-      }
-      filter(regex(?area, '${region}'))
+  optional {?compensator ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
 
-      # Extract the mRID of the topological node of the connectivity node
-      service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
+  # Extract connected flag and optionally power for each terminal
+  ?terminal cim:ACDCTerminal.connected ?connected .
+  optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
+  bind(coalesce(?node_mrid, ?t_mrid) as ?node)
 
-      # Extract connected flag and optionally power for each terminal
-      service <${repo}> {
-        ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-        optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
-      }
-      bind(coalesce(?node, ?t_mrid) as ?node_1)
-    }
-  } .
-  { # Search terminal 2 side SSH/TP/SV
-    select ?compensator (?connected as ?connected_2) (?p as ?p_2) ?node_2 (?bidzone as ?bidzone_2)
-    where
-    {
-      ?compensator a cim:SeriesCompensator .
-      ?terminal a cim:Terminal;
-               cim:IdentifiedObject.mRID ?t_mrid;
-               cim:Terminal.ConductingEquipment ?compensator;
-               cim:Terminal.ConnectivityNode ?con_node;
-               cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2 .
-      ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
-      ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-      optional {
-        ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
-      }
-      filter(regex(?area, '${region}'))
-      service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node .}
-      service <${repo}> {
-        ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-        optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
-      }
-      bind(coalesce(?node, ?t_mrid) as ?node_2)
-    }
-  } .
-  optional
-  { # Add branch loss on recieving end.
-    bind((xsd:double(str(?p_1)) + xsd:double(str(?p_2))) as ?pl)
-    bind(if (xsd:double(str(?p_1)) > xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_2)
-    bind(if (xsd:double(str(?p_1)) < xsd:double(str(?p_2)), ?pl, xsd:double(0.0)) as ?ploss_1)
-  }
-  optional {?compensator SN:Equipment.networkAnalysisEnable ?_network_analysis}
-  filter(?network_analysis)
-  filter(?node_1 != ?node_2) .  # We don't need lines connecting nodes to themselves
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
-
-  # Assign status flag for the compensator. It is assigned by the first existing of
-  # 1) in_service from the SvStatus of the compensator
-  # 2) Connected flags of the two terminals associated with the compensator. If one or both the terminals
-  #   are not connected, the status is set to False
-  bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status) .
-}
+  # Create variables for node 1 and node 2
+  bind(if(?nr = 1, str(?p), '') as ?p_1)
+  bind(if(?nr = 1, ?node, '') as ?node_1)
+  bind(if(?nr = 1, ?connected, False) as ?connected_1)
+  bind(if(?nr = 1, ?bidzone, '') as ?bidzone_1)
+  bind(if(?nr = 2, str(?p), '') as ?p_2)
+  bind(if(?nr = 2, ?node, '') as ?node_2)
+  bind(if(?nr = 2, ?connected, False) as ?connected_2)
+  bind(if(?nr = 2, ?bidzone, '') as  ?bidzone_2)
+} group by ?compensator
+having ((count(*) > 1) && (max(?node_1) != max(?node_2)) && coalesce(max(?analysis_enabled), True))
