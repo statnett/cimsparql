@@ -235,3 +235,9 @@ def test_custom_headers(graphdb_client: Callable):
     custom_headers = {"my_header": "my_header_value"}
     client = graphdb_client(ServiceConfig(server="some-server"), custom_headers)
     assert client.sparql.customHttpHeaders == custom_headers
+
+
+@pytest.mark.asyncio
+async def test_two_winding_transformers(model: CimModel):
+    df = await model.two_winding_transformers()
+    assert len(df) == 1326
