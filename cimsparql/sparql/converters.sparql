@@ -4,53 +4,46 @@ PREFIX xsd:<${xsd}>
 PREFIX SN:<${SN}>
 select ?mrid ?name ?alias ?p ?q ?station ?status ?node
 where {
-  service <${repo}> {
-    # Declare interesting converter types
-    values ?converter_type {cim:VsConverter cim:DCConvertUnit cim:CsConverter}
-
-    # Extract active and reactive power for the converter
-    graph ${ssh_graph} {
-      ?converter a ?converter_type;
-             cim:ACDCConverter.p ?p;
-             cim:ACDCConverter.q ?q .
-    }
-    optional {?converter ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
+  # Extract active and reactive power for the converter
+  graph ${ssh_graph} {
+    ?converter cim:ACDCConverter.p ?p;
+               cim:ACDCConverter.q ?q .
   }
+  optional {?converter ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
 
+  # Extract connected and optionally the mrid for the topological node associated with the terminal
+  ?terminal cim:ACDCTerminal.connected ?connected .
+  optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
+
+  # Extract the mrid of the topoligical node associated with the connectivity node for the terminal
+  optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
+
+  service <${eq_repo}> {
   # Extract mrid, name, substation and optionally aliasName of the converter
   ?converter cim:IdentifiedObject.mRID ?mrid;
-         cim:IdentifiedObject.name ?name;
-         cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
+             cim:IdentifiedObject.name ?name;
+             cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
   optional {?converter cim:IdentifiedObject.aliasName ?alias .}
 
   # Find area and mRID for the substation
   ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-               cim:IdentifiedObject.mRID ?station .
+              cim:IdentifiedObject.mRID ?station .
 
   # Extract properties for the terminals for the converter
   ?terminal cim:Terminal.ConductingEquipment ?converter;
-           cim:IdentifiedObject.mRID ?t_mrid;
-           cim:Terminal.ConnectivityNode ?con_node;
-           cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
-  filter regex(?area, '${region}')
-
-  # Extract connected and optionally the mrid for the topological node associated with the terminal
-  service <${repo}> {
-    ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-    optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
-  }
-
-  # Extract the mrid of the topoligical node associated with the connectivity node for the terminal
-  optional {service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
-
+            cim:IdentifiedObject.mRID ?t_mrid;
+            cim:Terminal.ConnectivityNode ?con_node;
+            cim:ACDCTerminal.sequenceNumber 1 .
   optional {?converter SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+  filter regex(?area, '${region}')
+  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+  filter(?analysis_enabled)
+  }
 
   # Asiign an mrid to the ?node variable. The first that exists is choden
   # 1) mRID of the topological node associated with the connectivity node
   # 2) mRID of the topological node for the terminal
   # 3) mRID of the terminal
   bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node)
-  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  filter(?analysis_enabled)
   bind(coalesce(?in_service, ?connected) as ?status)
 }
