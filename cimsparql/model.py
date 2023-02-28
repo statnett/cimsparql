@@ -635,6 +635,7 @@ def get_federated_cim_model(
         "Loads",
         "Branch node withdraw",
         "DC Active Power Flow",
+        "Series compensators",
         "SV branch",
     )
     for query in exec_from_tpssvssh:
