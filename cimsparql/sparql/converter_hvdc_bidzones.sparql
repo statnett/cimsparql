@@ -1,15 +1,19 @@
 # Name: Converter HVDC bidzones
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-PREFIX xsd:<${xsd}>
+PREFIX ALG:<${ALG}>
 
 select distinct ?mrid ?from_area ?to_area
 where
 {
+  values ?converters {
+    cim:VsConverter cim:ACDCConverter cim:CsConverter cim:DCConvertUnit
+    ALG:ACDCConverter ALG:CsConverter ALG:DCConverter ALG:VoltageSourceConverter ALG:VsConverter
+  }
   # Find all converters and the corresponding substation
   ?converter cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation;
              cim:IdentifiedObject.mRID ?mrid ;
-             a cim:VsConverter .
+             a ?converters .
 
   # Find market delivery point for the substation
   ?substation SN:Substation.MarketDeliveryPoint ?delivery_point .
