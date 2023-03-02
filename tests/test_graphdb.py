@@ -111,11 +111,11 @@ async def test_regions(model: CimModel):
 @pytest.mark.asyncio
 async def test_hvdc_converters_bidzones(model: CimModel):
     df = await model.hvdc_converter_bidzones()
+
     corridors = set(zip(df["from_area"], df["to_area"]))
 
-    # TODO: For some reason NO2-NL is not present in this result
     # Check data quality in the models
-    expect_corridors = {("SE4", "SE3"), ("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB")}
+    expect_corridors = {("SE4", "SE3"), ("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB"), ("NO2", "NL")}
     assert expect_corridors.issubset(corridors)
 
 
