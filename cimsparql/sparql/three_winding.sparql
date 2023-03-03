@@ -44,7 +44,7 @@ where {
       ?p_transformer ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr
     }
     group by ?p_transformer
-    having (?winding_count = 3)
+    having (?winding_count > 2)
   } .
 
   # Optionally extract active power limits

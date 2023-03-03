@@ -17,7 +17,7 @@ where {
       ?p_transformer ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
     }
     group by ?p_transformer
-    having (?winding_count = 3)
+    having (?winding_count > 2)
   }
   { select ?p_transformer (sum(xsd:double(str(?sv_p))) / sum(?in_service) as ?ploss_2)
     where

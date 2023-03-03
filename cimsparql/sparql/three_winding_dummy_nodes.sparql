@@ -14,7 +14,7 @@ where
       filter(regex(?area, '${region}'))
     }
     group by ?p_transformer
-    having (?winding_count = 3)
+    having (?winding_count > 2)
   } .
   ?p_transformer cim:IdentifiedObject.mRID ?node;
            cim:IdentifiedObject.name ?name;
