@@ -39,6 +39,8 @@ def graphdb_service() -> ServiceConfig:
 
 @pytest.fixture(scope="session")
 def model(graphdb_service: ServiceConfig) -> CimModel:
+    if os.getenv("GRAPHDB_SERVER") is None:
+        pytest.skip("Require access to GraphDB")
     system_state_repo = f"repository:{graphdb_service.repo},infer=false"
     eq_repo = f"repository:{graphdb_service.repo},infer=false"
     return get_cim_model(graphdb_service, ModelConfig(system_state_repo, ssh_graph, eq_repo))

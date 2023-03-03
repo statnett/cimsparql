@@ -62,6 +62,9 @@ class BusDataSchema(JsonSchemaOut):
     sv_voltage: Series[float] = pa.Field(nullable=True)
 
 
+BusDataFrame = DataFrame[BusDataSchema]
+
+
 class LoadsSchema(NamedResourceSchema):
     node: Series[str] = pa.Field()
     station: Series[str] = pa.Field()
