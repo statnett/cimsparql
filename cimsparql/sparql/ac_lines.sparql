@@ -44,7 +44,7 @@ where {
   ?terminal cim:Terminal.ConductingEquipment ?acline;
             cim:IdentifiedObject.mRID ?t_mrid;
             cim:Terminal.ConnectivityNode ?con_node;
-            cim:ACDCTerminal.sequenceNumber ?nr .
+            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
 
   # Find substation of each connectivity node of the terminals above
   ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .

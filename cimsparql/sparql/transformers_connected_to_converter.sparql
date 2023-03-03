@@ -2,7 +2,10 @@
 PREFIX ALG:<${ALG}>
 PREFIX SN: <${SN}>
 PREFIX cim:<${cim}>
-select ?mrid ?name ?t_mrid ?p_mrid
+
+# TODO: We probably need distinct since we get a hit on cim:VsConverter in SSH-profile and ALG:VoltageSourceConverter
+# in EQ-repo. This was caused by correcting the ALG-namespace which lacked # at the end
+select distinct ?mrid ?name ?t_mrid ?p_mrid
 where {
   values ?converter_type {cim:VsConverter cim:CsConverter cim:DCConvertUnit ALG:VoltageSourceConverter ALG:DCConverter }
 

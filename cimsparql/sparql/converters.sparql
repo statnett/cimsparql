@@ -33,7 +33,7 @@ where {
   ?terminal cim:Terminal.ConductingEquipment ?converter;
             cim:IdentifiedObject.mRID ?t_mrid;
             cim:Terminal.ConnectivityNode ?con_node;
-            cim:ACDCTerminal.sequenceNumber 1 .
+            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
   optional {?converter SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   filter regex(?area, '${region}')
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
