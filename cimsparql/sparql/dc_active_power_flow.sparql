@@ -13,7 +13,7 @@ where {
 
     # Extract properties for the terminal associated with the component
     ?terminal cim:Terminal.ConductingEquipment ?component;
-              cim:ACDCTerminal.sequenceNumber ?nr .
+              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
   }
   union
   {
