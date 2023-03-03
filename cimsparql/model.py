@@ -554,6 +554,10 @@ class Model:
         df = await self.get_table_and_convert(self.hvdc_converter_bidzone_query, index="mrid")
         return HVDCBidzonesSchema(df)
 
+    @property
+    def protective_action_query(self) -> str:
+        return self.template_to_query(templates.PROTECTIVE_ACTION_QUERY)
+
     def add_mrid_query(self, rdf_type: Optional[str] = None, graph: Optional[str] = None) -> str:
         substitutes = {"rdf_type": rdf_type or "?rdf_type", "g": graph or "?g"}
         return self.template_to_query(templates.ADD_MRID_QUERY, substitutes)

@@ -25,6 +25,7 @@ HVDC_CONVERTER_BIDZONES = _read_template(sparql_folder / "converter_hvdc_bidzone
 LOADS_QUERY = _read_template(sparql_folder / "loads.sparql")
 MARKET_DATES_QUERY = _read_template(sparql_folder / "market_dates.sparql")
 POWER_FLOW_QUERY = _read_template(sparql_folder / "power_flow.sparql")
+PROTECTIVE_ACTION_QUERY = _read_template(sparql_folder / "protective_action.sparql")
 REGIONS_QUERY = _read_template(sparql_folder / "regions.sparql")
 SERIES_COMPENSATORS_QUERY = _read_template(sparql_folder / "series_compensators.sparql")
 STATION_GROUP_CODE_NAME_QUERY = _read_template(
