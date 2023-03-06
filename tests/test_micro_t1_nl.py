@@ -21,6 +21,7 @@ def skip(micro_t1_nl: Optional[CimModel], server: str) -> bool:
 
 
 MOD_TYPE = Dict[str, Optional[CimModel]]
+MICRO_MODELS = ["rdf4j", "blazegraph", "graphdb", "blazegraph_fed"]
 
 
 @contextlib.contextmanager
@@ -35,7 +36,7 @@ def tmp_client(model: CimModel, new_client: GraphDBClient):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [False, True])
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 async def test_bus_data_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str, use_async: bool):
     model = micro_t1_nl_models[server]
     if skip(model, server):
@@ -52,7 +53,7 @@ async def test_bus_data_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str, u
     assert data.index.name == "node"
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 def test_cim_version_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
     if skip(model, server):
@@ -60,7 +61,7 @@ def test_cim_version_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str):
     assert model.cim_version == 16
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 def test_repo_not_empty_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
     if skip(model, server):
@@ -68,7 +69,7 @@ def test_repo_not_empty_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str):
     assert not model.client.empty
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_cim_converters_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str):
     # TODO: There are no Converters in micro_t1_nl_models
@@ -95,7 +96,7 @@ async def test_full_model_micro_t1_nl(micro_t1_nl_models: MOD_TYPE, server: str)
     assert row["version"] == "3"
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_substation_voltage_level(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -105,7 +106,7 @@ async def test_substation_voltage_level(micro_t1_nl_models: MOD_TYPE, server: st
     assert sorted(data["v"].tolist()) == [225.0, 380.0, 400.0]
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_branch_node_withdraw(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -115,7 +116,7 @@ async def test_branch_node_withdraw(micro_t1_nl_models: MOD_TYPE, server: str):
     assert data.empty
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_loads(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -134,7 +135,7 @@ async def test_loads(micro_t1_nl_models: MOD_TYPE, server: str):
     assert set(data["name"]) == expected_names
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "region,expected_names",
@@ -156,7 +157,7 @@ async def test_sync_machines(
     assert expected_names == set(data["name"])
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_connections(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -168,7 +169,7 @@ async def test_connections(micro_t1_nl_models: MOD_TYPE, server: str):
     assert data.columns.difference(["t_mrid_1", "t_mrid_2"]).empty
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_aclines(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -179,7 +180,7 @@ async def test_aclines(micro_t1_nl_models: MOD_TYPE, server: str):
     assert len(data) == 2
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "params",
@@ -218,7 +219,7 @@ async def test_transformers(micro_t1_nl_models: MOD_TYPE, params: Dict[str, Any]
     assert set(data["name"].unique()) == params["expect_names"]
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "params",
@@ -238,7 +239,7 @@ async def test_transformers_connectivity(
     assert len(data.groupby(["p_mrid"]).count()) == params["num_transf"]
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_two_winding_transformers(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -251,7 +252,7 @@ async def test_two_winding_transformers(micro_t1_nl_models: MOD_TYPE, server: st
     assert data["r"].dtype == float
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_three_winding_transformers(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -262,7 +263,7 @@ async def test_three_winding_transformers(micro_t1_nl_models: MOD_TYPE, server: 
     assert len(data) == 3
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_disconnected(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -276,7 +277,7 @@ async def test_disconnected(micro_t1_nl_models: MOD_TYPE, server: str):
     assert all(data["mrid"].str.contains(x).any() for x in expected_partial_mrids)
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_powerflow(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -287,7 +288,7 @@ async def test_powerflow(micro_t1_nl_models: MOD_TYPE, server: str):
     assert len(data) == 24
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_regions(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -298,7 +299,7 @@ async def test_regions(micro_t1_nl_models: MOD_TYPE, server: str):
     assert set(regions["region"]) == {"BE", "EU", "NL"}
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_coordinates(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -318,7 +319,7 @@ async def test_coordinates(micro_t1_nl_models: MOD_TYPE, server: str):
     assert ((coordinates["y"] > 50.0) & (coordinates["y"] < 53.0)).all()
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_empty_dc_active_flow(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]
@@ -329,7 +330,7 @@ async def test_empty_dc_active_flow(micro_t1_nl_models: MOD_TYPE, server: str):
     assert df.empty
 
 
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
+@pytest.mark.parametrize("server", MICRO_MODELS)
 @pytest.mark.asyncio
 async def test_transformer_windings(micro_t1_nl_models: MOD_TYPE, server: str):
     model = micro_t1_nl_models[server]

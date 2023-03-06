@@ -243,7 +243,7 @@ class GraphDBClient:
         response.raise_for_status()
 
     def upload_rdf(
-        self, fname: Path, rdf_format: str, params: Optional[Dict[str, str]] = None
+        self, content: Union[Path, bytes], rdf_format: str, params: Optional[Dict[str, str]] = None
     ) -> None:
         """
         Upload data in RDF format to a srevice
@@ -254,8 +254,10 @@ class GraphDBClient:
                 doc for a complete list of available options)
             params: Additional parameters passed to the post request
         """
-        with open(fname, "rb") as infile:
-            xml_content = infile.read()
+        xml_content = content
+        if isinstance(content, Path):
+            with open(content, "rb") as infile:
+                xml_content = infile.read()
 
         response = requests.post(
             self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
