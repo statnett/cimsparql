@@ -39,7 +39,6 @@ where {
 
   # Extract mRID and connectivity node for each terminal associated with a load
   ?terminal cim:Terminal.ConductingEquipment ?load;
-           cim:IdentifiedObject.mRID ?t_mrid;
            cim:Terminal.ConnectivityNode ?con_node .
   }
 
@@ -52,6 +51,6 @@ where {
   # Assign mRID to the ?node variable. The mRID is set to the first existing of
   # 1) mRID of the topoligical node associated with a connectivity node for the terminal for each load
   # 2) mRID of the topological node associated with the terminal for each load
-  # 3) mRID of the terminal for each load
-  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node)
+  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid) as ?node)
+  filter(?node)
 }
