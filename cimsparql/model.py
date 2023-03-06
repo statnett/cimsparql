@@ -62,6 +62,16 @@ class Model:
         self.config = config or ModelConfig()
         self.mapper = mapper or TypeMapper(self.get_client("Type mapper").service_cfg)
 
+    @property
+    def distinct_clients(self) -> list[GraphDBClient]:
+        obj_ids = set()
+        distinct = []
+        for client in self.clients.values():
+            if id(client) not in obj_ids:
+                obj_ids.add(id(client))
+                distinct.append(client)
+        return distinct
+
     def get_client(self, query_name: str) -> GraphDBClient:
         """
         Return the corret graph db client to execute a query. By default
@@ -632,11 +642,13 @@ def get_federated_cim_model(
     exec_from_tpssvssh = (
         "AC Lines",
         "Converters",
+        "Disconnected",
         "Loads",
         "Branch node withdraw",
         "DC Active Power Flow",
         "Series compensators",
         "SV branch",
+        "Power flow",
     )
     for query in exec_from_tpssvssh:
         clients[query] = tpsvssh_client

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import pathlib
+import re
 from copy import deepcopy
 from typing import Dict, Generator, Optional
 
@@ -161,6 +162,45 @@ def init_test_cim_blazegraph(url: str, name: str, suffix: str = ""):
     return client
 
 
+def split_tpsvssh(fname: pathlib.Path) -> tuple[list[str], list[str]]:
+    tpsvssh_lines = []
+    remaining_lines = []
+
+    tpsvssh_contexts = {
+        "http://entsoe.eu/CIM/StateVariables/4/1",
+        "http://entsoe.eu/CIM/SteadyStateHypothesis/1/1",
+        "http://entsoe.eu/CIM/Topology/4/1",
+    }
+
+    # Regex extracts the content between < > of the last occurence on each line
+    prog = re.compile(r"<([^>]+)>[^>]+$")
+    with open(fname, "r") as infile:
+        for line in infile:
+            m = prog.search(line)
+            if m and m.group(1) in tpsvssh_contexts:
+                tpsvssh_lines.append(line)
+            else:
+                remaining_lines.append(line)
+    return "".join(tpsvssh_lines), "".join(remaining_lines)
+
+
+def init_federated_micro_cim_blazegraph(url: str):
+    tpsvssh_client = new_repo_blazegraph(url, "federated_micro_t1_nl_tpsvssh", "http")
+    eq_client = new_repo_blazegraph(url, "federated_micro_t1_nl_eq", "http")
+
+    # Split NQ file content in SV/TP/SSH profile
+    fname = pathlib.Path(__file__).parent / "tests/data/micro_t1_nl.nq"
+    tpsvssh, remaining = split_tpsvssh(fname)
+    tpsvssh_client.upload_rdf(tpsvssh.encode("utf8"), "n-quads")
+    eq_client.upload_rdf(remaining.encode("utf8"), "n-quads")
+
+    m_cfg = ModelConfig(
+        system_state_repo=tpsvssh_client.service_cfg.url + ",infer=false",
+        eq_repo=eq_client.service_cfg.url + ",infer=false",
+    )
+    return get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
+
+
 def cim_client(url: str, repo_name: str, repo_name_suffix: str, rest_api: RestApi) -> GraphDBClient:
     if rest_api == RestApi.BLAZEGRAPH:
         return init_test_cim_blazegraph(url, repo_name, repo_name_suffix)
@@ -209,12 +249,29 @@ def apply_custom_modifications(model: Optional[CimModel]) -> None:
 
 
 @pytest.fixture(scope="session")
+def micro_t1_nl_bg_federated(
+    blazegraph_url: str,
+) -> Generator[Optional[MultiClientCimModel], None, None]:
+    model = init_federated_micro_cim_blazegraph(blazegraph_url)
+    try:
+        yield model
+    finally:
+        if model:
+            for client in model.distinct_clients:
+                try:
+                    client.delete_repo()
+                except Exception:
+                    pass
+
+
+@pytest.fixture(scope="session")
 def micro_t1_nl_models(
-    micro_t1_nl, micro_t1_nl_bg, micro_t1_nl_graphdb
+    micro_t1_nl, micro_t1_nl_bg, micro_t1_nl_graphdb, micro_t1_nl_bg_federated
 ) -> Dict[str, Optional[CimModel]]:
     return {
         "rdf4j": micro_t1_nl,
         "blazegraph": micro_t1_nl_bg,
+        "blazegraph_fed": micro_t1_nl_bg_federated,
         "graphdb": micro_t1_nl_graphdb,
     }
 
