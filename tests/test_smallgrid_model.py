@@ -5,10 +5,10 @@ from typing import Dict, Optional
 import pandas as pd
 import pytest
 
-from cimsparql.model import CimModel
+from cimsparql.model import SingleClientModel
 
 
-def check_service_available(model: Optional[CimModel], server: str):
+def check_service_available(model: Optional[SingleClientModel], server: str):
     if model is None:
         if os.getenv("CI") and server not in ("graphdb", "graphdb_sep"):
             pytest.fail("Service should always be available in CI")
@@ -19,7 +19,7 @@ def check_service_available(model: Optional[CimModel], server: str):
 @pytest.mark.slow
 @pytest.mark.asyncio
 @pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
-async def test_eq_query(smallgrid_models: Dict[str, CimModel], server):
+async def test_eq_query(smallgrid_models: Dict[str, SingleClientModel], server):
     model = smallgrid_models[server]
     check_service_available(model, server)
     query_template = Template(

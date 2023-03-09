@@ -20,11 +20,11 @@ from cimsparql.graphdb import (
     new_repo_blazegraph,
 )
 from cimsparql.model import (
-    CimModel,
+    Model,
     ModelConfig,
-    MultiClientCimModel,
-    get_cim_model,
+    SingleClientModel,
     get_federated_cim_model,
+    get_single_client_model,
 )
 
 this_dir = pathlib.Path(__file__).parent
@@ -39,23 +39,25 @@ def graphdb_service() -> ServiceConfig:
 
 
 @pytest.fixture(scope="session")
-def model(graphdb_service: ServiceConfig) -> CimModel:
+def model(graphdb_service: ServiceConfig) -> SingleClientModel:
     if os.getenv("GRAPHDB_SERVER") is None:
         pytest.skip("Require access to GraphDB")
     system_state_repo = f"repository:{graphdb_service.repo},infer=false"
     eq_repo = f"repository:{graphdb_service.repo},infer=false"
-    return get_cim_model(graphdb_service, ModelConfig(system_state_repo, ssh_graph, eq_repo))
+    return get_single_client_model(
+        graphdb_service, ModelConfig(system_state_repo, ssh_graph, eq_repo)
+    )
 
 
 @pytest.fixture(scope="session")
-def micro_t1_nl_graphdb() -> Optional[CimModel]:
+def micro_t1_nl_graphdb() -> Optional[SingleClientModel]:
     repo = os.getenv("GRAPHDB_MICRO_NL_REPO", "abot-micro-nl")
     model = None
     try:
         s_cfg = ServiceConfig(repo=repo)
         m_cfg = ModelConfig(system_state_repo=f"repository:{repo}", eq_repo=f"repository:{repo}")
         if os.getenv("GRAPHDB_SERVER"):
-            model = get_cim_model(s_cfg, m_cfg)
+            model = get_single_client_model(s_cfg, m_cfg)
     except Exception as exc:
         logger.error(f"{exc}")
         model = None
@@ -63,7 +65,7 @@ def micro_t1_nl_graphdb() -> Optional[CimModel]:
 
 
 @pytest.fixture(scope="session")
-def model_sep() -> Optional[MultiClientCimModel]:
+def model_sep() -> Optional[Model]:
     eq_repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
     system_state_repo = os.getenv("GRAPHDB_STATE", "abot_20220825T1621Z")
     eq_client_cfg = ServiceConfig(eq_repo)
@@ -80,14 +82,12 @@ def model_sep() -> Optional[MultiClientCimModel]:
 
 
 @pytest.fixture(scope="session")
-def graphdb_real_data_models(
-    model: CimModel, model_sep: MultiClientCimModel
-) -> Dict[str, MultiClientCimModel]:
+def graphdb_real_data_models(model: SingleClientModel, model_sep: Model) -> Dict[str, Model]:
     return {"model": model, "model_sep": model_sep}
 
 
 @pytest.fixture(scope="session")
-def connections(model: CimModel) -> pd.DataFrame:
+def connections(model: SingleClientModel) -> pd.DataFrame:
     return model.connections()
 
 
@@ -213,17 +213,17 @@ def init_cim_model(
     repo_name_suffix: str = "",
     rest_api: RestApi = RestApi.RDF4J,
     config: Optional[ModelConfig] = None,
-) -> Optional[CimModel]:
+) -> Optional[SingleClientModel]:
     try:
         client = cim_client(url, repo_name, repo_name_suffix, rest_api)
-        return CimModel(client, config)
+        return SingleClientModel(client, config)
     except Exception as exc:
         logger.error(f"{exc}")
         return None
 
 
 @pytest.fixture(scope="session")
-def micro_t1_nl(rdf4j_url: str) -> Generator[Optional[CimModel], None, None]:
+def micro_t1_nl(rdf4j_url: str) -> Generator[Optional[SingleClientModel], None, None]:
     model = init_cim_model(rdf4j_url, "micro_t1_nl")
     try:
         yield model
@@ -233,7 +233,7 @@ def micro_t1_nl(rdf4j_url: str) -> Generator[Optional[CimModel], None, None]:
 
 
 @pytest.fixture(scope="session")
-def micro_t1_nl_bg(blazegraph_url: str) -> Generator[Optional[CimModel], None, None]:
+def micro_t1_nl_bg(blazegraph_url: str) -> Generator[Optional[SingleClientModel], None, None]:
     model = init_cim_model(blazegraph_url, "micro_t1_nl", rest_api=RestApi.BLAZEGRAPH)
     try:
         yield model
@@ -242,7 +242,7 @@ def micro_t1_nl_bg(blazegraph_url: str) -> Generator[Optional[CimModel], None, N
             model.client.delete_repo()
 
 
-def apply_custom_modifications(model: Optional[CimModel]) -> None:
+def apply_custom_modifications(model: Optional[SingleClientModel]) -> None:
     if model:
         for rdf_type in CIM_TYPES_WITH_MRID:
             model.add_mrid(f"cim:{rdf_type}")
@@ -251,7 +251,7 @@ def apply_custom_modifications(model: Optional[CimModel]) -> None:
 @pytest.fixture(scope="session")
 def micro_t1_nl_bg_federated(
     blazegraph_url: str,
-) -> Generator[Optional[MultiClientCimModel], None, None]:
+) -> Generator[Optional[Model], None, None]:
     model = init_federated_micro_cim_blazegraph(blazegraph_url)
     try:
         yield model
@@ -267,7 +267,7 @@ def micro_t1_nl_bg_federated(
 @pytest.fixture(scope="session")
 def micro_t1_nl_models(
     micro_t1_nl, micro_t1_nl_bg, micro_t1_nl_graphdb, micro_t1_nl_bg_federated
-) -> Dict[str, Optional[CimModel]]:
+) -> Dict[str, Optional[SingleClientModel]]:
     return {
         "rdf4j": micro_t1_nl,
         "blazegraph": micro_t1_nl_bg,
@@ -295,12 +295,12 @@ def small_grid_model(url: str, api: RestApi):
 
 
 @pytest.fixture(scope="session")
-def small_grid_model_rdf4j(rdf4j_url) -> Generator[Optional[CimModel], None, None]:
+def small_grid_model_rdf4j(rdf4j_url) -> Generator[Optional[SingleClientModel], None, None]:
     yield from small_grid_model(rdf4j_url, RestApi.RDF4J)
 
 
 @pytest.fixture(scope="session")
-def small_grid_model_bg(blazegraph_url) -> Generator[Optional[CimModel], None, None]:
+def small_grid_model_bg(blazegraph_url) -> Generator[Optional[SingleClientModel], None, None]:
     yield from small_grid_model(blazegraph_url, RestApi.BLAZEGRAPH)
 
 
@@ -313,7 +313,7 @@ def smallgrid_models(small_grid_model_rdf4j, small_grid_model_bg):
             system_state_repo=f"repository:{small_grid}_tpsvssh", ssh_graph=ssh_graph
         )
         try:
-            model = get_cim_model(s_cfg, m_cfg)
+            model = get_single_client_model(s_cfg, m_cfg)
         except Exception as exc:
             logger.error(f"{exc}")
             model = None

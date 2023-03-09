@@ -21,8 +21,8 @@ easiliy define their own queries.
 
 ```python
 >>> from cimsparql.graphdb import ServiceConfig
->>> from cimsparql.model import get_cim_model
->>> model = get_cim_model(ServiceConfig(limit=3))
+>>> from cimsparql.model import get_single_client_model
+>>> model = get_single_client_model(ServiceConfig(limit=3))
 >>> ac_lines = model.ac_lines()
 >>> print(ac_lines[['name', 'x', 'r', 'bch']])
          name       x       r       bch
