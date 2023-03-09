@@ -1,4 +1,4 @@
-"""The cimsparql.model module contains the base class CimModel."""
+"""The cimsparql.model module contains the base class Model."""
 
 import asyncio
 import re
@@ -148,10 +148,6 @@ class Model:
             {"repo": state_repo, "eq_repo": eq_repo} | substitutes | self.client.prefixes
         )
 
-
-class MultiClientCimModel(Model):
-    """Used to query with sparql queries (typically CIM)."""
-
     @cached_property
     def cim_version(self) -> int:
         return int(re.search("cim(\\d+)", self.client.prefixes["cim"]).group(1))
@@ -230,9 +226,9 @@ class MultiClientCimModel(Model):
            region:
 
         Example:
-            >>> from cimsparql.model import get_cim_model
+            >>> from cimsparql.model import get_single_client_model
             >>> server_url = "127.0.0.1:7200"
-            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model = get_single_client_model(server_url, "LATEST")
             >>> model.wind_generating_units()
 
         """
@@ -264,9 +260,9 @@ class MultiClientCimModel(Model):
            region: Limit to region
 
         Example:
-            >>> from cimsparql.model import get_cim_model
+            >>> from cimsparql.model import get_single_client_model
             >>> server_url = "127.0.0.1:7200"
-            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model = get_single_client_model(server_url, "LATEST")
             >>> model.connections()
         """
         query = self.connections_query(region)
@@ -349,9 +345,9 @@ class MultiClientCimModel(Model):
            region: Limit to region
 
         Example:
-            >>> from cimsparql.model import get_cim_model
+            >>> from cimsparql.model import get_single_client_model
             >>> server_url = "127.0.0.1:7200"
-            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model = get_single_client_model(server_url, "LATEST")
             >>> model.ac_lines()
         """
         query = self.ac_lines_query(region, rate)
@@ -411,9 +407,9 @@ class MultiClientCimModel(Model):
            region: Limit to region
 
         Example:
-            >>> from cimsparql.model import get_cim_model
+            >>> from cimsparql.model import get_single_client_model
             >>> server_url = "127.0.0.1:7200"
-            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model = get_single_client_model(server_url, "LATEST")
             >>> model.two_winding_transformers()
         """
         query = self.two_winding_transformers_query(region, rate)
@@ -440,9 +436,9 @@ class MultiClientCimModel(Model):
         """Query three-winding transformer. Return as three two-winding transformers.
 
         Example:
-            >>> from cimsparql.model import get_cim_model
+            >>> from cimsparql.model import get_single_client_model
             >>> server_url = "127.0.0.1:7200"
-            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model = get_single_client_model(server_url, "LATEST")
             >>> model.two_winding_transformers()
         """
         query = self.three_winding_transformers_query(region, rate)
@@ -536,9 +532,9 @@ class MultiClientCimModel(Model):
            regions: List of regions in database
 
         Example:
-            >>> from cimsparql.model import get_cim_model
+            >>> from cimsparql.model import get_single_client_model
             >>> server_url = "127.0.0.1:7200"
-            >>> model = get_cim_model(server_url, "LATEST")
+            >>> model = get_single_client_model(server_url, "LATEST")
             >>> model.regions
         """
         # TODO: Probably deprecate this property in the future. But keep for now.
@@ -583,7 +579,7 @@ class MultiClientCimModel(Model):
         client.update_query(self.add_mrid_query(rdf_type, graph))
 
 
-class CimModel(MultiClientCimModel):
+class SingleClientModel(Model):
     def __init__(
         self,
         client: GraphDBClient,
@@ -598,7 +594,18 @@ def get_cim_model(
     service_cfg: Optional[ServiceConfig] = None,
     model_cfg: Optional[ModelConfig] = None,
     async_sparql_wrapper: bool = False,
-) -> CimModel:
+) -> SingleClientModel:
+    """
+    Function kept for backward compatibility. Use `get_single_client_model` instead.
+    """
+    return get_single_client_model(service_cfg, model_cfg, async_sparql_wrapper)
+
+
+def get_single_client_model(
+    service_cfg: Optional[ServiceConfig] = None,
+    model_cfg: Optional[ModelConfig] = None,
+    async_sparql_wrapper: bool = False,
+) -> SingleClientModel:
     """Get a CIM Model.
 
 
@@ -609,7 +616,7 @@ def get_cim_model(
             If False, the native SparqlWrapper sends requests via urllib
     """
     c = AsyncGraphDBClient(service_cfg) if async_sparql_wrapper else GraphDBClient(service_cfg)
-    return CimModel(c, model_cfg)
+    return SingleClientModel(c, model_cfg)
 
 
 def query_name(query: str) -> str:
@@ -626,7 +633,7 @@ def get_federated_cim_model(
     tpsvssh_client: GraphDBClient,
     model_cfg: ModelConfig,
     mapper: Optional[TypeMapper] = None,
-) -> MultiClientCimModel:
+) -> Model:
     """
     Return a CIM model where the equipment profile is located in one repo and the topology,
     state variables and steady state hypothesis profile is located in another.
@@ -652,4 +659,4 @@ def get_federated_cim_model(
     )
     for query in exec_from_tpssvssh:
         clients[query] = tpsvssh_client
-    return MultiClientCimModel(clients, model_cfg, mapper)
+    return Model(clients, model_cfg, mapper)

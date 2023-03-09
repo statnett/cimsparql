@@ -109,7 +109,7 @@ class TypeMapper:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
 
         Args:
-            client: initialized CimModel
+            client: initialized SingleClientModel
 
         Returns:
             sparql-type -> python type map

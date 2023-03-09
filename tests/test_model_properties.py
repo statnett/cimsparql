@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from cimsparql.data_models import BusDataFrame
-from cimsparql.model import CimModel, MultiClientCimModel
+from cimsparql.model import Model, SingleClientModel
 
 
 @dataclass
@@ -22,7 +22,7 @@ CONSISTENCY_DATA = dict[str, Union[NodeConsistencyData, None]]
 
 
 async def get_node_consistency_test_data(
-    model: Union[MultiClientCimModel, None],
+    model: Union[Model, None],
 ) -> Union[NodeConsistencyData, None]:
     if model is None:
         return None
@@ -53,7 +53,7 @@ async def get_node_consistency_test_data(
 
 
 async def collect_node_consistency_data(
-    model: CimModel, micro_t1_nl_bg: CimModel
+    model: SingleClientModel, micro_t1_nl_bg: SingleClientModel
 ) -> list[NodeConsistencyData]:
     res = await asyncio.gather(
         get_node_consistency_test_data(model), get_node_consistency_test_data(micro_t1_nl_bg)
@@ -62,7 +62,7 @@ async def collect_node_consistency_data(
 
 
 @pytest.fixture(scope="session")
-def nc_data(model: CimModel, micro_t1_nl_bg: CimModel) -> CONSISTENCY_DATA:
+def nc_data(model: SingleClientModel, micro_t1_nl_bg: SingleClientModel) -> CONSISTENCY_DATA:
     """
     Return test data which in a datastructure suitable for consistency checks
     for node data

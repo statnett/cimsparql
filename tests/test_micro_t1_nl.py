@@ -7,25 +7,25 @@ import pandas as pd
 import pytest
 
 from cimsparql.graphdb import GraphDBClient, make_async
-from cimsparql.model import CimModel
+from cimsparql.model import SingleClientModel
 
 
 def skip_msg(server: str) -> str:
     return f"Require access to {server}"
 
 
-def skip(micro_t1_nl: Optional[CimModel], server: str) -> bool:
+def skip(micro_t1_nl: Optional[SingleClientModel], server: str) -> bool:
     if server == "graphdb":
         return not micro_t1_nl
     return not micro_t1_nl and not os.getenv("CI")
 
 
-MOD_TYPE = Dict[str, Optional[CimModel]]
+MOD_TYPE = Dict[str, Optional[SingleClientModel]]
 MICRO_MODELS = ["rdf4j", "blazegraph", "graphdb", "blazegraph_fed"]
 
 
 @contextlib.contextmanager
-def tmp_client(model: CimModel, new_client: GraphDBClient):
+def tmp_client(model: SingleClientModel, new_client: GraphDBClient):
     orig_client = deepcopy(model.client)
     try:
         model.client = new_client
