@@ -5,15 +5,25 @@ from string import Template
 from typing import Optional
 
 import pytest
+import t_utils.common as t_common
 
 from cimsparql.graphdb import GraphDBClient, RestApi
 
 
-def skip_rdf4j_test(rdf4j_gdb: Optional[GraphDBClient]):
-    if os.getenv("CI"):
-        # On CI in GitHub these tests should always run
-        return False
-    return rdf4j_gdb is None
+def skip_rdf4j_test(rdf4j_gdb: Optional[GraphDBClient]) -> bool:
+    # On CI in GitHub these tests should always run
+    return not (rdf4j_gdb or os.getenv("CI"))
+
+
+@pytest.fixture(scope="module")
+def rdf4j_gdb() -> GraphDBClient:
+    try:
+        return t_common.initialized_rdf4j_repo()
+    except Exception as exc:
+        if os.getenv("CI"):
+            pytest.fail(f"{exc}")
+        else:
+            pytest.skip(f"{exc}")
 
 
 @pytest.mark.parametrize(
@@ -26,71 +36,65 @@ def skip_rdf4j_test(rdf4j_gdb: Optional[GraphDBClient]):
         ),
     ],
 )
-def test_rdf4j_picasso_data(rdf4j_gdb: Optional[GraphDBClient], query, expect):
-    if skip_rdf4j_test(rdf4j_gdb):
-        pytest.skip("Require access to RDF4J service")
-
+def test_rdf4j_picasso_data(rdf4j_gdb: GraphDBClient, query, expect):
     prefixes = Template("PREFIX ex:<${ex}>\nPREFIX foaf:<${foaf}>").substitute(rdf4j_gdb.prefixes)
     result = rdf4j_gdb.exec_query(f"{prefixes}\n{query}")
     assert result == expect
 
 
-def test_rdf4j_prefixes(rdf4j_gdb: Optional[GraphDBClient]):
-    if skip_rdf4j_test(rdf4j_gdb):
-        pytest.skip("Require access to RDF4J service")
-
+def test_rdf4j_prefixes(rdf4j_gdb: GraphDBClient):
     assert set(rdf4j_gdb.prefixes.keys()).issuperset({"ex", "foaf"})
 
 
-def test_upload_rdf_xml(rdf4j_gdb: Optional[GraphDBClient]):
-    if skip_rdf4j_test(rdf4j_gdb):
-        pytest.skip("Require access to RDF4J service")
+@pytest.fixture
+def upload_client() -> GraphDBClient:
+    client = None
+    try:
+        yield t_common.init_repo_rdf4j(t_common.rdf4j_url(), "upload")
+    except Exception as exc:
+        if os.getenv("CI"):
+            pytest.fail(f"{exc}")
+        else:
+            pytest.skip(f"{exc}")
+    finally:
+        if client:
+            client.delete_repo()
 
+
+def test_upload_rdf_xml(upload_client: GraphDBClient):
     xml_file = Path(__file__).parent / "data/demo.xml"
-    rdf4j_gdb.upload_rdf(xml_file, "rdf/xml")
+    upload_client.upload_rdf(xml_file, "rdf/xml")
 
-    prefixes = Template("PREFIX rdf:<${rdf}>\nPREFIX md:<${md}>").substitute(rdf4j_gdb.prefixes)
-    df = rdf4j_gdb.exec_query(f"{prefixes}\nSELECT * WHERE {{?s rdf:type md:FullModel}}")
+    prefixes = Template("PREFIX rdf:<${rdf}>\nPREFIX md:<${md}>").substitute(upload_client.prefixes)
+    df = upload_client.exec_query(f"{prefixes}\nSELECT * WHERE {{?s rdf:type md:FullModel}}")
     assert len(df) == 1
 
 
-def test_get_table_default_arg(rdf4j_gdb: Optional[GraphDBClient]):
-    if skip_rdf4j_test(rdf4j_gdb):
-        pytest.skip("Require access to RDF4J service")
-
+def test_get_table_default_arg(rdf4j_gdb: GraphDBClient):
     df = rdf4j_gdb.get_table("SELECT * {?s ?o ?p}")[0]
     assert len(df) == 6
 
 
-def test_namespaces(rdf4j_gdb: Optional[GraphDBClient]):
-    if skip_rdf4j_test(rdf4j_gdb):
-        pytest.skip("Require access to RDF4J service")
-
+def test_namespaces(rdf4j_gdb: GraphDBClient):
     ns = "http://mynamepace.org"
     rdf4j_gdb.set_namespace("myns", ns)
     fetched_ns = rdf4j_gdb.get_namespace("myns")
     assert ns == fetched_ns
 
 
-def test_upload_with_context(rdf4j_gdb):
-    if skip_rdf4j_test(rdf4j_gdb):
-        pytest.skip("Require access to RDF4J service")
-
+def test_upload_with_context(upload_client: GraphDBClient):
     xml_file = Path(__file__).parent / "data/demo.xml"
     graph = "<http://mygraph.com/demo/1/1>"
-    rdf4j_gdb.upload_rdf(xml_file, "rdf/xml", {"context": graph})
+    upload_client.upload_rdf(xml_file, "rdf/xml", {"context": graph})
 
-    prefixes = Template("PREFIX rdf:<${rdf}>\nPREFIX md:<${md}>").substitute(rdf4j_gdb.prefixes)
-    df = rdf4j_gdb.exec_query(
+    prefixes = Template("PREFIX rdf:<${rdf}>\nPREFIX md:<${md}>").substitute(upload_client.prefixes)
+    df = upload_client.exec_query(
         f"{prefixes}\nSELECT * WHERE {{GRAPH {graph} {{?s rdf:type md:FullModel}}}}"
     )
     assert len(df) == 1
 
 
 def test_direct_sparql_endpoint(rdf4j_gdb):
-    if skip_rdf4j_test(rdf4j_gdb):
-        pytest.skip("Require access to RDF4J service")
-
     service_cfg_direct = deepcopy(rdf4j_gdb.service_cfg)
     service_cfg_direct.server = rdf4j_gdb.service_cfg.url
     service_cfg_direct.rest_api = RestApi.DIRECT_SPARQL_ENDPOINT

@@ -1,16 +1,15 @@
 import os
 from string import Template
-from typing import Dict, Optional
 
 import pandas as pd
 import pytest
+import t_utils.common as t_common
+import t_utils.entsoe_models as t_entsoe
 
-from cimsparql.model import SingleClientModel
 
-
-def check_service_available(model: Optional[SingleClientModel], server: str):
-    if model is None:
-        if os.getenv("CI") and server not in ("graphdb", "graphdb_sep"):
+def check_service_available(test_model: t_common.ModelTest):
+    if not test_model.model:
+        if os.getenv("CI") and test_model.must_run_in_ci:
             pytest.fail("Service should always be available in CI")
         else:
             pytest.skip("Require access to external Graph service")
@@ -18,14 +17,15 @@ def check_service_available(model: Optional[SingleClientModel], server: str):
 
 @pytest.mark.slow
 @pytest.mark.asyncio
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb"])
-async def test_eq_query(smallgrid_models: Dict[str, SingleClientModel], server):
-    model = smallgrid_models[server]
-    check_service_available(model, server)
+@pytest.mark.parametrize("test_model", t_entsoe.smallgrid_models())
+async def test_eq_query(test_model: t_common.ModelTest):
+    check_service_available(test_model)
     query_template = Template(
         "PREFIX rdf:<${rdf}>\nPREFIX cim:<${cim}>\n"
         "SELECT ?voltage {?s rdf:type cim:BaseVoltage; cim:BaseVoltage.nominalVoltage ?voltage}"
     )
+
+    model = test_model.model
     query = model.template_to_query(query_template)
     df = await model.get_table_and_convert(query)
     df = df.sort_values("voltage").reset_index(drop=True)
@@ -35,10 +35,10 @@ async def test_eq_query(smallgrid_models: Dict[str, SingleClientModel], server):
 
 @pytest.mark.slow
 @pytest.mark.asyncio
-@pytest.mark.parametrize("server", ["rdf4j", "blazegraph", "graphdb", "graphdb_sep"])
-async def test_tpsv_query(smallgrid_models, server):
-    model = smallgrid_models[server]
-    check_service_available(model, server)
+@pytest.mark.parametrize("test_model", t_entsoe.smallgrid_models())
+async def test_tpsv_query(test_model: t_common.ModelTest):
+    check_service_available(test_model)
+    model = test_model.model
     repo = model.config.system_state_repo
     query_template = Template(
         "PREFIX rdf:<${rdf}>\nPREFIX cim:<${cim}>\n"

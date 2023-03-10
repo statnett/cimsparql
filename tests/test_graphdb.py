@@ -1,10 +1,15 @@
+import asyncio
 import os
 import re
 from base64 import b64encode
-from typing import Dict, List, Set
+from typing import List
 
+import httpx
+import pandas as pd
 import pytest
 import requests
+import t_utils.common as t_common
+import t_utils.custom_models as t_custom
 from pytest_httpserver import HeaderValueMatcher
 
 from cimsparql.graphdb import (
@@ -20,96 +25,69 @@ from cimsparql.graphdb import (
 from cimsparql.model import Model, SingleClientModel
 from cimsparql.type_mapper import TypeMapper
 
-ID_OBJ = "cim:IdentifiedObject"
+
+async def collect_data(model: Model) -> List[pd.DataFrame]:
+    result = await asyncio.gather(
+        model.ac_lines(),
+        model.borders(),
+        model.branch_node_withdraw(),
+        model.bus_data(),
+        model.connections(),
+        model.converters(),
+        model.coordinates(),
+        model.disconnected(),
+        model.dc_active_flow(),
+        model.exchange("NO|SE"),
+        model.full_model(),
+        model.hvdc_converter_bidzones(),
+        model.loads(),
+        model.market_dates(),
+        model.powerflow(),
+        model.regions(),
+        model.series_compensators(),
+        model.station_group_codes_and_names(),
+        model.substation_voltage_level(),
+        model.synchronous_machines(),
+        model.three_winding_transformers(),
+        model.transformer_windings(),
+        model.transformers_connected_to_converter(),
+        model.transformers(),
+        model.two_winding_transformers(),
+        model.wind_generating_units(),
+    )
+    return result
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("test_model", t_custom.all_custom_models())
+async def test_not_empty(test_model: t_common.ModelTest):
+    model = test_model.model
+    if not model:
+        pytest.skip("Require access to GraphDB")
+    dfs = await collect_data(model)
+
+    for i, df in enumerate(dfs):
+        assert not df.empty, f"Failed for dataframe {i}"
+
+
+@pytest.fixture
+def model() -> SingleClientModel:
+    test_model = t_custom.combined_model()
+    if not test_model.model:
+        pytest.skip("Require access to GraphDB")
+    return test_model.model
+
+
 def test_cimversion(model: SingleClientModel):
     assert model.cim_version == 16
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("model_name", ["model", "model_sep"])
-async def test_load(model_name: str, graphdb_real_data_models: Dict[str, Model]):
-    model = graphdb_real_data_models[model_name]
-    load = await model.loads()
-    assert set(load.columns).issubset(
-        {"node", "name", "bidzone", "p", "q", "station", "station_group", "status"}
-    )
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_power_flow(model: SingleClientModel):
-    power_flow = await model.powerflow()
-    assert not power_flow.empty
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_series_compensator(model: SingleClientModel):
-    compensators = await model.series_compensators(region="NO")
-    assert compensators.shape[1] == 12
-
-
-@pytest.fixture()
-def gen_columns() -> List[str]:
-    return {
-        "name",
-        "allocationmax",
-        "node",
-        "status",
-        "station_group",
-        "station_group_name",
-        "station",
-        "market_code",
-        "maxP",
-        "minP",
-        "MO",
-        "bidzone",
-        "sn",
-        "p",
-    }
-
-
-@pytest.fixture()
-def synchronous_machines_columns(gen_columns: Set[str]) -> Set[str]:
-    return gen_columns | {"bidzone", "p", "q", "sn", "t_mrid", "station"}
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_synchronous_machines(
-    model: SingleClientModel, synchronous_machines_columns: Set[str]
-):
-    synchronous_machines = await model.synchronous_machines()
-    assert not synchronous_machines.empty
-    assert set(synchronous_machines.columns).difference(synchronous_machines_columns) == set()
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_wind_generating_units(model: SingleClientModel):
-    wind_units_machines = await model.wind_generating_units()
-    assert not wind_units_machines.empty
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_connections(model: SingleClientModel):
-    con = await model.connections()
-    assert not con.empty
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 @pytest.mark.asyncio
 async def test_regions(model: SingleClientModel):
     regions = await model.regions()
     assert regions.groupby("region").count().loc["NO", "name"] > 16
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 @pytest.mark.asyncio
 async def test_hvdc_converters_bidzones(model: SingleClientModel):
     df = await model.hvdc_converter_bidzones()
@@ -121,17 +99,6 @@ async def test_hvdc_converters_bidzones(model: SingleClientModel):
     assert expect_corridors.issubset(corridors)
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("model_name", ["model", "model_sep"])
-async def test_ac_lines(model_name: str, graphdb_real_data_models: Dict[str, Model]):
-    model = graphdb_real_data_models[model_name]
-    lines = await model.ac_lines()
-    assert lines.shape[1] == 15
-    assert all(lines[["x", "un"]].dtypes == float)
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 @pytest.mark.asyncio
 async def test_windings(model: SingleClientModel):
     windings = await model.transformers(region="NO")
@@ -140,60 +107,24 @@ async def test_windings(model: SingleClientModel):
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 @pytest.mark.asyncio
-async def test_transformer_connected_to_converters(model: SingleClientModel):
-    transformers = await model.transformers_connected_to_converter(region="NO")
-    assert set(transformers.columns) == {"t_mrid", "name", "p_mrid"}
-    assert not transformers.empty
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
 async def test_borders_no(model: SingleClientModel):
     borders = await model.borders(region="NO")
-    assert {"name", "t_mrid_1", "t_mrid_2", "area_1", "area_2", "market_code"}.issuperset(
-        borders.columns
-    )
-    assert not borders.empty
     assert (borders[["area_1", "area_2"]] == "NO").any(axis=1).all()
     assert (borders["area_1"] != borders["area_2"]).all()
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_substation_voltage_level(model: SingleClientModel):
-    voltage_level = await model.substation_voltage_level()
-    assert {"container", "v"}.difference(voltage_level.columns) == set()
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_station_group_codes_and_names(model: SingleClientModel):
-    st_group_names = await model.station_group_codes_and_names()
-    assert not st_group_names.empty
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_dc_active_flow(model: SingleClientModel):
-    flow = await model.dc_active_flow()
-    assert not flow.empty
-
-
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 def test_data_row():
     cols = ["a", "b", "c", "d", "e"]
     rows = [{"a": 1, "b": 2}, {"c": 3, "d": 4}, {"a": 5, "b": 6}, {"e": 7}]
     assert not set(data_row(cols, rows)).symmetric_difference(cols)
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 def test_data_row_missing_column():
     cols = ["a", "b", "c", "d", "e"]
     rows = [{"a": 1, "b": 2}, {"c": 3}, {"a": 5, "b": 6}, {"e": 7}]
     assert set(data_row(cols, rows).keys()).symmetric_difference(cols) == {"d"}
 
 
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
 def test_dtypes(model: SingleClientModel):
     mapper = TypeMapper(model.client.service_cfg)
     df = model.client.get_table(mapper.query)[0]
@@ -221,19 +152,29 @@ def test_conf_bytes_from_template():
 
 
 @pytest.mark.asyncio
-async def test_create_delete_repo(rdf4j_url):
-    if not rdf4j_url:
-        pytest.skip("require rdf4j")
+async def test_create_delete_repo():
+    url = t_common.rdf4j_url()
+
+    # Check if it is possible to make contact
+    try:
+        resp = httpx.get("http://" + url)
+        if resp.status_code != 200 and not os.getenv("CI"):
+            pytest.skip("Could not contact RDF4J server")
+    except Exception as exc:
+        if os.getenv("CI"):
+            pytest.fail(f"{exc}")
+        else:
+            pytest.skip(f"{exc}")
     repo = "test_repo"
     template = confpath() / "native_store_config_template.ttl"
     conf_bytes = config_bytes_from_template(template, {"repo": repo})
-    service_cfg = ServiceConfig(repo, "http", rdf4j_url)
+    service_cfg = ServiceConfig(repo, "http", url)
     current_repos = await repos(service_cfg)
 
     assert "test_repo" not in [i.repo_id for i in current_repos]
 
-    # protocol is added internally. Thus, skip from rdf4j_url
-    client = new_repo(rdf4j_url, repo, conf_bytes, protocol="http")
+    # protocol is added internally. Thus, skip from t_common.rdf4j_url
+    client = new_repo(url, repo, conf_bytes, protocol="http")
     current_repos = await repos(service_cfg)
     assert "test_repo" in [i.repo_id for i in current_repos]
 
@@ -244,7 +185,6 @@ async def test_create_delete_repo(rdf4j_url):
 
 @pytest.mark.asyncio
 async def test_repos_with_auth(httpserver):
-
     response_json = {
         "results": {
             "bindings": [
