@@ -4,9 +4,11 @@ from typing import Union
 
 import pandas as pd
 import pytest
+import t_utils.custom_models as t_custom
+import t_utils.entsoe_models as t_entsoe
 
 from cimsparql.data_models import BusDataFrame
-from cimsparql.model import Model, SingleClientModel
+from cimsparql.model import Model
 
 
 @dataclass
@@ -52,29 +54,29 @@ async def get_node_consistency_test_data(
     )
 
 
-async def collect_node_consistency_data(
-    model: SingleClientModel, micro_t1_nl_bg: SingleClientModel
-) -> list[NodeConsistencyData]:
+async def collect_node_consistency_data() -> list[NodeConsistencyData]:
+    combined_custom = t_custom.combined_model().model
+    bg_model = t_entsoe.micro_t1_nl_bg().model
     res = await asyncio.gather(
-        get_node_consistency_test_data(model), get_node_consistency_test_data(micro_t1_nl_bg)
+        get_node_consistency_test_data(combined_custom), get_node_consistency_test_data(bg_model)
     )
     return res
 
 
 @pytest.fixture(scope="session")
-def nc_data(model: SingleClientModel, micro_t1_nl_bg: SingleClientModel) -> CONSISTENCY_DATA:
+def nc_data() -> CONSISTENCY_DATA:
     """
     Return test data which in a datastructure suitable for consistency checks
     for node data
     """
-    res = asyncio.run(collect_node_consistency_data(model, micro_t1_nl_bg))
-    return {"model": res[0], "micro_t1_nl_bg": res[1]}
+    res = asyncio.run(collect_node_consistency_data())
+    return {"model": res[0], "t_entsoe.micro_t1_nl_bg": res[1]}
 
 
-@pytest.mark.parametrize("model_name", ["model", "micro_t1_nl_bg"])
+@pytest.mark.parametrize("model_name", ["model", "t_entsoe.micro_t1_nl_bg"])
 def test_node_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
     data = nc_data[model_name]
-    if data is None:
+    if not data:
         pytest.skip(f"No data collected for {model_name}")
 
     mrids = set(data.bus.index)
@@ -88,13 +90,13 @@ def test_node_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
         assert set(df["node"]).issubset(mrids), msg
 
 
-@pytest.mark.parametrize("model_name", ["model", "micro_t1_nl_bg"])
+@pytest.mark.parametrize("model_name", ["model", "t_entsoe.micro_t1_nl_bg"])
 def test_two_or_three_winding(nc_data: CONSISTENCY_DATA, model_name: str):
     """
     Ensure that a transformer is either a two windinng transformer or three winding
     """
     data = nc_data[model_name]
-    if data is None:
+    if not data:
         pytest.skip(f"No data collected for {model_name}")
 
     two_w = data.two_node_dfs["two_winding_transformers"].index

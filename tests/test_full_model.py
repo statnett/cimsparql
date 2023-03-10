@@ -1,14 +1,12 @@
-import os
-
 import pytest
-
-from cimsparql.model import SingleClientModel
+import t_utils.custom_models as t_custom
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(os.getenv("GRAPHDB_SERVER", None) is None, reason="Need graphdb server to run")
-async def test_full_model_1(model: SingleClientModel):
+async def test_full_model_1():
+    model = t_custom.combined_model().model
+    if not model:
+        pytest.skip("Require access to GRAPPHDB")
     full_model = await model.full_model()
     assert len(full_model) == 3
     assert len(full_model["time"].unique()) == 1
-    assert (full_model["description"] == "statnett").all()

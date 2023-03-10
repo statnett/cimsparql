@@ -1,10 +1,10 @@
 import os
 from string import Template
-from typing import Optional
 
 import pytest
+import t_utils.common as t_common
 
-from cimsparql.graphdb import GraphDBClient, make_async
+from cimsparql.graphdb import make_async
 
 
 @pytest.mark.parametrize(
@@ -18,11 +18,16 @@ from cimsparql.graphdb import GraphDBClient, make_async
     ],
 )
 @pytest.mark.asyncio
-async def test_async_rdf4j_picasso_data(rdf4j_gdb: Optional[GraphDBClient], query, expect):
-    if rdf4j_gdb is None and not os.getenv("CI"):
-        pytest.skip("Require access to RDF4J service")
+async def test_async_rdf4j_picasso_data(query, expect):
+    try:
+        client = t_common.initialized_rdf4j_repo()
+    except Exception as exc:
+        if os.getenv("CI"):
+            pytest.fail(f"{exc}")
+        else:
+            pytest.skip(f"{exc}")
 
-    prefixes = Template("PREFIX ex:<${ex}>\nPREFIX foaf:<${foaf}>").substitute(rdf4j_gdb.prefixes)
-    client = make_async(rdf4j_gdb)
+    prefixes = Template("PREFIX ex:<${ex}>\nPREFIX foaf:<${foaf}>").substitute(client.prefixes)
+    client = make_async(client)
     result = await client.exec_query(f"{prefixes}\n{query}")
     assert result == expect
