@@ -12,6 +12,7 @@ readme = "README.md"
 authors = ["Statnett Datascience <Datascience.Drift@Statnett.no>"]
 repository = "https://github.com/statnett/cimsparql.git"
 include = ["pkg_data/*"]
+exclude = ["tests/*"]
 
 [tool.poetry.dependencies]
 SPARQLWrapper = "*"
