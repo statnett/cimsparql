@@ -24,6 +24,9 @@ class FullModelSchema(JsonSchemaOut):
         return len(df["time"].unique()) == 1
 
 
+FullModelDataFrame = DataFrame[FullModelSchema]
+
+
 class MridResourceSchema(JsonSchemaOut):
     """
     Common class for resources with an mrid as index
@@ -52,6 +55,9 @@ class MarketDatesSchema(NamedResourceSchema):
     activation_date: Series[dt.datetime] = pa.Field()
 
 
+MarketDatesDataFrame = DataFrame[MarketDatesSchema]
+
+
 class BusDataSchema(JsonSchemaOut):
     node: Index[str] = pa.Field(unique=True)
     name: Series[str] = pa.Field()
@@ -75,11 +81,17 @@ class LoadsSchema(NamedResourceSchema):
     station_group: Series[str] = pa.Field(nullable=True)
 
 
+LoadsDataFrame = DataFrame[LoadsSchema]
+
+
 class WindGeneratingUnitsSchema(NamedMarketResourceSchema):
     station_group: Series[str] = pa.Field(nullable=True)
     min_p: Series[float] = pa.Field()
     max_p: Series[float] = pa.Field()
     plant_mrid: Series[str] = pa.Field(nullable=True)
+
+
+WindGeneratingUnitsDataFrame = DataFrame[WindGeneratingUnitsSchema]
 
 
 class SynchronousMachinesSchema(NamedMarketResourceSchema):
@@ -98,9 +110,15 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     q: Series[float] = pa.Field(nullable=True)
 
 
+SynchronousMachinesDataFrame = DataFrame[SynchronousMachinesSchema]
+
+
 class ConnectionsSchema(MridResourceSchema):
     t_mrid_1: Series[str] = pa.Field()
     t_mrid_2: Series[str] = pa.Field()
+
+
+ConnectionsDataFrame = DataFrame[ConnectionsSchema]
 
 
 class BordersSchema(NamedMarketResourceSchema):
@@ -110,10 +128,16 @@ class BordersSchema(NamedMarketResourceSchema):
     t_mrid_2: Series[str] = pa.Field()
 
 
+BordersDataFrame = DataFrame[BordersSchema]
+
+
 class ExchangeSchema(NamedMarketResourceSchema):
     node: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     p: Series[float] = pa.Field()
+
+
+ExchangeDataFrame = DataFrame[ExchangeSchema]
 
 
 class ConvertersSchema(NamedResourceSchema):
@@ -123,9 +147,15 @@ class ConvertersSchema(NamedResourceSchema):
     node: Series[str] = pa.Field()
 
 
+ConvertersDataFrame = DataFrame[ConvertersSchema]
+
+
 class TransfConToConverterSchema(NamedResourceSchema):
     t_mrid: Series[str] = pa.Field()
     p_mrid: Series[str] = pa.Field()
+
+
+TransfConToConverterDataFrame = DataFrame[TransfConToConverterSchema]
 
 
 class CoordinatesSchema(JsonSchemaOut):
@@ -134,6 +164,9 @@ class CoordinatesSchema(JsonSchemaOut):
     y: Series[str] = pa.Field()
     epsg: Series[pd.CategoricalDtype] = pa.Field()
     rdf_type: Series[pd.CategoricalDtype] = pa.Field()
+
+
+CoordinatesDataFrame = DataFrame[CoordinatesSchema]
 
 
 class BranchComponentSchema(NamedResourceSchema):
@@ -150,14 +183,23 @@ class BranchComponentSchema(NamedResourceSchema):
     x: Series[float] = pa.Field()
 
 
+BranchComponentDataFrame = DataFrame[BranchComponentSchema]
+
+
 class ShuntComponentSchema(BranchComponentSchema):
     b: Series[float] = pa.Field()
     g: Series[float] = pa.Field()
 
 
+ShuntComponentDataFrame = DataFrame[ShuntComponentSchema]
+
+
 class AcLinesSchema(ShuntComponentSchema):
     length: Series[float] = pa.Field()
     g: Series[float] = pa.Field(nullable=True)
+
+
+AcLinesDataFrame = DataFrame[AcLinesSchema]
 
 
 class TransformersSchema(JsonSchemaOut):
@@ -172,9 +214,15 @@ class TransformersSchema(JsonSchemaOut):
     rate: Series[float] = pa.Field(nullable=True)
 
 
+TransformersDataFrame = DataFrame[TransformersSchema]
+
+
 class TransformerWindingSchema(ShuntComponentSchema):
     angle: Series[float] = pa.Field()
     ratio: Series[float] = pa.Field()
+
+
+TransformerWindingDataFrame = DataFrame[TransformerWindingSchema]
 
 
 class SubstationVoltageSchema(JsonSchemaOut):
@@ -183,8 +231,14 @@ class SubstationVoltageSchema(JsonSchemaOut):
     v: Series[float] = pa.Field()
 
 
+SubstationVoltageDataFrame = DataFrame[SubstationVoltageSchema]
+
+
 class DisconnectedSchema(JsonSchemaOut):
     mrid: Series[str] = pa.Field(unique=True)
+
+
+DisconnectedDataFrame = DataFrame[DisconnectedSchema]
 
 
 class PowerFlowSchema(MridResourceSchema):
@@ -193,14 +247,23 @@ class PowerFlowSchema(MridResourceSchema):
     in_service: Series[bool] = pa.Field()
 
 
+PowerFlowDataFrame = DataFrame[PowerFlowSchema]
+
+
 class BranchWithdrawSchema(MridResourceSchema):
     node: Series[str] = pa.Field()
     p: Series[float] = pa.Field()
     q: Series[float] = pa.Field()
 
 
+BranchWithdrawDataFrame = DataFrame[BranchWithdrawSchema]
+
+
 class DcActiveFlowSchema(MridResourceSchema):
     p: Series[float] = pa.Field()
+
+
+DcActiveFlowDataFrame = DataFrame[DcActiveFlowSchema]
 
 
 class RegionsSchema(MridResourceSchema):
@@ -211,10 +274,16 @@ class RegionsSchema(MridResourceSchema):
     region_name: Series[str] = pa.Field(nullable=True)
 
 
+RegionsDataFrame = DataFrame[RegionsSchema]
+
+
 class StationGroupCodeNameSchema(JsonSchemaOut):
     station_group: Index[str] = pa.Field(unique=True)
     name: Series[str] = pa.Field()
     alias_name: Series[str] = pa.Field(nullable=True)
+
+
+StationGroupCodeNameDataFrame = DataFrame[StationGroupCodeNameSchema]
 
 
 class HVDCBidzonesSchema(MridResourceSchema):

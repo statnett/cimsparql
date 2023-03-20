@@ -1,4 +1,5 @@
 """Graphdb CIM sparql client"""
+
 import json
 import os
 from dataclasses import dataclass, field

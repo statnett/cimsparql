@@ -1,4 +1,6 @@
 # Tuple with all cim-types where cimsparql assumes mRID exists
+
+
 CIM_TYPES_WITH_MRID = (
     "ACDCConverterDCTerminal",
     "ACLineSegment",
