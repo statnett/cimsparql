@@ -1,6 +1,5 @@
 import contextlib
 import logging
-import os
 from copy import deepcopy
 from typing import Any, Dict, Set
 
@@ -13,14 +12,6 @@ from cimsparql.graphdb import GraphDBClient, make_async
 from cimsparql.model import SingleClientModel
 
 logger = logging.getLogger()
-
-
-def check_model(test_model: t_common.ModelTest):
-    if not test_model.model:
-        if test_model.must_run_in_ci and os.getenv("CI"):
-            pytest.fail("Micro model test can not be skipped in CI pipelines")
-        else:
-            pytest.skip("Can not access micro model")
 
 
 @contextlib.contextmanager
@@ -37,7 +28,7 @@ def tmp_client(model: SingleClientModel, new_client: GraphDBClient):
 @pytest.mark.parametrize("use_async", [False, True])
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 async def test_bus_data_micro_t1_nl(test_model: t_common.ModelTest, use_async: bool):
-    check_model(test_model)
+    t_common.check_model(test_model)
     model = test_model.model
     client = model.client
     if use_async:
@@ -52,21 +43,21 @@ async def test_bus_data_micro_t1_nl(test_model: t_common.ModelTest, use_async: b
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_cim_version_micro_t1_nl(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     model = test_model.model
     assert model.cim_version == 16
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_repo_not_empty_micro_t1_nl(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     assert not test_model.model.client.empty
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_cim_converters_micro_t1_nl(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     converters = await test_model.model.converters()
     assert converters.empty
 
@@ -74,7 +65,7 @@ async def test_cim_converters_micro_t1_nl(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_full_model_micro_t1_nl(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.full_model()
 
     profiles = {
@@ -93,7 +84,7 @@ async def test_full_model_micro_t1_nl(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_substation_voltage_level(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.substation_voltage_level()
     assert sorted(data["v"].tolist()) == [225.0, 380.0, 400.0]
 
@@ -101,7 +92,7 @@ async def test_substation_voltage_level(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_branch_node_withdraw(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.branch_node_withdraw()
     assert data.empty
 
@@ -109,7 +100,7 @@ async def test_branch_node_withdraw(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_loads(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
 
     data = await test_model.model.loads()
     assert len(data) == 6
@@ -135,7 +126,7 @@ async def test_loads(test_model: t_common.ModelTest):
     ],
 )
 async def test_sync_machines(test_model: t_common.ModelTest, region: str, expected_names: Set[str]):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.synchronous_machines(region)
     assert expected_names == set(data["name"])
 
@@ -143,7 +134,7 @@ async def test_sync_machines(test_model: t_common.ModelTest, region: str, expect
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_connections(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.connections()
     assert len(data) == 26
 
@@ -151,7 +142,7 @@ async def test_connections(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_aclines(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.ac_lines(region=".*")
     assert len(data) == 2
 
@@ -184,7 +175,7 @@ async def test_aclines(test_model: t_common.ModelTest):
     ],
 )
 async def test_transformers(test_model: t_common.ModelTest, params: Dict[str, Any]):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.transformers(params["region"])
     assert len(data) == params["num"]
     end_num_count = data["end_number"].value_counts()
@@ -199,7 +190,7 @@ async def test_transformers(test_model: t_common.ModelTest, params: Dict[str, An
     [{"region": ".*", "num": 15, "num_transf": 7}, {"region": "NL", "num": 6, "num_transf": 3}],
 )
 async def test_transformers_connectivity(test_model: t_common.ModelTest, params: Dict[str, Any]):
-    check_model(test_model)
+    t_common.check_model(test_model)
 
     data = await test_model.model.transformers(params["region"])
     assert len(data) == params["num"]
@@ -211,7 +202,7 @@ async def test_transformers_connectivity(test_model: t_common.ModelTest, params:
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_two_winding_transformers(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.two_winding_transformers()
     assert len(data) == 6
     expect_names = {"NL-TR2_1", "NL_TR2_2", "NL_TR2_3", "BE-TR2_1", "BE-TR2_2", "BE-TR2_3"}
@@ -222,7 +213,7 @@ async def test_two_winding_transformers(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_three_winding_transformers(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.three_winding_transformers()
     assert len(data) == 3
 
@@ -230,7 +221,7 @@ async def test_three_winding_transformers(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_disconnected(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.disconnected()
     assert len(data) == 2
 
@@ -242,7 +233,7 @@ async def test_disconnected(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_powerflow(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     data = await test_model.model.powerflow()
     assert len(data) == 24
 
@@ -250,7 +241,7 @@ async def test_powerflow(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_regions(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     regions = await test_model.model.regions()
     assert set(regions["region"]) == {"BE", "EU", "NL"}
 
@@ -258,7 +249,7 @@ async def test_regions(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_coordinates(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     model = test_model.model
     crd = await model.coordinates()
     pd.testing.assert_index_equal(crd["epsg"].cat.categories, pd.Index(["4326"], dtype=str))
@@ -277,7 +268,7 @@ async def test_coordinates(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_empty_dc_active_flow(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     df = await test_model.model.dc_active_flow()
     assert df.empty
 
@@ -285,7 +276,7 @@ async def test_empty_dc_active_flow(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
 async def test_transformer_windings(test_model: t_common.ModelTest):
-    check_model(test_model)
+    t_common.check_model(test_model)
     df = await test_model.model.transformer_windings()
 
     assert len(df) == 15

@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+import pytest
+
 from cimsparql.graphdb import GraphDBClient, config_bytes_from_template, confpath, new_repo
 from cimsparql.model import Model
 
@@ -47,3 +49,11 @@ def blazegraph_url() -> str:
         # Running on GitHub
         return "localhost:9999/blazegraph/namespace"
     return os.getenv("BLAZEGRAPH_URL", "")
+
+
+def check_model(test_model: ModelTest):
+    if not test_model.model:
+        if test_model.must_run_in_ci and os.getenv("CI"):
+            pytest.fail("Micro model test can not be skipped in CI pipelines")
+        else:
+            pytest.skip("Can not access micro model")

@@ -3,10 +3,10 @@
 import asyncio
 import re
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from string import Template
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 import pandas as pd
 
@@ -42,6 +42,7 @@ from cimsparql.data_models import (
 )
 from cimsparql.graphdb import AsyncGraphDBClient, GraphDBClient, ServiceConfig
 from cimsparql.type_mapper import TypeMapper
+from cimsparql.value_mapper import ValueMapper
 
 
 @dataclass
@@ -49,6 +50,7 @@ class ModelConfig:
     system_state_repo: Optional[str] = None
     ssh_graph: str = "?ssh_graph"
     eq_repo: Optional[str] = None
+    value_mappers: Iterable[ValueMapper] = field(default_factory=list)
 
 
 class Model:
@@ -115,6 +117,8 @@ class Model:
     ) -> pd.DataFrame:
         col_map = self.col_map(data_row, columns)
         result = self.mapper.map_data_types(result, col_map)
+        for v_mapper in self.config.value_mappers:
+            result = v_mapper.map(result)
 
         if index:
             return result.set_index(index)
