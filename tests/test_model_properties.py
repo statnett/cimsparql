@@ -1,5 +1,7 @@
 import asyncio
+import os
 from dataclasses import dataclass
+from string import Template
 from typing import Union
 
 import pandas as pd
@@ -10,12 +12,23 @@ import t_utils.entsoe_models as t_entsoe
 from cimsparql.data_models import BusDataFrame
 from cimsparql.model import Model
 
+swing_bus_query = Template(
+    """
+PREFIX cim:<${cim}>
+select ?top_node ?island
+where {
+    ?island cim:TopologicalIsland.AngleRefTopoligicalNode ?top_node
+}
+"""
+)
+
 
 @dataclass
 class NodeConsistencyData:
     bus: BusDataFrame
     two_node_dfs: dict[str, pd.DataFrame]
     single_node_dfs: dict[str, pd.DataFrame]
+    swing_buses: pd.DataFrame
 
 
 # Alias for a dict with node consistency data. The key should be the name
@@ -49,17 +62,20 @@ async def get_node_consistency_test_data(
     single_node_dfs = await asyncio.gather(
         model.loads(), model.exchange(), model.converters(), model.branch_node_withdraw()
     )
+    swing_buses = await model.get_table_and_convert(model.template_to_query(swing_bus_query))
     return NodeConsistencyData(
-        bus, dict(zip(two_node_names, two_node_dfs)), dict(zip(single_node_names, single_node_dfs))
+        bus,
+        dict(zip(two_node_names, two_node_dfs)),
+        dict(zip(single_node_names, single_node_dfs)),
+        swing_buses,
     )
 
 
 async def collect_node_consistency_data() -> list[NodeConsistencyData]:
-    combined_custom = t_custom.combined_model().model
-    bg_model = t_entsoe.micro_t1_nl_bg().model
-    res = await asyncio.gather(
-        get_node_consistency_test_data(combined_custom), get_node_consistency_test_data(bg_model)
-    )
+    test_models = [t_custom.combined_model(), t_entsoe.micro_t1_nl_bg()]
+    if any(m.model is None and m.must_run_in_ci and os.getenv("CI") for m in test_models):
+        pytest.fail("Model that must run in CI is None")
+    res = await asyncio.gather(*[get_node_consistency_test_data(m.model) for m in test_models])
     return res
 
 
@@ -73,11 +89,15 @@ def nc_data() -> CONSISTENCY_DATA:
     return {"model": res[0], "t_entsoe.micro_t1_nl_bg": res[1]}
 
 
+def skip_on_missing(data: CONSISTENCY_DATA, model_name: str):
+    if not data:
+        pytest.skip(f"No data collected for {model_name}")
+
+
 @pytest.mark.parametrize("model_name", ["model", "t_entsoe.micro_t1_nl_bg"])
 def test_node_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
     data = nc_data[model_name]
-    if not data:
-        pytest.skip(f"No data collected for {model_name}")
+    skip_on_missing(data, model_name)
 
     mrids = set(data.bus.index)
     for name, df in data.two_node_dfs.items():
@@ -93,12 +113,18 @@ def test_node_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
 @pytest.mark.parametrize("model_name", ["model", "t_entsoe.micro_t1_nl_bg"])
 def test_two_or_three_winding(nc_data: CONSISTENCY_DATA, model_name: str):
     """
-    Ensure that a transformer is either a two windinng transformer or three winding
+    Ensure that a transformer is either a two winding transformer or three winding
     """
     data = nc_data[model_name]
-    if not data:
-        pytest.skip(f"No data collected for {model_name}")
+    skip_on_missing(data, model_name)
 
     two_w = data.two_node_dfs["two_winding_transformers"].index
     three_w = data.two_node_dfs["three_winding_transformers"].index
     assert len(set(two_w).intersection(three_w)) == 0
+
+
+@pytest.mark.parametrize("model_name", ["model", "t_entsoe.micro_t1_nl_bg"])
+def test_swing_bus_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
+    data = nc_data[model_name]
+    skip_on_missing(data, model_name)
+    assert data.bus["is_swing_bus"].sum() == len(data.swing_buses)

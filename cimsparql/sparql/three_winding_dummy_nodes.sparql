@@ -1,12 +1,12 @@
 # Name: Three winding with dummy nodes
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select ?node ?name (?name as ?busname) ?un ?station ?bidzone
+select ?node ?name (?name as ?busname) ?un ?station ?bidzone ?island (False as ?is_swing_bus)
 where
 {
   # Select all three winding transformerss
   {
-    select  ?p_transformer (count(distinct ?nr) as ?winding_count)
+    select  ?p_transformer
     where {
       ?p_transformer a cim:PowerTransformer;
                cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
@@ -14,16 +14,24 @@ where
       filter(regex(?area, '${region}'))
     }
     group by ?p_transformer
-    having (?winding_count > 2)
+    having (count(*) > 2)
   } .
   ?p_transformer cim:IdentifiedObject.mRID ?node;
            cim:IdentifiedObject.name ?name;
-           cim:Equipment.EquipmentContainer ?Substation .
+           cim:Equipment.EquipmentContainer ?substation .
   ?winding cim:TransformerEnd.endNumber 1;
          cim:PowerTransformerEnd.ratedU ?un;
-         cim:PowerTransformerEnd.PowerTransformer ?p_transformer .
-  ?Substation cim:IdentifiedObject.mRID ?station .
-  optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone}
+         cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
+         cim:TransformerEnd.Terminal/cim:Terminal.ConnectivityNode ?con_node .
+  ?substation cim:IdentifiedObject.mRID ?station .
+  service <${repo}> {
+    optional{
+      ?con_node cim:ConnectivityNode.TopologicalNode ?top_node .
+      ?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name
+    }.
+    bind(coalesce(?island_name, "Unknown") as ?island)
+  }
+  optional {?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone}
   optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)

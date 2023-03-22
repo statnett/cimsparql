@@ -1,7 +1,7 @@
 # Name: Bus
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select ?node ?name ?busname ?un ?station ?bidzone ?sv_voltage
+select ?node ?name ?busname ?un ?station ?bidzone ?sv_voltage ?island ?is_swing_bus
 where {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
   service <${repo}> {
@@ -9,7 +9,11 @@ where {
            cim:TopologicalNode.ConnectivityNodeContainer ?container;
            cim:IdentifiedObject.mRID ?node;
            cim:IdentifiedObject.name ?busname;
-           ^cim:SvVoltage.TopologicalNode/cim:SvVoltage.v ?sv_voltage
+           ^cim:SvVoltage.TopologicalNode/cim:SvVoltage.v ?sv_voltage .
+    optional{?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name .}
+    optional{?top_node ^cim:TopologicalIsland.AngleRefTopoligicalNode ?angle_ref .}
+    bind(if(bound(?angle_ref), True, False) as ?is_swing_bus)
+    bind(coalesce(?island_name, "Unknown") as ?island)
   }
 
   # Find the nominal voltage from the base voltage associated with the topological node
