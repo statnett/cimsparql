@@ -26,7 +26,7 @@ def ssh_graph():
 @functools.lru_cache
 def combined_model() -> t_common.ModelTest:
     if os.getenv("CI"):
-        return t_common.ModelTest()
+        return t_common.ModelTest(None, False, False)
     service = combined_graphdb_service()
     system_state_repo = f"repository:{service.repo},infer=false"
     eq_repo = f"repository:{service.repo},infer=false"
