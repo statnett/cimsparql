@@ -42,7 +42,6 @@ where {
           cim:Conductor.length ?length .
 
   ?terminal cim:Terminal.ConductingEquipment ?acline;
-            cim:IdentifiedObject.mRID ?t_mrid;
             cim:Terminal.ConnectivityNode ?con_node;
             cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
 
@@ -78,7 +77,7 @@ where {
   # 1) mRID of the topological node of the connectivity node for each terminal
   # 2) mRID of the topological node of each terminal
   # 3) mrID of the terminal
-  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node)
+  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid) as ?node)
 
   # Create variables for node 1 and node 2
   bind(if(?nr = 1, str(?p), '') as ?p_1)
