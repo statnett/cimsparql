@@ -65,6 +65,7 @@ class ServiceConfig:
     user: str = field(default=os.getenv("GRAPHDB_USER"))
     passwd: str = field(default=os.getenv("GRAPHDB_USER_PASSWD"))
     rest_api: RestApi = field(default=os.getenv("SPARQL_REST_API", RestApi.RDF4J))
+    ca_bundle: Optional[str] = field(default=None)
 
     # Parameters for rest api
     # https://rdf4j.org/documentation/reference/rest-api/
@@ -415,7 +416,7 @@ def delete_repo_endpoint(config: ServiceConfig) -> str:
 class AsyncGraphDBClient(GraphDBClient):
     def __init__(self, service_cfg: Optional[ServiceConfig] = None) -> None:
         super().__init__(service_cfg)
-        self.sparql = AsyncSparqlWrapper(self.service_cfg.url)
+        self.sparql = AsyncSparqlWrapper(self.service_cfg.url, self.service_cfg.ca_bundle)
         self._init_sparql_wrapper()
 
     async def _exec_query(self, query: str) -> SparqlResult:
