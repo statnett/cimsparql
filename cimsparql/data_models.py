@@ -303,3 +303,12 @@ class TransformerWindingsSchema(JsonSchemaOut):
 
 
 TransformerWindingsDataFrame = DataFrame[TransformerWindingsSchema]
+
+
+class SvInjectionSchema(JsonSchemaOut):
+    node: Series[str] = pa.Field(unique=True)
+    p: Series[float] = pa.Field()
+    q: Series[float] = pa.Field()
+
+
+SvInjectionDataFrame = DataFrame[SvInjectionSchema]

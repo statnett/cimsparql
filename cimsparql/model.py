@@ -31,6 +31,7 @@ from cimsparql.data_models import (
     RegionsDataFrame,
     StationGroupCodeNameDataFrame,
     SubstationVoltageDataFrame,
+    SvInjectionDataFrame,
     SynchronousMachinesDataFrame,
     TransfConToConverterDataFrame,
     TransformersDataFrame,
@@ -526,6 +527,14 @@ class Model:
         return DcActiveFlowDataFrame(df.drop(columns="direction"))
 
     @property
+    def sv_injection_query(self) -> str:
+        return self.template_to_query(templates.SV_INJECTION_QUERY)
+
+    async def sv_injection(self) -> SvInjectionDataFrame:
+        df = await self.get_table_and_convert(self.sv_injection_query)
+        return SvInjectionDataFrame(df)
+
+    @property
     def regions_query(self) -> str:
         return self.template_to_query(templates.REGIONS_QUERY)
 
@@ -666,6 +675,7 @@ def get_federated_cim_model(
         "Series compensators",
         "SV branch",
         "Power flow",
+        "SvInjection",
     )
     for query in exec_from_tpssvssh:
         clients[query] = tpsvssh_client

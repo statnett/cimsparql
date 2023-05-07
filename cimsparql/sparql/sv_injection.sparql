@@ -1,0 +1,9 @@
+# Name: SvInjection
+PREFIX cim:<${cim}>
+select ?node ?p ?q
+where
+{
+  ?sv_injection cim:SvInjection.TopologicalNode/cim:IdentifiedObject.mRID ?node;
+                cim:SvInjection.pInjection ?p;
+                cim:SvInjection.qInjection ?q .
+}
