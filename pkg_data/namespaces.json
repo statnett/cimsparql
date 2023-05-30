@@ -1,6 +1,6 @@
 {
     "ALG": "http://www.alstom.com/grid/CIM-schema-cim15-extension#",
-    "SN": "http://SN#",
+    "SN": "http://www.statnett.no/CIM-schema-cim15-extension#",
     "cim": "http://iec.ch/TC57/2013/CIM-schema-cim16#",
     "cims": "http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#",
     "dc": "http://purl.org/dc/elements/1.1/",
