@@ -126,27 +126,40 @@ def require_rdf4j(f):
 
 
 class GraphDBClient:
-    def __init__(self, service_cfg: Optional[ServiceConfig] = None) -> None:
-        """GraphDB client
+    """GraphDB client for sending sparql queries to GraphDB server
 
-        Args:
-           service: string with url to graphdb repository. See cimsparql.url.service
-           mapper: GraphDBClient with the mapper (Default to self).
-           infer: deduce further knowledge based on existing RDF data and a formal set of
-           sameas: map same concepts from two or more datasets
-        """
+    Args:
+        service_cfg: Service configuration (see ServiceConfig)
+        custom_headers: Added to SPARQLWrapper using addCustomHttpHeader
+
+    Example:
+    >>> from cimsparql.graphdb import GraphDBClient
+    >>> gdbc = GraphDBClient()
+    >>> query = 'select * where { ?subject ?predicate ?object } limit 10'
+    >>> df, row = gdbc.get_table(query)xs
+
+    Where row is the output of graphdb.data_row
+    """
+
+    sparql_wrapper = SPARQLWrapper
+
+    def __init__(
+        self,
+        service_cfg: Optional[ServiceConfig] = None,
+        custom_headers: Optional[Dict[str, str]] = None,
+    ) -> None:
         self.service_cfg = service_cfg or ServiceConfig()
-        self.sparql = SPARQLWrapper(self.service_cfg.url)
-        self._init_sparql_wrapper()
-        self._prefixes = None
-
-    def _init_sparql_wrapper(self):
+        self.sparql = self.sparql_wrapper(self.service_cfg.url, self.service_cfg.ca_bundle)
         self.sparql.setReturnFormat(JSON)
         self.sparql.setMethod(POST)
         self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
         if self.service_cfg.timeout:
             self.sparql.setTimeout(self.service_cfg.timeout)
         self._update_sparql_parameters()
+        if custom_headers:
+            for name, value in custom_headers.items():
+                self.sparql.addCustomHttpHeader(name, value)
+        self._prefixes = None
 
     def _update_sparql_parameters(self):
         for key, value in self.service_cfg.parameters.items():
@@ -200,16 +213,11 @@ class GraphDBClient:
         return df, data_row(res["cols"], res["data"])
 
     def get_table(self, query: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
-        """
+        """Get result from sparql query as a pandas dataframe
+
         Args:
            query: to sparql server
            limit: limit number of resulting rows
-        Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> query = 'select * where { ?subject ?predicate ?object }'
-           >>> gdbc.get_table(query, limit=10)
         """
         res = self._exec_query(query)
         return self._convert_query_result_to_df(res)
@@ -228,7 +236,9 @@ class GraphDBClient:
             return prefixes
 
         auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
-        response = requests.get(self.service_cfg.url + "/namespaces", auth=auth)
+        response = requests.get(
+            self.service_cfg.url + "/namespaces", auth=auth, headers=self.sparql.customHttpHeaders
+        )
         if response.ok:
             prefixes.update(parse_namespaces_rdf4j(response))
             return prefixes
@@ -277,7 +287,8 @@ class GraphDBClient:
         response = requests.post(
             self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
             data={"update": query},
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            headers=self.sparql.customHttpHeaders
+            | {"Content-Type": "application/x-www-form-urlencoded"},
             auth=auth,
         )
         response.raise_for_status()
@@ -414,10 +425,23 @@ def delete_repo_endpoint(config: ServiceConfig) -> str:
 
 
 class AsyncGraphDBClient(GraphDBClient):
-    def __init__(self, service_cfg: Optional[ServiceConfig] = None) -> None:
-        super().__init__(service_cfg)
-        self.sparql = AsyncSparqlWrapper(self.service_cfg.url, self.service_cfg.ca_bundle)
-        self._init_sparql_wrapper()
+    """Asynchronous GraphDB client for sending sparql queries to GraphDB server
+
+    Args:
+        service_cfg: Service configuration (see ServiceConfig)
+        custom_headers: Added to SPARQLWrapper using addCustomHttpHeader
+
+    Example:
+    >>> import asyncio
+    >>> from cimsparql.graphdb import AsyncGraphDBClient
+    >>> gdbc = AsyncGraphDBClient()
+    >>> query = 'select * where { ?subject ?predicate ?object } limit 10'
+    >>> df, row = await gdbc.get_table(query)
+
+    Where row is the output of graphdb.data_row
+    """
+
+    sparql_wrapper = AsyncSparqlWrapper
 
     async def _exec_query(self, query: str) -> SparqlResult:
         self._prep_query(query)
@@ -429,16 +453,11 @@ class AsyncGraphDBClient(GraphDBClient):
         return out["out"]
 
     async def get_table(self, query: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
-        """
+        """Get result from sparql query as a pandas dataframe
+
         Args:
            query: to sparql server
            limit: limit number of resulting rows
-        Example:
-           >>> from cimsparql.graphdb import GraphDBClient
-           >>> from cimsparql.url import service
-           >>> gdbc = GraphDBClient(service('LATEST'))
-           >>> query = 'select * where { ?subject ?predicate ?object }'
-           >>> gdbc.get_table(query, limit=10)
         """
         res = await self._exec_query(query)
         return self._convert_query_result_to_df(res)

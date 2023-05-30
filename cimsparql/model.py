@@ -602,29 +602,31 @@ def get_cim_model(
     service_cfg: Optional[ServiceConfig] = None,
     model_cfg: Optional[ModelConfig] = None,
     async_sparql_wrapper: bool = False,
+    custom_headers: Optional[Dict[str, str]] = None,
 ) -> SingleClientModel:
     """
     Function kept for backward compatibility. Use `get_single_client_model` instead.
     """
-    return get_single_client_model(service_cfg, model_cfg, async_sparql_wrapper)
+    return get_single_client_model(service_cfg, model_cfg, async_sparql_wrapper, custom_headers)
 
 
 def get_single_client_model(
     service_cfg: Optional[ServiceConfig] = None,
     model_cfg: Optional[ModelConfig] = None,
     async_sparql_wrapper: bool = False,
+    custom_headers: Optional[Dict[str, str]] = None,
 ) -> SingleClientModel:
     """Get a CIM Model.
 
-
     Args:
         service_cfg: Configurations for the triple store service
-        model_cfg: Conifugrations for the CIM mode
+        model_cfg: Configurations for the CIM mode
         async_sparql_wrapper: If True http calls are made via asynchronous requests.
             If False, the native SparqlWrapper sends requests via urllib
+        custom_headers: Custom headers to be added to the requests
     """
-    c = AsyncGraphDBClient(service_cfg) if async_sparql_wrapper else GraphDBClient(service_cfg)
-    return SingleClientModel(c, model_cfg)
+    Client = AsyncGraphDBClient if async_sparql_wrapper else GraphDBClient
+    return SingleClientModel(Client(service_cfg, custom_headers), model_cfg)
 
 
 def query_name(query: str) -> str:

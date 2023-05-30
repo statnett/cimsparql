@@ -2,7 +2,7 @@ import asyncio
 import os
 import re
 from base64 import b64encode
-from typing import List
+from typing import Callable, List
 
 import httpx
 import pandas as pd
@@ -13,6 +13,7 @@ import t_utils.custom_models as t_custom
 from pytest_httpserver import HeaderValueMatcher
 
 from cimsparql.graphdb import (
+    AsyncGraphDBClient,
     GraphDBClient,
     RepoInfo,
     ServiceConfig,
@@ -227,3 +228,10 @@ def test_update_prefixes(monkeypatch):
     new_pref = {"eq": "http://eq"}
     client.update_prefixes(new_pref)
     assert client.prefixes == new_pref
+
+
+@pytest.mark.parametrize("graphdb_client", [GraphDBClient, AsyncGraphDBClient])
+def test_custom_headers(graphdb_client: Callable):
+    custom_headers = {"my_header": "my_header_value"}
+    client = graphdb_client(ServiceConfig(server="some-server"), custom_headers)
+    assert client.sparql.customHttpHeaders == custom_headers
