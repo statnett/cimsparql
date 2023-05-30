@@ -47,3 +47,4 @@ TWO_WINDING_QUERY = _read_template(sparql_folder / "two_winding_transformer.spar
 TYPE_MAPPER_QUERY = _read_template(sparql_folder / "type_mapper.sparql")
 WIND_GENERATING_UNITS_QUERY = _read_template(sparql_folder / "wind_generating_units.sparql")
 TRANSFORMER_WINDINGS_QUERY = _read_template(sparql_folder / "transformer_windings.sparql")
+WINDING = _read_template(sparql_folder / "winding.sparql")

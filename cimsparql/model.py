@@ -425,6 +425,10 @@ class Model:
             data["angle"] += angle.reindex(index=data.index, fill_value=0.0).squeeze()
         return TransformerWindingDataFrame(data)
 
+    @property
+    def winding_query(self) -> str:
+        return self.template_to_query(templates.WINDING)
+
     def three_winding_loss_query(self, region: Optional[str] = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_LOSS_QUERY, substitutes)
