@@ -28,6 +28,7 @@ from cimsparql.data_models import (
     LoadsDataFrame,
     MarketDatesDataFrame,
     PowerFlowDataFrame,
+    RASEquipmentDataFrame,
     RegionsDataFrame,
     StationGroupCodeNameDataFrame,
     SubstationVoltageDataFrame,
@@ -572,8 +573,12 @@ class Model:
         return HVDCBidzonesDataFrame(df)
 
     @property
-    def protective_action_query(self) -> str:
-        return self.template_to_query(templates.PROTECTIVE_ACTION_QUERY)
+    def ras_equipment_query(self) -> str:
+        return self.template_to_query(templates.RAS_EQUIPMENT_QUERY)
+
+    async def ras_equipment(self) -> RASEquipmentDataFrame:
+        df = await self.get_table_and_convert(self.ras_equipment_query)
+        return RASEquipmentDataFrame(df)
 
     def add_mrid_query(self, rdf_type: Optional[str] = None, graph: Optional[str] = None) -> str:
         substitutes = {"rdf_type": rdf_type or "?rdf_type", "g": graph or "?g"}

@@ -312,3 +312,12 @@ class SvInjectionSchema(JsonSchemaOut):
 
 
 SvInjectionDataFrame = DataFrame[SvInjectionSchema]
+
+
+class RASEquipmentSchema(JsonSchemaOut):
+    mrid: Series[str] = pa.Field(unique=True)
+    equipment_mrid: Series[str] = pa.Field()
+    name: Series[str] = pa.Field()
+
+
+RASEquipmentDataFrame = DataFrame[RASEquipmentSchema]
