@@ -32,7 +32,7 @@ class AsyncSparqlWrapper(SPARQLWrapper):
         url = request.get_full_url()
         method = request.get_method()
 
-        args = {"timeout": self.timeout} | {"verify": self.ca_bundle} if self.ca_bundle else {}
+        args = {"timeout": self.timeout} | ({"verify": self.ca_bundle} if self.ca_bundle else {})
         async with httpx.AsyncClient(**args) as client:
             response = await client.request(
                 method, url, headers=request.headers, content=request.data
