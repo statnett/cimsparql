@@ -16,7 +16,7 @@ jobs:
       - name: Install and configure Poetry
         uses: abatilo/actions-poetry@v2.3.0
         with:
-          poetry-version: 1.4.0
+          poetry-version: 1.5.1
       - uses: fredrikaverpil/poetry-update@v1.2
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
