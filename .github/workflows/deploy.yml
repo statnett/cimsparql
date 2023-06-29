@@ -73,7 +73,7 @@ jobs:
           poetry install --with docs
       - name: build docs
         run: |
-          poetry run sphinx docs html
+          poetry run sphinx-build docs html
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
