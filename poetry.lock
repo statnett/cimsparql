@@ -1518,13 +1518,13 @@ xml = ["lxml (>=4.6.3)"]
 
 [[package]]
 name = "pandera"
-version = "0.14.5"
+version = "0.16.1"
 description = "A light-weight and flexible data validation and testing tool for statistical data objects."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pandera-0.14.5-py3-none-any.whl", hash = "sha256:d8093404010d3e908aa11ae5bd4d0a6be6a715a1209800c4eec0eb03f06561fc"},
-    {file = "pandera-0.14.5.tar.gz", hash = "sha256:41cb917ecb898c392af9e34c13cd55d42934b10a36595b0d39cbbb5129e56487"},
+    {file = "pandera-0.16.1-py3-none-any.whl", hash = "sha256:8354cf06764aba98e50c4909f36611ea6ddd7d4147d4ce74d8f7affe0bb27703"},
+    {file = "pandera-0.16.1.tar.gz", hash = "sha256:65907e43b3743358044655cee83b5981055bc3d514393565932f1e7b5c2d2c0c"},
 ]
 
 [package.dependencies]
@@ -1532,7 +1532,8 @@ multimethod = "*"
 numpy = ">=1.19.0"
 packaging = ">=20.0"
 pandas = ">=1.2.0"
-pydantic = "*"
+pydantic = "<2.0.0"
+typeguard = ">=3.0.2"
 typing-inspect = ">=0.6.0"
 wrapt = "*"
 
@@ -2605,6 +2606,25 @@ files = [
 [package.extras]
 docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["argcomplete (>=2.0)", "pre-commit", "pytest", "pytest-mock"]
+
+[[package]]
+name = "typeguard"
+version = "4.0.0"
+description = "Run-time type checker for Python"
+optional = false
+python-versions = ">=3.7.4"
+files = [
+    {file = "typeguard-4.0.0-py3-none-any.whl", hash = "sha256:c4a40af0ba8a41077221271b46d0a6d8d46045443e4d887887c69254ca861952"},
+    {file = "typeguard-4.0.0.tar.gz", hash = "sha256:194fb3dbcb06ea9caf7088f3befee014de57961689f9c859ac5239b1ef61d987"},
+]
+
+[package.dependencies]
+importlib-metadata = {version = ">=3.6", markers = "python_version < \"3.10\""}
+typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.11\""}
+
+[package.extras]
+doc = ["packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
+test = ["mypy (>=1.2.0)", "pytest (>=7)"]
 
 [[package]]
 name = "typing-extensions"
