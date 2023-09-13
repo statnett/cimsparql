@@ -66,7 +66,7 @@ where {
   }} .
   # Search for acline SV status will be combined with SSH connected
   optional {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service . }
-  optional { ?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
+  optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
 
   # Find properties in TP/SV/SSH profile for each terminal.
   ?terminal cim:ACDCTerminal.connected ?connected .
@@ -94,4 +94,4 @@ where {
 # 1) We don't need lines connecting nodes to themselves
 # 2) Only extract lines where at least two nodes exist
 # 3) Only extract lines where SN:Equipment.networkAnalysisEnable is True (if the field exists)
-having((max(?node_1) != max(?node_2)) && (count(*) > 1) && coalesce(max(?analysis_enabled), True))
+having((max(?node_1) != max(?node_2)) && (max(?node_1) != "") && (max(?node_2) != "") && (count(*) > 1) && coalesce(max(?analysis_enabled), True))
