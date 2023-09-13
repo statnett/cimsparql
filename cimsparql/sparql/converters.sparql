@@ -31,7 +31,6 @@ where {
 
   # Extract properties for the terminals for the converter
   ?terminal cim:Terminal.ConductingEquipment ?converter;
-            cim:IdentifiedObject.mRID ?t_mrid;
             cim:Terminal.ConnectivityNode ?con_node;
             cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
   optional {?converter SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
@@ -44,6 +43,6 @@ where {
   # 1) mRID of the topological node associated with the connectivity node
   # 2) mRID of the topological node for the terminal
   # 3) mRID of the terminal
-  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node)
+  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid) as ?node)
   bind(coalesce(?in_service, ?connected) as ?status)
 }
