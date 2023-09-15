@@ -48,7 +48,6 @@ from cimsparql.value_mapper import ValueMapper
 @dataclass
 class ModelConfig:
     system_state_repo: Optional[str] = None
-    ssh_graph: str = "?ssh_graph"
     eq_repo: Optional[str] = None
     value_mappers: Iterable[ValueMapper] = field(default_factory=list)
 
@@ -204,7 +203,7 @@ class Model:
         return BusDataFrame(df)
 
     def loads_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.LOADS_QUERY, substitutes)
 
     async def loads(self, region: Optional[str] = None) -> LoadsDataFrame:
@@ -241,7 +240,7 @@ class Model:
         return WindGeneratingUnitsDataFrame(df)
 
     def synchronous_machines_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.SYNCHRONOUS_MACHINES_QUERY, substitutes)
 
     async def synchronous_machines(
@@ -311,7 +310,7 @@ class Model:
         return ExchangeDataFrame(df)
 
     def converters_query(self, region: Optional[str] = None) -> str:
-        substitutes = {"region": region or ".*", "ssh_graph": self.config.ssh_graph}
+        substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONVERTERS_QUERY, substitutes)
 
     async def converters(self, region: Optional[str] = None) -> ConvertersDataFrame:

@@ -57,7 +57,7 @@ where {
   # Optinoally extract in_service flag for each macchine, as well as active and reactive power
   service <${repo}> {
     optional {?machine ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
-    graph ${ssh_graph} {optional {?machine cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}}
+    optional {?machine cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}
   }
   optional {?machine SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)

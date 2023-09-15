@@ -13,7 +13,7 @@ where {
 
   # Optionally extract in_service flag and active and reactive energy consumption for each load
   optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service }.
-  graph ${ssh_graph} {?load cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q}
+  ?load cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q .
 
   service <${eq_repo}> {
   # Declare which load types to consider
@@ -41,7 +41,6 @@ where {
   ?terminal cim:Terminal.ConductingEquipment ?load;
            cim:Terminal.ConnectivityNode ?con_node .
   }
-
 
   # Assign status flag for load. The status flag is set to the first existing of
   # 1) in_service flag

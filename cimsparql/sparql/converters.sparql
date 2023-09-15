@@ -5,10 +5,9 @@ PREFIX SN:<${SN}>
 select ?mrid ?name ?alias ?p ?q ?station ?status ?node
 where {
   # Extract active and reactive power for the converter
-  graph ${ssh_graph} {
-    ?converter cim:ACDCConverter.p ?p;
-               cim:ACDCConverter.q ?q .
-  }
+  ?converter cim:ACDCConverter.p ?p;
+             cim:ACDCConverter.q ?q .
+
   optional {?converter ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
 
   # Extract connected and optionally the mrid for the topological node associated with the terminal

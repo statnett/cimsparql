@@ -16,13 +16,6 @@ def combined_graphdb_service() -> ServiceConfig:
     return ServiceConfig(repo=repo)
 
 
-default_ssh_graph = "<http://entsoe.eu/CIM/SteadyStateHypothesis/1/1>"
-
-
-def ssh_graph():
-    return os.getenv("SSH_GRAPH", default_ssh_graph)
-
-
 @functools.lru_cache
 def combined_model() -> t_common.ModelTest:
     if os.getenv("CI"):
@@ -32,9 +25,7 @@ def combined_model() -> t_common.ModelTest:
     eq_repo = f"repository:{service.repo},infer=false"
     model = None
     try:
-        model = get_single_client_model(
-            service, ModelConfig(system_state_repo, ssh_graph(), eq_repo)
-        )
+        model = get_single_client_model(service, ModelConfig(system_state_repo, eq_repo))
     except Exception as exc:
         logger.error(f"{exc}")
     return t_common.ModelTest(model, False, False)
@@ -52,9 +43,7 @@ def federated_model() -> t_common.ModelTest:
     tpsvssh_client = GraphDBClient(tpsvssh_client_cfg)
 
     m_cfg = ModelConfig(
-        f"repository:{system_state_repo},infer=false",
-        ssh_graph(),
-        f"repository:{eq_repo},infer=false",
+        f"repository:{system_state_repo},infer=false", f"repository:{eq_repo},infer=false"
     )
     model = None
     try:
