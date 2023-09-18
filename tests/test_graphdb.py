@@ -2,6 +2,7 @@ import asyncio
 import os
 import re
 from base64 import b64encode
+from http import HTTPStatus
 from typing import Callable, List
 
 import httpx
@@ -159,7 +160,7 @@ async def test_create_delete_repo():
     # Check if it is possible to make contact
     try:
         resp = httpx.get("http://" + url)
-        if resp.status_code != 200 and not os.getenv("CI"):
+        if resp.status_code not in [HTTPStatus.OK, HTTPStatus.FOUND] and not os.getenv("CI"):
             pytest.skip("Could not contact RDF4J server")
     except Exception as exc:
         if os.getenv("CI"):

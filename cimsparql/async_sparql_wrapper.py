@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from typing import Optional
 
 import httpx
@@ -39,7 +40,7 @@ class AsyncSparqlWrapper(SPARQLWrapper):
             )
 
         status = response.status_code
-        if status != 200:
+        if status != HTTPStatus.OK:
             raise exceptions.get(status, Exception)(response.content)
 
         return response.json()
