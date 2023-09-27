@@ -1,3 +1,4 @@
+---
 name: Deploy to PyPI
 
 on:
@@ -10,8 +11,9 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress
+# and latest queued.  However, do NOT cancel in-progress runs as we want to allow these
+# production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -31,7 +33,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: 3.11
       - name: Install and configure Poetry
         uses: abatilo/actions-poetry@v2.3.0
         with:
@@ -58,7 +60,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: 3.11
       - name: Install and configure Poetry
         uses: abatilo/actions-poetry@v2.3.0
         with:

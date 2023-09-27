@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import ClassVar
 
 import pandas as pd
 import pandera as pa
@@ -8,7 +9,7 @@ from pandera.typing import DataFrame, Index, Series
 class JsonSchemaOut(pa.SchemaModel):
     class Config:
         to_format = "json"
-        to_format_kwargs = {"orient": "table"}
+        to_format_kwargs: ClassVar[dict[str, str]] = {"orient": "table"}
         coerce = True
 
 
@@ -103,8 +104,8 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     station_group: Series[str] = pa.Field(nullable=True)
     station_group_name: Series[str] = pa.Field(nullable=True)
     station: Series[str] = pa.Field()
-    maxP: Series[float] = pa.Field(nullable=True)
-    minP: Series[float] = pa.Field(nullable=True)
+    maxP: Series[float] = pa.Field(nullable=True)  # noqa N815
+    minP: Series[float] = pa.Field(nullable=True)  # noqa N815
     MO: Series[float] = pa.Field(nullable=True)
     bidzone: Series[str] = pa.Field(nullable=True)
     sn: Series[float] = pa.Field()

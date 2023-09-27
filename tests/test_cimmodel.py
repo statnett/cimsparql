@@ -1,13 +1,16 @@
+from pathlib import Path
+from typing import Any
+from unittest.mock import Mock
+
 import pytest
-from mock import Mock
 
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.model import Model, ModelConfig, get_federated_cim_model, query_name
 from cimsparql.templates import sparql_folder
 
 
-def test_map_data_types(monkeypatch):
-    def cim_init(self, *args):
+def test_map_data_types(monkeypatch: pytest.MonkeyPatch):
+    def cim_init(self: Model, *_: Any) -> None:
         self.mapper = Mock(have_cim_version=Mock(return_value=True))
         self.clients = {"default": Mock(prefixes={"cim": None})}
 
@@ -16,8 +19,8 @@ def test_map_data_types(monkeypatch):
     assert cim_model.map_data_types
 
 
-def test_not_map_data_types(monkeypatch):
-    def cim_init(self, *args):
+def test_not_map_data_types(monkeypatch: pytest.MonkeyPatch):
+    def cim_init(self: Model, *_: Any) -> None:
         self.mapper = Mock(have_cim_version=Mock(return_value=False))
         self.clients = {"default": Mock(prefixes={"cim": None})}
 
@@ -27,8 +30,8 @@ def test_not_map_data_types(monkeypatch):
 
 
 @pytest.mark.parametrize("sparql_query", sparql_folder.glob("*.sparql"))
-def test_name_in_header(sparql_query):
-    with open(sparql_query, "r") as infile:
+def test_name_in_header(sparql_query: Path):
+    with open(sparql_query) as infile:
         line = infile.readline()
     assert line.startswith("# Name: ")
 
@@ -36,7 +39,7 @@ def test_name_in_header(sparql_query):
 def test_unique_headers():
     headers = []
     for f in sparql_folder.glob("*.sparql"):
-        with open(f, "r") as infile:
+        with open(f) as infile:
             headers.append(infile.readline())
 
     assert len(headers) == len(set(headers))
@@ -65,7 +68,7 @@ def test_multi_client_model_defined_clients_exist():
 
     query_names = []
     for f in sparql_folder.glob("*.sparql"):
-        with open(f, "r") as infile:
+        with open(f) as infile:
             query_names.append(query_name(infile.read()))
 
     queries_with_client = set(model.clients.keys())

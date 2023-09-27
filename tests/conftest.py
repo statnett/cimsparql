@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", autouse=True)
-def delete_models():
+def delete_models() -> None:
     """
     Fixture for deleting micro model repos created in during tests
     """
@@ -25,7 +25,7 @@ def delete_models():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def delete_picasso_repo():
+def delete_picasso_repo() -> None:
     yield
     with suppress(Exception):
         client = t_common.initialized_rdf4j_repo()

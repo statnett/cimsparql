@@ -1,12 +1,14 @@
 """The cimsparql.model module contains the base class Model."""
+from __future__ import annotations
 
 import asyncio
 import re
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import cached_property
 from string import Template
-from typing import Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -42,22 +44,24 @@ from cimsparql.data_models import (
 )
 from cimsparql.graphdb import AsyncGraphDBClient, GraphDBClient, ServiceConfig
 from cimsparql.type_mapper import TypeMapper
-from cimsparql.value_mapper import ValueMapper
+
+if TYPE_CHECKING:
+    from cimsparql.value_mapper import ValueMapper
 
 
 @dataclass
 class ModelConfig:
-    system_state_repo: Optional[str] = None
-    eq_repo: Optional[str] = None
+    system_state_repo: str | None = None
+    eq_repo: str | None = None
     value_mappers: Iterable[ValueMapper] = field(default_factory=list)
 
 
 class Model:
     def __init__(
         self,
-        clients: Dict[str, GraphDBClient],
-        config: Optional[ModelConfig] = None,
-        mapper: Optional[TypeMapper] = None,
+        clients: dict[str, GraphDBClient],
+        config: ModelConfig | None = None,
+        mapper: TypeMapper | None = None,
     ) -> None:
         self.clients = clients
         self.config = config or ModelConfig()
@@ -85,18 +89,18 @@ class Model:
         return self.get_client("default")
 
     @client.setter
-    def client(self, default_client: GraphDBClient):
+    def client(self, default_client: GraphDBClient) -> None:
         self.clients["default"] = default_client
 
     @staticmethod
-    def _col_map(data_row) -> Dict[str, str]:
+    def _col_map(data_row: dict[str, str]) -> dict[str, str]:
         return {
             column: data.get("datatype", data.get("type", None))
             for column, data in data_row.items()
         }
 
     @classmethod
-    def col_map(cls, data_row, columns: Dict[str, str]) -> Dict[str, str]:
+    def col_map(cls, data_row: dict[str, str], columns: dict[str, str]) -> dict[str, str]:
         columns = columns or {}
         col_map = cls._col_map(data_row)
         col_map.update(columns)
@@ -110,9 +114,9 @@ class Model:
     def _convert_result(
         self,
         result: pd.DataFrame,
-        data_row: List[dict],
-        index: Optional[str] = None,
-        columns: Optional[Dict[str, str]] = None,
+        data_row: list[dict],
+        index: str | None = None,
+        columns: dict[str, str] | None = None,
     ) -> pd.DataFrame:
         col_map = self.col_map(data_row, columns)
         result = self.mapper.map_data_types(result, col_map)
@@ -124,7 +128,7 @@ class Model:
         return result
 
     async def get_table_and_convert(
-        self, query: str, index: Optional[str] = None, columns: Optional[Dict[str, str]] = None
+        self, query: str, index: str | None = None, columns: dict[str, str] | None = None
     ) -> pd.DataFrame:
         name = query_name(query)
         client = self.get_client(name)
@@ -135,7 +139,7 @@ class Model:
         return self._convert_result(result, data_row, index, columns)
 
     def template_to_query(
-        self, template: Template, substitutes: Optional[Dict[str, str]] = None
+        self, template: Template, substitutes: dict[str, str] | None = None
     ) -> str:
         """Convert provided template to query."""
         substitutes = substitutes or {}
@@ -181,15 +185,15 @@ class Model:
         df = await self.get_table_and_convert(self.market_dates_query, index="mrid")
         return MarketDatesDataFrame(df)
 
-    def bus_data_query(self, region: Optional[str] = None) -> str:
+    def bus_data_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BUS_DATA_QUERY, substitutes)
 
-    def three_winding_dummy_nodes_query(self, region: Optional[str] = None) -> str:
+    def three_winding_dummy_nodes_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_DUMMY_NODES_QUERY, substitutes)
 
-    async def bus_data(self, region: Optional[str] = None) -> BusDataFrame:
+    async def bus_data(self, region: str | None = None) -> BusDataFrame:
         """Query name of topological nodes (TP query).
 
         Args:
@@ -202,11 +206,11 @@ class Model:
         df = pd.concat(dfs)
         return BusDataFrame(df)
 
-    def loads_query(self, region: Optional[str] = None) -> str:
+    def loads_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.LOADS_QUERY, substitutes)
 
-    async def loads(self, region: Optional[str] = None) -> LoadsDataFrame:
+    async def loads(self, region: str | None = None) -> LoadsDataFrame:
         """Query load data.
 
         Args:
@@ -216,12 +220,12 @@ class Model:
         df = await self.get_table_and_convert(query, index="mrid")
         return LoadsDataFrame(df)
 
-    def wind_generating_units_query(self, region: Optional[str] = None) -> str:
+    def wind_generating_units_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.WIND_GENERATING_UNITS_QUERY, substitutes)
 
     async def wind_generating_units(
-        self, region: Optional[str] = None
+        self, region: str | None = None
     ) -> WindGeneratingUnitsDataFrame:
         """Query wind generating units.
 
@@ -239,22 +243,20 @@ class Model:
         df = await self.get_table_and_convert(query, index="mrid")
         return WindGeneratingUnitsDataFrame(df)
 
-    def synchronous_machines_query(self, region: Optional[str] = None) -> str:
+    def synchronous_machines_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.SYNCHRONOUS_MACHINES_QUERY, substitutes)
 
-    async def synchronous_machines(
-        self, region: Optional[str] = None
-    ) -> SynchronousMachinesDataFrame:
+    async def synchronous_machines(self, region: str | None = None) -> SynchronousMachinesDataFrame:
         query = self.synchronous_machines_query(region)
         df = await self.get_table_and_convert(query, index="mrid")
         return SynchronousMachinesDataFrame(df)
 
-    def connections_query(self, region: Optional[str] = None) -> str:
+    def connections_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONNECTIONS_QUERY, substitutes)
 
-    async def connections(self, region: Optional[str] = None) -> ConnectionsDataFrame:
+    async def connections(self, region: str | None = None) -> ConnectionsDataFrame:
         """Query connectors
 
         Args:
@@ -274,11 +276,11 @@ class Model:
         df = await self.get_table_and_convert(query, index="mrid")
         return ConnectionsDataFrame(df)
 
-    def borders_query(self, region: Optional[str] = None) -> str:
+    def borders_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BORDERS_QUERY, substitutes)
 
-    async def borders(self, region: Optional[str] = None) -> BordersDataFrame:
+    async def borders(self, region: str | None = None) -> BordersDataFrame:
         """Retrieve ACLineSegments where one terminal is inside and the other is outside the region
 
         Args:
@@ -289,11 +291,11 @@ class Model:
         df = await self.get_table_and_convert(query, index="mrid")
         return BordersDataFrame(df)
 
-    def exchange_query(self, region: Optional[str] = None) -> str:
+    def exchange_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.EXCHANGE_QUERY, substitutes)
 
-    async def exchange(self, region: Optional[str] = None) -> ExchangeDataFrame:
+    async def exchange(self, region: str | None = None) -> ExchangeDataFrame:
         """Retrieve ACLineSegments where one terminal is inside and the other is outside the region.
 
         Args:
@@ -309,23 +311,23 @@ class Model:
         df = await self.get_table_and_convert(query, index="mrid")
         return ExchangeDataFrame(df)
 
-    def converters_query(self, region: Optional[str] = None) -> str:
+    def converters_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONVERTERS_QUERY, substitutes)
 
-    async def converters(self, region: Optional[str] = None) -> ConvertersDataFrame:
+    async def converters(self, region: str | None = None) -> ConvertersDataFrame:
         query = self.converters_query(region)
         df = await self.get_table_and_convert(query, index="mrid")
         return ConvertersDataFrame(df)
 
-    def transformers_connected_to_converter_query(self, region: Optional[str] = None) -> str:
+    def transformers_connected_to_converter_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(
             templates.TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY, substitutes
         )
 
     async def transformers_connected_to_converter(
-        self, region: Optional[str] = None
+        self, region: str | None = None
     ) -> TransfConToConverterDataFrame:
         """Query list of transformer connected at a converter (Voltage source or DC)
 
@@ -337,12 +339,12 @@ class Model:
         df = await self.get_table_and_convert(query, index="mrid")
         return TransfConToConverterDataFrame(df)
 
-    def ac_lines_query(self, region: Optional[str] = None, rate: Optional[str] = None) -> str:
+    def ac_lines_query(self, region: str | None = None, rate: str | None = None) -> str:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.AC_LINE_QUERY, substitutes)
 
     async def ac_lines(
-        self, region: Optional[str] = None, rate: Optional[str] = None
+        self, region: str | None = None, rate: str | None = None
     ) -> AcLinesDataFrame:
         """Query ac line segments
 
@@ -359,14 +361,12 @@ class Model:
         df = await self.get_table_and_convert(query, index="mrid")
         return AcLinesDataFrame(df)
 
-    def series_compensators_query(
-        self, region: Optional[str] = None, rate: Optional[str] = None
-    ) -> str:
+    def series_compensators_query(self, region: str | None = None, rate: str | None = None) -> str:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.SERIES_COMPENSATORS_QUERY, substitutes)
 
     async def series_compensators(
-        self, region: Optional[str] = None, rate: Optional[str] = None
+        self, region: str | None = None, rate: str | None = None
     ) -> BranchComponentDataFrame:
         """Query series compensators
 
@@ -377,12 +377,12 @@ class Model:
         df = await self.get_table_and_convert(query, index="mrid")
         return BranchComponentDataFrame(df)
 
-    def transformers_query(self, region: Optional[str] = None, rate: Optional[str] = None) -> str:
+    def transformers_query(self, region: str | None = None, rate: str | None = None) -> str:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.TRANSFORMERS_QUERY, substitutes)
 
     async def transformers(
-        self, region: Optional[str] = None, rate: Optional[str] = None
+        self, region: str | None = None, rate: str | None = None
     ) -> TransformersDataFrame:
         """Query transformer windings.
 
@@ -394,17 +394,17 @@ class Model:
         return TransformersDataFrame(df)
 
     def two_winding_transformers_query(
-        self, region: Optional[str] = None, rate: Optional[str] = None
+        self, region: str | None = None, rate: str | None = None
     ) -> str:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.TWO_WINDING_QUERY, substitutes)
 
-    def two_winding_angle_query(self, region: Optional[str] = None) -> str:
+    def two_winding_angle_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.TWO_WINDING_ANGLE_QUERY, substitutes)
 
     async def two_winding_transformers(
-        self, region: Optional[str] = None, rate: Optional[str] = None
+        self, region: str | None = None, rate: str | None = None
     ) -> TransformerWindingDataFrame:
         """Query two-winding transformer.
 
@@ -429,18 +429,18 @@ class Model:
     def winding_query(self) -> str:
         return self.template_to_query(templates.WINDING)
 
-    def three_winding_loss_query(self, region: Optional[str] = None) -> str:
+    def three_winding_loss_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_LOSS_QUERY, substitutes)
 
     def three_winding_transformers_query(
-        self, region: Optional[str] = None, rate: Optional[str] = None
+        self, region: str | None = None, rate: str | None = None
     ) -> str:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.THREE_WINDING_QUERY, substitutes)
 
     async def three_winding_transformers(
-        self, region: Optional[str] = None, rate: Optional[str] = None
+        self, region: str | None = None, rate: str | None = None
     ) -> TransformerWindingDataFrame:
         """Query three-winding transformer. Return as three two-winding transformers.
 
@@ -508,21 +508,21 @@ class Model:
         df = await self.get_table_and_convert(self.st_group_codes_names_query)
         return StationGroupCodeNameDataFrame(df.set_index("station_group"))
 
-    def branch_node_withdraw_query(self, region: Optional[str] = None) -> str:
+    def branch_node_withdraw_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BRANCH_NODE_WITHDRAW_QUERY, substitutes)
 
-    async def branch_node_withdraw(self, region: Optional[str] = None) -> BranchWithdrawDataFrame:
+    async def branch_node_withdraw(self, region: str | None = None) -> BranchWithdrawDataFrame:
         """Query branch flow from sv profile."""
         query = self.branch_node_withdraw_query(region)
         df = await self.get_table_and_convert(query, index="mrid")
         return BranchWithdrawDataFrame(df)
 
-    def dc_active_flow_query(self, region: Optional[str] = None) -> str:
+    def dc_active_flow_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.DC_ACTIVE_POWER_FLOW_QUERY, substitutes)
 
-    async def dc_active_flow(self, region: Optional[str] = None) -> DcActiveFlowDataFrame:
+    async def dc_active_flow(self, region: str | None = None) -> DcActiveFlowDataFrame:
         query = self.dc_active_flow_query(region)
         df = await self.get_table_and_convert(query)
         # Unable to group on max within the sparql query so we do it here.
@@ -579,15 +579,15 @@ class Model:
         df = await self.get_table_and_convert(self.ras_equipment_query)
         return RASEquipmentDataFrame(df)
 
-    def add_mrid_query(self, rdf_type: Optional[str] = None, graph: Optional[str] = None) -> str:
+    def add_mrid_query(self, rdf_type: str | None = None, graph: str | None = None) -> str:
         substitutes = {"rdf_type": rdf_type or "?rdf_type", "g": graph or "?g"}
         return self.template_to_query(templates.ADD_MRID_QUERY, substitutes)
 
     def add_mrid(
         self,
-        rdf_type: Optional[str] = None,
-        graph: Optional[str] = None,
-        client: Optional[GraphDBClient] = None,
+        rdf_type: str | None = None,
+        graph: str | None = None,
+        client: GraphDBClient | None = None,
     ) -> None:
         """
         Add cim:IdentifiedObject.mRID to all records. It is copied from rdf:about (or rdf:ID) if
@@ -608,18 +608,18 @@ class SingleClientModel(Model):
     def __init__(
         self,
         client: GraphDBClient,
-        config: Optional[ModelConfig] = None,
-        mapper: Optional[TypeMapper] = None,
+        config: ModelConfig | None = None,
+        mapper: TypeMapper | None = None,
     ) -> None:
         clients = defaultdict(lambda: client)
         super().__init__(clients, config, mapper)
 
 
 def get_cim_model(
-    service_cfg: Optional[ServiceConfig] = None,
-    model_cfg: Optional[ModelConfig] = None,
+    service_cfg: ServiceConfig | None = None,
+    model_cfg: ModelConfig | None = None,
     async_sparql_wrapper: bool = False,
-    custom_headers: Optional[Dict[str, str]] = None,
+    custom_headers: dict[str, str] | None = None,
 ) -> SingleClientModel:
     """
     Function kept for backward compatibility. Use `get_single_client_model` instead.
@@ -628,10 +628,10 @@ def get_cim_model(
 
 
 def get_single_client_model(
-    service_cfg: Optional[ServiceConfig] = None,
-    model_cfg: Optional[ModelConfig] = None,
+    service_cfg: ServiceConfig | None = None,
+    model_cfg: ModelConfig | None = None,
     async_sparql_wrapper: bool = False,
-    custom_headers: Optional[Dict[str, str]] = None,
+    custom_headers: dict[str, str] | None = None,
 ) -> SingleClientModel:
     """Get a CIM Model.
 
@@ -642,7 +642,7 @@ def get_single_client_model(
             If False, the native SparqlWrapper sends requests via urllib
         custom_headers: Custom headers to be added to the requests
     """
-    Client = AsyncGraphDBClient if async_sparql_wrapper else GraphDBClient
+    Client = AsyncGraphDBClient if async_sparql_wrapper else GraphDBClient  # noqa N806
     return SingleClientModel(Client(service_cfg, custom_headers), model_cfg)
 
 
@@ -659,7 +659,7 @@ def get_federated_cim_model(
     eq_client: GraphDBClient,
     tpsvssh_client: GraphDBClient,
     model_cfg: ModelConfig,
-    mapper: Optional[TypeMapper] = None,
+    mapper: TypeMapper | None = None,
 ) -> Model:
     """
     Return a CIM model where the equipment profile is located in one repo and the topology,

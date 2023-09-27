@@ -4,15 +4,15 @@ Will handle authenticated instances of GraphDB where user and password is given 
 variables ("GRAPHDB_USER" & "GRAPHDB_USER_PASSWD").
 
 """
+from __future__ import annotations
 
 import os
-from typing import Dict, List, Optional
 
-import requests
+import httpx
 
 
 def service(
-    repo: Optional[str] = None,
+    repo: str | None = None,
     server: str = "127.0.0.1:7200",
     protocol: str = "https",
     path: str = "",
@@ -30,7 +30,7 @@ def service(
     return url
 
 
-def service_blazegraph(server: str, repo: str, protocol: str = "https"):
+def service_blazegraph(server: str, repo: str, protocol: str = "https") -> str:
     return f"{protocol}://{server}/{repo}/sparql"
 
 
@@ -39,7 +39,7 @@ class GraphDbConfig:
         self,
         server: str = "127.0.0.1:7200",
         protocol: str = "https",
-        auth: requests.auth.AuthBase = None,
+        auth: httpx.BasicAuth | None = None,
     ) -> None:
         """Get repo configuration from GraphDB
 
@@ -50,20 +50,18 @@ class GraphDbConfig:
         """
         self._service = service(None, server, protocol)
         if auth is None:
-            auth = requests.auth.HTTPBasicAuth(
-                os.getenv("GRAPHDB_USER"), os.getenv("GRAPHDB_USER_PASSWD")
+            auth = httpx.BasicAuth(
+                os.getenv("GRAPHDB_USER", ""), os.getenv("GRAPHDB_USER_PASSWD", "")
             )
         try:
-            response = requests.get(
-                self._service, headers={"Accept": "application/json"}, auth=auth
-            )
+            response = httpx.get(self._service, headers={"Accept": "application/json"}, auth=auth)
             response.raise_for_status()
             self._repos = response.json()["results"]["bindings"]
-        except (requests.exceptions.RequestException, KeyError):
-            self._repos: List[Dict[str, Dict[str, str]]] = []
+        except (httpx.RequestError, KeyError):
+            self._repos: list[dict[str, dict[str, str]]] = []
 
     @property
-    def repos(self) -> List[str]:
+    def repos(self) -> list[str]:
         """List of available repos on GraphDB server."""
         if self._repos:
             return [repo["id"]["value"] for repo in self._repos]

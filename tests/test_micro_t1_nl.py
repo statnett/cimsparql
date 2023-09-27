@@ -1,7 +1,7 @@
 import contextlib
 import logging
 from copy import deepcopy
-from typing import Any, Dict, Set
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -125,7 +125,7 @@ async def test_loads(test_model: t_common.ModelTest):
         ("BE", {"BE-G1"}),
     ],
 )
-async def test_sync_machines(test_model: t_common.ModelTest, region: str, expected_names: Set[str]):
+async def test_sync_machines(test_model: t_common.ModelTest, region: str, expected_names: set[str]):
     t_common.check_model(test_model)
     data = await test_model.model.synchronous_machines(region)
     assert expected_names == set(data["name"])
@@ -174,12 +174,12 @@ async def test_aclines(test_model: t_common.ModelTest):
         },
     ],
 )
-async def test_transformers(test_model: t_common.ModelTest, params: Dict[str, Any]):
+async def test_transformers(test_model: t_common.ModelTest, params: dict[str, Any]):
     t_common.check_model(test_model)
     data = await test_model.model.transformers(params["region"])
     assert len(data) == params["num"]
     end_num_count = data["end_number"].value_counts()
-    assert sorted(list(end_num_count)) == params["end_num_count"]
+    assert sorted(end_num_count) == params["end_num_count"]
     assert set(data["name"].unique()) == params["expect_names"]
 
 
@@ -189,7 +189,7 @@ async def test_transformers(test_model: t_common.ModelTest, params: Dict[str, An
     "params",
     [{"region": ".*", "num": 15, "num_transf": 7}, {"region": "NL", "num": 6, "num_transf": 3}],
 )
-async def test_transformers_connectivity(test_model: t_common.ModelTest, params: Dict[str, Any]):
+async def test_transformers_connectivity(test_model: t_common.ModelTest, params: dict[str, Any]):
     t_common.check_model(test_model)
 
     data = await test_model.model.transformers(params["region"])

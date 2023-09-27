@@ -3,10 +3,8 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import List
 
 import t_utils.common as t_common
-
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig, new_repo_blazegraph
 from cimsparql.model import (
     ModelConfig,
@@ -20,7 +18,7 @@ this_dir = Path(__file__).parent
 logger = logging.getLogger()
 
 
-def micro_t1_nl_graphdb():
+def micro_t1_nl_graphdb() -> t_common.ModelTest:
     repo = os.getenv("GRAPHDB_MICRO_NL_REPO", "abot-micro-nl")
     model = None
     try:
@@ -28,8 +26,8 @@ def micro_t1_nl_graphdb():
         m_cfg = ModelConfig(system_state_repo=f"repository:{repo}", eq_repo=f"repository:{repo}")
         if os.getenv("GRAPHDB_SERVER"):
             model = get_single_client_model(s_cfg, m_cfg)
-    except Exception as exc:
-        logger.error(f"{exc}")
+    except Exception:
+        logger.exception("Failed to get single model")
     return t_common.ModelTest(model, False, False)
 
 
@@ -45,7 +43,7 @@ def split_tpsvssh(fname: Path) -> tuple[list[str], list[str]]:
 
     # Regex extracts the content between < > of the last occurence on each line
     prog = re.compile(r"<([^>]+)>[^>]+$")
-    with open(fname, "r") as infile:
+    with open(fname) as infile:
         for line in infile:
             m = prog.search(line)
             if m and m.group(1) in tpsvssh_contexts:
@@ -56,7 +54,7 @@ def split_tpsvssh(fname: Path) -> tuple[list[str], list[str]]:
 
 
 @functools.lru_cache
-def federated_micro_t1_nl_bg():
+def federated_micro_t1_nl_bg() -> t_common.ModelTest:
     model = None
     url = t_common.blazegraph_url()
     try:
@@ -74,12 +72,12 @@ def federated_micro_t1_nl_bg():
             eq_repo=eq_client.service_cfg.url + ",infer=false",
         )
         model = get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
-    except Exception as exc:
-        logger.error(f"{exc}")
+    except Exception:
+        logger.exception("Failed to get federated cim model")
     return t_common.ModelTest(model)
 
 
-def upload_micro_model(client: GraphDBClient):
+def upload_micro_model(client: GraphDBClient) -> None:
     name = "micro_t1_nl"
     nq_file = this_dir.parent / f"data/{name}.nq"
     graph = "<http://mygraph.com/demo/1/1>"
@@ -98,8 +96,8 @@ def micro_t1_nl() -> t_common.ModelTest:
         client = t_common.init_repo_rdf4j(url, "micro_t1_nl")
         upload_micro_model(client)
         model = SingleClientModel(client)
-    except Exception as exc:
-        logger.error(f"{exc}")
+    except Exception:
+        logger.exception("Failed to get single client model")
     return t_common.ModelTest(model)
 
 
@@ -111,14 +109,14 @@ def micro_t1_nl_bg() -> t_common.ModelTest:
         client = new_repo_blazegraph(url, "micro_t1_nl", "http")
         upload_micro_model(client)
         model = SingleClientModel(client)
-    except Exception as exc:
-        logger.error(f"{exc}")
+    except Exception:
+        logger.exception("Failed to get single client model")
     return t_common.ModelTest(model)
 
 
 @functools.lru_cache
 def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
-    def bg_http(url: str, name: str):
+    def bg_http(url: str, name: str) -> GraphDBClient:
         return new_repo_blazegraph(url, name, "http")
 
     model = None
@@ -136,16 +134,16 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
             eq_repo=eq_client.service_cfg.url,
         )
         model = get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
-    except Exception as exc:
-        logger.error(f"{exc}")
+    except Exception:
+        logger.exception("Failed to get federated model")
     return t_common.ModelTest(model)
 
 
-def micro_models() -> List[t_common.ModelTest]:
+def micro_models() -> list[t_common.ModelTest]:
     return [micro_t1_nl(), micro_t1_nl_bg(), federated_micro_t1_nl_bg()]
 
 
-def smallgrid_models() -> List[t_common.ModelTest]:
+def smallgrid_models() -> list[t_common.ModelTest]:
     bg_model = small_grid_model(t_common.blazegraph_url(), RestApi.BLAZEGRAPH)
     rdfj4_model = small_grid_model(t_common.rdf4j_url(), RestApi.RDF4J)
     return [rdfj4_model, bg_model]

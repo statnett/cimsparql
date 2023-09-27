@@ -18,7 +18,7 @@ from cimsparql.graphdb import make_async
     ],
 )
 @pytest.mark.asyncio
-async def test_async_rdf4j_picasso_data(query, expect):
+async def test_async_rdf4j_picasso_data(query: str, expect: list[dict[str, str]]):
     try:
         client = t_common.initialized_rdf4j_repo()
     except Exception as exc:

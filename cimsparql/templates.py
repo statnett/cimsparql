@@ -3,7 +3,7 @@ from string import Template
 
 
 def _read_template(filename: pathlib.Path) -> Template:
-    with open(filename, "r") as file:
+    with open(filename) as file:
         return Template(file.read())
 
 

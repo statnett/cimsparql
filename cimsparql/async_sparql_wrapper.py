@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from http import HTTPStatus
-from typing import Optional
+from typing import Any
 
 import httpx
 from SPARQLWrapper import JSON, SPARQLWrapper
@@ -21,11 +23,11 @@ exceptions = {
 
 
 class AsyncSparqlWrapper(SPARQLWrapper):
-    def __init__(self, *args, **kwargs):
-        self.ca_bundle: Optional[str] = kwargs.pop("ca_bundle", None)
+    def __init__(self, *args: Any, **kwargs: dict[str, str | None]) -> None:
+        self.ca_bundle: str | None = kwargs.pop("ca_bundle", None)
         super().__init__(*args, **kwargs)
 
-    async def queryAndConvert(self) -> dict:
+    async def queryAndConvert(self) -> dict:  # noqa N802
         if self.returnFormat != JSON:
             raise NotImplementedError("Async client only support JSON return format")
 
@@ -33,8 +35,8 @@ class AsyncSparqlWrapper(SPARQLWrapper):
         url = request.get_full_url()
         method = request.get_method()
 
-        args = {"timeout": self.timeout} | ({"verify": self.ca_bundle} if self.ca_bundle else {})
-        async with httpx.AsyncClient(**args) as client:
+        kwargs = {"verify": self.ca_bundle} if self.ca_bundle else {}
+        async with httpx.AsyncClient(timeout=self.timeout, **kwargs) as client:
             response = await client.request(
                 method, url, headers=request.headers, content=request.data
             )

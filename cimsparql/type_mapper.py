@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from decimal import Decimal
-from typing import Any, Callable, Dict, Generator, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -11,11 +12,12 @@ from cimsparql.templates import TYPE_MAPPER_QUERY
 
 # Type-caster that can be used with pandas. It can be python types, numpy dtypes or string
 # value. Examples: float, "int", int, "string"
-TYPE_CASTER = Union[Callable[[Any], Any], str]
-SPARQL_TYPE = str
-COL_NAME = str
-PREFIX = str
-URI = str
+if TYPE_CHECKING:
+    TYPE_CASTER = Callable[[Any], Any] | str
+    SPARQL_TYPE = str
+    COL_NAME = str
+    PREFIX = str
+    URI = str
 
 as_type_able = [int, float, "Int64", "Int32", "Int16"]
 
@@ -31,7 +33,7 @@ def to_timedelta(duration: str) -> pd.Timedelta:
     return pd.to_timedelta(duration)
 
 
-def str_preserve_none(x: Any) -> Union[str, None]:
+def str_preserve_none(x: Any) -> str | None:
     return None if pd.isna(x) else str(x)
 
 
@@ -70,7 +72,7 @@ def enforce_no_limit(client: GraphDBClient) -> Generator[GraphDBClient, None, No
         client.service_cfg.limit = orig_limit
 
 
-def build_type_map(prefixes: Dict[PREFIX, URI]) -> Dict[SPARQL_TYPE, TYPE_CASTER]:
+def build_type_map(prefixes: dict[PREFIX, URI]) -> dict[SPARQL_TYPE, TYPE_CASTER]:
     short_map = {"xsd": XSD_TYPE_MAP, "cim": CIM_TYPE_MAP}
 
     type_map = {}
@@ -86,8 +88,8 @@ def build_type_map(prefixes: Dict[PREFIX, URI]) -> Dict[SPARQL_TYPE, TYPE_CASTER
 class TypeMapper:
     def __init__(
         self,
-        service_cfg: Optional[ServiceConfig] = None,
-        custom_additions: Optional[Dict[str, Any]] = None,
+        service_cfg: ServiceConfig | None = None,
+        custom_additions: dict[str, Any] | None = None,
     ) -> None:
         self.client = GraphDBClient(service_cfg)
 
@@ -96,16 +98,16 @@ class TypeMapper:
         self.prim_type_map = build_type_map(self.client.prefixes)
         self.map = sparql_type_map | self.get_map() | self.prim_type_map | custom_additions
 
-    def have_cim_version(self, cim) -> bool:
-        return any(cim in val for val in self.map.keys())
+    def have_cim_version(self, cim: str) -> bool:
+        return any(cim in val for val in self.map)
 
-    def type_map(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def type_map(self, df: pd.DataFrame) -> dict[str, Any]:
         return {
             row.sparql_type: self.prim_type_map.get(row.range, str_preserve_none)
             for row in df.itertuples()
         }
 
-    def get_map(self) -> Dict[str, Any]:
+    def get_map(self) -> dict[str, Any]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
 
         Args:
@@ -124,15 +126,15 @@ class TypeMapper:
         return self.type_map(df)
 
     def build_type_caster(
-        self, col_map: Dict[COL_NAME, SPARQL_TYPE]
-    ) -> Dict[COL_NAME, TYPE_CASTER]:
+        self, col_map: dict[COL_NAME, SPARQL_TYPE]
+    ) -> dict[COL_NAME, TYPE_CASTER]:
         """
         Construct a direct mapping from column names to a type caster from the
         """
         return {col: self.map[dtype] for col, dtype in col_map.items() if dtype in self.map}
 
     def map_data_types(
-        self, df: pd.DataFrame, col_map: Dict[COL_NAME, SPARQL_TYPE]
+        self, df: pd.DataFrame, col_map: dict[COL_NAME, SPARQL_TYPE]
     ) -> pd.DataFrame:
         """Maps the dtypes of a DataFrame to the python-corresponding types of the sparql-types from
         the source data
@@ -152,7 +154,7 @@ class TypeMapper:
         return df
 
 
-def map_base_types(df: pd.DataFrame, type_map: Dict[COL_NAME, TYPE_CASTER]) -> pd.DataFrame:
+def map_base_types(df: pd.DataFrame, type_map: dict[COL_NAME, TYPE_CASTER]) -> pd.DataFrame:
     """Maps the datatypes in type_map which can be used with the df.astype function
 
     Args:
@@ -168,7 +170,7 @@ def map_base_types(df: pd.DataFrame, type_map: Dict[COL_NAME, TYPE_CASTER]) -> p
     return df
 
 
-def map_exceptions(df: pd.DataFrame, type_map: Dict[COL_NAME, TYPE_CASTER]) -> pd.DataFrame:
+def map_exceptions(df: pd.DataFrame, type_map: dict[COL_NAME, TYPE_CASTER]) -> pd.DataFrame:
     """Maps the functions/datatypes in type_map which cant be done with the df.astype function
 
     Args:

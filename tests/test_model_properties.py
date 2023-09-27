@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 import asyncio
 import os
 from dataclasses import dataclass
 from string import Template
-from typing import Union
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import pytest
 import t_utils.custom_models as t_custom
 import t_utils.entsoe_models as t_entsoe
 
-from cimsparql.data_models import BusDataFrame
-from cimsparql.model import Model
+if TYPE_CHECKING:
+    from cimsparql.data_models import BusDataFrame
 
 swing_bus_query = Template(
     """
@@ -31,14 +33,17 @@ class NodeConsistencyData:
     swing_buses: pd.DataFrame
 
 
-# Alias for a dict with node consistency data. The key should be the name
-# of the model
-CONSISTENCY_DATA = dict[str, Union[NodeConsistencyData, None]]
+if TYPE_CHECKING:
+    # Alias for a dict with node consistency data. The key should be the name
+    # of the model
+    from cimsparql.model import Model
+
+    CONSISTENCY_DATA = dict[str, NodeConsistencyData | None]
 
 
 async def get_node_consistency_test_data(
-    model: Union[Model, None],
-) -> Union[NodeConsistencyData, None]:
+    model: Model | None,
+) -> NodeConsistencyData | None:
     if model is None:
         return None
     bus = await model.bus_data()
@@ -65,8 +70,8 @@ async def get_node_consistency_test_data(
     swing_buses = await model.get_table_and_convert(model.template_to_query(swing_bus_query))
     return NodeConsistencyData(
         bus,
-        dict(zip(two_node_names, two_node_dfs)),
-        dict(zip(single_node_names, single_node_dfs)),
+        dict(zip(two_node_names, two_node_dfs, strict=True)),
+        dict(zip(single_node_names, single_node_dfs, strict=True)),
         swing_buses,
     )
 

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import os
+from collections.abc import Generator
 from copy import deepcopy
 from pathlib import Path
 from string import Template
-from typing import Optional
 
 import pytest
 import t_utils.common as t_common
@@ -10,7 +12,7 @@ import t_utils.common as t_common
 from cimsparql.graphdb import GraphDBClient, RestApi
 
 
-def skip_rdf4j_test(rdf4j_gdb: Optional[GraphDBClient]) -> bool:
+def skip_rdf4j_test(rdf4j_gdb: GraphDBClient | None) -> bool:
     # On CI in GitHub these tests should always run
     return not (rdf4j_gdb or os.getenv("CI"))
 
@@ -36,7 +38,7 @@ def rdf4j_gdb() -> GraphDBClient:
         ),
     ],
 )
-def test_rdf4j_picasso_data(rdf4j_gdb: GraphDBClient, query, expect):
+def test_rdf4j_picasso_data(rdf4j_gdb: GraphDBClient, query: str, expect: list[dict[str, str]]):
     prefixes = Template("PREFIX ex:<${ex}>\nPREFIX foaf:<${foaf}>").substitute(rdf4j_gdb.prefixes)
     result = rdf4j_gdb.exec_query(f"{prefixes}\n{query}")
     assert result == expect
@@ -47,7 +49,7 @@ def test_rdf4j_prefixes(rdf4j_gdb: GraphDBClient):
 
 
 @pytest.fixture
-def upload_client() -> GraphDBClient:
+def upload_client() -> Generator[GraphDBClient, None, None]:
     client = None
     try:
         yield t_common.init_repo_rdf4j(t_common.rdf4j_url(), "upload")
@@ -94,7 +96,7 @@ def test_upload_with_context(upload_client: GraphDBClient):
     assert len(df) == 1
 
 
-def test_direct_sparql_endpoint(rdf4j_gdb):
+def test_direct_sparql_endpoint(rdf4j_gdb: GraphDBClient):
     service_cfg_direct = deepcopy(rdf4j_gdb.service_cfg)
     service_cfg_direct.server = rdf4j_gdb.service_cfg.url
     service_cfg_direct.rest_api = RestApi.DIRECT_SPARQL_ENDPOINT

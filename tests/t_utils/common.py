@@ -1,20 +1,24 @@
+from __future__ import annotations
+
 import functools
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import pytest
 
 from cimsparql.graphdb import GraphDBClient, config_bytes_from_template, confpath, new_repo
-from cimsparql.model import Model
+
+if TYPE_CHECKING:
+    from cimsparql.model import Model
 
 this_dir = Path(__file__).parent
 
 
 @dataclass
 class ModelTest:
-    model: Optional[Model] = None
+    model: Model | None = None
     must_run_in_ci: bool = True
     cleanup: bool = True
 
@@ -51,7 +55,7 @@ def blazegraph_url() -> str:
     return os.getenv("BLAZEGRAPH_URL", "")
 
 
-def check_model(test_model: ModelTest):
+def check_model(test_model: ModelTest) -> None:
     if not test_model.model:
         if test_model.must_run_in_ci and os.getenv("CI"):
             pytest.fail("Micro model test can not be skipped in CI pipelines")

@@ -1,10 +1,8 @@
 import functools
 import logging
 import os
-from typing import List
 
 import t_utils.common as t_common
-
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.model import ModelConfig, get_federated_cim_model, get_single_client_model
 
@@ -12,7 +10,7 @@ logger = logging.getLogger()
 
 
 def combined_graphdb_service() -> ServiceConfig:
-    repo = os.getenv("GRAPHDB_COMBINED-repo", "abot_combined")
+    repo = os.getenv("GRAPHDB_COMBINED_REPO", "abot_combined")
     return ServiceConfig(repo=repo)
 
 
@@ -26,8 +24,8 @@ def combined_model() -> t_common.ModelTest:
     model = None
     try:
         model = get_single_client_model(service, ModelConfig(system_state_repo, eq_repo))
-    except Exception as exc:
-        logger.error(f"{exc}")
+    except Exception:
+        logger.exception("Failed to get single client model")
     return t_common.ModelTest(model, False, False)
 
 
@@ -48,10 +46,10 @@ def federated_model() -> t_common.ModelTest:
     model = None
     try:
         model = get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
-    except Exception as exc:
-        logger.error(f"{exc}")
+    except Exception:
+        logger.exception("Failed to get federated model")
     return t_common.ModelTest(model, False, False)
 
 
-def all_custom_models() -> List[t_common.ModelTest]:
+def all_custom_models() -> list[t_common.ModelTest]:
     return [combined_model(), federated_model()]

@@ -2,16 +2,15 @@ import asyncio
 import os
 import re
 from base64 import b64encode
+from collections.abc import Callable
 from http import HTTPStatus
-from typing import Callable, List
 
 import httpx
 import pandas as pd
 import pytest
-import requests
 import t_utils.common as t_common
 import t_utils.custom_models as t_custom
-from pytest_httpserver import HeaderValueMatcher
+from pytest_httpserver import HeaderValueMatcher, HTTPServer
 
 from cimsparql.graphdb import (
     AsyncGraphDBClient,
@@ -28,7 +27,7 @@ from cimsparql.model import Model, SingleClientModel
 from cimsparql.type_mapper import TypeMapper
 
 
-async def collect_data(model: Model) -> List[pd.DataFrame]:
+async def collect_data(model: Model) -> list[pd.DataFrame]:
     result = await asyncio.gather(
         model.ac_lines(),
         model.borders(),
@@ -94,7 +93,7 @@ async def test_regions(model: SingleClientModel):
 async def test_hvdc_converters_bidzones(model: SingleClientModel):
     df = await model.hvdc_converter_bidzones()
 
-    corridors = set(zip(df["from_area"], df["to_area"]))
+    corridors = set(zip(df["from_area"], df["to_area"], strict=True))
 
     # Check data quality in the models
     expect_corridors = {("SE4", "SE3"), ("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB"), ("NO2", "NL")}
@@ -133,23 +132,20 @@ def test_dtypes(model: SingleClientModel):
     assert df["sparql_type"].isna().sum() == 0
 
 
-def test_prefix_resp_not_ok(monkeypatch):
-    resp = requests.Response()
-    resp.status_code = 401
-    resp.reason = "Something went wrong"
-    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: resp)
-
+def test_prefix_resp_not_ok(monkeypatch: pytest.MonkeyPatch):
+    resp = httpx.Response(status_code=HTTPStatus.UNAUTHORIZED, text="Something went wrong")
+    monkeypatch.setattr(httpx, "get", lambda *_, **__: resp)
     with pytest.raises(RuntimeError) as exc:
         GraphDBClient(ServiceConfig(server="some-serever")).get_prefixes()
-    assert resp.reason in str(exc)
-    assert str(resp.status_code) in str(exc)
+    assert resp.reason_phrase in str(exc)
+    assert f"{resp.status_code}" in str(exc)
 
 
 def test_conf_bytes_from_template():
     template = confpath() / "native_store_config_template.ttl"
 
     conf_bytes = config_bytes_from_template(template, {"repo": "test_repo"})
-    conf_str = conf_bytes.decode("utf8")
+    conf_str = conf_bytes.decode()
     assert 'rep:repositoryID "test_repo"' in conf_str
 
 
@@ -186,7 +182,7 @@ async def test_create_delete_repo():
 
 
 @pytest.mark.asyncio
-async def test_repos_with_auth(httpserver):
+async def test_repos_with_auth(httpserver: HTTPServer):
     response_json = {
         "results": {
             "bindings": [
@@ -221,8 +217,8 @@ async def test_repos_with_auth(httpserver):
     assert repo_info == [expect]
 
 
-def test_update_prefixes(monkeypatch):
-    monkeypatch.setattr(GraphDBClient, "get_prefixes", lambda *args: {})
+def test_update_prefixes(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(GraphDBClient, "get_prefixes", lambda *_: {})
     client = GraphDBClient(ServiceConfig(server="some-server"))
     assert client.prefixes == {}
 

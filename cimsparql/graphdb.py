@@ -1,15 +1,17 @@
 """Graphdb CIM sparql client"""
+from __future__ import annotations
 
 import json
 import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import auto
+from http import HTTPStatus
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, TypedDict, Union
+from typing import TYPE_CHECKING, TypedDict, TypeVar
 
 import httpx
 import pandas as pd
-import requests
 from SPARQLWrapper import JSON, POST, SPARQLWrapper
 from strenum import StrEnum
 
@@ -18,12 +20,12 @@ from cimsparql.url import service, service_blazegraph
 
 
 class SparqlResult(TypedDict):
-    cols: List[str]
-    data: List[Dict[str, Dict[str, str]]]
-    out: List[Dict[str, str]]
+    cols: list[str]
+    data: list[dict[str, dict[str, str]]]
+    out: list[dict[str, str]]
 
 
-def data_row(cols: List[str], rows: List[Dict[str, Dict[str, str]]]) -> Dict[str, str]:
+def data_row(cols: list[str], rows: list[dict[str, dict[str, str]]]) -> dict[str, str]:
     """Get a sample row for extraction of data types
 
     Args:
@@ -48,7 +50,7 @@ class RestApi(StrEnum):
     DIRECT_SPARQL_ENDPOINT = auto()
 
 
-def parse_namespaces_rdf4j(response: requests.Response) -> Dict[str, str]:
+def parse_namespaces_rdf4j(response: httpx.Response) -> dict[str, str]:
     prefixes = {}
     for line in response.text.split()[1:]:
         prefix, uri = line.split(",")
@@ -62,20 +64,20 @@ class ServiceConfig:
     protocol: str = "https"
     server: str = field(default=os.getenv("GRAPHDB_SERVER", "127.0.0.1:7200"))
     path: str = ""
-    user: str = field(default=os.getenv("GRAPHDB_USER"))
-    passwd: str = field(default=os.getenv("GRAPHDB_USER_PASSWD"))
-    rest_api: RestApi = field(default=os.getenv("SPARQL_REST_API", RestApi.RDF4J))
-    ca_bundle: Optional[str] = field(default=None)
+    user: str | None = field(default=os.getenv("GRAPHDB_USER"))
+    passwd: str | None = field(default=os.getenv("GRAPHDB_USER_PASSWD"))
+    rest_api: RestApi = field(default=RestApi(os.getenv("SPARQL_REST_API", "RDF4J")))
+    ca_bundle: str | None = field(default=None)
 
     # Parameters for rest api
     # https://rdf4j.org/documentation/reference/rest-api/
     distinct: bool = False
     infer: bool = False
-    limit: Optional[int] = None
-    offset: Optional[int] = None
-    timeout: Optional[int] = None
+    limit: int | None = None
+    offset: int | None = None
+    timeout: int | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.rest_api not in RestApi:
             raise ValueError(f"rest_api must be one of {RestApi}")
 
@@ -88,13 +90,17 @@ class ServiceConfig:
         return service(self.repo, self.server, self.protocol, self.path)
 
     @property
-    def parameters(self) -> Dict[str, Union[bool, int]]:
+    def parameters(self) -> dict[str, bool | int | None]:
         return {
             "distinct": self.distinct,
             "infer": self.infer,
             "limit": self.limit,
             "offset": self.offset,
         }
+
+    @property
+    def auth(self) -> httpx.BasicAuth | None:
+        return httpx.BasicAuth(self.user, self.passwd) if self.user and self.passwd else None
 
 
 # Available formats from RDF4J API
@@ -114,13 +120,20 @@ MIME_TYPE_RDF_FORMATS = {
 
 UPLOAD_END_POINT = {RestApi.RDF4J: "/statements", RestApi.BLAZEGRAPH: ""}
 
+if TYPE_CHECKING:
+    from typing import Concatenate, ParamSpec
 
-def require_rdf4j(f):
-    def wrapper(*args):
-        self = args[0]
-        if self.service_cfg.rest_api != RestApi.RDF4J:
+    P = ParamSpec("P")
+    T = TypeVar("T")
+
+    RDF4J_DECORATED = Callable[Concatenate[GraphDBClient, P], T]
+
+
+def require_rdf4j(f: RDF4J_DECORATED) -> Callable[RDF4J_DECORATED]:
+    def wrapper(cli: GraphDBClient, *args: P.args, **kwargs: P.kwargs) -> T:
+        if cli.service_cfg.rest_api != RestApi.RDF4J:
             raise NotImplementedError("Function only implemented for RDF4J")
-        return f(*args)
+        return f(cli, *args, **kwargs)
 
     return wrapper
 
@@ -145,8 +158,8 @@ class GraphDBClient:
 
     def __init__(
         self,
-        service_cfg: Optional[ServiceConfig] = None,
-        custom_headers: Optional[Dict[str, str]] = None,
+        service_cfg: ServiceConfig | None = None,
+        custom_headers: dict[str, str] | None = None,
     ) -> None:
         self.service_cfg = service_cfg or ServiceConfig()
         self.sparql = self.sparql_wrapper(self.service_cfg.url, self.service_cfg.ca_bundle)
@@ -161,7 +174,7 @@ class GraphDBClient:
                 self.sparql.addCustomHttpHeader(name, value)
         self._prefixes = None
 
-    def _update_sparql_parameters(self):
+    def _update_sparql_parameters(self) -> None:
         for key, value in self.service_cfg.parameters.items():
             if value is not None:
                 self.set_parameter(key, str(value))
@@ -175,12 +188,12 @@ class GraphDBClient:
         self.sparql.endpoint = self.service_cfg.url
 
     @property
-    def prefixes(self) -> Dict[str, str]:
+    def prefixes(self) -> dict[str, str]:
         if self._prefixes is None:
             self._prefixes = self.get_prefixes()
         return self._prefixes
 
-    def update_prefixes(self, pref: Dict[str, str]):
+    def update_prefixes(self, pref: dict[str, str]) -> None:
         """
         Update prefixes from a dict
         """
@@ -189,7 +202,7 @@ class GraphDBClient:
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service_cfg.url}>"
 
-    def _prep_query(self, query: str):
+    def _prep_query(self, query: str) -> None:
         self.sparql.setQuery(query)
         self._update_sparql_parameters()
 
@@ -204,15 +217,15 @@ class GraphDBClient:
         results = self.sparql.queryAndConvert()
         return self._process_result(results)
 
-    def exec_query(self, query: str) -> List[Dict[str, str]]:
+    def exec_query(self, query: str) -> list[dict[str, str]]:
         out = self._exec_query(query)
         return out["out"]
 
-    def _convert_query_result_to_df(self, res: SparqlResult) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    def _convert_query_result_to_df(self, res: SparqlResult) -> tuple[pd.DataFrame, dict[str, str]]:
         df = pd.DataFrame(res["out"]) if len(res["out"]) else pd.DataFrame(columns=res["cols"])
         return df, data_row(res["cols"], res["data"])
 
-    def get_table(self, query: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    def get_table(self, query: str) -> tuple[pd.DataFrame, dict[str, str]]:
         """Get result from sparql query as a pandas dataframe
 
         Args:
@@ -227,7 +240,7 @@ class GraphDBClient:
         """Identify empty GraphDB repo"""
         return self.get_table("select * where {?s ?p ?o} limit 1")[0].empty
 
-    def get_prefixes(self) -> Dict[str, str]:
+    def get_prefixes(self) -> dict[str, str]:
         prefixes = default_namespaces()
 
         if self.service_cfg.rest_api in (RestApi.BLAZEGRAPH, RestApi.DIRECT_SPARQL_ENDPOINT):
@@ -235,11 +248,12 @@ class GraphDBClient:
             # via `update_prefixes`. By default we load a pre-defined set of prefixes
             return prefixes
 
-        auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
-        response = requests.get(
-            self.service_cfg.url + "/namespaces", auth=auth, headers=self.sparql.customHttpHeaders
+        response = httpx.get(
+            self.service_cfg.url + "/namespaces",
+            auth=self.service_cfg.auth,
+            headers=self.sparql.customHttpHeaders,
         )
-        if response.ok:
+        if response.status_code == HTTPStatus.OK:
             prefixes.update(parse_namespaces_rdf4j(response))
             return prefixes
         msg = (
@@ -247,15 +261,17 @@ class GraphDBClient:
             "Verify that user and password are correctly set in the "
             "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
         )
-        raise RuntimeError(f"{msg} Status code: {response.status_code} Reason: {response.reason}")
+        raise RuntimeError(
+            f"{msg} Status code: {response.status_code} Reason: {response.reason_phrase}"
+        )
 
     def delete_repo(self) -> None:
         endpoint = delete_repo_endpoint(self.service_cfg)
-        response = requests.delete(endpoint)
+        response = httpx.delete(endpoint)
         response.raise_for_status()
 
     def upload_rdf(
-        self, content: Union[Path, bytes], rdf_format: str, params: Optional[Dict[str, str]] = None
+        self, content: Path | bytes, rdf_format: str, params: dict[str, str] | None = None
     ) -> None:
         """
         Upload data in RDF format to a srevice
@@ -266,14 +282,16 @@ class GraphDBClient:
                 doc for a complete list of available options)
             params: Additional parameters passed to the post request
         """
-        xml_content = content
-        if isinstance(content, Path):
-            with open(content, "rb") as infile:
-                xml_content = infile.read()
 
-        response = requests.post(
+        def read_xml_content(file: Path) -> bytes:
+            with open(file, "rb") as infile:
+                return infile.read()
+
+        xml_content = read_xml_content(content) if isinstance(content, Path) else content
+
+        response = httpx.post(
             self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
-            data=xml_content,
+            content=xml_content,
             params=params,
             headers={"Content-Type": MIME_TYPE_RDF_FORMATS[rdf_format]},
         )
@@ -283,31 +301,30 @@ class GraphDBClient:
         """
         Function that passes a query via a post API call
         """
-        auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
-        response = requests.post(
+        response = httpx.post(
             self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
             data={"update": query},
             headers=self.sparql.customHttpHeaders
             | {"Content-Type": "application/x-www-form-urlencoded"},
-            auth=auth,
+            auth=self.service_cfg.auth,
         )
         response.raise_for_status()
 
     @require_rdf4j
     def set_namespace(self, prefix: str, value: str) -> None:
-        auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
-        response = requests.put(
+        response = httpx.put(
             self.service_cfg.url + f"/namespaces/{prefix}",
-            data=value,
+            content=value,
             headers={"Content-Type": "text/plain"},
-            auth=auth,
+            auth=self.service_cfg.auth,
         )
         response.raise_for_status()
 
     @require_rdf4j
     def get_namespace(self, prefix: str) -> str:
-        auth = requests.auth.HTTPBasicAuth(self.service_cfg.user, self.service_cfg.passwd)
-        response = requests.get(self.service_cfg.url + f"/namespaces/{prefix}", auth=auth)
+        response = httpx.get(
+            self.service_cfg.url + f"/namespaces/{prefix}", auth=self.service_cfg.auth
+        )
         response.raise_for_status()
         return response.text
 
@@ -321,7 +338,7 @@ class RepoInfo:
     writable: bool
 
 
-async def repos(service_cfg: Optional[ServiceConfig] = None) -> List[RepoInfo]:
+async def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
     """
     List available repositories
     """
@@ -338,8 +355,8 @@ async def repos(service_cfg: Optional[ServiceConfig] = None) -> List[RepoInfo]:
         response = await client.get(url, auth=auth, headers={"Accept": "application/json"})
     response.raise_for_status()
 
-    def _repo_info(repo):
-        def get(key, default=""):
+    def _repo_info(repo: dict[str, str]) -> RepoInfo:
+        def get(key: str, default: str = "") -> str:
             return repo.get(key, {}).get("value", default)
 
         uri = get("uri")
@@ -366,9 +383,9 @@ def new_repo(
             Otherwise an error is raised if a repository with the same name already exists
         protocol: Default https
     """
-    ignored_errors = {409} if allow_exist else set()
+    ignored_errors = {HTTPStatus.CONFLICT} if allow_exist else set()
     url = service(repo, server, protocol)
-    response = requests.put(url, data=config, headers={"Content-Type": "text/turtle"})
+    response = httpx.put(url, content=config, headers={"Content-Type": "text/turtle"})
     if response.status_code not in ignored_errors:
         response.raise_for_status()
 
@@ -379,8 +396,8 @@ def new_repo_blazegraph(url: str, repo: str, protocol: str = "https") -> GraphDB
     template = confpath() / "blazegraph_repo_config.xml"
     config = config_bytes_from_template(template, {"repo": repo})
 
-    response = requests.post(
-        f"{protocol}://{url}", data=config, headers={"Content-type": "application/xml"}
+    response = httpx.post(
+        f"{protocol}://{url}", content=config, headers={"Content-type": "application/xml"}
     )
     response.raise_for_status()
     client = GraphDBClient(ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH))
@@ -388,7 +405,7 @@ def new_repo_blazegraph(url: str, repo: str, protocol: str = "https") -> GraphDB
 
 
 def config_bytes_from_template(
-    template: Path, params: Dict[str, str], encoding: str = "utf8"
+    template: Path, params: dict[str, str], encoding: str = "utf-8"
 ) -> bytes:
     """
     Replace value in template file with items in params
@@ -412,7 +429,7 @@ def confpath() -> Path:
     return Path(__file__).parent.parent / "pkg_data"
 
 
-def default_namespaces() -> Dict[str, str]:
+def default_namespaces() -> dict[str, str]:
     with open(confpath() / "namespaces.json") as infile:
         return json.load(infile)
 
@@ -448,11 +465,11 @@ class AsyncGraphDBClient(GraphDBClient):
         results = await self.sparql.queryAndConvert()
         return self._process_result(results)
 
-    async def exec_query(self, query: str) -> List[Dict[str, str]]:
+    async def exec_query(self, query: str) -> list[dict[str, str]]:
         out = await self._exec_query(query)
         return out["out"]
 
-    async def get_table(self, query: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    async def get_table(self, query: str) -> tuple[pd.DataFrame, dict[str, str]]:
         """Get result from sparql query as a pandas dataframe
 
         Args:

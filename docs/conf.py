@@ -49,15 +49,15 @@ intersphinx_mapping = {
 autosectionlabel_prefix_document = True
 napoleon_include_private_with_doc = True
 
-inheritance_node_attrs = dict(
-    shape="folder",
-    fontsize=14,
-    height=0.75,
-    fillcolor="SteelBlue1",
-    style="filled",
-    arrowType="open",
-    arrowSize=1.2,
-)
+inheritance_node_attrs = {
+    "shape": "folder",
+    "fontsize": 14,
+    "height": 0.75,
+    "fillcolor": "SteelBlue1",
+    "style": "filled",
+    "arrowType": "open",
+    "arrowSize": 1.2,
+}
 
 graphviz_output_format = "svg"
 

@@ -1,48 +1,24 @@
+---
 default_language_version:
-    python: python3
+  python: python3
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
-    -   id: check-json
-    -   id: check-merge-conflict
-    -   id: debug-statements
-    -   id: detect-private-key
-    -   id: check-yaml
-    -   id: check-toml
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
--   repo: https://github.com/hadialqattan/pycln
-    rev: v2.2.2
+      - id: check-json
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: detect-private-key
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.291
     hooks:
-    -   id: pycln
-        args: [--all]
--   repo: https://github.com/psf/black
-    rev: 23.7.0
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+  - repo: https://github.com/psf/black
+    rev: 23.9.1
     hooks:
-    -   id: black
--   repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-    -   id: isort
-        additional_dependencies: [toml]
--   repo: https://github.com/pycqa/flake8
-    rev: 6.1.0
-    hooks:
-    -   id: flake8
-        additional_dependencies:
-            - pyflakes
-            - pycodestyle
-            - flake8-bugbear
-            - flake8-comprehensions
-            - flake8-eradicate
-            - flake8-mutable
-            - flake8-simplify
-            - flake8-builtins
--   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
-    rev: v1.0.6
-    hooks:
-    -   id: python-bandit-vulnerability-check
-        args: [-ll, -ii, --exclude, ./.venv/*, --recursive, .]
-        pass_filenames: false
-        always_run: true
+      - id: black
