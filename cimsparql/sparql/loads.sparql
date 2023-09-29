@@ -1,7 +1,7 @@
 # Name: Loads
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select ?mrid ?name ?node ?station ?bidzone ?status ?p ?q ?station_group
+select ?mrid ?name ?node ?substation_mrid ?bidzone ?status ?p ?q ?station_group
 where {
 
   # Extrcact connected flag and optionally the mRID of the topological node associated with the terminal
@@ -27,7 +27,7 @@ where {
 
   # Extract area and mRID (referred to as 'station') for the substation of each load
   ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-               cim:IdentifiedObject.mRID ?station .
+               cim:IdentifiedObject.mRID ?substation_mrid .
   filter regex(?area, '${region}')
 
   # Optionally extract bidzone for each substation and station_group for each load

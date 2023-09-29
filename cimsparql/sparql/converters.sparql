@@ -2,7 +2,7 @@
 PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
 PREFIX SN:<${SN}>
-select ?mrid ?name ?alias ?p ?q ?station ?status ?node
+select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node
 where {
   # Extract active and reactive power for the converter
   ?converter cim:ACDCConverter.p ?p;
@@ -26,7 +26,7 @@ where {
 
   # Find area and mRID for the substation
   ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-              cim:IdentifiedObject.mRID ?station .
+              cim:IdentifiedObject.mRID ?substation_mrid .
 
   # Extract properties for the terminals for the converter
   ?terminal cim:Terminal.ConductingEquipment ?converter;

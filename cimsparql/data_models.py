@@ -61,10 +61,10 @@ MarketDatesDataFrame = DataFrame[MarketDatesSchema]
 
 class BusDataSchema(JsonSchemaOut):
     node: Index[str] = pa.Field(unique=True)
-    name: Series[str] = pa.Field()
     busname: Series[str] = pa.Field()
+    substation: Series[str] = pa.Field()
     un: Series[float] = pa.Field()
-    station: Series[str] = pa.Field()
+    substation_mrid: Series[str] = pa.Field()
     bidzone: Series[str] = pa.Field(nullable=True)
     sv_voltage: Series[float] = pa.Field(nullable=True)
     island: Series[str] = pa.Field()
@@ -76,7 +76,7 @@ BusDataFrame = DataFrame[BusDataSchema]
 
 class LoadsSchema(NamedResourceSchema):
     node: Series[str] = pa.Field()
-    station: Series[str] = pa.Field()
+    substation_mrid: Series[str] = pa.Field()
     bidzone: Series[str] = pa.Field(nullable=True)
     status: Series[bool] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
@@ -103,7 +103,7 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     status: Series[bool] = pa.Field()
     station_group: Series[str] = pa.Field(nullable=True)
     station_group_name: Series[str] = pa.Field(nullable=True)
-    station: Series[str] = pa.Field()
+    substation_mrid: Series[str] = pa.Field()
     maxP: Series[float] = pa.Field(nullable=True)  # noqa N815
     minP: Series[float] = pa.Field(nullable=True)  # noqa N815
     MO: Series[float] = pa.Field(nullable=True)
@@ -145,7 +145,7 @@ ExchangeDataFrame = DataFrame[ExchangeSchema]
 
 class ConvertersSchema(NamedResourceSchema):
     alias: Series[str] = pa.Field(nullable=True)
-    station: Series[str] = pa.Field()
+    substation_mrid: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     node: Series[str] = pa.Field()
 

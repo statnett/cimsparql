@@ -1,15 +1,15 @@
 # Name: Bus
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select ?node ?name ?busname ?un ?station ?bidzone ?sv_voltage ?island ?is_swing_bus
+select (?mrid as ?node) ?busname (?substation_name as ?substation) ?un ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus
 where {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
   service <${repo}> {
     ?top_node cim:TopologicalNode.BaseVoltage ?base_voltage;
-           cim:TopologicalNode.ConnectivityNodeContainer ?container;
-           cim:IdentifiedObject.mRID ?node;
-           cim:IdentifiedObject.name ?busname;
-           ^cim:SvVoltage.TopologicalNode/cim:SvVoltage.v ?sv_voltage .
+              cim:TopologicalNode.ConnectivityNodeContainer ?container;
+              cim:IdentifiedObject.mRID ?mrid;
+              cim:IdentifiedObject.name ?busname;
+              ^cim:SvVoltage.TopologicalNode/cim:SvVoltage.v ?sv_voltage .
     optional{?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name .}
     optional{?top_node ^cim:TopologicalIsland.AngleRefTopoligicalNode ?angle_ref .}
     bind(if(bound(?angle_ref), True, False) as ?is_swing_bus)
@@ -20,14 +20,14 @@ where {
   ?base_voltage cim:BaseVoltage.nominalVoltage ?un .
 
   # Extract properties from the connectivity node container associated with each topoligical node
-  ?container cim:IdentifiedObject.name ?name;
-             cim:VoltageLevel.Substation ?substation .
+  ?container cim:VoltageLevel.Substation ?_substation .
 
   # Extract information about the substation associated with the connectivity node container
-  ?substation cim:IdentifiedObject.mRID ?station;
-              cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+  ?_substation cim:IdentifiedObject.mRID ?substation_mrid;
+	       cim:IdentifiedObject.name ?substation_name;
+	       cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
 
   # Extract the bidzone of each substation if it exists
-  optional {?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
+  optional {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
   FILTER regex(?area, '${region}')
 }

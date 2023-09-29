@@ -2,7 +2,7 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select distinct ?mrid ?name ?market_code ?allocationmax ?node ?status ?station_group ?station_group_name ?station ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
+select distinct ?mrid ?name ?market_code ?allocationmax ?node ?status ?station_group ?station_group_name ?substation_mrid ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
 where {
   # Extract properties for synchronous machines.
   ?machine a cim:SynchronousMachine;
@@ -16,7 +16,7 @@ where {
 
   # Extract area and mrid for the substation associated with a sync machine
   ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-               cim:IdentifiedObject.mRID ?station .
+               cim:IdentifiedObject.mRID ?substation_mrid .
 
   # Optionally extract min/max operating power for each machin
   optional {
