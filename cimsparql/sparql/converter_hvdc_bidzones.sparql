@@ -1,19 +1,45 @@
 # Name: Converter HVDC bidzones
+# Description: This query collects mrid of AC/DC converter and the to/from bidzones of the DC
+# cable connected to the converter. This is used to map HVDC planned (which is given per bidzones)
+# to the corresponding converter. Ideally we would like to extract the bidzones via
+# substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode
+# however, the DC cables are for some reason connected between two substation in the same are.
+# For example, the DC cable called C300KVINESDALFEDA_NORNED goes between two substations in NO2
+# eventhough the physical cable goes between NO2 and NL. However, the name of the substations
+# appear to be of the form HVDC_{region} (e.g. HVDC_NL even though the bidzone is NO2...).
+# Therefore, we deduce the to_area field based on the name of the substation.
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 PREFIX ALG:<${ALG}>
 
-select distinct ?mrid ?from_area ?to_area
-where
-{
-  ?pole a ALG:DCPole;
-      cim:IdentifiedObject.mRID ?mrid;
-      cim:Equipment.EquipmentContainer/SN:Substation.MarketDeliveryPoint ?delivery_point.
+select distinct ?mrid ?from_area ?to_area {
+    # Extract converters for each line.
+    ?converter ALG:DCConverter.DCPole | ALG:VoltageSourceConverter.DCPole ?pole;
+                                        cim:IdentifiedObject.mRID ?mrid .
+    ?cnv_terminal cim:Terminal.ConnectivityNode ?node ;
+                  cim:Terminal.ConductingEquipment ?pole .
+    ?dc_line_terminal cim:Terminal.ConductingEquipment ?line ;
+                      cim:Terminal.ConnectivityNode ?node .
 
-  ?delivery_point SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?from_area .
-
-  # Extract the destination point from the line that has one end matching from_area
-  ?line SN:Line.FromMarketDeliveryPoint ?delivery_point;
-        SN:Line.ToMarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?to_area
-  filter(?from_area != ?to_area)
+    {
+        # Extract to/from area for each line
+        select
+        ?line
+        (max(?from_area) as ?from_area)
+        (max(?to_area) as ?to_area)
+        where
+        {
+            ?line a ALG:DCLineSegment .
+            ?line cim:IdentifiedObject.name ?hvdc_line .
+            ?terminal cim:Terminal.ConductingEquipment ?line;
+                      cim:ACDCTerminal.sequenceNumber ?nr ;
+                      cim:Terminal.ConnectivityNode ?node .
+            ?node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
+            ?substation cim:IdentifiedObject.name ?substation_name ;
+                        SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone .
+            bind(if(?nr = 1, ?bidzone, "") as ?from_area)
+            bind(if(?nr = 2, ?bidzone, "") as ?to_area)
+        } group by ?line
+    }
+    filter(?from_area != ?to_area)
 }
