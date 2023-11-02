@@ -3,5 +3,12 @@
     "extends": [
         "config:base"
     ],
-    "lockFileMaintenance": { "enabled": true }
+    "lockFileMaintenance": { "enabled": true },
+    "packageRules": [
+        {
+          "matchDatasources": ["pypi"],
+          "enabled": false
+        }
+      ]
+
 }
