@@ -267,10 +267,10 @@ async def test_coordinates(test_model: t_common.ModelTest):
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.asyncio
-async def test_empty_dc_active_flow(test_model: t_common.ModelTest):
+async def test_not_empty_dc_active_flow(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     df = await test_model.model.dc_active_flow()
-    assert df.empty
+    assert not df.empty
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
