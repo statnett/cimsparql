@@ -684,6 +684,7 @@ def get_federated_cim_model(
         "SV branch",
         "Power flow",
         "SvInjection",
+        "Two winding transformer",
     )
     for query in exec_from_tpssvssh:
         clients[query] = tpsvssh_client
