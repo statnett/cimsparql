@@ -6,9 +6,9 @@ PREFIX ALG:<${ALG}>
 select distinct ?mrid ?from_area ?to_area
 where
 {
-  ?pole a ALG:DCPole;
-      cim:IdentifiedObject.mRID ?mrid;
-      cim:Equipment.EquipmentContainer/SN:Substation.MarketDeliveryPoint ?delivery_point.
+  ?converter ALG:DCConverter.DCPole | ALG:VoltageSourceConverter.DCPole ?pole ;
+      cim:IdentifiedObject.mRID ?mrid .
+  ?pole cim:Equipment.EquipmentContainer/SN:Substation.MarketDeliveryPoint ?delivery_point.
 
   ?delivery_point SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?from_area .
 
