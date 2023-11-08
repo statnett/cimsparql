@@ -148,6 +148,8 @@ class ConvertersSchema(NamedResourceSchema):
     substation_mrid: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     node: Series[str] = pa.Field()
+    p: Series[float] = pa.Field()
+    q: Series[float] = pa.Field()
 
 
 ConvertersDataFrame = DataFrame[ConvertersSchema]
