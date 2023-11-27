@@ -2,7 +2,7 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select distinct ?mrid ?name ?market_code ?allocationmax ?node ?status ?station_group ?station_group_name ?substation_mrid ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
+select distinct ?mrid ?name ?market_code ?node ?status ?station_group ?station_group_name ?substation_mrid ?maxP ?minP ?MO ?bidzone ?sn ?p ?q
 where {
   # Extract properties for synchronous machines.
   ?machine a cim:SynchronousMachine;
@@ -33,13 +33,12 @@ where {
 
   # Opionally extract non-CIM standard properties generating units
   optional {
-    select ?gen_unit ?market_code ?MO ?apctmax ?station_group ?station_group_name
+    select ?gen_unit ?market_code ?MO ?station_group ?station_group_name
     where
     {
       ?gen_unit SN:GeneratingUnit.marketCode ?market_code;
              SN:GeneratingUnit.groupAllocationWeight ?MO;
-             SN:GeneratingUnit.ScheduleResource ?ScheduleResource;
-             SN:GeneratingUnit.groupAllocationMax ?apctmax .
+             SN:GeneratingUnit.ScheduleResource ?ScheduleResource .
       ?ScheduleResource SN:ScheduleResource.marketCode ?station_group;
                         cim:IdentifiedObject.name ?station_group_name .
     }
@@ -51,10 +50,10 @@ where {
     optional {?terminal cim:Terminal.TopologyNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
   } .
 
-  # Optionally extract the mRID of the toplogical node associated with the connectivity node for each sync machine
+  # Optionally extract the mRID of the topological node associated with the connectivity node for each sync machine
   optional { service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
 
-  # Optinoally extract in_service flag for each macchine, as well as active and reactive power
+  # Optionally extract in_service flag for each machine, as well as active and reactive power
   service <${repo}> {
     optional {?machine ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
     optional {?machine cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}
@@ -65,12 +64,11 @@ where {
   # Assign a node mRID for each sync machine. It is set as the first existing of
   # 1) mRID of the topological node associated with the connectivity node for the terminal associated
   #    with the sync machine
-  # 2) mRID of the toplogical node associated with the terminal for the sync machine
+  # 2) mRID of the topological node associated with the terminal for the sync machine
   bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?t_mrid) as ?node)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
 
   # Assign a status flag. If exists, the in_service flag for the sync machine is used. Otherwise,
   # the connected flag of the terminal associated with the sync machine is used
   bind(coalesce(?in_service, ?connected) as ?status)
-  bind(xsd:double(str(?apctmax)) * xsd:double(str(?maxP)) / 100.0 as ?allocationmax)
 }

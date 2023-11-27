@@ -98,7 +98,6 @@ WindGeneratingUnitsDataFrame = DataFrame[WindGeneratingUnitsSchema]
 
 
 class SynchronousMachinesSchema(NamedMarketResourceSchema):
-    allocationmax: Series[float] = pa.Field(nullable=True)
     node: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     station_group: Series[str] = pa.Field(nullable=True)
