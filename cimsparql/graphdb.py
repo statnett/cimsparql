@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, TypedDict, TypeVar
 
 import httpx
 import pandas as pd
+import tenacity
 from SPARQLWrapper import JSON, POST, SPARQLWrapper
 from strenum import StrEnum
 
@@ -76,6 +77,8 @@ class ServiceConfig:
     limit: int | None = None
     offset: int | None = None
     timeout: int | None = None
+    num_retries: int = 0
+    max_delay_seconds: int = 60
 
     def __post_init__(self) -> None:
         if self.rest_api not in RestApi:
@@ -154,15 +157,13 @@ class GraphDBClient:
     Where row is the output of graphdb.data_row
     """
 
-    sparql_wrapper = SPARQLWrapper
-
     def __init__(
         self,
         service_cfg: ServiceConfig | None = None,
         custom_headers: dict[str, str] | None = None,
     ) -> None:
         self.service_cfg = service_cfg or ServiceConfig()
-        self.sparql = self.sparql_wrapper(self.service_cfg.url, self.service_cfg.ca_bundle)
+        self.sparql = self.create_sparql_wrapper()
         self.sparql.setReturnFormat(JSON)
         self.sparql.setMethod(POST)
         self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
@@ -173,6 +174,9 @@ class GraphDBClient:
             for name, value in custom_headers.items():
                 self.sparql.addCustomHttpHeader(name, value)
         self._prefixes = None
+
+    def create_sparql_wrapper(self) -> SPARQLWrapper:
+        return SPARQLWrapper(self.service_cfg.url)
 
     def _update_sparql_parameters(self) -> None:
         for key, value in self.service_cfg.parameters.items():
@@ -214,7 +218,13 @@ class GraphDBClient:
 
     def _exec_query(self, query: str) -> SparqlResult:
         self._prep_query(query)
-        results = self.sparql.queryAndConvert()
+
+        for attempt in tenacity.Retrying(
+            stop=tenacity.stop_after_attempt(self.service_cfg.num_retries + 1),
+            wait=tenacity.wait_exponential(self.service_cfg.max_delay_seconds),
+        ):
+            with attempt:
+                results = self.sparql.queryAndConvert()
         return self._process_result(results)
 
     def exec_query(self, query: str) -> list[dict[str, str]]:
@@ -458,7 +468,13 @@ class AsyncGraphDBClient(GraphDBClient):
     Where row is the output of graphdb.data_row
     """
 
-    sparql_wrapper = AsyncSparqlWrapper
+    def create_sparql_wrapper(self) -> AsyncSparqlWrapper:
+        return AsyncSparqlWrapper(
+            self.service_cfg.url,
+            ca_bundle=self.service_cfg.ca_bundle,
+            num_retries=self.service_cfg.num_retries,
+            max_delay_seconds=self.service_cfg.max_delay_seconds,
+        )
 
     async def _exec_query(self, query: str) -> SparqlResult:
         self._prep_query(query)
