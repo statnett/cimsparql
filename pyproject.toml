@@ -15,6 +15,7 @@ pandera = "*"
 pandas = "*"
 python = "^3.10"
 httpx = "*"
+tenacity = "*"
 
 [tool.poetry.group.test.dependencies]
 asyncio = "*"
