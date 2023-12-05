@@ -11,7 +11,7 @@ logger = logging.getLogger()
 
 def combined_graphdb_service() -> ServiceConfig:
     repo = os.getenv("GRAPHDB_COMBINED_REPO", "abot_combined")
-    return ServiceConfig(repo=repo)
+    return ServiceConfig(repo=repo, max_delay_seconds=1)
 
 
 @functools.lru_cache
@@ -35,8 +35,8 @@ def federated_model() -> t_common.ModelTest:
         return t_common.ModelTest()
     eq_repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
     system_state_repo = os.getenv("GRAPHDB_STATE", "abot_20220825T1621Z")
-    eq_client_cfg = ServiceConfig(eq_repo)
-    tpsvssh_client_cfg = ServiceConfig(system_state_repo)
+    eq_client_cfg = ServiceConfig(eq_repo, max_delay_seconds=1)
+    tpsvssh_client_cfg = ServiceConfig(system_state_repo, max_delay_seconds=1)
     eq_client = GraphDBClient(eq_client_cfg)
     tpsvssh_client = GraphDBClient(tpsvssh_client_cfg)
 

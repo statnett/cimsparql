@@ -22,7 +22,7 @@ def micro_t1_nl_graphdb() -> t_common.ModelTest:
     repo = os.getenv("GRAPHDB_MICRO_NL_REPO", "abot-micro-nl")
     model = None
     try:
-        s_cfg = ServiceConfig(repo=repo)
+        s_cfg = ServiceConfig(repo=repo, max_delay_seconds=1)
         m_cfg = ModelConfig(system_state_repo=f"repository:{repo}", eq_repo=f"repository:{repo}")
         if os.getenv("GRAPHDB_SERVER"):
             model = get_single_client_model(s_cfg, m_cfg)
