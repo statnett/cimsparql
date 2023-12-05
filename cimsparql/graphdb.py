@@ -17,6 +17,7 @@ from SPARQLWrapper import JSON, POST, SPARQLWrapper
 from strenum import StrEnum
 
 from cimsparql.async_sparql_wrapper import AsyncSparqlWrapper
+from cimsparql.sparql_result_json import SparqlResultJson
 from cimsparql.url import service, service_blazegraph
 
 
@@ -79,6 +80,7 @@ class ServiceConfig:
     timeout: int | None = None
     num_retries: int = 0
     max_delay_seconds: int = 60
+    validate: bool = False
 
     def __post_init__(self) -> None:
         if self.rest_api not in RestApi:
@@ -210,10 +212,11 @@ class GraphDBClient:
         self.sparql.setQuery(query)
         self._update_sparql_parameters()
 
-    def _process_result(self, results: dict) -> dict:
-        cols = results["head"]["vars"]
-        data = results["results"]["bindings"]
-        out = [{c: row.get(c, {}).get("value") for c in cols} for row in data]
+    @staticmethod
+    def _process_result(results: SparqlResultJson) -> dict:
+        cols = results.head.variables
+        data = results.results.bindings
+        out = [{c: row[c].value if c in row else None for c in cols} for row in data]
         return {"out": out, "cols": cols, "data": data}
 
     def _exec_query(self, query: str) -> SparqlResult:
@@ -221,11 +224,15 @@ class GraphDBClient:
 
         for attempt in tenacity.Retrying(
             stop=tenacity.stop_after_attempt(self.service_cfg.num_retries + 1),
-            wait=tenacity.wait_exponential(self.service_cfg.max_delay_seconds),
+            wait=tenacity.wait_exponential(max=self.service_cfg.max_delay_seconds),
         ):
             with attempt:
                 results = self.sparql.queryAndConvert()
-        return self._process_result(results)
+
+        sparql_result = SparqlResultJson(**results)
+        if self.service_cfg.validate:
+            sparql_result.validate_column_consistency()
+        return self._process_result(sparql_result)
 
     def exec_query(self, query: str) -> list[dict[str, str]]:
         out = self._exec_query(query)
@@ -478,7 +485,7 @@ class AsyncGraphDBClient(GraphDBClient):
 
     async def _exec_query(self, query: str) -> SparqlResult:
         self._prep_query(query)
-        results = await self.sparql.queryAndConvert()
+        results = await self.sparql.query_and_convert()
         return self._process_result(results)
 
     async def exec_query(self, query: str) -> list[dict[str, str]]:

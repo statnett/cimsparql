@@ -95,7 +95,7 @@ class Model:
     @staticmethod
     def _col_map(data_row: dict[str, str]) -> dict[str, str]:
         return {
-            column: data.get("datatype", data.get("type", None))
+            column: data.datatype if data.datatype else data.value_type
             for column, data in data_row.items()
         }
 
