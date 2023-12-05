@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
-from http import HTTPStatus
 from typing import Any
 
 import httpx
@@ -14,6 +13,8 @@ from SPARQLWrapper.SPARQLExceptions import (
     Unauthorized,
     URITooLong,
 )
+
+from cimsparql.sparql_result_json import SparqlResultJson
 
 exceptions = {
     400: QueryBadFormed,
@@ -30,7 +31,7 @@ async def retry_task(
     task_generator: Callable[[], http_task], num_retries: int, max_delay_seconds: int
 ) -> http_task.Response:
     async for attempt in tenacity.AsyncRetrying(
-        stop=tenacity.stop_after_attempt(num_retries),
+        stop=tenacity.stop_after_attempt(num_retries + 1),
         wait=tenacity.wait_exponential(max=max_delay_seconds),
     ):
         with attempt:
@@ -46,14 +47,16 @@ class AsyncSparqlWrapper(SPARQLWrapper):
         ca_bundle: str | None = None,
         num_retries: int = 0,
         max_delay_seconds: int = 60,
+        validate: bool = False,
         **kwargs: dict[str, str | None],
     ) -> None:
         super().__init__(*args, **kwargs)
         self.ca_bundle = ca_bundle
         self.num_retries = num_retries
         self.max_delay_seconds = max_delay_seconds
+        self.validate = validate
 
-    async def queryAndConvert(self) -> dict:  # noqa N802
+    async def query_and_convert(self) -> SparqlResultJson:
         if self.returnFormat != JSON:
             raise NotImplementedError("Async client only support JSON return format")
 
@@ -68,9 +71,7 @@ class AsyncSparqlWrapper(SPARQLWrapper):
                 self.num_retries,
                 self.max_delay_seconds,
             )
-
-        status = response.status_code
-        if status != HTTPStatus.OK:
-            raise exceptions.get(status, Exception)(response.content)
-
-        return response.json()
+        result = SparqlResultJson(**response.json())
+        if self.validate:
+            result.validate_column_consistency()
+        return result
