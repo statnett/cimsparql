@@ -1,24 +1,28 @@
 from polyfactory.decorators import post_generated
 from polyfactory.factories import pydantic_factory
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class SparqlResultHead(BaseModel):
+class CimsparqlBaseModel(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class SparqlResultHead(CimsparqlBaseModel):
     link: list[str] = Field(default_factory=list)
     variables: list[str] = Field(default_factory=list, alias="vars")
 
 
-class SparqlResultValue(BaseModel):
+class SparqlResultValue(CimsparqlBaseModel):
     value_type: str = Field(alias="type")
     value: str
     datatype: str = ""
 
 
-class SparqlData(BaseModel):
+class SparqlData(CimsparqlBaseModel):
     bindings: list[dict[str, SparqlResultValue]]
 
 
-class SparqlResultJson(BaseModel):
+class SparqlResultJson(CimsparqlBaseModel):
     """
     Data model for rest api resonse of MIME type
 
