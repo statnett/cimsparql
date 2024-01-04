@@ -3,17 +3,17 @@ PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 PREFIX ALG:<${ALG}>
 
-select distinct ?mrid ?from_area ?to_area
+select distinct ?mrid ?bidzone_1 ?bidzone_2
 where
 {
   ?converter ALG:DCConverter.DCPole | ALG:VoltageSourceConverter.DCPole ?pole ;
       cim:IdentifiedObject.mRID ?mrid .
   ?pole cim:Equipment.EquipmentContainer/SN:Substation.MarketDeliveryPoint ?delivery_point.
 
-  ?delivery_point SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?from_area .
+  ?delivery_point SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone_1 .
 
-  # Extract the destination point from the line that has one end matching from_area
+  # Extract the destination point from the line that has one end matching bidzone_1
   ?line SN:Line.FromMarketDeliveryPoint ?delivery_point;
-        SN:Line.ToMarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?to_area
-  filter(?from_area != ?to_area)
+        SN:Line.ToMarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone_2
+  filter(?bidzone_1 != ?bidzone_2)
 }

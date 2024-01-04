@@ -296,8 +296,8 @@ StationGroupCodeNameDataFrame = DataFrame[StationGroupCodeNameSchema]
 
 
 class HVDCBidzonesSchema(MridResourceSchema):
-    from_area: Series[str] = pa.Field()
-    to_area: Series[str] = pa.Field()
+    bidzone_1: Series[str] = pa.Field()
+    bidzone_2: Series[str] = pa.Field()
 
 
 HVDCBidzonesDataFrame = DataFrame[HVDCBidzonesSchema]

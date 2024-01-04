@@ -94,7 +94,7 @@ async def test_regions(model: SingleClientModel):
 async def test_hvdc_converters_bidzones(model: SingleClientModel):
     df = await model.hvdc_converter_bidzones()
 
-    corridors = set(zip(df["from_area"], df["to_area"], strict=True))
+    corridors = set(zip(df["bidzone_1"], df["bidzone_2"], strict=True))
 
     # Check data quality in the models
     expect_corridors = {("SE4", "SE3"), ("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB"), ("NO2", "NL")}
