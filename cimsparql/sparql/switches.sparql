@@ -1,0 +1,15 @@
+# Name: Switches
+PREFIX cim: <${cim}>
+select ?mrid ?is_open (strafter(str(?type), "#") as ?equipment_type) ?connectivity_node_1 ?connectivity_node_2 where {
+	?switch cim:Switch.open ?is_open;
+    	a ?type
+    service <${eq_repo}>{
+        ?switch cim:IdentifiedObject.mRID ?mrid;
+                ^cim:Terminal.ConductingEquipment ?terminal1;
+                ^cim:Terminal.ConductingEquipment ?terminal2 .
+       ?terminal1 cim:ACDCTerminal.sequenceNumber 1;
+                  cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_1 .
+       ?terminal2 cim:ACDCTerminal.sequenceNumber 2;
+                  cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_2 .
+    }
+}

@@ -280,3 +280,14 @@ async def test_transformer_windings(test_model: t_common.ModelTest):
     df = await test_model.model.transformer_windings()
 
     assert len(df) == 15
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+@pytest.mark.asyncio
+async def test_switches(test_model: t_common.ModelTest):
+    t_common.check_model(test_model)
+    df = await test_model.model.switches()
+
+    # 26 Breakers from CGMES_v2.4.15-MicroGridTestConfiguration_v2.docx (table 8)
+    assert len(df) == 26
+    assert (df["equipment_type"] == "Breaker").all()

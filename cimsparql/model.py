@@ -35,6 +35,7 @@ from cimsparql.data_models import (
     StationGroupCodeNameDataFrame,
     SubstationVoltageDataFrame,
     SvInjectionDataFrame,
+    SwitchesDataFrame,
     SynchronousMachinesDataFrame,
     TransfConToConverterDataFrame,
     TransformersDataFrame,
@@ -603,6 +604,13 @@ class Model:
         client = client or self.client
         client.update_query(self.add_mrid_query(rdf_type, graph))
 
+    def switches_query(self) -> str:
+        return self.template_to_query(templates.SWITCHES_QUERY)
+
+    async def switches(self) -> SwitchesDataFrame:
+        df = await self.get_table_and_convert(self.switches_query())
+        return SwitchesDataFrame(df)
+
 
 class SingleClientModel(Model):
     def __init__(
@@ -684,6 +692,7 @@ def get_federated_cim_model(
         "SV branch",
         "Power flow",
         "SvInjection",
+        "Switches",
         "Two winding transformer",
     )
     for query in exec_from_tpssvssh:

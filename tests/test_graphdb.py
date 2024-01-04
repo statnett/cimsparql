@@ -49,6 +49,7 @@ async def collect_data(model: Model) -> list[pd.DataFrame]:
         model.station_group_codes_and_names(),
         model.substation_voltage_level(),
         model.synchronous_machines(),
+        model.switches(),
         model.three_winding_transformers(),
         model.transformer_windings(),
         model.transformers_connected_to_converter(),
