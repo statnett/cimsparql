@@ -323,3 +323,14 @@ class RASEquipmentSchema(JsonSchemaOut):
 
 
 RASEquipmentDataFrame = DataFrame[RASEquipmentSchema]
+
+
+class Switches(JsonSchemaOut):
+    mrid: Index[str] = pa.Field(unique=True)
+    is_open: Series[bool] = pa.Field()
+    equipment_type: Series[str] = pa.Field()
+    connectivity_node_1: Series[str] = pa.Field()
+    connectivity_node_2: Series[str] = pa.Field()
+
+
+SwitchesDataFrame = DataFrame[Switches]
