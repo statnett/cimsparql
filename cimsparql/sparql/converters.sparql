@@ -2,7 +2,7 @@
 PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
 PREFIX SN:<${SN}>
-select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node
+select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node ?connectivity_node
 where {
   # Extract active and reactive power for the converter
   ?converter cim:ACDCConverter.p ?p;
@@ -32,6 +32,7 @@ where {
   ?terminal cim:Terminal.ConductingEquipment ?converter;
             cim:Terminal.ConnectivityNode ?con_node;
             cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
+  ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
   optional {?converter SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   filter regex(?area, '${region}')
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)

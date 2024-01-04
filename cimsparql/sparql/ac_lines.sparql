@@ -28,6 +28,8 @@ select
 (max(?b) as ?b)
 (max(?g) as ?g)
 (max(?length) as ?length)
+(max(?connectivity_node_1) as ?connectivity_node_1)
+(max(?connectivity_node_2) as ?connectivity_node_2)
 where {
   # TODO: Check if SN:Equipment.networkAnalysisEnable is on it's way into the standard
   # Assume π equivalent with at least r,x and b shunt.
@@ -67,6 +69,7 @@ where {
   # Search for acline SV status will be combined with SSH connected
   optional {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service . }
   optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
+  ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
 
   # Find properties in TP/SV/SSH profile for each terminal.
   ?terminal cim:ACDCTerminal.connected ?connected .
@@ -88,6 +91,8 @@ where {
   bind(if(?nr = 2, ?node, '') as ?node_2)
   bind(if(?nr = 2, ?connected, False) as ?connected_2)
   bind(if(?nr = 2, ?bidzone, '') as  ?bidzone_2)
+  bind(if(?nr = 1, ?connectivity_node, '') as ?connectivity_node_1)
+  bind(if(?nr = 2, ?connectivity_node, '') as ?connectivity_node_2)
   filter(regex(?area, '${region}'))
 } group by ?acline
 # Filtration rules

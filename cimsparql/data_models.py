@@ -82,6 +82,7 @@ class LoadsSchema(NamedResourceSchema):
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
     station_group: Series[str] = pa.Field(nullable=True)
+    connectivity_node: Series[str] = pa.Field()
 
 
 LoadsDataFrame = DataFrame[LoadsSchema]
@@ -110,6 +111,7 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     sn: Series[float] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
+    connectivity_node: Series[str] = pa.Field()
 
 
 SynchronousMachinesDataFrame = DataFrame[SynchronousMachinesSchema]
@@ -149,6 +151,7 @@ class ConvertersSchema(NamedResourceSchema):
     node: Series[str] = pa.Field()
     p: Series[float] = pa.Field()
     q: Series[float] = pa.Field()
+    connectivity_node: Series[str] = pa.Field()
 
 
 ConvertersDataFrame = DataFrame[ConvertersSchema]
@@ -185,6 +188,8 @@ class BranchComponentSchema(NamedResourceSchema):
     status: Series[bool] = pa.Field()
     un: Series[float] = pa.Field()
     x: Series[float] = pa.Field()
+    connectivity_node_1: Series[str] = pa.Field()
+    connectivity_node_2: Series[str] = pa.Field()
 
 
 BranchComponentDataFrame = DataFrame[BranchComponentSchema]
