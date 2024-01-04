@@ -3,7 +3,7 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
 
-select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status (?un_1 as ?un) ?x ?b ?g ?angle ?ratio
+select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status (?un_1 as ?un) ?x ?b ?g ?angle ?ratio ?connectivity_node_1 ?connectivity_node_2
 where
 {
     # Collect properties for terminal_1
@@ -46,7 +46,8 @@ where
                    cim:PowerTransformerEnd.g ?g;
                    cim:IdentifiedObject.mRID ?mrid .
         ?terminal_1 cim:Terminal.ConnectivityNode ?con_node_1.
-        ?con_node_1 cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un_1 .
+        ?con_node_1 cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un_1;
+            cim:IdentifiedObject.mRID ?connectivity_node_1 .
         optional {
             ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?terminal_1;
                                                            a cim:ActivePowerLimit;
@@ -58,8 +59,9 @@ where
                    cim:TransformerEnd.Terminal ?terminal_2;
                    cim:PowerTransformerEnd.ratedU ?ubase_2 ;
                    cim:TransformerEnd.endNumber 2 .
-        ?terminal_2 cim:Terminal.ConnectivityNode ?con_node_2.
-        ?con_node_2 cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un_2 .
+        ?terminal_2 cim:Terminal.ConnectivityNode ?con_node_2 .
+        ?con_node_2 cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un_2 ;
+             cim:IdentifiedObject.mRID ?connectivity_node_2 .
         optional{
             ?winding_2 cim:PowerTransformerEnd.phaseAngleClock ?aclock .
         }

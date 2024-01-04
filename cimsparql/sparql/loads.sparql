@@ -1,7 +1,7 @@
 # Name: Loads
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select ?mrid ?name ?node ?substation_mrid ?bidzone ?status ?p ?q ?station_group
+select ?mrid ?name ?node ?substation_mrid ?bidzone ?status ?p ?q ?station_group ?connectivity_node
 where {
 
   # Extrcact connected flag and optionally the mRID of the topological node associated with the terminal
@@ -10,6 +10,7 @@ where {
 
   # Optionally extract the mRID of the topological node for the connectivity node associated with each terminal
   optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
+  ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
 
   # Optionally extract in_service flag and active and reactive energy consumption for each load
   optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service }.

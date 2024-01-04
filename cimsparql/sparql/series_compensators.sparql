@@ -16,6 +16,8 @@ select
   (coalesce(max(?in_service), max(?connected_1) && max(?connected_2)) as ?status)
   (max(?un) as ?un)
   (max(?x) as ?x)
+  (max(?connectivity_node_1) as ?connectivity_node_1)
+  (max(?connectivity_node_2) as ?connectivity_node_2)
 where {
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for series compensator
@@ -30,7 +32,8 @@ where {
   # Extract terminal properties
   ?terminal cim:Terminal.ConnectivityNode ?con_node;
             cim:ACDCTerminal.sequenceNumber ?nr .
-  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
+  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation ;
+            cim:IdentifiedObject.mRID ?connectivity_node .
   ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
   optional {
     ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
@@ -69,5 +72,7 @@ where {
   bind(if(?nr = 2, ?node, '') as ?node_2)
   bind(if(?nr = 2, ?connected, False) as ?connected_2)
   bind(if(?nr = 2, ?bidzone, '') as  ?bidzone_2)
+  bind(if(?nr = 1, ?connectivity_node, '') as ?connectivity_node_1)
+  bind(if(?nr = 2, ?connectivity_node, '') as ?connectivity_node_2)
 } group by ?compensator
 having ((count(*) > 1) && (max(?node_1) != max(?node_2)) && coalesce(max(?analysis_enabled), True))
