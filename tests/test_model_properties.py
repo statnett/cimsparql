@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 import pytest
+import t_utils.common as t_common
 import t_utils.custom_models as t_custom
 import t_utils.entsoe_models as t_entsoe
 
@@ -133,3 +134,22 @@ def test_swing_bus_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
     data = nc_data[model_name]
     skip_on_missing(data, model_name)
     assert data.bus["is_swing_bus"].sum() == len(data.swing_buses)
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models() + t_custom.all_custom_models())
+@pytest.mark.asyncio
+async def test_all_connectivity_nodes_fetched(test_model: t_common.ModelTest):
+    t_common.check_model(test_model)
+    count_query = test_model.model.template_to_query(
+        Template("select (count(?s) as ?count) where {?s a <${cim}ConnectivityNode>}")
+    )
+    num_nodes_df = await test_model.model.get_table_and_convert(count_query)
+    num_connectivity_nodes = num_nodes_df["count"].iloc[0]
+
+    # Verify that we get some nodes
+    assert num_connectivity_nodes > 0
+
+    df = await test_model.model.connectivity_nodes()
+
+    # Verify that we get information for all nodes in the model
+    assert len(df) == num_connectivity_nodes

@@ -34,6 +34,7 @@ async def collect_data(model: Model) -> list[pd.DataFrame]:
         model.branch_node_withdraw(),
         model.bus_data(),
         model.connections(),
+        model.connectivity_nodes(),
         model.converters(),
         model.coordinates(),
         model.disconnected(),

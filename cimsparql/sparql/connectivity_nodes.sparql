@@ -1,0 +1,29 @@
+# Name: Connectivity nodes
+
+PREFIX cim:<${cim}>
+PREFIX SN:<${SN}>
+
+select ?mrid (?container_mrid as ?container) ?container_name ?un ?bidzone (strafter(str(?cnt_type), "#") as ?container_type)
+where {
+   ?con_node_container ^cim:ConnectivityNode.ConnectivityNodeContainer/cim:IdentifiedObject.mRID ?mrid .
+
+  # Extract properties from the connectivity node container associated with each topoligical node
+  {
+    ?con_node_container cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un ;
+    	cim:VoltageLevel.Substation ?_substation .
+
+    # Extract information about the substation associated with the connectivity node container
+    ?_substation cim:IdentifiedObject.mRID ?container_mrid;
+      a ?cnt_type;
+      cim:IdentifiedObject.name ?container_name;
+      cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+    # Extract the bidzone of each substation if it exists
+    optional{?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone }
+  } union {
+    ?con_node_container cim:Line.Region/cim:IdentifiedObject.name ?area ;
+      a ?cnt_type;
+      cim:IdentifiedObject.mRID ?container_mrid;
+      cim:IdentifiedObject.name ?container_name
+  }
+  FILTER regex(?area, '.*')
+}
