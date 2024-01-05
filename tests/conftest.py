@@ -1,5 +1,6 @@
 import logging
 import pathlib
+from collections.abc import Generator
 from contextlib import suppress
 
 import pytest
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", autouse=True)
-def delete_models() -> None:
+def delete_models() -> Generator[None, None, None]:
     """
     Fixture for deleting micro model repos created in during tests
     """
@@ -25,7 +26,7 @@ def delete_models() -> None:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def delete_picasso_repo() -> None:
+def delete_picasso_repo() -> Generator[None, None, None]:
     yield
     with suppress(Exception):
         client = t_common.initialized_rdf4j_repo()
