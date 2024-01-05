@@ -20,6 +20,7 @@ from cimsparql.data_models import (
     BranchWithdrawDataFrame,
     BusDataFrame,
     ConnectionsDataFrame,
+    ConnectivityNodeDataFrame,
     ConvertersDataFrame,
     CoordinatesDataFrame,
     DcActiveFlowDataFrame,
@@ -610,6 +611,14 @@ class Model:
     async def switches(self) -> SwitchesDataFrame:
         df = await self.get_table_and_convert(self.switches_query())
         return SwitchesDataFrame(df)
+
+    def connectivity_nodes_query(self, region: str | None = None) -> str:
+        substitutes = {"region": region or ".*"}
+        return self.template_to_query(templates.CONNECTIVITY_NODES_QUERY, substitutes)
+
+    async def connectivity_nodes(self, region: str | None = None) -> ConnectivityNodeDataFrame:
+        df = await self.get_table_and_convert(self.connectivity_nodes_query(region), index="mrid")
+        return ConnectivityNodeDataFrame(df)
 
 
 class SingleClientModel(Model):

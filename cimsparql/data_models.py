@@ -339,3 +339,15 @@ class Switches(JsonSchemaOut):
 
 
 SwitchesDataFrame = DataFrame[Switches]
+
+
+class ConnectivityNode(JsonSchemaOut):
+    mrid: Index[str] = pa.Field(unique=True)
+    container: Series[str] = pa.Field()
+    container_name: Series[str] = pa.Field()
+    un: Series[float] = pa.Field(nullable=True)
+    bidzone: Series[str] = pa.Field(nullable=True)
+    container_type: Series[str] = pa.Field()
+
+
+ConnectivityNodeDataFrame = DataFrame[ConnectivityNode]
