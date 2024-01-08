@@ -32,7 +32,7 @@ def combined_model() -> t_common.ModelTest:
 @functools.lru_cache
 def federated_model() -> t_common.ModelTest:
     if os.getenv("CI"):
-        return t_common.ModelTest()
+        return t_common.ModelTest(None, False, False)
     eq_repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
     system_state_repo = os.getenv("GRAPHDB_STATE", "abot_20220825T1621Z")
     eq_client_cfg = ServiceConfig(eq_repo, max_delay_seconds=1)
