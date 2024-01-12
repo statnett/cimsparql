@@ -35,7 +35,7 @@ jobs:
         with:
           python-version: 3.11
       - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v2.4.0
+        uses: abatilo/actions-poetry@v3.0.0
         with:
           poetry-version: 1.6.1
       - name: Install dynamic versioning
@@ -62,7 +62,7 @@ jobs:
         with:
           python-version: 3.11
       - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v2.4.0
+        uses: abatilo/actions-poetry@v3.0.0
         with:
           poetry-version: 1.6.1
       - name: Install dynamic versioning
