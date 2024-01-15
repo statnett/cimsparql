@@ -1,7 +1,7 @@
 # Name: Branch node withdraw
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select ?mrid ?node ?p ?q
+select ?mrid ?node ?p ?q ?connectivity_node
 where {
   # Extract properties of each terminal from the SV/TP/SSH profile.
   # If exists, the mRID of the topological node associated with the terminal is etracted
@@ -21,7 +21,8 @@ where {
     optional {?component SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
     ?terminal cim:Terminal.ConductingEquipment ?component;
             cim:IdentifiedObject.mRID ?mrid;
-            cim:Terminal.ConnectivityNode ?con_node.
+            cim:Terminal.ConnectivityNode ?con_node .
+    ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
 
     # Find area for the connectivity node of the terminal
     ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
