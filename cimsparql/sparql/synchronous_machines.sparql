@@ -48,7 +48,7 @@ where {
   # Extract connected flag and optionally mRID for the topological node associated with each terminal
   service <${repo}> {
     ?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .
-    optional {?terminal cim:Terminal.TopologyNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
+    optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
   } .
 
   # Optionally extract the mRID of the topological node associated with the connectivity node for each sync machine
