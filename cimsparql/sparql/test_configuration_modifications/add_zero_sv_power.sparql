@@ -1,0 +1,13 @@
+prefix cim:<${cim}>
+
+insert {
+    graph <http://cimsparql/xml-adpator/SV-modifications> {
+        _:b0 a cim:SvPowerFlow;
+            cim:SvPowerFlow.Terminal ?terminal;
+            cim:SvPowerFlow.p "0.0"
+        }
+}
+where {
+    ?terminal a cim:Terminal
+    filter not exists{?s cim:SvPowerFlow.Terminal ?terminal}
+}

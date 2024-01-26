@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 import t_utils.common as t_common
+from cimsparql.adaptions import XmlModelAdaptor
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig, new_repo_blazegraph
 from cimsparql.model import (
     ModelConfig,
@@ -61,11 +62,15 @@ def federated_micro_t1_nl_bg() -> t_common.ModelTest:
         tpsvssh_client = new_repo_blazegraph(url, "federated_micro_t1_nl_tpsvssh", "http")
         eq_client = new_repo_blazegraph(url, "federated_micro_t1_nl_eq", "http")
 
-        # Split NQ file content in SV/TP/SSH profile
-        fname = this_dir.parent / "data/micro_t1_nl.nq"
-        tpsvssh, remaining = split_tpsvssh(fname)
-        tpsvssh_client.upload_rdf(tpsvssh.encode("utf8"), "n-quads")
-        eq_client.upload_rdf(remaining.encode("utf8"), "n-quads")
+        adaptor = XmlModelAdaptor.from_folder(this_dir.parent / "data/micro")
+        adaptor.adapt()
+        tpsvssh_ctx = adaptor.tpsvssh_contexts()
+        tpsvssh = adaptor.nq_bytes(tpsvssh_ctx)
+        remaining = adaptor.nq_bytes(
+            [ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx]
+        )
+        tpsvssh_client.upload_rdf(tpsvssh, "n-quads")
+        eq_client.upload_rdf(remaining, "n-quads")
 
         m_cfg = ModelConfig(
             system_state_repo=tpsvssh_client.service_cfg.url + ",infer=false",
@@ -78,10 +83,10 @@ def federated_micro_t1_nl_bg() -> t_common.ModelTest:
 
 
 def upload_micro_model(client: GraphDBClient) -> None:
-    name = "micro_t1_nl"
-    nq_file = this_dir.parent / f"data/{name}.nq"
+    adaptor = XmlModelAdaptor.from_folder(this_dir.parent / "data/micro")
+    adaptor.adapt()
     graph = "<http://mygraph.com/demo/1/1>"
-    client.upload_rdf(nq_file, "n-quads", {"context": graph})
+    client.upload_rdf(adaptor.nq_bytes(), "n-quads", {"context": graph})
 
 
 @functools.lru_cache

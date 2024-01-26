@@ -10,7 +10,6 @@ where {
 
   # Optionally extract the mRID of the topological node for the connectivity node associated with each terminal
   optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
-  ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
 
   # Optionally extract in_service flag and active and reactive energy consumption for each load
   optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service }.
@@ -41,6 +40,7 @@ where {
   # Extract mRID and connectivity node for each terminal associated with a load
   ?terminal cim:Terminal.ConductingEquipment ?load;
            cim:Terminal.ConnectivityNode ?con_node .
+  ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
   }
 
   # Assign status flag for load. The status flag is set to the first existing of
