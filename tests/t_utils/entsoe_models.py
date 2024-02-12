@@ -125,14 +125,21 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
         return new_repo_blazegraph(url, name, "http")
 
     model = None
-    test_folder = Path(__file__).parent.parent / "data"
+    test_folder = Path(__file__).parent.parent / "data/small"
     try:
+        adaptor = XmlModelAdaptor.from_folder(test_folder)
+        adaptor.adapt()
         init_func = t_common.init_repo_rdf4j if api == RestApi.RDF4J else bg_http
         tpsvssh_client = init_func(url, "smallgrid_tpsvssh")
-        tpsvssh_client.upload_rdf(test_folder / "smallgrid_tpsvssh.nq", "n-quads")
+        tpsvssh_ctx = adaptor.tpsvssh_contexts()
+        tpsvssh_client.upload_rdf(adaptor.nq_bytes(tpsvssh_ctx), "n-quads")
+
+        remaining = adaptor.nq_bytes(
+            [ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx]
+        )
 
         eq_client = init_func(url, "smallgrid_eq")
-        eq_client.upload_rdf(test_folder / "smallgrid_eq.nq", "n-quads")
+        eq_client.upload_rdf(remaining, "n-quads")
 
         m_cfg = ModelConfig(
             system_state_repo=tpsvssh_client.service_cfg.url,
