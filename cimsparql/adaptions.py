@@ -69,6 +69,7 @@ class XmlModelAdaptor:
             "SvPowerFlow.p": XSD.float,
             ".open": XSD.boolean,
             ".connected": XSD.boolean,
+            ".nominalVoltage": XSD.float,
         }
         for s, predicate, o, g in self.graph.quads():
             with suppress(StopIteration):
