@@ -6,7 +6,8 @@ where {
       cim:SvPowerFlow.Terminal ?terminal;
       cim:SvPowerFlow.p ?p;
       cim:SvPowerFlow.q ?q .
-  service <${eq_repo}> {
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
     ?terminal cim:IdentifiedObject.mRID ?mrid .
   }
   optional {?terminal cim:Terminal.ConductingEquipment/^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service}

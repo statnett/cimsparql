@@ -14,7 +14,8 @@ where {
   # Extract the mRID for the topological node of the connectivity node associated with each terminal
   optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
 
-  service <${eq_repo}> {
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
     # Specify components wer are interested in
     values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer} .
     ?component a ?rdf_type .

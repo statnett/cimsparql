@@ -17,7 +17,8 @@ where {
   # Extract the mrid of the topoligical node associated with the connectivity node for the terminal
   optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
 
-  service <${eq_repo}> {
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
   # Extract mrid, name, substation and optionally aliasName of the converter
   ?converter cim:IdentifiedObject.mRID ?mrid;
              cim:IdentifiedObject.name ?name;

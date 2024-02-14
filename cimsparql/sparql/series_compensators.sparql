@@ -21,7 +21,8 @@ select
 where {
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for series compensator
-  service <${eq_repo}> {
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
   ?compensator cim:SeriesCompensator.r ?r;
          cim:SeriesCompensator.x ?x;
          cim:IdentifiedObject.mRID ?mrid;

@@ -34,7 +34,8 @@ where {
   # TODO: Check if SN:Equipment.networkAnalysisEnable is on it's way into the standard
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for ACLineSegments
-  service <${eq_repo}> {
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo
+  service ?eq_repo {
   ?acline cim:ACLineSegment.r ?r;
           cim:ACLineSegment.x ?x;
           cim:ACLineSegment.bch ?b;

@@ -15,8 +15,8 @@ where
                 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p_2 ;
                 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?node_2 .
     optional {?p_transformer ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service }.
-    service <${eq_repo}>
-    {
+    ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+    service ?eq_repo {
         # Extract two winding transformers
         {
             select ?p_transformer where {
