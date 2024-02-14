@@ -36,3 +36,9 @@ def test_tpsvssh_contexts(xml_adaptor: XmlModelAdaptor):
 )
 def test_is_uuid(value: str, result: bool):
     assert is_uuid(value) is result
+
+
+def test_add_internal_eq_link(xml_adaptor: XmlModelAdaptor):
+    xml_adaptor.add_internal_eq_link("http://eq.com")
+    query = f"select * where {{?node <{XmlModelAdaptor.eq_predicate}> ?eq_uri}}"
+    assert len(xml_adaptor.graph.query(query)) == 1
