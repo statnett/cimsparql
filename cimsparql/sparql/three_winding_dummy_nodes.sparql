@@ -4,37 +4,41 @@ PREFIX SN:<${SN}>
 select ?node ?busname (?container_name as ?substation) ?un (?container_mrid as ?substation_mrid) ?bidzone ?island (False as ?is_swing_bus) ?connectivity_node
 where
 {
-  # Select all three winding transformerss
-  {
-    select  ?p_transformer
-    where {
-      ?p_transformer a cim:PowerTransformer;
-		     cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-                     ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr.
-      filter(regex(?area, '${region}'))
-    }
-    group by ?p_transformer
-    having (count(*) > 2)
-  } .
-  ?p_transformer cim:IdentifiedObject.mRID ?node;
-		 cim:IdentifiedObject.name ?busname;
-                 cim:Equipment.EquipmentContainer ?container.
-  ?winding cim:TransformerEnd.endNumber 1;
-           cim:PowerTransformerEnd.ratedU ?un;
-           cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-	   cim:TransformerEnd.Terminal/cim:Terminal.ConnectivityNode ?con_node.
-  ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
-  ?container cim:IdentifiedObject.mRID ?container_mrid;
-	     cim:IdentifiedObject.name ?container_name.
-  service <${repo}> {
-    optional{
-      ?con_node cim:ConnectivityNode.TopologicalNode ?top_node .
-      ?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name
-    }.
-    bind(coalesce(?island_name, "Unknown") as ?island)
+  optional{
+    ?con_node cim:ConnectivityNode.TopologicalNode ?top_node .
+    ?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name
+  }.
+
+
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
+    # Select all three winding transformerss
+    {
+      select  ?p_transformer
+      where {
+        ?p_transformer a cim:PowerTransformer;
+          cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+                      ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr.
+        filter(regex(?area, '${region}'))
+      }
+      group by ?p_transformer
+      having (count(*) > 2)
+    } .
+    ?p_transformer cim:IdentifiedObject.mRID ?node;
+      cim:IdentifiedObject.name ?busname;
+                  cim:Equipment.EquipmentContainer ?container.
+    ?winding cim:TransformerEnd.endNumber 1;
+            cim:PowerTransformerEnd.ratedU ?un;
+            cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
+            cim:TransformerEnd.Terminal ?terminal .
+    ?terminal cim:Terminal.ConnectivityNode ?con_node.
+    ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
+    ?container cim:IdentifiedObject.mRID ?container_mrid;
+        cim:IdentifiedObject.name ?container_name.
+    optional {?container SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone}
+    optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
   }
-  optional {?container SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone}
-  optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
   filter(?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  bind(coalesce(?island_name, "Unknown") as ?island)
 }
