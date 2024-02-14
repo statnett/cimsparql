@@ -703,6 +703,7 @@ def get_federated_cim_model(
         "SvInjection",
         "Switches",
         "Two winding transformer",
+        "Synchronous machines",
     )
     for query in exec_from_tpssvssh:
         clients[query] = tpsvssh_client
