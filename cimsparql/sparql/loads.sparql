@@ -15,7 +15,8 @@ where {
   optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service }.
   ?load cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q .
 
-  service <${eq_repo}> {
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
   # Declare which load types to consider
   values ?load_type {cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer}
 

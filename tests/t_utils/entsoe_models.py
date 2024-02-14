@@ -63,7 +63,7 @@ def federated_micro_t1_nl_bg() -> t_common.ModelTest:
         eq_client = new_repo_blazegraph(url, "federated_micro_t1_nl_eq", "http")
 
         adaptor = XmlModelAdaptor.from_folder(this_dir.parent / "data/micro")
-        adaptor.adapt()
+        adaptor.adapt(eq_client.service_cfg.url)
         tpsvssh_ctx = adaptor.tpsvssh_contexts()
         tpsvssh = adaptor.nq_bytes(tpsvssh_ctx)
         remaining = adaptor.nq_bytes(
@@ -84,7 +84,7 @@ def federated_micro_t1_nl_bg() -> t_common.ModelTest:
 
 def upload_micro_model(client: GraphDBClient) -> None:
     adaptor = XmlModelAdaptor.from_folder(this_dir.parent / "data/micro")
-    adaptor.adapt()
+    adaptor.adapt(client.service_cfg.url)
     graph = "<http://mygraph.com/demo/1/1>"
     client.upload_rdf(adaptor.nq_bytes(), "n-quads", {"context": graph})
 
@@ -127,9 +127,10 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
     model = None
     test_folder = Path(__file__).parent.parent / "data/small"
     try:
-        adaptor = XmlModelAdaptor.from_folder(test_folder)
-        adaptor.adapt()
         init_func = t_common.init_repo_rdf4j if api == RestApi.RDF4J else bg_http
+        eq_client = init_func(url, "smallgrid_eq")
+        adaptor = XmlModelAdaptor.from_folder(test_folder)
+        adaptor.adapt(eq_client.service_cfg.url)
         tpsvssh_client = init_func(url, "smallgrid_tpsvssh")
         tpsvssh_ctx = adaptor.tpsvssh_contexts()
         tpsvssh_client.upload_rdf(adaptor.nq_bytes(tpsvssh_ctx), "n-quads")
@@ -138,7 +139,6 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
             [ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx]
         )
 
-        eq_client = init_func(url, "smallgrid_eq")
         eq_client.upload_rdf(remaining, "n-quads")
 
         m_cfg = ModelConfig(

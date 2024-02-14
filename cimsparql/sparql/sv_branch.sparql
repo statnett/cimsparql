@@ -9,7 +9,8 @@ PREFIX SN: <${SN}>
 select ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?p_1 ?q_1 ?p_2 ?q_2 ?v_1 ?angle_1 ?v_2 ?angle_2
 where {
   # Extract key properties for ACLineSegment
-  service <${eq_repo}>{
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
     ?acline cim:ACLineSegment.r ?r;
             cim:ACLineSegment.x ?x;
             cim:ACLineSegment.bch ?bch;

@@ -4,7 +4,8 @@ PREFIX xsd:<${xsd}>
 select ?mrid ?p ?direction
 where {
   ?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .
-  service <${eq_repo}> {
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
   {{
     # Declare components we are interested in
     values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator} .

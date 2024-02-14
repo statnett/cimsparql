@@ -48,10 +48,11 @@ class XmlModelAdaptor:
             mrid = mrid_str if is_uuid(mrid_str) else generate_uuid(mrid_str)
             self.graph.add((result["s"], identified_obj_mrid, Literal(mrid), result["g"]))
 
-    def adapt(self) -> None:
+    def adapt(self, eq_uri: str) -> None:
         self.add_zero_sv_power_flow()
         self.add_mrid()
         self.add_dtypes()
+        self.add_internal_eq_link(eq_uri)
 
     def add_zero_sv_power_flow(self) -> None:
         with open(
