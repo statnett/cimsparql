@@ -17,11 +17,8 @@ where {
 
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   service ?eq_repo {
-  # Declare which load types to consider
-  values ?load_type {cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer}
-
   # Extract mRID, name and substation for each load
-  ?load a ?load_type;
+  ?load a cim:EnergyConsumer;
          cim:IdentifiedObject.mRID ?mrid;
          cim:IdentifiedObject.name ?name;
          cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation.
