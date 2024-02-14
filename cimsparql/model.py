@@ -692,6 +692,7 @@ def get_federated_cim_model(
     # Setup client based on # Name in the pre-defined queries
     exec_from_tpssvssh = (
         "AC Lines",
+        "Bus",
         "Converters",
         "Disconnected",
         "Loads",
