@@ -703,6 +703,7 @@ def get_federated_cim_model(
         "Power flow",
         "SvInjection",
         "Switches",
+        "Three winding with dummy nodes",
         "Two winding transformer",
         "Synchronous machines",
     )
