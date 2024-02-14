@@ -11,10 +11,12 @@ from string import Template
 from rdflib import ConjunctiveGraph
 from rdflib.namespace import XSD
 from rdflib.plugins.sparql import prepareUpdate
-from rdflib.term import Literal, URIRef
+from rdflib.term import BNode, Literal, URIRef
 
 
 class XmlModelAdaptor:
+    eq_predicate = "http://entsoe.eu/CIM/EquipmentCore/3/1"
+
     def __init__(self, filenames: Iterable[Path]) -> None:
         self.graph = ConjunctiveGraph()
         for filename in filenames:
@@ -98,6 +100,13 @@ class XmlModelAdaptor:
         for ctx in contexts:
             graph += self.graph.get_context(ctx.identifier)
         return graph.serialize(format="nquads", encoding="utf8")
+
+    def add_internal_eq_link(self, eq_uri: str) -> None:
+        # Insert in one SV graph
+        ctx = next(c for c in self.tpsvssh_contexts() if "SV" in str(c))
+        self.graph.get_context(ctx.identifier).add(
+            (BNode(), URIRef(self.eq_predicate), URIRef(eq_uri))
+        )
 
 
 def is_uuid(x: str) -> bool:
