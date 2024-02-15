@@ -4,59 +4,46 @@ PREFIX SN: <${SN}>
 select ?name ?node ?mrid ?status ?p ?market_code
 where
 {
-  # Extract name and mrid for aclines
-  ?acline a cim:ACLineSegment;
-    cim:IdentifiedObject.name ?name;
-    cim:IdentifiedObject.mRID ?mrid .
-  filter (!regex(?name, 'HVDC')) .
-  optional {?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code . }
-
-  # Extract properties for the terminal at sequenceNumber 1 for the acline
-  ?terminal1 a cim:Terminal;
-             cim:Terminal.ConductingEquipment ?acline;
-             cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
-             cim:Terminal.ConnectivityNode ?con_node .
-
-  # Extract from the connectivity node of terminal1
-  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 .
-
-  # Extract propertoes for the terminal at squenceNumber 2 for the acline
-  ?terminal2 a cim:Terminal;
-             cim:Terminal.ConductingEquipment ?acline;
-             cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
-             cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .
-
-  # When a region is provided: only keep results that satisfy either
-  # 1) area_1 = region and area_2 != region
-  # 2) area_2 = region and area_1 != region
-  filter ((regex(?area_1, '${region}') && !regex(?area_2, '${region}')) || (regex(?area_1, '${region}') && !regex(?area_2, '${region}')))
-
-  # Extract the mRID of the topological node associated with the connectivity node for one of the terminals
-  optional {service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}}
-
-  # Extract power, connected and the mRID of the topoligical node associated with the terminal (if exists)
-  service <${repo}> {
-    ?terminal1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p;
-               cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1
-    optional {?terminal1 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
-  } .
-
-  # Extract connection flag for the second terminal
-  service <${repo}> {?terminal2 cim:ACDCTerminal.connected ?connected_2 . }
+  ?terminal1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p;
+              cim:ACDCTerminal.connected ?connected_1 .
+  ?terminal2 cim:ACDCTerminal.connected ?connected_2 .
+  optional {?terminal1 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
+  optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
 
   # Extract a connection flag that is composed of the inService flag for all conducting equipment connected
-  # to an acline. If one or more of the conducting equipment is not in service, the acline will be considered
-  # out of service as well
-  service <${repo}>
-  { optional
-    { select ?acline (min(?_in_service) as ?in_service)
-      where
-      {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service . }
-      group by ?acline
-    }
+  # to an acline.
+  optional{?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service } .
+
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
+    # Extract name and mrid for aclines
+    ?acline a cim:ACLineSegment;
+      cim:IdentifiedObject.name ?name;
+      cim:IdentifiedObject.mRID ?mrid .
+    filter (!regex(?name, 'HVDC')) .
+    optional {?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code . }
+
+    # Extract properties for the terminal at sequenceNumber 1 for the acline
+    ?terminal1 cim:Terminal.ConductingEquipment ?acline;
+               cim:ACDCTerminal.sequenceNumber 1;
+               cim:Terminal.ConnectivityNode ?con_node .
+
+    # Extract from the connectivity node of terminal1
+    ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 .
+
+    # Extract propertoes for the terminal at squenceNumber 2 for the acline
+    ?terminal2 cim:Terminal.ConductingEquipment ?acline;
+              cim:ACDCTerminal.sequenceNumber 2;
+              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .
+
+    # When a region is provided: only keep results that satisfy either
+    # 1) area_1 = region and area_2 != region
+    # 2) area_2 = region and area_1 != region
+    filter ((regex(?area_1, '${region}') && !regex(?area_2, '${region}')) || (regex(?area_1, '${region}') && !regex(?area_2, '${region}')))
+
+    optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   }
 
-  optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
   filter(?analysis_enabled)
 

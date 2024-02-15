@@ -695,6 +695,7 @@ def get_federated_cim_model(
         "Bus",
         "Converters",
         "Disconnected",
+        "Exchange",
         "Loads",
         "Branch node withdraw",
         "DC Active Power Flow",
