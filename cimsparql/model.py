@@ -709,6 +709,7 @@ def get_federated_cim_model(
         "Two winding transformer",
         "Two winding transformer angle",
         "Synchronous machines",
+        "Windings",
     )
     for query in exec_from_tpssvssh:
         clients[query] = tpsvssh_client
