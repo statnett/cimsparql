@@ -707,6 +707,7 @@ def get_federated_cim_model(
         "Three winding loss",
         "Three winding with dummy nodes",
         "Two winding transformer",
+        "Two winding transformer angle",
         "Synchronous machines",
     )
     for query in exec_from_tpssvssh:

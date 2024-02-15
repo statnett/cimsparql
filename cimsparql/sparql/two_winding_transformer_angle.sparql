@@ -4,19 +4,21 @@ PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select ?mrid ?angle
 where {
-  ?winding1 cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-            cim:IdentifiedObject.mRID ?mrid;
-            cim:TransformerEnd.endNumber 1 .
-  ?winding2 cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-            cim:TransformerEnd.endNumber 2 .
-  ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc;
-               cim:TapChanger.normalStep ?normalstep;
-               ^cim:PhaseTapChanger.TransformerEnd/cim:PowerTransformerEnd.PowerTransformer ?p_transformer .
-  service <${repo}> {
-    ?tap_changer cim:TapChanger.step ?ssh_position .
-    optional{ ?tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?sv_position }
-    bind(coalesce(?sv_position, ?ssh_position) as ?position)
+  ?tap_changer cim:TapChanger.step ?ssh_position .
+  optional{ ?tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?sv_position } .
+
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  service ?eq_repo {
+    ?winding1 cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
+              cim:IdentifiedObject.mRID ?mrid;
+              cim:TransformerEnd.endNumber 1 .
+    ?winding2 cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
+              cim:TransformerEnd.endNumber 2 .
+    ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc;
+                cim:TapChanger.normalStep ?normalstep;
+                ^cim:PhaseTapChanger.TransformerEnd/cim:PowerTransformerEnd.PowerTransformer ?p_transformer .
   }
 
+  bind(coalesce(?sv_position, ?ssh_position) as ?position)
   bind((xsd:double(str(?position)) - xsd:double(str(?normalstep))) * xsd:double(str(?inc)) as ?angle)
 }
