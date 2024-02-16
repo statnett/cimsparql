@@ -55,12 +55,12 @@ def split_tpsvssh(fname: Path) -> tuple[list[str], list[str]]:
 
 
 @functools.lru_cache
-def federated_micro_t1_nl_bg() -> t_common.ModelTest:
+def federated_micro_t1() -> t_common.ModelTest:
     model = None
-    url = t_common.blazegraph_url()
+    url = t_common.rdf4j_url()
     try:
-        tpsvssh_client = new_repo_blazegraph(url, "federated_micro_t1_nl_tpsvssh", "http")
-        eq_client = new_repo_blazegraph(url, "federated_micro_t1_nl_eq", "http")
+        tpsvssh_client = t_common.init_repo_rdf4j(url, "federated_micro_t1_nl_tpsvssh")
+        eq_client = t_common.init_repo_rdf4j(url, "federated_micro_t1_nl_eq")
 
         adaptor = XmlModelAdaptor.from_folder(this_dir.parent / "data/micro")
         adaptor.adapt(eq_client.service_cfg.url)
@@ -107,19 +107,6 @@ def micro_t1_nl() -> t_common.ModelTest:
 
 
 @functools.lru_cache
-def micro_t1_nl_bg() -> t_common.ModelTest:
-    model = None
-    try:
-        url = t_common.blazegraph_url()
-        client = new_repo_blazegraph(url, "micro_t1_nl", "http")
-        upload_micro_model(client)
-        model = SingleClientModel(client)
-    except Exception:
-        logger.exception("Failed to get single client model")
-    return t_common.ModelTest(model)
-
-
-@functools.lru_cache
 def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
     def bg_http(url: str, name: str) -> GraphDBClient:
         return new_repo_blazegraph(url, name, "http")
@@ -152,10 +139,9 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
 
 
 def micro_models() -> list[t_common.ModelTest]:
-    return [micro_t1_nl(), micro_t1_nl_bg(), federated_micro_t1_nl_bg()]
+    return [micro_t1_nl(), federated_micro_t1()]
 
 
 def smallgrid_models() -> list[t_common.ModelTest]:
-    bg_model = small_grid_model(t_common.blazegraph_url(), RestApi.BLAZEGRAPH)
     rdfj4_model = small_grid_model(t_common.rdf4j_url(), RestApi.RDF4J)
-    return [rdfj4_model, bg_model]
+    return [rdfj4_model]
