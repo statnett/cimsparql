@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import asyncio
+import functools
+import logging
 import re
+import time
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from functools import cached_property
 from string import Template
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 import pandas as pd
 
@@ -56,6 +59,23 @@ class ModelConfig:
     system_state_repo: str | None = None
     eq_repo: str | None = None
     value_mappers: Iterable[ValueMapper] = field(default_factory=list)
+
+
+logger = logging.getLogger()
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+def async_time(f: Callable[P, T]) -> Callable[P, T]:
+    @functools.wraps(f)
+    async def wrapped(*args: P.args, **kwargs: P.kwargs) -> T:
+        started = time.time()
+        result = await f(*args, **kwargs)
+        finished = time.time()
+        logger.debug("%s took %f seconds", f.__name__, finished - started)
+        return result
+
+    return wrapped
 
 
 class Model:
@@ -165,6 +185,7 @@ class Model:
     def full_model_query(self) -> str:
         return self.template_to_query(templates.FULL_MODEL_QUERY)
 
+    @async_time
     async def full_model(self) -> FullModelDataFrame:
         """Return all models where all depencies has been created and is available
 
@@ -183,6 +204,7 @@ class Model:
         """Market activation date for this repository."""
         return self.template_to_query(templates.MARKET_DATES_QUERY)
 
+    @async_time
     async def market_dates(self) -> MarketDatesDataFrame:
         df = await self.get_table_and_convert(self.market_dates_query, index="mrid")
         return MarketDatesDataFrame(df)
@@ -195,6 +217,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.THREE_WINDING_DUMMY_NODES_QUERY, substitutes)
 
+    @async_time
     async def bus_data(self, region: str | None = None) -> BusDataFrame:
         """Query name of topological nodes (TP query).
 
@@ -212,6 +235,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.LOADS_QUERY, substitutes)
 
+    @async_time
     async def loads(self, region: str | None = None) -> LoadsDataFrame:
         """Query load data.
 
@@ -226,6 +250,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.WIND_GENERATING_UNITS_QUERY, substitutes)
 
+    @async_time
     async def wind_generating_units(
         self, region: str | None = None
     ) -> WindGeneratingUnitsDataFrame:
@@ -249,6 +274,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.SYNCHRONOUS_MACHINES_QUERY, substitutes)
 
+    @async_time
     async def synchronous_machines(self, region: str | None = None) -> SynchronousMachinesDataFrame:
         query = self.synchronous_machines_query(region)
         df = await self.get_table_and_convert(query, index="mrid")
@@ -258,6 +284,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONNECTIONS_QUERY, substitutes)
 
+    @async_time
     async def connections(self, region: str | None = None) -> ConnectionsDataFrame:
         """Query connectors
 
@@ -282,6 +309,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BORDERS_QUERY, substitutes)
 
+    @async_time
     async def borders(self, region: str | None = None) -> BordersDataFrame:
         """Retrieve ACLineSegments where one terminal is inside and the other is outside the region
 
@@ -297,6 +325,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.EXCHANGE_QUERY, substitutes)
 
+    @async_time
     async def exchange(self, region: str | None = None) -> ExchangeDataFrame:
         """Retrieve ACLineSegments where one terminal is inside and the other is outside the region.
 
@@ -317,6 +346,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONVERTERS_QUERY, substitutes)
 
+    @async_time
     async def converters(self, region: str | None = None) -> ConvertersDataFrame:
         query = self.converters_query(region)
         df = await self.get_table_and_convert(query, index="mrid")
@@ -328,6 +358,7 @@ class Model:
             templates.TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY, substitutes
         )
 
+    @async_time
     async def transformers_connected_to_converter(
         self, region: str | None = None
     ) -> TransfConToConverterDataFrame:
@@ -345,6 +376,7 @@ class Model:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.AC_LINE_QUERY, substitutes)
 
+    @async_time
     async def ac_lines(
         self, region: str | None = None, rate: str | None = None
     ) -> AcLinesDataFrame:
@@ -367,6 +399,7 @@ class Model:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.SERIES_COMPENSATORS_QUERY, substitutes)
 
+    @async_time
     async def series_compensators(
         self, region: str | None = None, rate: str | None = None
     ) -> BranchComponentDataFrame:
@@ -383,6 +416,7 @@ class Model:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.TRANSFORMERS_QUERY, substitutes)
 
+    @async_time
     async def transformers(
         self, region: str | None = None, rate: str | None = None
     ) -> TransformersDataFrame:
@@ -405,6 +439,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.TWO_WINDING_ANGLE_QUERY, substitutes)
 
+    @async_time
     async def two_winding_transformers(
         self, region: str | None = None, rate: str | None = None
     ) -> TransformerWindingDataFrame:
@@ -441,6 +476,7 @@ class Model:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.THREE_WINDING_QUERY, substitutes)
 
+    @async_time
     async def three_winding_transformers(
         self, region: str | None = None, rate: str | None = None
     ) -> TransformerWindingDataFrame:
@@ -472,6 +508,7 @@ class Model:
     def disconnected_query(self) -> str:
         return self.template_to_query(templates.DISCONNECTED_QUERY)
 
+    @async_time
     async def disconnected(self) -> DisconnectedDataFrame:
         """Query disconneced status from ssh profile (not available in GraphDB)."""
         df = await self.get_table_and_convert(self.disconnected_query)
@@ -490,6 +527,7 @@ class Model:
     def transformer_windings_query(self) -> str:
         return self.template_to_query(templates.TRANSFORMER_WINDINGS_QUERY)
 
+    @async_time
     async def transformer_windings(self) -> TransformerWindingsDataFrame:
         """Query windings from EQ profile."""
         df = await self.get_table_and_convert(self.transformer_windings_query, index="w_mrid")
@@ -499,6 +537,7 @@ class Model:
     def coordinates_query(self) -> str:
         return self.template_to_query(templates.COORDINATES_QUERY)
 
+    @async_time
     async def coordinates(self) -> CoordinatesDataFrame:
         return CoordinatesDataFrame(await self.get_table_and_convert(self.coordinates_query))
 
@@ -506,6 +545,7 @@ class Model:
     def st_group_codes_names_query(self) -> str:
         return self.template_to_query(templates.STATION_GROUP_CODE_NAME_QUERY)
 
+    @async_time
     async def station_group_codes_and_names(self) -> StationGroupCodeNameDataFrame:
         df = await self.get_table_and_convert(self.st_group_codes_names_query)
         return StationGroupCodeNameDataFrame(df.set_index("station_group"))
@@ -514,6 +554,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BRANCH_NODE_WITHDRAW_QUERY, substitutes)
 
+    @async_time
     async def branch_node_withdraw(self, region: str | None = None) -> BranchWithdrawDataFrame:
         """Query branch flow from sv profile."""
         query = self.branch_node_withdraw_query(region)
@@ -524,6 +565,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.DC_ACTIVE_POWER_FLOW_QUERY, substitutes)
 
+    @async_time
     async def dc_active_flow(self, region: str | None = None) -> DcActiveFlowDataFrame:
         query = self.dc_active_flow_query(region)
         df = await self.get_table_and_convert(query)
@@ -536,6 +578,7 @@ class Model:
     def sv_injection_query(self) -> str:
         return self.template_to_query(templates.SV_INJECTION_QUERY)
 
+    @async_time
     async def sv_injection(self) -> SvInjectionDataFrame:
         df = await self.get_table_and_convert(self.sv_injection_query)
         return SvInjectionDataFrame(df)
@@ -544,6 +587,7 @@ class Model:
     def regions_query(self) -> str:
         return self.template_to_query(templates.REGIONS_QUERY)
 
+    @async_time
     async def regions(self) -> RegionsDataFrame:
         """Query regions
 
@@ -565,6 +609,7 @@ class Model:
     def hvdc_converter_bidzone_query(self) -> str:
         return self.template_to_query(templates.HVDC_CONVERTER_BIDZONES)
 
+    @async_time
     async def hvdc_converter_bidzones(self) -> HVDCBidzonesDataFrame:
         """
         Fetching mrid of converters placed on HVDC exchange corridors together with
@@ -577,6 +622,7 @@ class Model:
     def ras_equipment_query(self) -> str:
         return self.template_to_query(templates.RAS_EQUIPMENT_QUERY)
 
+    @async_time
     async def ras_equipment(self) -> RASEquipmentDataFrame:
         df = await self.get_table_and_convert(self.ras_equipment_query)
         return RASEquipmentDataFrame(df)
@@ -608,6 +654,7 @@ class Model:
     def switches_query(self) -> str:
         return self.template_to_query(templates.SWITCHES_QUERY)
 
+    @async_time
     async def switches(self) -> SwitchesDataFrame:
         df = await self.get_table_and_convert(self.switches_query())
         return SwitchesDataFrame(df)
@@ -616,6 +663,7 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONNECTIVITY_NODES_QUERY, substitutes)
 
+    @async_time
     async def connectivity_nodes(self, region: str | None = None) -> ConnectivityNodeDataFrame:
         df = await self.get_table_and_convert(self.connectivity_nodes_query(region), index="mrid")
         return ConnectivityNodeDataFrame(df)
