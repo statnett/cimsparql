@@ -33,7 +33,7 @@ select ?t_mrid ?connected where
 
 @pytest.mark.asyncio
 async def test_subj_conversion():
-    tm = t_entsoe.micro_t1_nl_bg()
+    tm = t_entsoe.micro_t1_nl()
     t_common.check_model(tm)
     model = tm.model
     model2 = deepcopy(model)
