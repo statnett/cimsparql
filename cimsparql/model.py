@@ -699,6 +699,7 @@ def get_federated_cim_model(
         "Loads",
         "Branch node withdraw",
         "DC Active Power Flow",
+        "Full model",
         "Series compensators",
         "SV branch",
         "Power flow",
