@@ -37,7 +37,7 @@ jobs:
       - name: Install and configure Poetry
         uses: abatilo/actions-poetry@v3.0.0
         with:
-          poetry-version: 1.6.1
+          poetry-version: 1.8.2
       - name: Install dynamic versioning
         run: poetry self add "poetry-dynamic-versioning[plugin]"
       - name: build package
@@ -64,7 +64,7 @@ jobs:
       - name: Install and configure Poetry
         uses: abatilo/actions-poetry@v3.0.0
         with:
-          poetry-version: 1.6.1
+          poetry-version: 1.8.2
       - name: Install dynamic versioning
         run: poetry self add "poetry-dynamic-versioning[plugin]"
       - name: Install dependencies

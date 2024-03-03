@@ -22,7 +22,7 @@ jobs:
       - name: Install and configure Poetry
         uses: abatilo/actions-poetry@v3.0.0
         with:
-          poetry-version: 1.6.1
+          poetry-version: 1.8.2
 
       - name: Set poetry virtualenv to local
         run: poetry config virtualenvs.in-project true
@@ -42,7 +42,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ['3.10', '3.11']
-        poetry-version: [1.6.1]
+        poetry-version: [1.8.2]
 
     services:
       rdf4j:
