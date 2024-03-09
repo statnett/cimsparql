@@ -1,8 +1,8 @@
 # Name: Three winding
 PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
+PREFIX pti: <${pti}>
 PREFIX xsd: <${xsd}>
-select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2) ?angle ?ratio ?connectivity_node_1 (?node_2 as ?connectivity_node_2)
+select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate ?angle ?ratio ?connectivity_node_1 (?node_2 as ?connectivity_node_2)
 where {
   # Use mrid of transformer as dummy node
   ?p_transformer cim:IdentifiedObject.mRID ?node_2;
@@ -28,14 +28,11 @@ where {
   ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un ;
     cim:IdentifiedObject.mRID ?connectivity_node_1 .
 
-  # Optionally extract bidzone for substations
-  optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
-
   # Assign the mRID of the topological node for the connectivity nodes to node_1
   service <${repo}> {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .}
 
   # Exxtract eonnected status for terminal and optionally in_service flag for windings
-  service <${repo}> {?terminal cim:Terminal.connected|cim:ACDCTerminal.connected ?connected .}
+  service <${repo}> {?terminal cim:ACDCTerminal.connected ?connected .}
   optional {service <${repo}> {?winding ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service}} .
 
   # Extract three winding transformers
@@ -55,9 +52,9 @@ where {
           cim:IdentifiedObject.name '${rate}';
           cim:ActivePowerLimit.value ?rate .
   }
-  optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
-  filter(?network_analysis)
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  optional {?p_transformer pti:Equipment.excludeFromCase ?_exclude_from_case} .
+  bind(coalesce(?_exclude_from_case, false) as ?exclude_from_case)
+  filter (!?exclude_from_case)
 
   # Assign status flag to the transformer. The first that exists is used
   # 1) in_service flag on the transformer

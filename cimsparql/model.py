@@ -528,9 +528,8 @@ class Model:
         query = self.dc_active_flow_query(region)
         df = await self.get_table_and_convert(query)
         # Unable to group on max within the sparql query so we do it here.
-        df = df.iloc[df.groupby("mrid")["p"].idxmax()].set_index("mrid")
-        df["p"] *= df["direction"]
-        return DcActiveFlowDataFrame(df.drop(columns="direction"))
+        df = df.iloc[df.eval("p_abs = abs(p)").groupby("mrid")["p_abs"].idxmax()].set_index("mrid")
+        return DcActiveFlowDataFrame(df)
 
     @property
     def sv_injection_query(self) -> str:
@@ -570,7 +569,7 @@ class Model:
         Fetching mrid of converters placed on HVDC exchange corridors together with
         to/from bidzone
         """
-        df = await self.get_table_and_convert(self.hvdc_converter_bidzone_query, index="mrid")
+        df = await self.get_table_and_convert(self.hvdc_converter_bidzone_query)
         return HVDCBidzonesDataFrame(df)
 
     @property

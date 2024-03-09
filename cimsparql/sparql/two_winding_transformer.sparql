@@ -1,9 +1,9 @@
 # Name: Two winding transformer
 PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
+PREFIX pti: <${pti}>
 PREFIX xsd: <${xsd}>
 
-select ?mrid ?name ?bidzone_1 ?bidzone_2 ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status (?un_1 as ?un) ?x ?b ?g ?angle ?ratio ?connectivity_node_1 ?connectivity_node_2
+select ?mrid ?name ?node_1 ?node_2 ?ploss_1 ?ploss_2 ?r ?rate ?status (?un_1 as ?un) ?x ?b ?g ?angle ?ratio ?connectivity_node_1 ?connectivity_node_2
 where
 {
     # Collect properties for terminal_1
@@ -20,8 +20,7 @@ where
         # Extract two winding transformers
         {
             select ?p_transformer where {
-                ?p_transformer a cim:PowerTransformer;
-                               ^cim:PowerTransformerEnd.PowerTransformer ?power_transformer_end
+                ?power_transformer_end cim:PowerTransformerEnd.PowerTransformer ?p_transformer
             }
             group by ?p_transformer
             having (count(*) = 2)
@@ -30,11 +29,9 @@ where
                        cim:Equipment.EquipmentContainer ?substation;
                        cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
         filter(regex(?area, '${region}'))
-        optional {?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone }.
-        optional {
-            ?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis
-        }
-        bind(coalesce(?_network_analysis, True) as ?network_analysis)
+        optional {?p_transformer pti:Equipment.excludeFromCase ?_exclude_from_case} .
+        bind(coalesce(?_exclude_from_case, false) as ?exclude_from_case)
+        filter (!?exclude_from_case)
         # Extract for winding_1
         ?winding_1 cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
                    cim:TransformerEnd.Terminal ?terminal_1;
@@ -77,6 +74,4 @@ where
     bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)
     #  ratio: n = Us / Up (secondary (2) / primary (1))
     bind((xsd:double(str(?ubase_2)) / xsd:double(str(?un_2))) / (xsd:double(str(?ubase_1)) / xsd:double(str(?un_1))) as ?ratio)
-    bind(?bidzone as ?bidzone_1)
-    bind(?bidzone as ?bidzone_2)
 }

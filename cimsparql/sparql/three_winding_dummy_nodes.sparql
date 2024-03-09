@@ -1,6 +1,8 @@
 # Name: Three winding with dummy nodes
 PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
+PREFIX entsoe:<${entsoe}>
+PREFIX entsoe2:<${entsoe2}>
+PREFIX pti:<${pti}>
 select ?node ?busname (?container_name as ?substation) ?un (?container_mrid as ?substation_mrid) ?bidzone ?island (False as ?is_swing_bus) ?connectivity_node
 where
 {
@@ -33,8 +35,8 @@ where
     }.
     bind(coalesce(?island_name, "Unknown") as ?island)
   }
-  optional {?container SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone}
-  optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
-  filter(?network_analysis)
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  optional {?container pti:Substation.EnergySchedulingArea/entsoe2:EnergySchedulingArea.EnergyCongestionZone/entsoe:IdentifiedObject.energyIdentCodeEic ?bidzone}.
+  optional {?p_transformer pti:Equipment.excludeFromCase ?_exclude_from_case} .
+  bind(coalesce(?_exclude_from_case, false) as ?exclude_from_case)
+  filter (!?exclude_from_case)
 }

@@ -1,19 +1,26 @@
 # Name: Converter HVDC bidzones
 PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
-PREFIX ALG:<${ALG}>
+PREFIX pti:<${pti}>
+PREFIX entsoe2:<${entsoe2}>
+PREFIX entsoe:<${entsoe}>
+select distinct ?bidzone_1 ?bidzone_2 ?converter_1 ?converter_2 ?name_1 ?name_2
+where {
+  ?line a cim:DCLineSegment;
+        cim:IdentifiedObject.name ?name.
 
-select distinct ?mrid ?bidzone_1 ?bidzone_2
-where
-{
-  ?converter ALG:DCConverter.DCPole | ALG:VoltageSourceConverter.DCPole ?pole ;
-      cim:IdentifiedObject.mRID ?mrid .
-  ?pole cim:Equipment.EquipmentContainer/SN:Substation.MarketDeliveryPoint ?delivery_point.
+  ?terminal_1 cim:DCTerminal.DCConductingEquipment ?line;
+              cim:Terminal.sequenceNumber 1;
+              cim:DCBaseTerminal.DCNode/^cim:DCBaseTerminal.DCNode/cim:ACDCConverterDCTerminal.DCConductingEquipment ?conducting_equipment_1.
+  ?conducting_equipment_1 ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/pti:Substation.EnergySchedulingArea/entsoe2:EnergySchedulingArea.EnergyCongestionZone/entsoe:IdentifiedObject.energyIdentCodeEic ?bidzone_1;
+			  cim:IdentifiedObject.mRID ?converter_1;
+     cim:IdentifiedObject.name ?name_1.
 
-  ?delivery_point SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone_1 .
+  ?terminal_2 cim:DCTerminal.DCConductingEquipment ?line;
+              cim:Terminal.sequenceNumber 2;
+              cim:DCBaseTerminal.DCNode/^cim:DCBaseTerminal.DCNode/cim:ACDCConverterDCTerminal.DCConductingEquipment ?conducting_equipment_2.
+  ?conducting_equipment_2 ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/pti:Substation.EnergySchedulingArea/entsoe2:EnergySchedulingArea.EnergyCongestionZone/entsoe:IdentifiedObject.energyIdentCodeEic ?bidzone_2;
+			  cim:IdentifiedObject.mRID ?converter_2;
+     cim:IdentifiedObject.name ?name_2.
 
-  # Extract the destination point from the line that has one end matching bidzone_1
-  ?line SN:Line.FromMarketDeliveryPoint ?delivery_point;
-        SN:Line.ToMarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone_2
-  filter(?bidzone_1 != ?bidzone_2)
+  filter (?bidzone_1 != ?bidzone_2)
 }

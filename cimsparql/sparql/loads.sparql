@@ -1,7 +1,7 @@
 # Name: Loads
 PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
-select ?mrid ?name ?node ?substation_mrid ?bidzone ?status ?p ?q ?station_group ?connectivity_node
+PREFIX pti:<${pti}>
+select ?mrid ?name ?node ?status ?p ?q ?station_group ?connectivity_node
 where {
 
   # Extrcact connected flag and optionally the mRID of the topological node associated with the terminal
@@ -24,16 +24,15 @@ where {
          cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation.
 
   # Extract area and mRID (referred to as 'station') for the substation of each load
-  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-               cim:IdentifiedObject.mRID ?substation_mrid .
+  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area.
+
   filter regex(?area, '${region}')
 
   # Optionally extract bidzone for each substation and station_group for each load
-  optional {?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
-  optional {?load cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
-  optional {?load SN:Equipment.networkAnalysisEnable ?_network_analysis} .
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
-  filter (?network_analysis)
+  optional {?load pti:Equipment.excludeFromCase ?_exclude_from_case} .
+  bind(coalesce(?_exclude_from_case, false) as ?exclude_from_case)
+  filter (!?exclude_from_case)
+  optional {?load cim:NonConformLoad.LoadGroup/pti:NonConformLoadGroup.ScheduleResource/pti:ScheduleResource.marketCode ?station_group} .
 
   # Extract mRID and connectivity node for each terminal associated with a load
   ?terminal cim:Terminal.ConductingEquipment ?load;

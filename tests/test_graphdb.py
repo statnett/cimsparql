@@ -92,14 +92,18 @@ async def test_regions(model: SingleClientModel):
 
 
 @pytest.mark.asyncio
+@pytest.mark.xfail(reason="HVDC substations in wrong bidzone (e.g. HVDC_GB is placed in NO2)")
 async def test_hvdc_converters_bidzones(model: SingleClientModel):
     df = await model.hvdc_converter_bidzones()
 
     corridors = set(zip(df["bidzone_1"], df["bidzone_2"], strict=True))
 
     # Check data quality in the models
-    expect_corridors = {("SE4", "SE3"), ("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB"), ("NO2", "NL")}
+    expect_corridors = {("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB"), ("NO2", "NL")}
     assert expect_corridors.issubset(corridors)
+
+    converter_df = await model.converters("NO")
+    assert set(converter_df.index).issubset(df.index)
 
 
 @pytest.mark.asyncio

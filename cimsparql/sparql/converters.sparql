@@ -1,8 +1,8 @@
 # Name: Converters
 PREFIX cim:<${cim}>
+PREFIX pti:<${pti}>
 PREFIX xsd:<${xsd}>
-PREFIX SN:<${SN}>
-select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node ?connectivity_node
+select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node ?connectivity_node ?area
 where {
   # Extract active and reactive power for the converter
   ?converter cim:ACDCConverter.p ?p;
@@ -22,23 +22,23 @@ where {
   # Extract mrid, name, substation and optionally aliasName of the converter
   ?converter cim:IdentifiedObject.mRID ?mrid;
              cim:IdentifiedObject.name ?name;
-             cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
-  optional {?converter cim:IdentifiedObject.aliasName ?alias .}
+             cim:Equipment.EquipmentContainer/cim:DCConverterUnit.Substation ?substation .
+  optional {?converter cim:IdentifiedObject.aliasName ?alias}
 
-  # Find area and mRID for the substation
-  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-              cim:IdentifiedObject.mRID ?substation_mrid .
+    # Find area and mRID for the substation
+    ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+		cim:IdentifiedObject.mRID ?substation_mrid .
 
-  # Extract properties for the terminals for the converter
-  ?terminal cim:Terminal.ConductingEquipment ?converter;
-            cim:Terminal.ConnectivityNode ?con_node;
-            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
-  ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
-  optional {?converter SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
-  filter regex(?area, '${region}')
-  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  filter(?analysis_enabled)
+    # Extract properties for the terminals for the converter
+    ?terminal cim:Terminal.ConductingEquipment ?converter;
+              cim:Terminal.ConnectivityNode ?con_node .
+    ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
+    filter regex(?area, '${region}')
   }
+  optional {?converter pti:Equipment.excludeFromCase ?_exclude_from_case} .
+  bind(coalesce(?_exclude_from_case, false) as ?exclude_from_case)
+  filter (!?exclude_from_case)
+
 
   # Asiign an mrid to the ?node variable. The first that exists is choden
   # 1) mRID of the topological node associated with the connectivity node

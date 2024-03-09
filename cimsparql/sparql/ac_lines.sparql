@@ -1,7 +1,7 @@
 # Name: AC Lines
 PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
+PREFIX pti:<${pti}>
 select
 # Below a lot of max aggregation is performed. For variables without any suffix (_1 og _2) all values within the
 # group are equal and we might as well just pick the maximum value. For variables with the suffix _1 og _2, the
@@ -11,8 +11,6 @@ select
 # thus max-aggregation will pick True if it exists in the group
 (max(?mrid) as ?mrid)
 (max(?name) as ?name)
-(max(?bidzone_1) as ?bidzone_1)
-(max(?bidzone_2) as ?bidzone_2)
 (max(?node_1) as ?node_1)
 (max(?node_2) as ?node_2)
 
@@ -46,7 +44,7 @@ where {
 
   ?terminal cim:Terminal.ConductingEquipment ?acline;
             cim:Terminal.ConnectivityNode ?con_node;
-            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
+            cim:ACDCTerminal.sequenceNumber ?nr .
 
   # Find substation of each connectivity node of the terminals above
   ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation ;
@@ -54,12 +52,9 @@ where {
 
   # Find area and optionally bidzone for each substation
   ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-  optional {
-    ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone .
-  }
 
   optional {?acline cim:ACLineSegment.gch ?g .}
-  optional {?acline SN:Equipment.networkAnalysisEnable ?analysis_enabled .}
+  optional {?acline pti:Equipment.excludeFromCase ?exclude_from_case} .
 
   # If exists, extract active power limit for acline
   optional {
@@ -87,11 +82,9 @@ where {
   bind(if(?nr = 1, str(?p), '') as ?p_1)
   bind(if(?nr = 1, ?node, '') as ?node_1)
   bind(if(?nr = 1, ?connected, False) as ?connected_1)
-  bind(if(?nr = 1, ?bidzone, '') as ?bidzone_1)
   bind(if(?nr = 2, str(?p), '') as ?p_2)
   bind(if(?nr = 2, ?node, '') as ?node_2)
   bind(if(?nr = 2, ?connected, False) as ?connected_2)
-  bind(if(?nr = 2, ?bidzone, '') as  ?bidzone_2)
   bind(if(?nr = 1, ?connectivity_node, '') as ?connectivity_node_1)
   bind(if(?nr = 2, ?connectivity_node, '') as ?connectivity_node_2)
   filter(regex(?area, '${region}'))
@@ -99,5 +92,4 @@ where {
 # Filtration rules
 # 1) We don't need lines connecting nodes to themselves
 # 2) Only extract lines where at least two nodes exist
-# 3) Only extract lines where SN:Equipment.networkAnalysisEnable is True (if the field exists)
-having((max(?node_1) != max(?node_2)) && (max(?node_1) != "") && (max(?node_2) != "") && (count(*) > 1) && coalesce(max(?analysis_enabled), True))
+having((max(?node_1) != max(?node_2)) && (max(?node_1) != "") && (max(?node_2) != "") && (count(*) > 1) && coalesce(max(!?exclude_from_case), true))

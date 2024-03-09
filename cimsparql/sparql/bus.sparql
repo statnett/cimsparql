@@ -1,6 +1,8 @@
 # Name: Bus
 PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
+PREFIX entsoe:<${entsoe}>
+PREFIX entsoe2:<${entsoe2}>
+PREFIX pti:<${pti}>
 select (?mrid as ?node) ?busname (?substation_name as ?substation) ?un ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus
 where {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
@@ -28,6 +30,6 @@ where {
 	       cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
 
   # Extract the bidzone of each substation if it exists
-  optional {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
+  optional {?_substation pti:Substation.EnergySchedulingArea/entsoe2:EnergySchedulingArea.EnergyCongestionZone/entsoe:IdentifiedObject.energyIdentCodeEic ?bidzone} .
   FILTER regex(?area, '${region}')
 }

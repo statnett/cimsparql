@@ -22,7 +22,8 @@ class FullModelSchema(JsonSchemaOut):
 
     @pa.dataframe_check
     def unique_time(cls, df: DataFrame) -> bool:
-        return len(df["time"].unique()) == 1
+        n = len(df["time"].unique())
+        return n == 1 or n == 0
 
 
 FullModelDataFrame = DataFrame[FullModelSchema]
@@ -76,8 +77,6 @@ BusDataFrame = DataFrame[BusDataSchema]
 
 class LoadsSchema(NamedResourceSchema):
     node: Series[str] = pa.Field()
-    substation_mrid: Series[str] = pa.Field()
-    bidzone: Series[str] = pa.Field(nullable=True)
     status: Series[bool] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
@@ -88,7 +87,7 @@ class LoadsSchema(NamedResourceSchema):
 LoadsDataFrame = DataFrame[LoadsSchema]
 
 
-class WindGeneratingUnitsSchema(NamedMarketResourceSchema):
+class WindGeneratingUnitsSchema(NamedResourceSchema):
     station_group: Series[str] = pa.Field(nullable=True)
     min_p: Series[float] = pa.Field()
     max_p: Series[float] = pa.Field()
@@ -98,7 +97,7 @@ class WindGeneratingUnitsSchema(NamedMarketResourceSchema):
 WindGeneratingUnitsDataFrame = DataFrame[WindGeneratingUnitsSchema]
 
 
-class SynchronousMachinesSchema(NamedMarketResourceSchema):
+class SynchronousMachinesSchema(NamedResourceSchema):
     node: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     station_group: Series[str] = pa.Field(nullable=True)
@@ -107,7 +106,6 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     maxP: Series[float] = pa.Field(nullable=True)  # noqa N815
     minP: Series[float] = pa.Field(nullable=True)  # noqa N815
     MO: Series[float] = pa.Field(nullable=True)
-    bidzone: Series[str] = pa.Field(nullable=True)
     sn: Series[float] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
@@ -177,8 +175,6 @@ CoordinatesDataFrame = DataFrame[CoordinatesSchema]
 
 
 class BranchComponentSchema(NamedResourceSchema):
-    bidzone_1: Series[str] = pa.Field(nullable=True)
-    bidzone_2: Series[str] = pa.Field(nullable=True)
     node_1: Series[str] = pa.Field()
     node_2: Series[str] = pa.Field()
     ploss_1: Series[float] = pa.Field(nullable=True)
@@ -295,9 +291,13 @@ class StationGroupCodeNameSchema(JsonSchemaOut):
 StationGroupCodeNameDataFrame = DataFrame[StationGroupCodeNameSchema]
 
 
-class HVDCBidzonesSchema(MridResourceSchema):
+class HVDCBidzonesSchema(JsonSchemaOut):
     bidzone_1: Series[str] = pa.Field()
     bidzone_2: Series[str] = pa.Field()
+    converter_1: Series[str] = pa.Field()
+    converter_2: Series[str] = pa.Field()
+    name_1: Series[str] = pa.Field()
+    name_2: Series[str] = pa.Field()
 
 
 HVDCBidzonesDataFrame = DataFrame[HVDCBidzonesSchema]

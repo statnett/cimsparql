@@ -1,6 +1,6 @@
 # Name: Branch node withdraw
 PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
+PREFIX pti:<${pti}>
 select ?mrid ?node ?p ?q ?connectivity_node
 where {
   # Extract properties of each terminal from the SV/TP/SSH profile.
@@ -19,7 +19,7 @@ where {
     # Specify components wer are interested in
     values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer} .
     ?component a ?rdf_type .
-    optional {?component SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+    optional {?component pti:Equipment.excludeFromCase ?_exclude_from_case} .
     ?terminal cim:Terminal.ConductingEquipment ?component;
             cim:IdentifiedObject.mRID ?mrid;
             cim:Terminal.ConnectivityNode ?con_node .
@@ -31,13 +31,13 @@ where {
   }
 
   # Assign analysis enabled (all True if not exist)
-  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+  bind(coalesce(?_exclude_from_case, false) as ?exclude_from_case)
 
   # Assign an mRID to the ?node variable. The first that exists is used
   # 1) mRID of the topological node associated with the connectivity node the terminal
   # 2) mrID of the topoligical node associated with the terminel
   # 3) mRID of the terminal
   bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?mrid) as ?node)
-  filter(?analysis_enabled)
+  filter(!?exclude_from_case)
   filter(?connected)
 }
