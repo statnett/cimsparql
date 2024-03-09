@@ -1,4 +1,5 @@
 """Graphdb CIM sparql client"""
+
 from __future__ import annotations
 
 import json

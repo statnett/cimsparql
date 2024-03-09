@@ -31,7 +31,6 @@ pytest-integration = "*"
 pytest-profiling = "*"
 
 [tool.poetry.group.style.dependencies]
-black = "*"
 ruff = "*"
 
 [tool.poetry.group.dev.dependencies]
@@ -54,6 +53,11 @@ style = "semver"
 pattern = '^(?P<base>\d+\.\d+\.\d+)(-?((?P<stage>[a-zA-Z]+)\.?(?P<revision>\d+)?))?$'
 
 [tool.ruff]
+# Assume Python 3.10
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
 select = [
   "A", # flake8-builtins
   "ANN", # flake8-annotations
@@ -113,46 +117,24 @@ exclude = [
     "venv",
 ]
 
-# Same as Black.
-line-length = 100
-
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-# Assume Python 3.10
-target-version = "py310"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "docs/conf.py" = ["A001"]
 "tests/test*.py" = ["ANN201"]
 
-[tool.ruff.pep8-naming]
+[tool.ruff.lint.pep8-naming]
 # Allow Pydantic's `@validator` decorator to trigger class method treatment.
 classmethod-decorators = ["pandera.dataframe_check"]
 
-[tool.ruff.flake8-import-conventions]
+[tool.ruff.lint.flake8-import-conventions]
 
-[tool.ruff.flake8-import-conventions.aliases]
+[tool.ruff.lint.flake8-import-conventions.aliases]
 # Declare the default aliases.
 pandas = "pd"
 pandera = "pa"
-
-[tool.black]
-line-length = 100
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | profiling
-)/
-'''
 
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration

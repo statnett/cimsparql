@@ -1,4 +1,5 @@
 """The cimsparql.model module contains the base class Model."""
+
 from __future__ import annotations
 
 import functools
