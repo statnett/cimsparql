@@ -4,6 +4,7 @@ Will handle authenticated instances of GraphDB where user and password is given 
 variables ("GRAPHDB_USER" & "GRAPHDB_USER_PASSWD").
 
 """
+
 from __future__ import annotations
 
 import os

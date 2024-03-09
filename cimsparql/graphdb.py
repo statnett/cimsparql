@@ -1,4 +1,5 @@
 """Graphdb CIM sparql client"""
+
 from __future__ import annotations
 
 import json
@@ -131,10 +132,10 @@ if TYPE_CHECKING:
     P = ParamSpec("P")
     T = TypeVar("T")
 
-    RDF4J_DECORATED = Callable[Concatenate[GraphDBClient, P], T]
 
-
-def require_rdf4j(f: RDF4J_DECORATED) -> Callable[RDF4J_DECORATED]:
+def require_rdf4j(
+    f: Callable[Concatenate[GraphDBClient, P], T],
+) -> Callable[Concatenate[GraphDBClient, P], T]:
     def wrapper(cli: GraphDBClient, *args: P.args, **kwargs: P.kwargs) -> T:
         if cli.service_cfg.rest_api != RestApi.RDF4J:
             raise NotImplementedError("Function only implemented for RDF4J")
