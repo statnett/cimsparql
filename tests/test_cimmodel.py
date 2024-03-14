@@ -1,12 +1,18 @@
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
 import pytest
+import werkzeug
+from pytest_httpserver import HTTPServer
 
-from cimsparql.graphdb import GraphDBClient
+from cimsparql.adaptions import is_uuid
+from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig
 from cimsparql.model import Model, ModelConfig, get_federated_cim_model, query_name
+from cimsparql.sparql_result_json import SparqlResultJsonFactory
 from cimsparql.templates import sparql_folder
+from cimsparql.type_mapper import TypeMapper
 
 
 def test_map_data_types(monkeypatch: pytest.MonkeyPatch):
@@ -75,3 +81,57 @@ def test_multi_client_model_defined_clients_exist():
 
     # Verify that all queries with a special client is one of the pre-defined queries
     assert queries_with_client.issubset(query_names)
+
+
+class LocalTypeMapper(TypeMapper):
+    def get_map(self) -> dict[str, Any]:
+        return {}
+
+
+class CorrelationIdPicker:
+    def __init__(self) -> None:
+        self.correlation_id = None
+
+    def extract_correlation_id(self, request: werkzeug.Request) -> werkzeug.Response:
+        self.correlation_id = request.headers.get(GraphDBClient.x_correlation_id)
+        result = SparqlResultJsonFactory.build().model_dump_json()
+        return werkzeug.Response(result, status=HTTPStatus.OK, mimetype="application/json")
+
+
+def test_correlation_id(httpserver: HTTPServer):
+    correlation_picker = CorrelationIdPicker()
+    httpserver.expect_request("/sparql").respond_with_handler(
+        correlation_picker.extract_correlation_id
+    )
+    config = ServiceConfig(
+        server=httpserver.url_for("/sparql"), rest_api=RestApi.DIRECT_SPARQL_ENDPOINT
+    )
+
+    model = Model(
+        {"name1": GraphDBClient(config), "name2": GraphDBClient(config)},
+        mapper=LocalTypeMapper(config),
+    )
+    query1 = "# Name: name1\nselect * {?s ?p ?o}"
+    query2 = "# Name: name2\nselect * {?s ?p ?o}"
+
+    model.get_table_and_convert(query1)  # Runs from first client
+    assert correlation_picker.correlation_id is None
+    model.get_table_and_convert(query2)  # Runs from second client
+    assert correlation_picker.correlation_id is None
+
+    # Run from within context
+    with model:
+        model.get_table_and_convert(query1)  # Runs from first client
+        assert is_uuid(correlation_picker.correlation_id)
+
+        c_id = correlation_picker.correlation_id
+        model.get_table_and_convert(
+            query2
+        )  # Runs from second client (but should have same correlation id)
+        assert correlation_picker.correlation_id == c_id
+
+    # Run again and confirm that correlation id is removed
+    model.get_table_and_convert(query1)  # Runs from first client
+    assert correlation_picker.correlation_id is None
+    model.get_table_and_convert(query2)  # Runs from second client
+    assert correlation_picker.correlation_id is None
