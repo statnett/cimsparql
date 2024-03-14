@@ -16,7 +16,6 @@ import tenacity
 from SPARQLWrapper import JSON, POST, SPARQLWrapper
 from strenum import StrEnum
 
-from cimsparql.async_sparql_wrapper import AsyncSparqlWrapper
 from cimsparql.sparql_result_json import SparqlResultJson
 from cimsparql.url import service, service_blazegraph
 
@@ -355,7 +354,7 @@ class RepoInfo:
     writable: bool
 
 
-async def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
+def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
     """
     List available repositories
     """
@@ -368,8 +367,8 @@ async def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
 
     url = f"{service_cfg.protocol}://{service_cfg.server}/repositories"
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, auth=auth, headers={"Accept": "application/json"})
+    with httpx.Client() as client:
+        response = client.get(url, auth=auth, headers={"Accept": "application/json"})
     response.raise_for_status()
 
     def _repo_info(repo: dict[str, str]) -> RepoInfo:
@@ -456,55 +455,3 @@ def delete_repo_endpoint(config: ServiceConfig) -> str:
         # Remove /sparql at the end
         return config.url.rpartition("/")[0]
     return config.url
-
-
-class AsyncGraphDBClient(GraphDBClient):
-    """Asynchronous GraphDB client for sending sparql queries to GraphDB server
-
-    Args:
-        service_cfg: Service configuration (see ServiceConfig)
-        custom_headers: Added to SPARQLWrapper using addCustomHttpHeader
-
-    Example:
-    >>> import asyncio
-    >>> from cimsparql.graphdb import AsyncGraphDBClient
-    >>> gdbc = AsyncGraphDBClient()
-    >>> query = 'select * where { ?subject ?predicate ?object } limit 10'
-    >>> df, row = await gdbc.get_table(query)
-
-    Where row is the output of graphdb.data_row
-    """
-
-    def create_sparql_wrapper(self) -> AsyncSparqlWrapper:
-        return AsyncSparqlWrapper(
-            self.service_cfg.url,
-            ca_bundle=self.service_cfg.ca_bundle,
-            num_retries=self.service_cfg.num_retries,
-            max_delay_seconds=self.service_cfg.max_delay_seconds,
-        )
-
-    async def _exec_query(self, query: str) -> SparqlResult:
-        self._prep_query(query)
-        results = await self.sparql.query_and_convert()
-        return self._process_result(results)
-
-    async def exec_query(self, query: str) -> list[dict[str, str]]:
-        out = await self._exec_query(query)
-        return out["out"]
-
-    async def get_table(self, query: str) -> tuple[pd.DataFrame, dict[str, str]]:
-        """Get result from sparql query as a pandas dataframe
-
-        Args:
-           query: to sparql server
-           limit: limit number of resulting rows
-        """
-        res = await self._exec_query(query)
-        return self._convert_query_result_to_df(res)
-
-
-def make_async(client: GraphDBClient) -> AsyncGraphDBClient:
-    """
-    Convenience function that creates a new async graph db client from an existing client
-    """
-    return AsyncGraphDBClient(client.service_cfg)
