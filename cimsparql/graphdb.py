@@ -158,6 +158,8 @@ class GraphDBClient:
     Where row is the output of graphdb.data_row
     """
 
+    x_correlation_id = "x-correlation-id"
+
     def __init__(
         self,
         service_cfg: ServiceConfig | None = None,
@@ -175,6 +177,12 @@ class GraphDBClient:
             for name, value in custom_headers.items():
                 self.sparql.addCustomHttpHeader(name, value)
         self._prefixes = None
+
+    def add_correlation_id_to_header(self, correlation_id: str) -> None:
+        self.sparql.addCustomHttpHeader(self.x_correlation_id, correlation_id)
+
+    def clear_correlation_id_from_header(self) -> None:
+        self.sparql.clearCustomHttpHeader(self.x_correlation_id)
 
     def create_sparql_wrapper(self) -> SPARQLWrapper:
         return SPARQLWrapper(self.service_cfg.url)

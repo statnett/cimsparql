@@ -10,7 +10,9 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from functools import cached_property
 from string import Template
+from types import TracebackType
 from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from uuid import uuid4
 
 import pandas as pd
 
@@ -104,6 +106,18 @@ class Model:
         there is only one client so the same client is returned in all cases
         """
         return self.clients[query_name]
+
+    def __enter__(self) -> Model:
+        transaction_id = str(uuid4())
+        for client in self.clients.values():
+            client.add_correlation_id_to_header(transaction_id)
+
+    def __exit__(
+        self, exc_type: type[BaseException], exc: BaseException, exc_tb: TracebackType
+    ) -> None:
+        _, _, _ = exc_type, exc, exc_tb
+        for client in self.clients.values():
+            client.clear_correlation_id_from_header()
 
     @property
     def client(self) -> GraphDBClient:
