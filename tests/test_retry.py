@@ -5,10 +5,8 @@ from http import HTTPStatus
 import pytest
 import tenacity
 from pytest_httpserver import HTTPServer
-from SPARQLWrapper import JSON
 from werkzeug import Request, Response
 
-from cimsparql.async_sparql_wrapper import AsyncSparqlWrapper
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig
 from cimsparql.sparql_result_json import SparqlResultJsonFactory
 
@@ -33,28 +31,6 @@ def fail_first_ok_second_server(httpserver: HTTPServer) -> str:
     handler = FailFirstOkSecondHandler()
     httpserver.expect_request("/sparql").respond_with_handler(handler.request_handler)
     return httpserver.url_for("/sparql")
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("validate", [True, False])
-@pytest.mark.parametrize(
-    "num_retries,exception_context",
-    [
-        (0, pytest.raises(tenacity.RetryError)),  # Expect error because no retry
-        (1, nullcontext()),  # Expect no error because we have retry
-    ],
-)
-async def test_retry_async(
-    httpserver: HTTPServer,
-    num_retries: int,
-    exception_context: AbstractContextManager,
-    validate: bool,
-):
-    url = fail_first_ok_second_server(httpserver)
-    sparql_wrapper = AsyncSparqlWrapper(url, num_retries=num_retries, validate=validate)
-    sparql_wrapper.setReturnFormat(JSON)
-    with exception_context:
-        await sparql_wrapper.query_and_convert()
 
 
 @pytest.mark.parametrize(

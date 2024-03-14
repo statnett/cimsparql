@@ -1,9 +1,11 @@
 import asyncio
+import logging
 import os
 import re
 from base64 import b64encode
 from collections.abc import Callable
 from http import HTTPStatus
+from typing import Any
 
 import httpx
 import pandas as pd
@@ -13,7 +15,6 @@ import t_utils.custom_models as t_custom
 from pytest_httpserver import HeaderValueMatcher, HTTPServer
 
 from cimsparql.graphdb import (
-    AsyncGraphDBClient,
     GraphDBClient,
     RepoInfo,
     ServiceConfig,
@@ -26,37 +27,49 @@ from cimsparql.graphdb import (
 from cimsparql.model import Model, SingleClientModel
 from cimsparql.type_mapper import TypeMapper
 
+logger = logging.getLogger()
+
+
+def exception_logging(func: Callable[[Any], pd.DataFrame], *args: Any):
+    logger.debug(f"Starting {func.__name__}")
+    try:
+        return func(*args)
+    except Exception:
+        logger.exception("Exception for %s", func.__name__)
+        return pd.DataFrame()
+
 
 async def collect_data(model: Model) -> list[pd.DataFrame]:
+    loop = asyncio.get_event_loop()
     result = await asyncio.gather(
-        model.ac_lines(),
-        model.borders(),
-        model.branch_node_withdraw(),
-        model.bus_data(),
-        model.connections(),
-        model.connectivity_nodes(),
-        model.converters(),
-        model.coordinates(),
-        model.disconnected(),
-        model.dc_active_flow(),
-        model.exchange("NO|SE"),
-        model.full_model(),
-        model.hvdc_converter_bidzones(),
-        model.loads(),
-        model.market_dates(),
-        model.powerflow(),
-        model.regions(),
-        model.series_compensators(),
-        model.station_group_codes_and_names(),
-        model.substation_voltage_level(),
-        model.synchronous_machines(),
-        model.switches(),
-        model.three_winding_transformers(),
-        model.transformer_windings(),
-        model.transformers_connected_to_converter(),
-        model.transformers(),
-        model.two_winding_transformers(),
-        model.wind_generating_units(),
+        loop.run_in_executor(None, exception_logging, model.ac_lines),
+        loop.run_in_executor(None, exception_logging, model.borders),
+        loop.run_in_executor(None, exception_logging, model.branch_node_withdraw),
+        loop.run_in_executor(None, exception_logging, model.bus_data),
+        loop.run_in_executor(None, exception_logging, model.connections),
+        loop.run_in_executor(None, exception_logging, model.connectivity_nodes),
+        loop.run_in_executor(None, exception_logging, model.converters),
+        loop.run_in_executor(None, exception_logging, model.coordinates),
+        loop.run_in_executor(None, exception_logging, model.disconnected),
+        loop.run_in_executor(None, exception_logging, model.dc_active_flow),
+        loop.run_in_executor(None, exception_logging, model.exchange, "NO|SE"),
+        loop.run_in_executor(None, exception_logging, model.full_model),
+        loop.run_in_executor(None, exception_logging, model.hvdc_converter_bidzones),
+        loop.run_in_executor(None, exception_logging, model.loads),
+        loop.run_in_executor(None, exception_logging, model.market_dates),
+        loop.run_in_executor(None, exception_logging, model.powerflow),
+        loop.run_in_executor(None, exception_logging, model.regions),
+        loop.run_in_executor(None, exception_logging, model.series_compensators),
+        loop.run_in_executor(None, exception_logging, model.station_group_codes_and_names),
+        loop.run_in_executor(None, exception_logging, model.substation_voltage_level),
+        loop.run_in_executor(None, exception_logging, model.synchronous_machines),
+        loop.run_in_executor(None, exception_logging, model.switches),
+        loop.run_in_executor(None, exception_logging, model.three_winding_transformers),
+        loop.run_in_executor(None, exception_logging, model.transformer_windings),
+        loop.run_in_executor(None, exception_logging, model.transformers_connected_to_converter),
+        loop.run_in_executor(None, exception_logging, model.transformers),
+        loop.run_in_executor(None, exception_logging, model.two_winding_transformers),
+        loop.run_in_executor(None, exception_logging, model.wind_generating_units),
     )
     return result
 
@@ -85,15 +98,13 @@ def test_cimversion(model: SingleClientModel):
     assert model.cim_version == 16
 
 
-@pytest.mark.asyncio
-async def test_regions(model: SingleClientModel):
-    regions = await model.regions()
+def test_regions(model: SingleClientModel):
+    regions = model.regions()
     assert regions.groupby("region").count().loc["NO", "name"] > 16
 
 
-@pytest.mark.asyncio
-async def test_hvdc_converters_bidzones(model: SingleClientModel):
-    df = await model.hvdc_converter_bidzones()
+def test_hvdc_converters_bidzones(model: SingleClientModel):
+    df = model.hvdc_converter_bidzones()
 
     corridors = set(zip(df["bidzone_1"], df["bidzone_2"], strict=True))
 
@@ -102,16 +113,14 @@ async def test_hvdc_converters_bidzones(model: SingleClientModel):
     assert expect_corridors.issubset(corridors)
 
 
-@pytest.mark.asyncio
-async def test_windings(model: SingleClientModel):
-    windings = await model.transformers(region="NO")
+def test_windings(model: SingleClientModel):
+    windings = model.transformers(region="NO")
     assert windings.shape[1] == 9
 
 
 @pytest.mark.skipif(os.getenv("GRAPHDB_SERVER") is None, reason="Need graphdb server to run")
-@pytest.mark.asyncio
-async def test_borders_no(model: SingleClientModel):
-    borders = await model.borders(region="NO")
+def test_borders_no(model: SingleClientModel):
+    borders = model.borders(region="NO")
     assert (borders[["area_1", "area_2"]] == "NO").any(axis=1).all()
     assert (borders["area_1"] != borders["area_2"]).all()
 
@@ -151,8 +160,7 @@ def test_conf_bytes_from_template():
     assert 'rep:repositoryID "test_repo"' in conf_str
 
 
-@pytest.mark.asyncio
-async def test_create_delete_repo():
+def test_create_delete_repo():
     url = t_common.rdf4j_url()
 
     # Check if it is possible to make contact
@@ -169,22 +177,21 @@ async def test_create_delete_repo():
     template = confpath() / "native_store_config_template.ttl"
     conf_bytes = config_bytes_from_template(template, {"repo": repo})
     service_cfg = ServiceConfig(repo, "http", url)
-    current_repos = await repos(service_cfg)
+    current_repos = repos(service_cfg)
 
     assert "test_repo" not in [i.repo_id for i in current_repos]
 
     # protocol is added internally. Thus, skip from t_common.rdf4j_url
     client = new_repo(url, repo, conf_bytes, protocol="http")
-    current_repos = await repos(service_cfg)
+    current_repos = repos(service_cfg)
     assert "test_repo" in [i.repo_id for i in current_repos]
 
     client.delete_repo()
-    current_repos = await repos(service_cfg)
+    current_repos = repos(service_cfg)
     assert "test_repo" not in [i.repo_id for i in current_repos]
 
 
-@pytest.mark.asyncio
-async def test_repos_with_auth(httpserver: HTTPServer):
+def test_repos_with_auth(httpserver: HTTPServer):
     response_json = {
         "results": {
             "bindings": [
@@ -213,7 +220,7 @@ async def test_repos_with_auth(httpserver: HTTPServer):
     protocol, server = matches.groups()
 
     cfg = ServiceConfig("repo", server=server, protocol=protocol, user=user, passwd=password)
-    repo_info = await repos(cfg)
+    repo_info = repos(cfg)
 
     expect = RepoInfo("uri", "id", "title", True, False)
     assert repo_info == [expect]
@@ -229,8 +236,7 @@ def test_update_prefixes(monkeypatch: pytest.MonkeyPatch):
     assert client.prefixes == new_pref
 
 
-@pytest.mark.parametrize("graphdb_client", [GraphDBClient, AsyncGraphDBClient])
-def test_custom_headers(graphdb_client: Callable):
+def test_custom_headers():
     custom_headers = {"my_header": "my_header_value"}
-    client = graphdb_client(ServiceConfig(server="some-server"), custom_headers)
+    client = GraphDBClient(ServiceConfig(server="some-server"), custom_headers)
     assert client.sparql.customHttpHeaders == custom_headers

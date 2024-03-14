@@ -1,9 +1,7 @@
-import asyncio
 from copy import deepcopy
 from string import Template
 
 import pandas as pd
-import pytest
 import t_utils.common as t_common
 import t_utils.entsoe_models as t_entsoe
 
@@ -31,8 +29,7 @@ select ?t_mrid ?connected where
 )
 
 
-@pytest.mark.asyncio
-async def test_subj_conversion():
+def test_subj_conversion():
     tm = t_entsoe.micro_t1_nl()
     t_common.check_model(tm)
     model = tm.model
@@ -42,9 +39,7 @@ async def test_subj_conversion():
     subj_query = model.template_to_query(subj_template)
     mrid_query = model.template_to_query(mrid_template)
 
-    dfs = await asyncio.gather(
-        model2.get_table_and_convert(subj_query), model.get_table_and_convert(mrid_query)
-    )
+    dfs = [model2.get_table_and_convert(subj_query), model.get_table_and_convert(mrid_query)]
 
     for i, df in enumerate(dfs):
         dfs[i] = df.sort_values("t_mrid").reset_index(drop=True)

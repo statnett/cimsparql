@@ -16,9 +16,8 @@ def check_service_available(test_model: t_common.ModelTest):
 
 
 @pytest.mark.slow
-@pytest.mark.asyncio
 @pytest.mark.parametrize("test_model", t_entsoe.smallgrid_models())
-async def test_eq_query(test_model: t_common.ModelTest):
+def test_eq_query(test_model: t_common.ModelTest):
     check_service_available(test_model)
     query_template = Template(
         "PREFIX rdf:<${rdf}>\nPREFIX cim:<${cim}>\n"
@@ -27,16 +26,15 @@ async def test_eq_query(test_model: t_common.ModelTest):
 
     model = test_model.model
     query = model.template_to_query(query_template)
-    df = await model.get_table_and_convert(query)
+    df = model.get_table_and_convert(query)
     df = df.sort_values("voltage").reset_index(drop=True)
     expect = pd.DataFrame({"voltage": [33.0, 132.0, 220.0]})
     pd.testing.assert_frame_equal(df, expect)
 
 
 @pytest.mark.slow
-@pytest.mark.asyncio
 @pytest.mark.parametrize("test_model", t_entsoe.smallgrid_models())
-async def test_tpsv_query(test_model: t_common.ModelTest):
+def test_tpsv_query(test_model: t_common.ModelTest):
     check_service_available(test_model)
     model = test_model.model
     repo = model.config.system_state_repo
@@ -45,5 +43,5 @@ async def test_tpsv_query(test_model: t_common.ModelTest):
         f"select * where {{service <{repo}> {{?s rdf:type cim:TopologicalNode}}}}"
     )
     query = model.template_to_query(query_template)
-    df = await model.get_table_and_convert(query)
+    df = model.get_table_and_convert(query)
     assert df.shape == (115, 1)

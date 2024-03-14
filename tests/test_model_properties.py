@@ -47,7 +47,8 @@ async def get_node_consistency_test_data(
 ) -> NodeConsistencyData | None:
     if model is None:
         return None
-    bus = await model.bus_data()
+    loop = asyncio.get_event_loop()
+    bus = await loop.run_in_executor(None, model.bus_data)
 
     # Results that has node_1 and node_2 which should be part of bus
     two_node_names = [
@@ -56,19 +57,25 @@ async def get_node_consistency_test_data(
         "two_winding_transformers",
         "three_winding_transformers",
     ]
+
     two_node_dfs = await asyncio.gather(
-        model.ac_lines(),
-        model.series_compensators(),
-        model.two_winding_transformers(),
-        model.three_winding_transformers(),
+        loop.run_in_executor(None, model.ac_lines),
+        loop.run_in_executor(None, model.series_compensators),
+        loop.run_in_executor(None, model.two_winding_transformers),
+        loop.run_in_executor(None, model.three_winding_transformers),
     )
 
     # Results that has node which should be part of bus
     single_node_names = ["loads", "exchange", "converters", "branch_node_withdraw"]
     single_node_dfs = await asyncio.gather(
-        model.loads(), model.exchange(), model.converters(), model.branch_node_withdraw()
+        loop.run_in_executor(None, model.loads),
+        loop.run_in_executor(None, model.exchange),
+        loop.run_in_executor(None, model.converters),
+        loop.run_in_executor(None, model.branch_node_withdraw),
     )
-    swing_buses = await model.get_table_and_convert(model.template_to_query(swing_bus_query))
+    swing_buses = await loop.run_in_executor(
+        None, model.get_table_and_convert, model.template_to_query(swing_bus_query)
+    )
     return NodeConsistencyData(
         bus,
         dict(zip(two_node_names, two_node_dfs, strict=True)),
@@ -137,19 +144,18 @@ def test_swing_bus_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models() + t_custom.all_custom_models())
-@pytest.mark.asyncio
 async def test_all_connectivity_nodes_fetched(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     count_query = test_model.model.template_to_query(
         Template("select (count(?s) as ?count) where {?s a <${cim}ConnectivityNode>}")
     )
-    num_nodes_df = await test_model.model.get_table_and_convert(count_query)
+    num_nodes_df = test_model.model.get_table_and_convert(count_query)
     num_connectivity_nodes = num_nodes_df["count"].iloc[0]
 
     # Verify that we get some nodes
     assert num_connectivity_nodes > 0
 
-    df = await test_model.model.connectivity_nodes()
+    df = test_model.model.connectivity_nodes()
 
     # Verify that we get information for all nodes in the model
     assert len(df) == num_connectivity_nodes
