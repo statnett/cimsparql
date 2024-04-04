@@ -164,9 +164,10 @@ class GraphDBClient:
         self,
         service_cfg: ServiceConfig | None = None,
         custom_headers: dict[str, str] | None = None,
+        sparql_wrapper: SPARQLWrapper | None = None,
     ) -> None:
         self.service_cfg = service_cfg or ServiceConfig()
-        self.sparql = self.create_sparql_wrapper()
+        self.sparql = sparql_wrapper or SPARQLWrapper(self.service_cfg.url)
         self.sparql.setReturnFormat(JSON)
         self.sparql.setMethod(POST)
         self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)

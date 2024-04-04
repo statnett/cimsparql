@@ -13,6 +13,7 @@ import pytest
 import t_utils.common as t_common
 import t_utils.custom_models as t_custom
 from pytest_httpserver import HeaderValueMatcher, HTTPServer
+from SPARQLWrapper import SPARQLWrapper
 
 from cimsparql.graphdb import (
     GraphDBClient,
@@ -25,6 +26,7 @@ from cimsparql.graphdb import (
     repos,
 )
 from cimsparql.model import Model, SingleClientModel
+from cimsparql.sparql_result_json import SparqlResultJsonFactory
 from cimsparql.type_mapper import TypeMapper
 
 logger = logging.getLogger()
@@ -240,3 +242,21 @@ def test_custom_headers():
     custom_headers = {"my_header": "my_header_value"}
     client = GraphDBClient(ServiceConfig(server="some-server"), custom_headers)
     assert client.sparql.customHttpHeaders == custom_headers
+
+
+class FixedResultSparqlWrapper(SPARQLWrapper):
+    def __init__(self) -> None:
+        super().__init__("http://fixed-result-endpoint")
+        self.result = SparqlResultJsonFactory.build()
+
+    def queryAndConvert(self) -> dict:  # noqa: N802
+        return self.result.model_dump(mode="json")
+
+
+def test_inject_subclassed_sparql_wrapper():
+    wrapper = FixedResultSparqlWrapper()
+    client = GraphDBClient(sparql_wrapper=wrapper)
+
+    # Confirm that we can sucessfully run a query
+    df = client.get_table("select * where {?s ?p ?o}")[0]
+    assert set(df.columns) == set(wrapper.result.head.variables)
