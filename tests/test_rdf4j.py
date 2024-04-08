@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import dataclasses
 import os
 from collections.abc import Generator
-from copy import deepcopy
 from pathlib import Path
 from string import Template
 
@@ -97,9 +97,11 @@ def test_upload_with_context(upload_client: GraphDBClient):
 
 
 def test_direct_sparql_endpoint(rdf4j_gdb: GraphDBClient):
-    service_cfg_direct = deepcopy(rdf4j_gdb.service_cfg)
-    service_cfg_direct.server = rdf4j_gdb.service_cfg.url
-    service_cfg_direct.rest_api = RestApi.DIRECT_SPARQL_ENDPOINT
+    service_cfg_direct = dataclasses.replace(
+        rdf4j_gdb.service_cfg,
+        server=rdf4j_gdb.service_cfg.url,
+        rest_api=RestApi.DIRECT_SPARQL_ENDPOINT,
+    )
 
     gdb_direct = GraphDBClient(service_cfg_direct)
     query = "SELECT * {?s ?p ?o}"
