@@ -1,3 +1,4 @@
+from collections import defaultdict
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
@@ -6,11 +7,22 @@ from unittest.mock import Mock
 import pytest
 import werkzeug
 from pytest_httpserver import HTTPServer
+from SPARQLWrapper import SPARQLWrapper
 
 from cimsparql.adaptions import is_uuid
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig
-from cimsparql.model import Model, ModelConfig, get_federated_cim_model, query_name
-from cimsparql.sparql_result_json import SparqlResultJsonFactory
+from cimsparql.model import (
+    Model,
+    ModelConfig,
+    get_federated_cim_model,
+    query_name,
+)
+from cimsparql.sparql_result_json import (
+    SparqlData,
+    SparqlResultHead,
+    SparqlResultJson,
+    SparqlResultJsonFactory,
+)
 from cimsparql.templates import sparql_folder
 from cimsparql.type_mapper import TypeMapper
 
@@ -135,3 +147,58 @@ def test_correlation_id(httpserver: HTTPServer):
     assert correlation_picker.correlation_id is None
     model.get_table_and_convert(query2)  # Runs from second client
     assert correlation_picker.correlation_id is None
+
+
+class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
+    def __init__(self) -> None:
+        super().__init__("http://fixed-result-endpoint")
+        self.result = SparqlResultJsonFactory.build()
+
+    def three_winding_result(self) -> SparqlResultJson:
+        variables = [
+            "node_1",
+            "node_2",
+            "status",
+            "name",
+            "mrid",
+            "un",
+            "r",
+            "x",
+            "b",
+            "g",
+            "rate",
+            "bidzone_1",
+            "bidzone_2",
+            "angle",
+            "ratio",
+            "connectivity_node_1",
+            "connectivity_node_2",
+        ]
+        return SparqlResultJson(
+            head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[])
+        )
+
+    def three_winding_loss(self) -> SparqlResultJson:
+        variables = ["mrid", "ploss_2"]
+        return SparqlResultJson(
+            head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[])
+        )
+
+    def queryAndConvert(self) -> dict:  # noqa: N802
+        name = query_name(self.queryString)
+        if name == "Three winding":
+            result = self.three_winding_result()
+        elif name == "Three winding loss":
+            result = self.three_winding_loss()
+        else:
+            raise ValueError(f"No handler for query: {self.queryString}")
+        return result.model_dump(mode="json")
+
+
+def test_three_winding_empty_result():
+    config = ServiceConfig(server="http://some-server", rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
+    client = GraphDBClient(
+        service_cfg=config, sparql_wrapper=EmptyThreeWindingTransformerSPARQLWrapper()
+    )
+    model = Model(defaultdict(lambda: client), mapper=LocalTypeMapper(config))
+    assert model.three_winding_transformers().empty
