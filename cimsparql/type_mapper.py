@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from decimal import Decimal
@@ -64,12 +65,15 @@ sparql_type_map = {"literal": str_preserve_none, "uri": str_preserve_none}
 
 @contextmanager
 def enforce_no_limit(client: GraphDBClient) -> Generator[GraphDBClient, None, None]:
-    orig_limit = client.service_cfg.limit
-    client.service_cfg.limit = None
+    orig_cfg = client.service_cfg
+    client.service_cfg = dataclasses.replace(orig_cfg, limit=None)
+    client._update_sparql_parameters()
+
     try:
         yield client
     finally:
-        client.service_cfg.limit = orig_limit
+        client.service_cfg = orig_cfg
+        client._update_sparql_parameters()
 
 
 def build_type_map(prefixes: dict[PREFIX, URI]) -> dict[SPARQL_TYPE, TYPE_CASTER]:

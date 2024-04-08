@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import auto
 from http import HTTPStatus
@@ -59,7 +60,7 @@ def parse_namespaces_rdf4j(response: httpx.Response) -> dict[str, str]:
     return prefixes
 
 
-@dataclass
+@dataclass(frozen=True)
 class ServiceConfig:
     repo: str = field(default=os.getenv("GRAPHDB_REPO", "LATEST"))
     protocol: str = "https"
@@ -216,10 +217,6 @@ class GraphDBClient:
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service_cfg.url}>"
 
-    def _prep_query(self, query: str) -> None:
-        self.sparql.setQuery(query)
-        self._update_sparql_parameters()
-
     @staticmethod
     def _process_result(results: SparqlResultJson) -> dict:
         cols = results.head.variables
@@ -228,14 +225,17 @@ class GraphDBClient:
         return {"out": out, "cols": cols, "data": data}
 
     def _exec_query(self, query: str) -> SparqlResult:
-        self._prep_query(query)
+        # To allow exec query to be run in threads, we use a deepcopy of the underlying
+        # sparql wrapper .This is needed since setQuery changes the state of the SPARQLWrapper
+        sparql_wrapper = deepcopy(self.sparql)
+        sparql_wrapper.setQuery(query)
 
         for attempt in tenacity.Retrying(
             stop=tenacity.stop_after_attempt(self.service_cfg.num_retries + 1),
             wait=tenacity.wait_exponential(max=self.service_cfg.max_delay_seconds),
         ):
             with attempt:
-                results = self.sparql.queryAndConvert()
+                results = sparql_wrapper.queryAndConvert()
 
         sparql_result = SparqlResultJson(**results)
         if self.service_cfg.validate:
