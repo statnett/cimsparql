@@ -663,7 +663,7 @@ class Model:
 
     @time_it
     def switches(self) -> SwitchesDataFrame:
-        df = self.get_table_and_convert(self.switches_query())
+        df = self.get_table_and_convert(self.switches_query(), index="mrid")
         return SwitchesDataFrame(df)
 
     def connectivity_nodes_query(self, region: str | None = None) -> str:
