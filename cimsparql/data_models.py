@@ -113,6 +113,7 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     q: Series[float] = pa.Field(nullable=True)
     connectivity_node: Series[str] = pa.Field()
     generator_type: Series[str] = pa.Field()
+    schedule_resource: Series[str] = pa.Field(nullable=True)
 
 
 SynchronousMachinesDataFrame = DataFrame[SynchronousMachinesSchema]

@@ -1,7 +1,7 @@
 # Name: Synchronous machines
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select ?mrid ?name ?market_code ?node ?status ?station_group ?station_group_name ?substation_mrid ?maxP ?minP ?MO ?bidzone ?sn ?p ?q ?connectivity_node ?generator_type
+select ?mrid ?name ?market_code ?node ?status ?station_group ?station_group_name ?substation_mrid ?maxP ?minP ?MO ?bidzone ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource
 where {
   ?terminal cim:ACDCTerminal.connected ?connected .
   optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid}
@@ -43,6 +43,7 @@ where {
            SN:GeneratingUnit.groupAllocationWeight ?MO;
            SN:GeneratingUnit.ScheduleResource ?ScheduleResource .
 	?ScheduleResource SN:ScheduleResource.marketCode ?station_group;
+                   cim:IdentifiedObject.mRID ?schedule_resource;
                    cim:IdentifiedObject.name ?station_group_name .
     }
       }
