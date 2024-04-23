@@ -54,11 +54,7 @@ class RestApi(StrEnum):
 
 
 def parse_namespaces_rdf4j(response: httpx.Response) -> dict[str, str]:
-    prefixes = {}
-    for line in response.text.split()[1:]:
-        prefix, uri = line.split(",")
-        prefixes[prefix] = uri
-    return prefixes
+    return dict(line.split(",") for line in response.text.split()[1:])
 
 
 @dataclass(frozen=True)
