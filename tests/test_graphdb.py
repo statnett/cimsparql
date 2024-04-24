@@ -240,7 +240,7 @@ def test_update_prefixes(monkeypatch: pytest.MonkeyPatch):
 
 def test_custom_headers():
     custom_headers = {"my_header": "my_header_value"}
-    client = GraphDBClient(ServiceConfig(server="some-server"), custom_headers)
+    client = GraphDBClient(ServiceConfig(server="some-server", token=None), custom_headers)
     assert client.sparql.customHttpHeaders == custom_headers
 
 

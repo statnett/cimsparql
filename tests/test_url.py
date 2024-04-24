@@ -8,7 +8,7 @@ from cimsparql.graphdb import GraphDBClient
 
 @pytest.fixture
 def gdbc() -> GraphDBClient:
-    if not os.getenv("GRAPHDB_SERVER"):
+    if not (os.getenv("GRAPHDB_SERVER") and os.getenv("GRAPHDB_TOKEN")):
         pytest.skip("Need graphdb server to run")
     return GraphDBClient(t_custom.combined_graphdb_service())
 
