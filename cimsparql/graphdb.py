@@ -65,6 +65,7 @@ class ServiceConfig:
     path: str = ""
     user: str | None = field(default=os.getenv("GRAPHDB_USER"))
     passwd: str | None = field(default=os.getenv("GRAPHDB_USER_PASSWD"))
+    token: str | None = field(default=os.getenv("GRAPHDB_TOKEN"))
     rest_api: RestApi = field(default=RestApi(os.getenv("SPARQL_REST_API", "RDF4J")))
     ca_bundle: str | None = field(default=None)
 
@@ -168,7 +169,10 @@ class GraphDBClient:
         self.sparql = sparql_wrapper or SPARQLWrapper(self.service_cfg.url)
         self.sparql.setReturnFormat(JSON)
         self.sparql.setMethod(POST)
-        self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
+        if self.service_cfg.token:
+            self.sparql.addCustomHttpHeader("authorization", self.service_cfg.token)
+        else:
+            self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
         if self.service_cfg.timeout:
             self.sparql.setTimeout(self.service_cfg.timeout)
         self._update_sparql_parameters()
@@ -414,7 +418,9 @@ def new_repo(
     return GraphDBClient(ServiceConfig(repo, protocol, server))
 
 
-def new_repo_blazegraph(url: str, repo: str, protocol: str = "https") -> GraphDBClient:
+def new_repo_blazegraph(
+    url: str, repo: str, protocol: str = "https", token: str | None = None
+) -> GraphDBClient:
     template = confpath() / "blazegraph_repo_config.xml"
     config = config_bytes_from_template(template, {"repo": repo})
 
@@ -422,7 +428,9 @@ def new_repo_blazegraph(url: str, repo: str, protocol: str = "https") -> GraphDB
         f"{protocol}://{url}", content=config, headers={"Content-type": "application/xml"}
     )
     response.raise_for_status()
-    client = GraphDBClient(ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH))
+    client = GraphDBClient(
+        ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH, token=token)
+    )
     return client
 
 

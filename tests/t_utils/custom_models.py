@@ -11,12 +11,12 @@ logger = logging.getLogger()
 
 def combined_graphdb_service() -> ServiceConfig:
     repo = os.getenv("GRAPHDB_COMBINED_REPO", "abot_combined")
-    return ServiceConfig(repo=repo, max_delay_seconds=1)
+    return ServiceConfig(repo=repo, max_delay_seconds=1, token=os.getenv("GRAPHDB_TOKEN"))
 
 
 @functools.lru_cache
 def combined_model() -> t_common.ModelTest:
-    if os.getenv("CI"):
+    if os.getenv("CI") or os.getenv("GRAPHDB_TOKEN") is None:
         return t_common.ModelTest(None, False, False)
     service = combined_graphdb_service()
     system_state_repo = f"repository:{service.repo},infer=false"
@@ -31,7 +31,7 @@ def combined_model() -> t_common.ModelTest:
 
 @functools.lru_cache
 def federated_model() -> t_common.ModelTest:
-    if os.getenv("CI"):
+    if os.getenv("CI") or os.getenv("GRAPHDB_TOKEN") is None:
         return t_common.ModelTest(None, False, False)
     eq_repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
     system_state_repo = os.getenv("GRAPHDB_STATE", "abot_20220825T1621Z")
