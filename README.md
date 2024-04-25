@@ -47,13 +47,6 @@ See the sparql templates folder (`cimsparql/sparql`) to the query used.
 >>> print(query_result)
 ```
 
-### List of available repos at the server
-
-```python
->>> from cimsparql.url import GraphDbConfig
->>> print(GraphDbConfig().repos)
-```
-
 ### Prefix and namespace
 
 Available namespace for current graphdb client (`gdbc` in the examples above),
