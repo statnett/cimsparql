@@ -1,4 +1,3 @@
-import logging
 import pathlib
 from collections.abc import Generator
 from contextlib import suppress
@@ -8,8 +7,6 @@ import t_utils.common as t_common
 import t_utils.entsoe_models as t_entsoe
 
 this_dir = pathlib.Path(__file__).parent
-
-logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", autouse=True)
