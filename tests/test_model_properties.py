@@ -6,13 +6,14 @@ from dataclasses import dataclass
 from string import Template
 from typing import TYPE_CHECKING
 
-import pandas as pd
 import pytest
 import t_utils.common as t_common
 import t_utils.custom_models as t_custom
 import t_utils.entsoe_models as t_entsoe
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cimsparql.data_models import BusDataFrame
 
 swing_bus_query = Template(

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import auto
@@ -20,6 +19,9 @@ from strenum import StrEnum
 
 from cimsparql.sparql_result_json import SparqlResultJson
 from cimsparql.url import service, service_blazegraph
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class SparqlResult(TypedDict):

@@ -3,15 +3,20 @@ from __future__ import annotations
 import hashlib
 import re
 import uuid
-from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from string import Template
+from typing import TYPE_CHECKING
 
 from rdflib import ConjunctiveGraph
 from rdflib.namespace import XSD
 from rdflib.plugins.sparql import prepareUpdate
 from rdflib.term import BNode, Literal, URIRef
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from rdflib import Graph
 
 
 class XmlModelAdaptor:
@@ -28,8 +33,8 @@ class XmlModelAdaptor:
     def namespaces(self) -> dict[str, str]:
         return {str(prefix): str(name) for prefix, name in self.graph.namespaces()}
 
-    def graphs(self) -> set[URIRef]:
-        return {graph for _, _, _, graph in self.graph.quads()}
+    def graphs(self) -> set[Graph]:
+        return {graph for _, _, _, graph in self.graph.quads() if graph}
 
     @classmethod
     def from_folder(cls, folder: Path) -> XmlModelAdaptor:
