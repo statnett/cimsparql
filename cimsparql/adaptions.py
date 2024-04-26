@@ -48,10 +48,23 @@ class XmlModelAdaptor:
             mrid = mrid_str if is_uuid(mrid_str) else generate_uuid(mrid_str)
             self.graph.add((result["s"], identified_obj_mrid, Literal(mrid), result["g"]))
 
+    def set_generation_type(self) -> None:
+        self.graph.update(
+            """
+            delete {?gen_unit a ?gen_unit_type}
+            insert {?gen_unit a cim:ThermalGeneratingUnit}
+            where {
+              values ?gen_unit_type {cim:GeneratingUnit}
+              ?gen_unit a ?gen_unit_type
+            }
+            """
+        )
+
     def adapt(self, eq_uri: str) -> None:
         self.add_zero_sv_power_flow()
         self.add_mrid()
         self.add_dtypes()
+        self.set_generation_type()
         self.add_internal_eq_link(eq_uri)
 
     def add_zero_sv_power_flow(self) -> None:
