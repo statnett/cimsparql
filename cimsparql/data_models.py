@@ -104,14 +104,15 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     station_group: Series[str] = pa.Field(nullable=True)
     station_group_name: Series[str] = pa.Field(nullable=True)
     substation_mrid: Series[str] = pa.Field()
-    maxP: Series[float] = pa.Field(nullable=True)  # noqa N815
-    minP: Series[float] = pa.Field(nullable=True)  # noqa N815
+    maxP: Series[float] = pa.Field()
+    minP: Series[float] = pa.Field()
     MO: Series[float] = pa.Field(nullable=True)
     bidzone: Series[str] = pa.Field(nullable=True)
     sn: Series[float] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
     connectivity_node: Series[str] = pa.Field()
+    generator_type: Series[str] = pa.Field()
 
 
 SynchronousMachinesDataFrame = DataFrame[SynchronousMachinesSchema]
