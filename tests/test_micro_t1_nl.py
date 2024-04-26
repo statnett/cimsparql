@@ -1,5 +1,4 @@
 import contextlib
-import logging
 from copy import deepcopy
 from typing import Any
 
@@ -10,8 +9,6 @@ import t_utils.entsoe_models as t_entsoe
 
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.model import SingleClientModel
-
-logger = logging.getLogger()
 
 
 @contextlib.contextmanager
