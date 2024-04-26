@@ -17,6 +17,7 @@ def delete_models() -> Generator[None, None, None]:
     yield
     models = t_entsoe.micro_models() + t_entsoe.smallgrid_models()
     for test_model in filter(lambda tm: tm.model is not None and tm.cleanup, models):
+        assert test_model.model
         for client in test_model.model.distinct_clients:
             with suppress(Exception):
                 client.delete_repo()

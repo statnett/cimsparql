@@ -25,6 +25,7 @@ def tmp_client(model: SingleClientModel, new_client: GraphDBClient):
 def test_bus_data_micro_t1_nl(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     model = test_model.model
+    assert model
     data = model.bus_data()
 
     assert len(data) == 12
@@ -35,18 +36,21 @@ def test_bus_data_micro_t1_nl(test_model: t_common.ModelTest):
 def test_cim_version_micro_t1_nl(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     model = test_model.model
+    assert model
     assert model.cim_version == 16
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_repo_not_empty_micro_t1_nl(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     assert not test_model.model.client.empty
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_cim_converters_micro_t1_nl(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     converters = test_model.model.converters()
     assert converters.empty
 
@@ -72,6 +76,7 @@ def test_full_model_micro_t1_nl(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_substation_voltage_level(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.substation_voltage_level()
     assert sorted(data["v"].tolist()) == [225.0, 380.0, 400.0]
 
@@ -79,6 +84,7 @@ def test_substation_voltage_level(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_branch_node_withdraw(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.branch_node_withdraw()
     assert data.empty
 
@@ -86,7 +92,7 @@ def test_branch_node_withdraw(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_loads(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
-
+    assert test_model.model
     data = test_model.model.loads()
     assert len(data) == 6
     expected_names = {
@@ -111,6 +117,7 @@ def test_loads(test_model: t_common.ModelTest):
 )
 def test_sync_machines(test_model: t_common.ModelTest, region: str, expected_names: set[str]):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.synchronous_machines(region)
     assert expected_names == set(data["name"])
 
@@ -118,6 +125,7 @@ def test_sync_machines(test_model: t_common.ModelTest, region: str, expected_nam
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_connections(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.connections()
     assert len(data) == 26
 
@@ -125,6 +133,7 @@ def test_connections(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_aclines(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.ac_lines(region=".*")
     assert len(data) == 2
 
@@ -157,6 +166,7 @@ def test_aclines(test_model: t_common.ModelTest):
 )
 def test_transformers(test_model: t_common.ModelTest, params: dict[str, Any]):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.transformers(params["region"])
     assert len(data) == params["num"]
     end_num_count = data["end_number"].value_counts()
@@ -172,6 +182,7 @@ def test_transformers(test_model: t_common.ModelTest, params: dict[str, Any]):
 def test_transformers_connectivity(test_model: t_common.ModelTest, params: dict[str, Any]):
     t_common.check_model(test_model)
 
+    assert test_model.model
     data = test_model.model.transformers(params["region"])
     assert len(data) == params["num"]
 
@@ -182,6 +193,7 @@ def test_transformers_connectivity(test_model: t_common.ModelTest, params: dict[
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_two_winding_transformers(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.two_winding_transformers()
     assert len(data) == 6
     expect_names = {"NL-TR2_1", "NL_TR2_2", "NL_TR2_3", "BE-TR2_1", "BE-TR2_2", "BE-TR2_3"}
@@ -192,6 +204,7 @@ def test_two_winding_transformers(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_three_winding_transformers(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.three_winding_transformers()
     assert len(data) == 3
 
@@ -199,6 +212,7 @@ def test_three_winding_transformers(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 async def test_disconnected(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.disconnected()
     assert len(data) == 2
 
@@ -210,6 +224,7 @@ async def test_disconnected(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_powerflow(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.powerflow()
     assert len(data) == 24
 
@@ -217,6 +232,7 @@ def test_powerflow(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_regions(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     regions = test_model.model.regions()
     assert set(regions["region"]) == {"BE", "EU", "NL"}
 
@@ -224,6 +240,7 @@ def test_regions(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_coordinates(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     model = test_model.model
     crd = model.coordinates()
     pd.testing.assert_index_equal(crd["epsg"].cat.categories, pd.Index(["4326"], dtype=str))
@@ -242,6 +259,7 @@ def test_coordinates(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 async def test_not_empty_dc_active_flow(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     df = test_model.model.dc_active_flow()
     assert not df.empty
 
@@ -249,6 +267,7 @@ async def test_not_empty_dc_active_flow(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_transformer_windings(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     df = test_model.model.transformer_windings()
 
     assert len(df) == 15
@@ -257,6 +276,7 @@ def test_transformer_windings(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_switches(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     df = test_model.model.switches()
 
     # 26 Breakers from CGMES_v2.4.15-MicroGridTestConfiguration_v2.docx (table 8)

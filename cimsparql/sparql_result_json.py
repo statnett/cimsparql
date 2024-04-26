@@ -1,6 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from polyfactory.decorators import post_generated
 from polyfactory.factories import pydantic_factory
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from typing import Self
 
 
 class CimsparqlBaseModel(BaseModel):
@@ -34,7 +41,7 @@ class SparqlResultJson(CimsparqlBaseModel):
     head: SparqlResultHead
     results: SparqlData
 
-    def validate_column_consistency(self) -> None:
+    def validate_column_consistency(self) -> Self:
         """
         This is an quite expensive validation since it iterates over the entire result.
         Therefore, it is not implemented as a validator, but it must be explicitly called

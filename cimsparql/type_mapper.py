@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
@@ -10,6 +9,9 @@ import pandas as pd
 
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.templates import TYPE_MAPPER_QUERY
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
 
 # Type-caster that can be used with pandas. It can be python types, numpy dtypes or string
 # value. Examples: float, "int", int, "string"

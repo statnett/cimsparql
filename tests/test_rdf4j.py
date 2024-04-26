@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import dataclasses
 import os
-from collections.abc import Generator
 from pathlib import Path
 from string import Template
+from typing import TYPE_CHECKING
 
 import pytest
 import t_utils.common as t_common
 
 from cimsparql.graphdb import GraphDBClient, RestApi
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 def skip_rdf4j_test(rdf4j_gdb: GraphDBClient | None) -> bool:

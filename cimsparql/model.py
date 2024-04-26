@@ -7,11 +7,8 @@ import logging
 import re
 import time
 from collections import defaultdict
-from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from functools import cached_property
-from string import Template
-from types import TracebackType
 from typing import TYPE_CHECKING, ParamSpec, TypeVar
 from uuid import uuid4
 
@@ -53,6 +50,10 @@ from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.type_mapper import TypeMapper
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+    from string import Template
+    from types import TracebackType
+
     from cimsparql.value_mapper import ValueMapper
 
 

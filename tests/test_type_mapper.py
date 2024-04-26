@@ -2,18 +2,21 @@ from __future__ import annotations
 
 import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import pandera as pa
 import pytest
 from pandas.testing import assert_frame_equal
-from pytest_httpserver import HTTPServer
 
 from cimsparql import type_mapper
 from cimsparql.data_models import JsonSchemaOut
 from cimsparql.graphdb import RestApi
 from cimsparql.model import ServiceConfig
+
+if TYPE_CHECKING:
+    from pytest_httpserver import HTTPServer
 
 
 def init_triple_store_server(
