@@ -50,11 +50,6 @@ jobs:
         image: eclipse/rdf4j-workbench:4.3.11
         ports:
           - 8080:8080
-      blazegraph:
-        # Docker Hub image
-        image: openkbs/blazegraph-docker
-        ports:
-          - 9999:9999
 
     runs-on: ${{ matrix.os }}
     steps:
