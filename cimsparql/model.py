@@ -501,6 +501,10 @@ class Model:
         query_loss = self.three_winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")
         df = pd.concat([data.assign(ploss_1=0.0), loss.loc[data.index]], axis=1)
+        query_angle = self.two_winding_angle_query(region)
+        angle = self.get_table_and_convert(query_angle, index="mrid")
+        if not angle.empty:
+            data["angle"] += angle.reindex(index=data.index, fill_value=0.0).squeeze()
         return TransformerWindingDataFrame(df)
 
     @property
@@ -763,9 +767,9 @@ def get_federated_cim_model(
         "Three winding loss",
         "Three winding with dummy nodes",
         "Two winding transformer",
-        "Two winding transformer angle",
         "Synchronous machines",
         "Windings",
+        "Winding transformer angle",
     )
     for query in exec_from_tpssvssh:
         clients[query] = tpsvssh_client

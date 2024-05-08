@@ -28,7 +28,9 @@ def test_bus_data_micro_t1_nl(test_model: t_common.ModelTest):
     assert model
     data = model.bus_data()
 
-    assert len(data) == 12
+    # 11 topological nodes + 1 dummy node three windnig transformer
+    # + 6 dummy nodes for two winding transformer
+    assert len(data) == 18
     assert data.index.name == "node"
 
 
@@ -202,11 +204,23 @@ def test_two_winding_transformers(test_model: t_common.ModelTest):
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
-def test_three_winding_transformers(test_model: t_common.ModelTest):
+def test_windings(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     assert test_model.model
     data = test_model.model.three_winding_transformers()
-    assert len(data) == 3
+    expect_names = {
+        "NL-TR2_1",
+        "NL_TR2_2",
+        "NL_TR2_3",
+        "BE-TR2_1",
+        "BE-TR2_2",
+        "BE-TR2_3",
+        "BE-TR3_1",
+    }
+    assert set(data["name"]) == expect_names
+
+    # 6 two winding transformers + one three winding 6*2 = 12 + 3 = 15
+    assert len(data) == 15
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())

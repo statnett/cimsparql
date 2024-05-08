@@ -12,18 +12,6 @@ where
 
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   service ?eq_repo {
-    # Select all three winding transformerss
-    {
-      select  ?p_transformer
-      where {
-        ?p_transformer a cim:PowerTransformer;
-          cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-                      ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr.
-        filter(regex(?area, '${region}'))
-      }
-      group by ?p_transformer
-      having (count(*) > 2)
-    } .
     ?p_transformer cim:IdentifiedObject.mRID ?node;
       cim:IdentifiedObject.name ?busname;
                   cim:Equipment.EquipmentContainer ?container.

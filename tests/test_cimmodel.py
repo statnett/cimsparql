@@ -178,6 +178,11 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
             head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[])
         )
 
+    def angle(self) -> SparqlResultJson:
+        return SparqlResultJson(
+            head=SparqlResultHead(vars=["mrid", "angle"]), results=SparqlData(bindings=[])
+        )
+
     def three_winding_loss(self) -> SparqlResultJson:
         variables = ["mrid", "ploss_2"]
         return SparqlResultJson(
@@ -190,6 +195,8 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
             result = self.three_winding_result()
         elif name == "Three winding loss":
             result = self.three_winding_loss()
+        elif name == "Winding transformer angle":
+            result = self.angle()
         else:
             raise ValueError(f"No handler for query: {self.queryString}")
         return result.model_dump(mode="json")
