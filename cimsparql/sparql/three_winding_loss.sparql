@@ -16,15 +16,6 @@ where {
             ^cim:PowerTransformerEnd.PowerTransformer/cim:IdentifiedObject.mRID ?mrid;
             cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
     filter(regex(?area, '.*'))
-    {
-      # Select all three winding transformers
-      select  ?p_transformer (count(distinct ?nr) as ?winding_count)
-      where {
-        ?p_transformer ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
-      }
-      group by ?p_transformer
-      having (?winding_count > 2)
-    }
     ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
     		     cim:TransformerEnd.Terminal ?terminal .
     optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
