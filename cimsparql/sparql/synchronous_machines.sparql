@@ -16,13 +16,13 @@ where {
     ?machine a cim:SynchronousMachine;
           cim:IdentifiedObject.name ?name;
           cim:RotatingMachine.ratedS ?sn;
-          cim:IdentifiedObject.mRID ?mrid;
           ^cim:Terminal.ConductingEquipment ?terminal;
           cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation;
 	  # TODO: Seems like cim15 uses SynchronousMachine while cim16 uses RotatingMachine. Will fix this when we have a proper cim16 model
           cim:SynchronousMachine.GeneratingUnit|cim:RotatingMachine.GeneratingUnit ?gen_unit.
 
     ?gen_unit a ?gen_type;
+	 cim:IdentifiedObject.mRID ?mrid;
 	 cim:GeneratingUnit.minOperatingP ?minP;
          cim:GeneratingUnit.maxOperatingP ?maxP.
 
