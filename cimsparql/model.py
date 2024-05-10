@@ -225,9 +225,9 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.BUS_DATA_QUERY, substitutes)
 
-    def three_winding_dummy_nodes_query(self, region: str | None = None) -> str:
+    def transformer_center_nodes_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
-        return self.template_to_query(templates.THREE_WINDING_DUMMY_NODES_QUERY, substitutes)
+        return self.template_to_query(templates.TRANSFORMER_CENTER_NODES_QUERY, substitutes)
 
     @time_it
     def bus_data(self, region: str | None = None) -> BusDataFrame:
@@ -238,7 +238,7 @@ class Model:
         """
         dfs = [
             self.get_table_and_convert(self.bus_data_query(region), index="node"),
-            self.get_table_and_convert(self.three_winding_dummy_nodes_query(region), index="node"),
+            self.get_table_and_convert(self.transformer_center_nodes_query(region), index="node"),
         ]
         df = pd.concat(dfs)
         return BusDataFrame(df)
@@ -765,7 +765,7 @@ def get_federated_cim_model(
         "Switches",
         "Three winding",
         "Three winding loss",
-        "Three winding with dummy nodes",
+        "Transformer center nodes",
         "Two winding transformer",
         "Synchronous machines",
         "Windings",

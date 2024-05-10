@@ -1,4 +1,4 @@
-# Name: Three winding with dummy nodes
+# Name: Transformer center nodes
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 select ?node ?busname (?container_name as ?substation) ?un (?container_mrid as ?substation_mrid) ?bidzone ?island (False as ?is_swing_bus) ?connectivity_node
