@@ -474,9 +474,9 @@ class Model:
     def winding_query(self) -> str:
         return self.template_to_query(templates.WINDING)
 
-    def three_winding_loss_query(self, region: str | None = None) -> str:
+    def winding_loss_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
-        return self.template_to_query(templates.THREE_WINDING_LOSS_QUERY, substitutes)
+        return self.template_to_query(templates.WINDING_LOSS_QUERY, substitutes)
 
     def three_winding_transformers_query(
         self, region: str | None = None, rate: str | None = None
@@ -498,7 +498,7 @@ class Model:
         """
         query = self.three_winding_transformers_query(region, rate)
         data = self.get_table_and_convert(query, index="mrid")
-        query_loss = self.three_winding_loss_query(region)
+        query_loss = self.winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")
         df = pd.concat([data.assign(ploss_1=0.0), loss.loc[data.index]], axis=1)
         query_angle = self.two_winding_angle_query(region)
