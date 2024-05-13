@@ -2,6 +2,7 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
+# Name: Transformer branches
 select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2) ?angle ?ratio ?connectivity_node_1 (?node_2 as ?connectivity_node_2)
 where {
   ?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .
@@ -44,9 +45,18 @@ where {
             cim:IdentifiedObject.name '${rate}';
             cim:ActivePowerLimit.value ?rate .
     }
-    optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
+    optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis} .
+    optional {
+        ?tap_changer cim:RatioTapChanger.TransformerEnd ?winding ;
+          cim:RatioTapChanger.stepVoltageIncrement ?inc;
+          cim:TapChanger.neutralStep ?neutral_step;
+          cim:TapChanger.normalStep ?normal_step
+    } .
+    bind(coalesce(?tap_changer, <http://non-existing-tap-changer>) as ?ratio_tap_changer)
   }
-
+  optional {?ratio_tap_changer cim:TapChanger.step ?ssh_step }.
+  bind(coalesce(?ssh_step, ?normal_step) as ?step)
+  bind(if(bound(?inc), 1+(xsd:integer(str(?step)) - xsd:integer(str(?neutral_step)))*xsd:double(str(?inc))/100.0, 1.0) as ?tau)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   filter(?network_analysis)
 
@@ -54,6 +64,6 @@ where {
   # 1) in_service flag on the transformer
   # 2) Connected flag for the terminal
   bind(coalesce(?in_service, ?connected) as ?status)
-  bind(xsd:double(str(?un)) / xsd:double(str(?ubase)) as ?ratio)
+  bind(xsd:double(str(?un))*?tau / xsd:double(str(?ubase)) as ?ratio)
   bind(xsd:double(30.0) * ?angleclock as ?angle)
 }
