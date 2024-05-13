@@ -191,9 +191,9 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
 
     def queryAndConvert(self) -> dict:  # noqa: N802
         name = query_name(self.queryString)
-        if name == "Three winding":
+        if name == "Transformer branches":
             result = self.three_winding_result()
-        elif name == "Three winding loss":
+        elif name == "Transformer branches loss":
             result = self.three_winding_loss()
         elif name == "Winding transformer angle":
             result = self.angle()
@@ -208,4 +208,4 @@ def test_three_winding_empty_result():
         service_cfg=config, sparql_wrapper=EmptyThreeWindingTransformerSPARQLWrapper()
     )
     model = Model(defaultdict(lambda: client), mapper=LocalTypeMapper(config))
-    assert model.three_winding_transformers().empty
+    assert model.transformer_branches().empty

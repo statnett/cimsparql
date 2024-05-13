@@ -37,8 +37,8 @@ SV_BRANCH_QUERY = _read_template(sparql_folder / "sv_branch.sparql")
 SV_INJECTION_QUERY = _read_template(sparql_folder / "sv_injection.sparql")
 SYNCHRONOUS_MACHINES_QUERY = _read_template(sparql_folder / "synchronous_machines.sparql")
 SWITCHES_QUERY = _read_template(sparql_folder / "switches.sparql")
+TRANSFORMER_BRANCHES_QUERY = _read_template(sparql_folder / "transformer_branches.sparql")
 TRANSFORMER_CENTER_NODES_QUERY = _read_template(sparql_folder / "transformer_center_nodes.sparql")
-THREE_WINDING_QUERY = _read_template(sparql_folder / "three_winding.sparql")
 TRANSFORMERS_QUERY = _read_template(sparql_folder / "transformers.sparql")
 TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY = _read_template(
     sparql_folder / "transformers_connected_to_converter.sparql"
