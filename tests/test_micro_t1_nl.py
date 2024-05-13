@@ -207,7 +207,7 @@ def test_two_winding_transformers(test_model: t_common.ModelTest):
 def test_windings(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     assert test_model.model
-    data = test_model.model.three_winding_transformers()
+    data = test_model.model.transformer_branches()
     expect_names = {
         "NL-TR2_1",
         "NL_TR2_2",

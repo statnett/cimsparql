@@ -478,25 +478,34 @@ class Model:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.WINDING_LOSS_QUERY, substitutes)
 
-    def three_winding_transformers_query(
-        self, region: str | None = None, rate: str | None = None
-    ) -> str:
+    def transformer_branches_query(self, region: str | None = None, rate: str | None = None) -> str:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
-        return self.template_to_query(templates.THREE_WINDING_QUERY, substitutes)
+        return self.template_to_query(templates.TRANSFORMER_BRANCHES_QUERY, substitutes)
 
     @time_it
-    def three_winding_transformers(
+    def transformer_branches(
         self, region: str | None = None, rate: str | None = None
     ) -> TransformerWindingDataFrame:
-        """Query three-winding transformer. Return as three two-winding transformers.
+        """Query transformer branches. For two winding transformers will
+        give two "branches" (x are nodes, o is the fictisous center node)
+
+        x --- o ---- x
+
+        Three winding transformers
+
+            x
+            |
+        x - o - x
+
+
 
         Example:
             >>> from cimsparql.model import get_single_client_model
             >>> server_url = "127.0.0.1:7200"
             >>> model = get_single_client_model(server_url, "LATEST")
-            >>> model.two_winding_transformers()
+            >>> model.transformer_branches()
         """
-        query = self.three_winding_transformers_query(region, rate)
+        query = self.transformer_branches_query(region, rate)
         data = self.get_table_and_convert(query, index="mrid")
         query_loss = self.winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")
@@ -763,8 +772,8 @@ def get_federated_cim_model(
         "Power flow",
         "SvInjection",
         "Switches",
-        "Three winding",
-        "Three winding loss",
+        "Transformer branches",
+        "Transformer branches loss",
         "Transformer center nodes",
         "Two winding transformer",
         "Synchronous machines",

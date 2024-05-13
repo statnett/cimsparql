@@ -56,14 +56,14 @@ async def get_node_consistency_test_data(
         "ac_lines",
         "series_compensators",
         "two_winding_transformers",
-        "three_winding_transformers",
+        "transformer_branches",
     ]
 
     two_node_dfs = await asyncio.gather(
         loop.run_in_executor(None, model.ac_lines),
         loop.run_in_executor(None, model.series_compensators),
         loop.run_in_executor(None, model.two_winding_transformers),
-        loop.run_in_executor(None, model.three_winding_transformers),
+        loop.run_in_executor(None, model.transformer_branches),
     )
 
     # Results that has node which should be part of bus
@@ -133,7 +133,7 @@ def test_two_or_three_winding(nc_data: CONSISTENCY_DATA, model_name: str):
     skip_on_missing(data, model_name)
 
     two_w = data.two_node_dfs["two_winding_transformers"].index
-    three_w = data.two_node_dfs["three_winding_transformers"].index
+    three_w = data.two_node_dfs["transformer_branches"].index
     assert len(set(two_w).intersection(three_w)) == 0
 
 
