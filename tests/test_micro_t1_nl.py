@@ -193,34 +193,29 @@ def test_transformers_connectivity(test_model: t_common.ModelTest, params: dict[
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
-def test_two_winding_transformers(test_model: t_common.ModelTest):
-    t_common.check_model(test_model)
-    assert test_model.model
-    data = test_model.model.two_winding_transformers()
-    assert len(data) == 6
-    expect_names = {"NL-TR2_1", "NL_TR2_2", "NL_TR2_3", "BE-TR2_1", "BE-TR2_2", "BE-TR2_3"}
-    assert set(data["name"]) == expect_names
-    assert data["r"].dtype == float
-
-
-@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_windings(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     assert test_model.model
     data = test_model.model.transformer_branches()
     expect_names = {
-        "NL-TR2_1",
-        "NL_TR2_2",
-        "NL_TR2_3",
-        "BE-TR2_1",
-        "BE-TR2_2",
-        "BE-TR2_3",
-        "BE-TR3_1",
+        "051cb1e0-2d34-3ac3-487e-a04c30781280": "NL_TR2_2",
+        "1464d1bc-4a33-634c-7d93-b550dadf8b06": "NL-TR2_1",
+        "bd9f254a-6448-10e5-657b-eb33b827887d": "NL-TR2_1",
+        "f8ea6566-e73c-547d-a572-526e45334891": "NL_TR2_3",
+        "91ec0b2c-2447-b8da-a141-90c0c35b33d6": "NL_TR2_2",
+        "af598929-431f-3ef3-e636-87923c96f17c": "NL_TR2_3",
+        "5f68a129-d5d8-4b71-9743-9ca2572ba26b": "BE-TR3_1",
+        "49ca3fd4-1b54-4c5b-83fd-4dbd0f9fec9d": "BE-TR2_1",
+        "81a18364-0397-48d3-b850-22a0e34b410f": "BE-TR2_2",
+        "e1f661c0-971d-4ce5-ad39-0ec427f288ab": "BE-TR3_1",
+        "664a19e1-1dc2-48d5-b265-c0630981e61c": "BE-TR2_2",
+        "f58281c5-862a-465e-97ec-d809be6e24ab": "BE-TR2_3",
+        "1912224a-9e98-41aa-84cf-00875bce7264": "BE-TR2_1",
+        "2e21d1ef-2287-434c-a767-1ca807cf2478": "BE-TR3_1",
+        "35651e25-a77a-46a1-92f4-443d6acce90e": "BE-TR2_3",
     }
-    assert set(data["name"]) == expect_names
-
-    # 6 two winding transformers + one three winding 6*2 = 12 + 3 = 15
-    assert len(data) == 15
+    assert data["name"].to_dict() == expect_names
+    assert data["status"].all()
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())

@@ -70,7 +70,6 @@ async def collect_data(model: Model) -> list[pd.DataFrame]:
         loop.run_in_executor(None, exception_logging, model.transformer_windings),
         loop.run_in_executor(None, exception_logging, model.transformers_connected_to_converter),
         loop.run_in_executor(None, exception_logging, model.transformers),
-        loop.run_in_executor(None, exception_logging, model.two_winding_transformers),
         loop.run_in_executor(None, exception_logging, model.wind_generating_units),
     )
     return result

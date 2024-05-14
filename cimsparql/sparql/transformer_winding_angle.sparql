@@ -1,6 +1,5 @@
 # Name: Winding transformer angle
 PREFIX cim: <${cim}>
-PREFIX rdf: <${rdf}>
 PREFIX xsd: <${xsd}>
 select ?mrid ?angle
 where {
@@ -9,13 +8,11 @@ where {
 
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   service ?eq_repo {
-    ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-              cim:IdentifiedObject.mRID ?mrid .
     ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc;
-                cim:TapChanger.normalStep ?normalstep;
-                ^cim:PhaseTapChanger.TransformerEnd/cim:PowerTransformerEnd.PowerTransformer ?p_transformer .
+                cim:TapChanger.neutralStep ?neutralstep;
+                ^cim:TransformerEnd.PhaseTapChanger/cim:IdentifiedObject.mRID ?mrid .
   }
 
   bind(coalesce(?sv_position, ?ssh_position) as ?position)
-  bind((xsd:double(str(?position)) - xsd:double(str(?normalstep))) * xsd:double(str(?inc)) as ?angle)
+  bind((xsd:double(str(?position)) - xsd:double(str(?neutralstep))) * xsd:double(str(?inc)) as ?angle)
 }

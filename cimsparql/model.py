@@ -437,38 +437,9 @@ class Model:
         df = self.get_table_and_convert(query)
         return TransformersDataFrame(df)
 
-    def two_winding_transformers_query(
-        self, region: str | None = None, rate: str | None = None
-    ) -> str:
-        substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
-        return self.template_to_query(templates.TWO_WINDING_QUERY, substitutes)
-
-    def two_winding_angle_query(self, region: str | None = None) -> str:
+    def winding_angle_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
-        return self.template_to_query(templates.TWO_WINDING_ANGLE_QUERY, substitutes)
-
-    @time_it
-    def two_winding_transformers(
-        self, region: str | None = None, rate: str | None = None
-    ) -> TransformerWindingDataFrame:
-        """Query two-winding transformer.
-
-        Args:
-           region: Limit to region
-
-        Example:
-            >>> from cimsparql.model import get_single_client_model
-            >>> server_url = "127.0.0.1:7200"
-            >>> model = get_single_client_model(server_url, "LATEST")
-            >>> model.two_winding_transformers()
-        """
-        query = self.two_winding_transformers_query(region, rate)
-        query_angle = self.two_winding_angle_query(region)
-        data = self.get_table_and_convert(query, index="mrid")
-        angle = self.get_table_and_convert(query_angle, index="mrid")
-        if not angle.empty:
-            data["angle"] += angle.reindex(index=data.index, fill_value=0.0).squeeze()
-        return TransformerWindingDataFrame(data)
+        return self.template_to_query(templates.TRANSFORMER_WINDING_ANGLE_QUERY, substitutes)
 
     @property
     def winding_query(self) -> str:
@@ -510,10 +481,10 @@ class Model:
         query_loss = self.winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")
         df = pd.concat([data.assign(ploss_1=0.0), loss.loc[data.index]], axis=1)
-        query_angle = self.two_winding_angle_query(region)
+        query_angle = self.winding_angle_query(region)
         angle = self.get_table_and_convert(query_angle, index="mrid")
         if not angle.empty:
-            data["angle"] += angle.reindex(index=data.index, fill_value=0.0).squeeze()
+            data.loc[angle.index, "angle"] = angle
         return TransformerWindingDataFrame(df)
 
     @property
@@ -775,7 +746,6 @@ def get_federated_cim_model(
         "Transformer branches",
         "Transformer branches loss",
         "Transformer center nodes",
-        "Two winding transformer",
         "Synchronous machines",
         "Windings",
         "Winding transformer angle",

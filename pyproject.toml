@@ -162,6 +162,10 @@ log_file = "pytest.log"
 log_level = "DEBUG"
 log_file_format = "%(asctime)s - %(name)s - %(levelname)s: %(message)s"
 norecursedirs = "_build tmp*  __pycache__ src prof wheel_files tests/t_utils"
+filterwarnings = [
+  "ignore: NQuadsSerializer does not use custom encoding. Given encoding was.*:UserWarning"
+]
+
 markers = [
   "integration: Mark test as an integration test",
   "slow: marks tests as slow (deselect with '-m \"not slow\"')"
