@@ -43,8 +43,7 @@ TRANSFORMERS_QUERY = _read_template(sparql_folder / "transformers.sparql")
 TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY = _read_template(
     sparql_folder / "transformers_connected_to_converter.sparql"
 )
-TWO_WINDING_ANGLE_QUERY = _read_template(sparql_folder / "two_winding_transformer_angle.sparql")
-TWO_WINDING_QUERY = _read_template(sparql_folder / "two_winding_transformer.sparql")
+TRANSFORMER_WINDING_ANGLE_QUERY = _read_template(sparql_folder / "transformer_winding_angle.sparql")
 TYPE_MAPPER_QUERY = _read_template(sparql_folder / "type_mapper.sparql")
 WIND_GENERATING_UNITS_QUERY = _read_template(sparql_folder / "wind_generating_units.sparql")
 TRANSFORMER_WINDINGS_QUERY = _read_template(sparql_folder / "transformer_windings.sparql")

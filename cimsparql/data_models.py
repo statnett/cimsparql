@@ -154,6 +154,8 @@ class ConvertersSchema(NamedResourceSchema):
     p: Series[float] = pa.Field()
     q: Series[float] = pa.Field()
     connectivity_node: Series[str] = pa.Field()
+    controller: Series[str] = pa.Field()
+    controller_factor: Series[float] = pa.Field()
 
 
 ConvertersDataFrame = DataFrame[ConvertersSchema]

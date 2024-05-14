@@ -52,17 +52,11 @@ async def get_node_consistency_test_data(
     bus = await loop.run_in_executor(None, model.bus_data)
 
     # Results that has node_1 and node_2 which should be part of bus
-    two_node_names = [
-        "ac_lines",
-        "series_compensators",
-        "two_winding_transformers",
-        "transformer_branches",
-    ]
+    two_node_names = ["ac_lines", "series_compensators", "transformer_branches"]
 
     two_node_dfs = await asyncio.gather(
         loop.run_in_executor(None, model.ac_lines),
         loop.run_in_executor(None, model.series_compensators),
-        loop.run_in_executor(None, model.two_winding_transformers),
         loop.run_in_executor(None, model.transformer_branches),
     )
 
@@ -125,19 +119,6 @@ def test_node_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
 
 
 @pytest.mark.parametrize("model_name", ["model"])
-def test_two_or_three_winding(nc_data: CONSISTENCY_DATA, model_name: str):
-    """
-    Ensure that a transformer is either a two winding transformer or three winding
-    """
-    data = nc_data[model_name]
-    skip_on_missing(data, model_name)
-
-    two_w = data.two_node_dfs["two_winding_transformers"].index
-    three_w = data.two_node_dfs["transformer_branches"].index
-    assert len(set(two_w).intersection(three_w)) == 0
-
-
-@pytest.mark.parametrize("model_name", ["model"])
 def test_swing_bus_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
     data = nc_data[model_name]
     skip_on_missing(data, model_name)
@@ -147,6 +128,7 @@ def test_swing_bus_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models() + t_custom.all_custom_models())
 async def test_all_connectivity_nodes_fetched(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     count_query = test_model.model.template_to_query(
         Template("select (count(?s) as ?count) where {?s a <${cim}ConnectivityNode>}")
     )
