@@ -146,6 +146,21 @@ class ExchangeSchema(NamedMarketResourceSchema):
 ExchangeDataFrame = DataFrame[ExchangeSchema]
 
 
+class PhaseTapChangerSchema(JsonSchemaOut):
+    mrid: Series[str] = pa.Field()
+    phase_shift_increment: Series[float] = pa.Field()
+    enabled: bool = pa.Field()
+    neutral_step: int = pa.Field()
+    high_step: int = pa.Field()
+    low_step: int = pa.Field()
+    mode: str = pa.Field()
+    target_value: float = pa.Field()
+    monitored_winding: str = pa.Field()
+
+
+PhaseTapChangerDataFrame = DataFrame[PhaseTapChangerSchema]
+
+
 class ConvertersSchema(NamedResourceSchema):
     alias: Series[str] = pa.Field(nullable=True)
     substation_mrid: Series[str] = pa.Field()

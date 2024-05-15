@@ -32,6 +32,7 @@ from cimsparql.data_models import (
     HVDCBidzonesDataFrame,
     LoadsDataFrame,
     MarketDatesDataFrame,
+    PhaseTapChangerDataFrame,
     PowerFlowDataFrame,
     RASEquipmentDataFrame,
     RegionsDataFrame,
@@ -518,6 +519,13 @@ class Model:
         return PowerFlowDataFrame(df)
 
     @property
+    def phase_tap_changer_query(self) -> str:
+        return self.template_to_query(templates.PHASE_TAP_CHANGER)
+
+    def phase_tap_changer(self) -> PhaseTapChangerDataFrame:
+        return PhaseTapChangerDataFrame(self.get_table_and_convert(self.phase_tap_changer_query))
+
+    @property
     def transformer_windings_query(self) -> str:
         return self.template_to_query(templates.TRANSFORMER_WINDINGS_QUERY)
 
@@ -740,26 +748,27 @@ def get_federated_cim_model(
     # Setup client based on # Name in the pre-defined queries
     exec_from_tpssvssh = (
         "AC Lines",
+        "Branch node withdraw",
         "Bus",
         "Converters",
+        "DC Active Power Flow",
         "Disconnected",
         "Exchange",
-        "Loads",
-        "Branch node withdraw",
-        "DC Active Power Flow",
         "Full model",
-        "Series compensators",
-        "SV branch",
+        "Loads",
+        "Phase tap changer",
         "Power flow",
+        "SV branch",
+        "Series compensators",
         "SvInjection",
         "Switches",
-        "Transformer branches",
-        "Transformer branches loss",
-        "Transformer center nodes",
         "Synchronous machines",
         "Sv power deviation",
-        "Windings",
+        "Transformer branches loss",
+        "Transformer branches",
+        "Transformer center nodes",
         "Winding transformer angle",
+        "Windings",
     )
     for query in exec_from_tpssvssh:
         clients[query] = tpsvssh_client
