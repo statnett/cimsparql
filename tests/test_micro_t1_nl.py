@@ -217,6 +217,10 @@ def test_windings(test_model: t_common.ModelTest):
     assert data["name"].to_dict() == expect_names
     assert data["status"].all()
 
+    # On transformer branches, the mrid of node_2 should be a transformer
+    transformers = test_model.model.transformers()
+    assert set(data["node_2"]).issubset(set(transformers["p_mrid"]))
+
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 async def test_disconnected(test_model: t_common.ModelTest):

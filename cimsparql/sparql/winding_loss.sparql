@@ -12,12 +12,12 @@ where {
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   service ?eq_repo {
     # Extract mRID and area for each power transformer
-    ?p_transformer a cim:PowerTransformer;
-            ^cim:PowerTransformerEnd.PowerTransformer/cim:IdentifiedObject.mRID ?mrid;
-            cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-    filter(regex(?area, '.*'))
+
     ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-    		     cim:TransformerEnd.Terminal ?terminal .
+    	cim:TransformerEnd.Terminal ?terminal .
+    ?p_transformer cim:IdentifiedObject.mRID ?mrid ;
+      cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+    filter(regex(?area, '.*'))
     optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
   }
 
