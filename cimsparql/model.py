@@ -438,9 +438,12 @@ class Model:
         df = self.get_table_and_convert(query)
         return TransformersDataFrame(df)
 
-    def winding_angle_query(self, region: str | None = None) -> str:
-        substitutes = {"region": region or ".*"}
-        return self.template_to_query(templates.TRANSFORMER_WINDING_ANGLE_QUERY, substitutes)
+    @property
+    def winding_angle_query(self) -> str:
+        return self.template_to_query(templates.TRANSFORMER_WINDING_ANGLE_QUERY)
+
+    def winding_angle(self) -> pd.DataFrame:
+        return self.get_table_and_convert(self.winding_angle_query, index="mrid")
 
     @property
     def winding_query(self) -> str:
@@ -482,10 +485,7 @@ class Model:
         query_loss = self.winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")
         df = data.assign(ploss_1=0.0, ploss_2=lambda df: df["node_2"].map(loss["ploss_2"]))
-        query_angle = self.winding_angle_query(region)
-        angle = self.get_table_and_convert(query_angle, index="mrid")
-        if not angle.empty:
-            data.loc[angle.index, "angle"] = angle
+        data.update(self.winding_angle())
         return TransformerWindingDataFrame(df)
 
     @property

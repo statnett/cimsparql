@@ -100,6 +100,12 @@ def test_cimversion(model: SingleClientModel):
     assert model.cim_version == 16
 
 
+def test_ltc_fixed_angle_equals_zero(model: SingleClientModel):
+    branches = model.get_table_and_convert(model.transformer_branches_query(), index="mrid")
+    angle = model.winding_angle()
+    pytest.approx(branches.loc[angle.index, "angle"] == 0.0)
+
+
 def test_regions(model: SingleClientModel):
     regions = model.regions()
     assert regions.groupby("region").count().loc["NO", "name"] > 16
