@@ -480,7 +480,7 @@ class Model:
         data = self.get_table_and_convert(query, index="mrid")
         query_loss = self.winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")
-        df = pd.concat([data.assign(ploss_1=0.0), loss.loc[data.index]], axis=1)
+        df = data.assign(ploss_1=0.0, ploss_2=lambda df: df["node_2"].map(loss["ploss_2"]))
         query_angle = self.winding_angle_query(region)
         angle = self.get_table_and_convert(query_angle, index="mrid")
         if not angle.empty:
