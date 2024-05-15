@@ -134,6 +134,16 @@ def test_connections(test_model: t_common.ModelTest):
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+def test_ltc_fixed_angle_equals_zero(test_model: t_common.ModelTest):
+    t_common.check_model(test_model)
+    assert test_model.model
+    model = test_model.model
+    branches = model.get_table_and_convert(model.transformer_branches_query(), index="mrid")
+    angle = model.winding_angle()
+    pytest.approx(branches.loc[angle.index, "angle"] == 0.0)
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_aclines(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     assert test_model.model
