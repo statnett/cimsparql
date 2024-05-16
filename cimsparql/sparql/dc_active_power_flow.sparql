@@ -18,38 +18,6 @@ where {
   }
   union
   {
-      {
-        select ?p_transformer
-        where {
-          ?p_transformer ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr .
-        }
-        group by ?p_transformer
-        having (count(*) = 2)
-      } .
-
-      # Extract region pf the power trasnformer
-      ?p_transformer cim:Equipment.EquipmentContainer/cim:Substation.Region ?region .
-
-      # Extract information from the windings associated with the power transformer
-      ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-               cim:TransformerEnd.Terminal ?terminal;
-               cim:TransformerEnd.endNumber ?nr .
-
-      # For power transformer extract the winding corresponding to endNumber 1
-      ?component cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-                 cim:TransformerEnd.endNumber 1 .
-  }
-  union
-  {
-      # Extract all three winding transformers
-      {
-        select ?p_transformer
-        where {
-          ?p_transformer ^cim:PowerTransformerEnd.PowerTransformer/cim:TransformerEnd.endNumber ?nr;
-                  }
-        group by ?p_transformer
-        having (count(*) = 3)
-      } .
 
       # Extract the region for the transformer
       ?p_transformer cim:Equipment.EquipmentContainer/cim:Substation.Region ?region .
