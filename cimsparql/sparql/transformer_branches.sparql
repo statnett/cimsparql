@@ -5,7 +5,17 @@ PREFIX xsd: <${xsd}>
 # Name: Transformer branches
 select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2) ?angle ?ratio ?connectivity_node_1 (?node_2 as ?connectivity_node_2)
 where {
-  ?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_1 .
+
+  {
+    ?con_node cim:ConnectivityNode.TopologicalNode ?top_node
+  } union {
+    # Get topological node directly from the terminal when it does not
+    # exist via the connectivity node
+    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?top_node }
+    ?terminal cim:Terminal.TopologicalNode ?top_node
+  }.
+
+  ?top_node cim:IdentifiedObject.mRID ?node_1 .
   ?terminal cim:ACDCTerminal.connected ?connected .
   optional {?winding ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
 
