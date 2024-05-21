@@ -3,41 +3,42 @@ PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 select ?mrid ?node ?p ?q ?connectivity_node
 where {
+  {
+    select * where {
+        ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+        service ?eq_repo {
+          # Specify components wer are interested in
+          values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer} .
+          ?component a ?rdf_type .
+          optional {?component SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+          ?terminal cim:Terminal.ConductingEquipment ?component;
+                  cim:IdentifiedObject.mRID ?mrid;
+                  cim:Terminal.ConnectivityNode ?con_node .
+          ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
+
+          # Find area for the connectivity node of the terminal
+          ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+          filter(regex(?area, '${region}'))
+      }
+    }
+  }
+
   # Extract properties of each terminal from the SV/TP/SSH profile.
   # If exists, the mRID of the topological node associated with the terminal is etracted
   ?terminal cim:ACDCTerminal.connected ?connected .
-  optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
   ?_sv_t cim:SvPowerFlow.Terminal ?terminal;
           cim:SvPowerFlow.p ?p;
           cim:SvPowerFlow.q ?q .
-
-  # Extract the mRID for the topological node of the connectivity node associated with each terminal
-  optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
-
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-  service ?eq_repo {
-    # Specify components wer are interested in
-    values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer} .
-    ?component a ?rdf_type .
-    optional {?component SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
-    ?terminal cim:Terminal.ConductingEquipment ?component;
-            cim:IdentifiedObject.mRID ?mrid;
-            cim:Terminal.ConnectivityNode ?con_node .
-    ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
-
-    # Find area for the connectivity node of the terminal
-    ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-    filter(regex(?area, '${region}'))
+  {
+    ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
+  } union {
+    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
+    ?terminal cim:Terminal.TopologicalNode ?topological_node .
   }
+  ?topological_node cim:IdentifiedObject.mRID ?node .
 
   # Assign analysis enabled (all True if not exist)
   bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-
-  # Assign an mRID to the ?node variable. The first that exists is used
-  # 1) mRID of the topological node associated with the connectivity node the terminal
-  # 2) mrID of the topoligical node associated with the terminel
-  # 3) mRID of the terminal
-  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid, ?mrid) as ?node)
   filter(?analysis_enabled)
   filter(?connected)
 }
