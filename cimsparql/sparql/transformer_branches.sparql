@@ -23,14 +23,14 @@ where {
   service ?eq_repo {
     # Use mrid of transformer as dummy node
     ?p_transformer cim:IdentifiedObject.mRID ?node_2;
-            cim:Equipment.EquipmentContainer ?Substation;
-            cim:IdentifiedObject.name ?name .
+            cim:Equipment.EquipmentContainer ?Substation .
     ?Substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
     filter(regex(?area, '${region}'))
 
     # Extract properties for the windings associated with p_transformer
     ?winding cim:TransformerEnd.Terminal ?terminal;
           cim:IdentifiedObject.mRID ?mrid;
+          cim:IdentifiedObject.name ?name;
           cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
           cim:PowerTransformerEnd.ratedU ?ubase;
           cim:PowerTransformerEnd.r ?r;
