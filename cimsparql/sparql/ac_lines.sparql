@@ -70,18 +70,18 @@ where {
   }} .
   # Search for acline SV status will be combined with SSH connected
   optional {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service . }
-  optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
+
+  {
+    ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
+  } union {
+    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
+    ?terminal cim:Terminal.TopologicalNode ?topological_node .
+  }
+  ?topological_node cim:IdentifiedObject.mRID ?node .
 
   # Find properties in TP/SV/SSH profile for each terminal.
   ?terminal cim:ACDCTerminal.connected ?connected .
-  optional {?terminal cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid} .
   optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
-
-  # Assign an mrid to the ?node_<nr> variable. The mrid is set to the first that exist
-  # 1) mRID of the topological node of the connectivity node for each terminal
-  # 2) mRID of the topological node of each terminal
-  # 3) mrID of the terminal
-  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid) as ?node)
 
   # Create variables for node 1 and node 2
   bind(if(?nr = 1, str(?p), '') as ?p_1)
