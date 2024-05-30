@@ -65,6 +65,7 @@ async def collect_data(model: Model) -> list[pd.DataFrame]:
         loop.run_in_executor(None, exception_logging, model.station_group_codes_and_names),
         loop.run_in_executor(None, exception_logging, model.substation_voltage_level),
         loop.run_in_executor(None, exception_logging, model.synchronous_machines),
+        loop.run_in_executor(None, exception_logging, model.sv_power_deviation),
         loop.run_in_executor(None, exception_logging, model.switches),
         loop.run_in_executor(None, exception_logging, model.transformer_branches),
         loop.run_in_executor(None, exception_logging, model.transformer_windings),

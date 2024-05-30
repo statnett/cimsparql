@@ -1,5 +1,6 @@
 import contextlib
 from copy import deepcopy
+from string import Template
 from typing import Any
 
 import pandas as pd
@@ -295,3 +296,27 @@ def test_switches(test_model: t_common.ModelTest):
     # 26 Breakers from CGMES_v2.4.15-MicroGridTestConfiguration_v2.docx (table 8)
     assert len(df) == 26
     assert (df["equipment_type"] == "Breaker").all()
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+def test_sv_power_deviation(test_model: t_common.ModelTest) -> None:
+    t_common.check_model(test_model)
+    assert test_model.model
+
+    df = test_model.model.sv_power_deviation()
+
+    client = test_model.model.clients["Sv power deviation"]
+
+    count_query = test_model.model.template_to_query(
+        Template("""
+        PREFIX cim: <$cim>
+        select (count(distinct ?tp_node) as ?num) where {
+        ?s cim:Terminal.TopologicalNode ?tp_node
+        }
+        """)
+    )
+
+    # Count number of tp nodes connected to a terminal
+    num = int(client.get_table(count_query)[0]["num"].iloc[0])
+    assert num > 0
+    assert len(df) == num

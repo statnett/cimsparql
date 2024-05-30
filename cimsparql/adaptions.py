@@ -67,6 +67,7 @@ class XmlModelAdaptor:
 
     def adapt(self, eq_uri: str) -> None:
         self.add_zero_sv_power_flow()
+        self.add_zero_sv_injection()
         self.add_mrid()
         self.add_dtypes()
         self.set_generation_type()
@@ -126,6 +127,16 @@ class XmlModelAdaptor:
         self.graph.get_context(ctx.identifier).add(
             (BNode(), URIRef(self.eq_predicate), URIRef(eq_uri))
         )
+
+    def add_zero_sv_injection(self) -> None:
+        with open(
+            Path(__file__).parent
+            / "sparql/test_configuration_modifications/add_sv_injection.sparql"
+        ) as f:
+            query = Template(f.read())
+
+        prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
+        self.graph.update(prepared_update_query)
 
 
 def is_uuid(x: str) -> bool:

@@ -38,6 +38,7 @@ from cimsparql.data_models import (
     StationGroupCodeNameDataFrame,
     SubstationVoltageDataFrame,
     SvInjectionDataFrame,
+    SvPowerDeviationDataFrame,
     SwitchesDataFrame,
     SynchronousMachinesDataFrame,
     TransfConToConverterDataFrame,
@@ -661,6 +662,15 @@ class Model:
         df = self.get_table_and_convert(self.connectivity_nodes_query(region), index="mrid")
         return ConnectivityNodeDataFrame(df)
 
+    def sv_power_deviation_query(self) -> str:
+        return self.template_to_query(templates.SV_POWER_DEVIATION_QUERY)
+
+    @time_it
+    def sv_power_deviation(self) -> SvPowerDeviationDataFrame:
+        return SvPowerDeviationDataFrame(
+            self.get_table_and_convert(self.sv_power_deviation_query())
+        )
+
 
 class SingleClientModel(Model):
     def __init__(
@@ -747,6 +757,7 @@ def get_federated_cim_model(
         "Transformer branches loss",
         "Transformer center nodes",
         "Synchronous machines",
+        "Sv power deviation",
         "Windings",
         "Winding transformer angle",
     )

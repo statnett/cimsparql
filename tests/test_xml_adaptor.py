@@ -42,3 +42,10 @@ def test_add_internal_eq_link(xml_adaptor: XmlModelAdaptor):
     xml_adaptor.add_internal_eq_link("http://eq.com")
     query = f"select * where {{?node <{XmlModelAdaptor.eq_predicate}> ?eq_uri}}"
     assert len(xml_adaptor.graph.query(query)) == 1
+
+
+def test_add_sv_injection(xml_adaptor: XmlModelAdaptor) -> None:
+    query = "select * where {?s a cim:SvInjection}"
+    orig_number = len(xml_adaptor.graph.query(query))
+    xml_adaptor.add_zero_sv_injection()
+    assert len(xml_adaptor.graph.query(query)) > orig_number

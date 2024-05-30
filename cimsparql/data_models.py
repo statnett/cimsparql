@@ -355,3 +355,14 @@ class ConnectivityNode(JsonSchemaOut):
 
 
 ConnectivityNodeDataFrame = DataFrame[ConnectivityNode]
+
+
+class SvPowerDeviationSchema(JsonSchemaOut):
+    node: Series[str] = pa.Field(unique=True)
+    sum_terminal_flow: Series[float] = pa.Field()
+    reported_sv_injection: Series[float] = pa.Field()
+    connectivity_nodes: Series[str] = pa.Field()
+    terminal_names: Series[str] = pa.Field()
+
+
+SvPowerDeviationDataFrame = DataFrame[SvPowerDeviationSchema]
