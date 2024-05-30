@@ -1,0 +1,11 @@
+prefix cim:<${cim}>
+insert {
+    graph <http://cimsparql/xml-adpator/SV-modifications> {
+        _:b0 cim:SvInjection.TopologicalNode ?tp_node;
+            a cim:SvInjection;
+            cim:SvInjection.pInjection 0.0
+}}
+where {
+    ?tp_node a cim:TopologicalNode
+    filter not exists {?s cim:SvInjection.TopologicalNode ?tp_node}
+}

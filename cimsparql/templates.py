@@ -35,6 +35,7 @@ STATION_GROUP_CODE_NAME_QUERY = _read_template(
 SUBSTATION_VOLTAGE_LEVEL_QUERY = _read_template(sparql_folder / "substation_voltage_level.sparql")
 SV_BRANCH_QUERY = _read_template(sparql_folder / "sv_branch.sparql")
 SV_INJECTION_QUERY = _read_template(sparql_folder / "sv_injection.sparql")
+SV_POWER_DEVIATION_QUERY = _read_template(sparql_folder / "sv_power_deviation.sparql")
 SYNCHRONOUS_MACHINES_QUERY = _read_template(sparql_folder / "synchronous_machines.sparql")
 SWITCHES_QUERY = _read_template(sparql_folder / "switches.sparql")
 TRANSFORMER_BRANCHES_QUERY = _read_template(sparql_folder / "transformer_branches.sparql")

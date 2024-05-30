@@ -1,0 +1,32 @@
+# Name: Sv power deviation
+PREFIX xsd:<${xsd}>
+PREFIX cim:<${cim}>
+select
+?node
+(sum(xsd:double(str(?p))) as ?sum_terminal_flow)
+(sum(xsd:double(str(?p_inj))) as ?reported_sv_injection)
+(group_concat(?con_node_mrid; SEPARATOR=",") as ?connectivity_nodes)
+(group_concat(?terminal_name; SEPARATOR=",") as ?terminal_names)
+where {
+    {
+        select * {
+            ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+            service ?eq_repo {
+                ?terminal cim:Terminal.ConnectivityNode ?con_node ;
+                    cim:IdentifiedObject.name ?terminal_name .
+                ?con_node cim:IdentifiedObject.mRID ?con_node_mrid
+            }
+        }
+    }
+    ?sv_power_flow cim:SvPowerFlow.p ?p;
+        cim:SvPowerFlow.Terminal ?terminal .
+    {
+        ?con_node cim:ConnectivityNode.TopologicalNode ?tp_node
+    } union {
+        filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?tp_node}
+        ?terminal cim:Terminal.TopologicalNode ?tp_node
+    }
+    ?tp_node cim:IdentifiedObject.mRID ?node;
+        cim:IdentifiedObject.name ?name;
+        ^cim:SvInjection.TopologicalNode/cim:SvInjection.pInjection ?p_inj
+} group by ?node
