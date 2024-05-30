@@ -7,8 +7,14 @@ where
   ?terminal1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p;
               cim:ACDCTerminal.connected ?connected_1 .
   ?terminal2 cim:ACDCTerminal.connected ?connected_2 .
-  optional {?terminal1 cim:Terminal.TopologicalNode/cim:IdentifiedObject.mRID ?term_top_node_mrid .}
-  optional {?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?con_top_node_mrid .}
+
+  {
+    ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
+  } union {
+    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
+    ?terminal1 cim:Terminal.TopologicalNode ?topological_node .
+  }
+  ?topological_node cim:IdentifiedObject.mRID ?node .
 
   # Extract a connection flag that is composed of the inService flag for all conducting equipment connected
   # to an acline.
@@ -51,9 +57,4 @@ where
   # 1) The computed in_service flag for each acline
   # 2) The connected status for the terminals. If one of the terminals is off, the status is False
   bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)
-
-  # Assign mRID to the ?node variable. The mRID is set to the first existing entry of
-  # 1) mRID of the topological node associated with the connectivity node of the first terminal
-  # 2) mRID of the toplogical node associated with the first terminal
-  bind(coalesce(?con_top_node_mrid, ?term_top_node_mrid) as ?node)
 }
