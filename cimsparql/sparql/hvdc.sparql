@@ -1,0 +1,22 @@
+PREFIX cim: <${cim}>
+PREFIX ALG: <${ALG}>
+PREFIX xsd: <${xsd}>
+select ?converter_mrid_1 ?converter_mrid_2 (group_concat(?name; separator="--") as ?name) (max(?vdc_1) as ?vdcn) (sum(xsd:float(str(?r))) as ?r)
+{
+  ?converter_1 a ALG:VoltageSourceConverter;
+	       cim:IdentifiedObject.mRID ?converter_mrid_1;
+        ALG:VoltageSourceConverter.DCPole/cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?vdc_1 .
+  ?converter_2 a ALG:VoltageSourceConverter;
+	       cim:IdentifiedObject.mRID ?converter_mrid_2.
+  ?t_1 cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter_1;
+       cim:Terminal.ConductingEquipment ?line;
+       cim:Terminal.sequenceNumber 1 .
+  ?t_2 cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter_2;
+       cim:Terminal.ConductingEquipment ?line;
+       cim:Terminal.sequenceNumber 2 .
+  ?line a ALG:DCLineSegment;
+  	ALG:DCLineSegment.dcSegmentResistance ?r;
+        cim:IdentifiedObject.name ?name.
+}
+group by ?converter_mrid_1 ?converter_mrid_2
+having (count(*) > 1)
