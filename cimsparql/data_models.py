@@ -171,6 +171,12 @@ class ConvertersSchema(NamedResourceSchema):
     connectivity_node: Series[str] = pa.Field()
     controller: Series[str] = pa.Field()
     controller_factor: Series[float] = pa.Field()
+    pole_loss: Series[float] = pa.Field()
+    loss0: Series[float] = pa.Field()
+    loss1: Series[float] = pa.Field()
+    loss2: Series[float] = pa.Field()
+    vdcn: Series[float] = pa.Field()
+    un: Series[float] = pa.Field()
 
 
 ConvertersDataFrame = DataFrame[ConvertersSchema]
@@ -381,3 +387,13 @@ class SvPowerDeviationSchema(JsonSchemaOut):
 
 
 SvPowerDeviationDataFrame = DataFrame[SvPowerDeviationSchema]
+
+
+class HVDC(JsonSchemaOut):
+    converter_mrid_1: Series[str] = pa.Field()
+    converter_mrid_2: Series[str] = pa.Field()
+    name: Series[str] = pa.Field()
+    r: Series[float] = pa.Field(ge=0.0)
+
+
+HVDCDataFrame = DataFrame[HVDC]

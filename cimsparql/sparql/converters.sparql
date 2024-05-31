@@ -3,9 +3,8 @@ PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
 PREFIX SN:<${SN}>
 PREFIX ALG:<${ALG}>
-select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node ?connectivity_node ?controller ?controller_factor
+select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un
 where {
-
   {
     select * where {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
@@ -13,9 +12,11 @@ where {
         # Extract mrid, name, substation and optionally aliasName of the converter
         ?converter cim:IdentifiedObject.mRID ?mrid;
                   cim:IdentifiedObject.name ?name;
-            ALG:VoltageSourceConverter.DCPole|ALG:DCConverter.DCPole ?pole.
+                  cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
+		  ALG:VoltageSourceConverter.DCPole|ALG:DCConverter.DCPole ?pole.
+
         ?pole ALG:DCPole.DCController/cim:IdentifiedObject.mRID ?controller;
-              ALG:DCPole.participationFactor ?controller_factor;
+              ALG:DCPole.participationFactor ?controller_factor.
 
         optional {?converter cim:IdentifiedObject.aliasName ?alias .}
         # Extract properties for the terminals for the converter
@@ -27,8 +28,17 @@ where {
         ?substation cim:IdentifiedObject.mRID ?substation_mrid;
           cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
         optional {?converter SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
-        filter regex(?area, '${region}')
+	optional {
+          ?converter ALG:VoltageSourceConverter.loss0 ?_loss0;
+                     ALG:VoltageSourceConverter.loss1 ?_loss1;
+		     ALG:VoltageSourceConverter.loss2 ?_loss2.
+	  ?pole cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?_vdcn;
+	}
         bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+	bind(coalesce(?_loss0, 0.0) as ?loss0)
+	bind(coalesce(?_loss1, 0.0) as ?loss1)
+	bind(coalesce(?_loss2, 0.0) as ?loss2)
+	bind(coalesce(?_vdcn, 0.0) as ?vdcn)
         filter(?analysis_enabled)
       }
     }
@@ -36,8 +46,9 @@ where {
 
   # Extract active and reactive power for the converter
   ?converter cim:ACDCConverter.p ?p;
-             cim:ACDCConverter.q ?q .
+             cim:ACDCConverter.q ?q.
 
+  optional {?converter cim:ACDCConverter.poleLossP ?_pole_loss.}
   optional {?converter ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
 
   # Extract connected and optionally the mrid for the topological node associated with the terminal
@@ -52,4 +63,5 @@ where {
   ?topological_node cim:IdentifiedObject.mRID ?node .
 
   bind(coalesce(?in_service, ?connected) as ?status)
+  bind(coalesce(?_pole_loss, 0.0) as ?pole_loss)
 }

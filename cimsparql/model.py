@@ -30,6 +30,7 @@ from cimsparql.data_models import (
     ExchangeDataFrame,
     FullModelDataFrame,
     HVDCBidzonesDataFrame,
+    HVDCDataFrame,
     LoadsDataFrame,
     MarketDatesDataFrame,
     PhaseTapChangerDataFrame,
@@ -613,6 +614,15 @@ class Model:
         # We need to find a solution for custom namespaces in queries
         df = self.get_table_and_convert(self.regions_query, index="mrid")
         return RegionsDataFrame(df)
+
+    @property
+    def hvdc_query(self) -> str:
+        return self.template_to_query(templates.HVDC)
+
+    @time_it
+    def hvdc(self) -> HVDCDataFrame:
+        df = self.get_table_and_convert(self.hvdc_query)
+        return HVDCDataFrame(df)
 
     @property
     def hvdc_converter_bidzone_query(self) -> str:
