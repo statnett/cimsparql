@@ -1,6 +1,7 @@
 # Name: Synchronous machines
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
+PREFIX xsd: <${xsd}>
 select ?mrid ?name ?market_code ?node ?status ?station_group ?station_group_name ?substation_mrid ?maxP ?minP ?MO ?bidzone ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource
 where {
   # Extract properties for synchronous machines.
@@ -8,19 +9,20 @@ where {
     select * where {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       service ?eq_repo {
-        values ?gen_type {cim:NuclearGeneratingUnit cim:MktGeneratingUnit cim:HydroGeneratingUnit cim:WindGeneratingUnit cim:ThermalGeneratingUnit cim:SolarGeneratingUnit}
         ?machine a cim:SynchronousMachine;
+              cim:IdentifiedObject.mRID ?machine_mrid;
               cim:IdentifiedObject.name ?name;
               cim:RotatingMachine.ratedS ?sn;
               ^cim:Terminal.ConductingEquipment ?terminal;
-              cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation;
-        # TODO: Seems like cim15 uses SynchronousMachine while cim16 uses RotatingMachine. Will fix this when we have a proper cim16 model
-              cim:SynchronousMachine.GeneratingUnit|cim:RotatingMachine.GeneratingUnit ?gen_unit.
+              cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
 
-        ?gen_unit a ?gen_type;
-      cim:IdentifiedObject.mRID ?mrid;
-      cim:GeneratingUnit.minOperatingP ?minP;
-            cim:GeneratingUnit.maxOperatingP ?maxP.
+        # TODO: Seems like cim15 uses SynchronousMachine while cim16 uses RotatingMachine. Will fix this when we have a proper cim16 model
+        optional{
+          values ?gen_type {cim:NuclearGeneratingUnit cim:MktGeneratingUnit cim:HydroGeneratingUnit cim:WindGeneratingUnit cim:ThermalGeneratingUnit cim:SolarGeneratingUnit}
+          ?machine cim:SynchronousMachine.GeneratingUnit|cim:RotatingMachine.GeneratingUnit ?nullable_gen_unit;
+            a ?gen_type
+        }
+        bind(coalesce(?nullable_gen_unit, URI("http://no-gen-unit")) as ?gen_unit)
 
         ?terminal cim:Terminal.ConnectivityNode ?con_node .
         ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
@@ -31,16 +33,17 @@ where {
 
         # Optionally extract min/max operating power for each machin
         optional {
-          ?gen_unit	cim:GeneratingUnit.minOperatingP ?minP;
-        cim:GeneratingUnit.maxOperatingP ?maxP.
+          ?gen_unit cim:IdentifiedObject.mRID ?gen_unit_mrid;
+          	cim:GeneratingUnit.minOperatingP ?nullable_minP;
+            cim:GeneratingUnit.maxOperatingP ?nullable_maxP.
 
         optional {
-      ?gen_unit SN:GeneratingUnit.marketCode ?market_code;
-              SN:GeneratingUnit.groupAllocationWeight ?MO;
-              SN:GeneratingUnit.ScheduleResource ?ScheduleResource .
-      ?ScheduleResource SN:ScheduleResource.marketCode ?station_group;
-                      cim:IdentifiedObject.mRID ?schedule_resource;
-                      cim:IdentifiedObject.name ?station_group_name .
+          ?gen_unit SN:GeneratingUnit.marketCode ?market_code;
+                  SN:GeneratingUnit.groupAllocationWeight ?MO;
+                  SN:GeneratingUnit.ScheduleResource ?ScheduleResource .
+          ?ScheduleResource SN:ScheduleResource.marketCode ?station_group;
+                          cim:IdentifiedObject.mRID ?schedule_resource;
+                          cim:IdentifiedObject.name ?station_group_name .
         }
           }
         filter regex(?area, '${region}')
@@ -52,7 +55,8 @@ where {
 
         # Opionally extract non-CIM standard properties generating units
         optional {?machine SN:Equipment.networkAnalysisEnable ?_network_analysis}
-        bind(replace(str(?gen_type), str(cim:), "") as ?generator_type)
+        bind(if(bound(?gen_type), replace(str(?gen_type), str(cim:), ""), "unknown") as ?generator_type)
+        bind(coalesce(?gen_unit_mrid, ?machine_mrid) as ?mrid)
       }
     }
   }
@@ -71,5 +75,7 @@ where {
 
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   bind(coalesce(?in_service, ?connected) as ?status)
+  bind(coalesce(?nullable_maxP, if(xsd:double(str(?p)) >= 0.0, ?p, 0.0), 0.0) as ?maxP)
+  bind(coalesce(?nullable_minP, if(xsd:double(str(?p)) < 0.0, ?p, 0.0), 0.0) as ?minP)
   filter(?network_analysis)
 }
