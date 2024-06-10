@@ -13,22 +13,19 @@ where {
         # Extract mrid, name, substation and optionally aliasName of the converter
         ?converter cim:IdentifiedObject.mRID ?mrid;
                   cim:IdentifiedObject.name ?name;
-                  cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation;
             ALG:VoltageSourceConverter.DCPole|ALG:DCConverter.DCPole ?pole.
         ?pole ALG:DCPole.DCController/cim:IdentifiedObject.mRID ?controller;
               ALG:DCPole.participationFactor ?controller_factor;
 
         optional {?converter cim:IdentifiedObject.aliasName ?alias .}
-
-        # Find area and mRID for the substation
-        ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-        cim:IdentifiedObject.mRID ?substation_mrid .
-
         # Extract properties for the terminals for the converter
         ?terminal cim:Terminal.ConductingEquipment ?converter;
                   cim:Terminal.ConnectivityNode ?con_node;
                   cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
-        ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
+        ?con_node cim:IdentifiedObject.mRID ?connectivity_node ;
+          cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation .
+        ?substation cim:IdentifiedObject.mRID ?substation_mrid;
+          cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
         optional {?converter SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
         filter regex(?area, '${region}')
         bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
