@@ -5,7 +5,7 @@ select
 ?node
 (sum(xsd:double(str(?p))) as ?sum_terminal_flow)
 (max(xsd:double(str(?p_inj))) as ?reported_sv_injection)
-(group_concat(?con_node_mrid;
+(group_concat(distinct(?con_node_mrid);
         SEPARATOR=",") as ?connectivity_nodes)
 (group_concat(?terminal_name;
         SEPARATOR=",") as ?terminal_names)
