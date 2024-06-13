@@ -1,0 +1,31 @@
+# Name: Fictitious switches
+#
+# This query adds at connectivity nodes associated with ACLineSegment terminals that does not have other switches
+# associated with them. For this to have effect in a real model, the ac_line connectivity node must be patched
+# with the value in connectivity_node_2 here.
+# The mrid of the fictitious switch is the same as the line. Thus, the fictitous switch
+PREFIX cim: <${cim}>
+
+select ?mrid (false as ?is_open) ("Breaker" as ?equipment_type) ?connectivity_node_1 ?connectivity_node_2 {
+        {
+            # Select AC lines and extract whether there is a switch associated with one of the terminals
+            select ?acline ?nr (regex(lcase(group_concat(STRAFTER(str(?type), "#"); SEPARATOR=",")), "breaker|disconnector|fuse|sectionaliser|cut|jumper") as ?has_switch) {
+                ?acline a cim:ACLineSegment .
+                ?terminal1 cim:Terminal.ConductingEquipment ?acline;
+                cim:Terminal.ConnectivityNode ?con_node ;
+                cim:ACDCTerminal.sequenceNumber ?nr .
+                ?other_terminals1 cim:Terminal.ConnectivityNode ?con_node ;
+                cim:Terminal.ConductingEquipment ?other_equipment .
+                ?other_equipment a ?type
+            } group by ?acline ?nr
+    	}
+    filter (!?has_switch)
+    ?acline cim:IdentifiedObject.mRID ?mrid .  # mrid of the acline will be used as ficitious switch mrid
+
+    # Extract the connectivity node associated with the
+   	?terminal cim:Terminal.ConductingEquipment ?acline;
+    	cim:ACDCTerminal.sequenceNumber ?nr;
+    	cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_1 ;
+    	# Use the terminal's mrid as the mrid of the fictitious connectivity node
+    	cim:IdentifiedObject.mRID ?connectivity_node_2 .
+}

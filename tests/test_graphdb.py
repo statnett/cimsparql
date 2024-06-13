@@ -55,6 +55,7 @@ async def collect_data(model: Model) -> list[pd.DataFrame]:
         loop.run_in_executor(None, exception_logging, model.dc_active_flow),
         loop.run_in_executor(None, exception_logging, model.disconnected),
         loop.run_in_executor(None, exception_logging, model.exchange, "NO|SE"),
+        loop.run_in_executor(None, exception_logging, model.fictitious_switches),
         loop.run_in_executor(None, exception_logging, model.full_model),
         loop.run_in_executor(None, exception_logging, model.hvdc_converter_bidzones),
         loop.run_in_executor(None, exception_logging, model.loads),

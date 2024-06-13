@@ -330,3 +330,12 @@ def test_sv_power_deviation(test_model: t_common.ModelTest) -> None:
     num = int(client.get_table(count_query)[0]["num"].iloc[0])
     assert num > 0
     assert len(df) == num
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+def test_fictitious_switches(test_model: t_common.ModelTest):
+    t_common.check_model(test_model)
+    assert test_model.model
+
+    df = test_model.model.fictitious_switches()
+    assert len(df) == 10

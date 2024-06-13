@@ -661,6 +661,16 @@ class Model:
         df = self.get_table_and_convert(self.switches_query(), index="mrid")
         return SwitchesDataFrame(df)
 
+    def fictitious_switches_query(self) -> str:
+        return self.template_to_query(templates.FICTITIOUS_SWITCHES)
+
+    def fictitious_switches(self) -> SwitchesDataFrame:
+        df = self.get_table_and_convert(self.fictitious_switches_query())
+
+        # Drop duplicates to ensure that lines with no switch in either end only
+        # gets one switch
+        return SwitchesDataFrame(df.drop_duplicates(subset="mrid").set_index("mrid"))
+
     def connectivity_nodes_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.CONNECTIVITY_NODES_QUERY, substitutes)
