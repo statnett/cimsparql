@@ -50,6 +50,7 @@ from cimsparql.data_models import (
 )
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.type_mapper import TypeMapper
+from cimsparql.utils import query_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -717,15 +718,6 @@ def get_single_client_model(
         custom_headers: Custom headers to be added to the requests
     """
     return SingleClientModel(GraphDBClient(service_cfg, custom_headers), model_cfg)
-
-
-def query_name(query: str) -> str:
-    """
-    Extract the name of the query provided that the first line starts with # Name: <name>.
-    If no match is found, an empty string is returned
-    """
-    m = re.search("^# Name: ([a-zA-Z0-9 ]+)", query)
-    return m.group(1) if m else ""
 
 
 def get_federated_cim_model(

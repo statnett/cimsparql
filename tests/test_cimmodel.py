@@ -15,7 +15,6 @@ from cimsparql.model import (
     Model,
     ModelConfig,
     get_federated_cim_model,
-    query_name,
 )
 from cimsparql.sparql_result_json import (
     SparqlData,
@@ -25,6 +24,7 @@ from cimsparql.sparql_result_json import (
 )
 from cimsparql.templates import sparql_folder
 from cimsparql.type_mapper import TypeMapper
+from cimsparql.utils import query_name
 
 
 def test_map_data_types(monkeypatch: pytest.MonkeyPatch):
