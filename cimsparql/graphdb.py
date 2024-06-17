@@ -17,6 +17,7 @@ import tenacity
 from SPARQLWrapper import JSON, POST, SPARQLWrapper
 from strenum import StrEnum
 
+from cimsparql.retry_cb import RetryCallback, RetryCallbackFactory
 from cimsparql.sparql_result_json import SparqlResultJson
 from cimsparql.url import service, service_blazegraph
 
@@ -70,6 +71,7 @@ class ServiceConfig:
     token: str | None = field(default=os.getenv("GRAPHDB_TOKEN"))
     rest_api: RestApi = field(default=RestApi(os.getenv("SPARQL_REST_API", "RDF4J")))
     ca_bundle: str | None = field(default=None)
+    retry_callback_factory: RetryCallbackFactory = field(default=RetryCallback)
 
     # Parameters for rest api
     # https://rdf4j.org/documentation/reference/rest-api/
@@ -233,9 +235,14 @@ class GraphDBClient:
         sparql_wrapper = deepcopy(self.sparql)
         sparql_wrapper.setQuery(query)
 
+        retry_cb = self.service_cfg.retry_callback_factory()
+        retry_cb.pre_call(query)
+
         for attempt in tenacity.Retrying(
             stop=tenacity.stop_after_attempt(self.service_cfg.num_retries + 1),
             wait=tenacity.wait_exponential(max=self.service_cfg.max_delay_seconds),
+            before=retry_cb.before,
+            after=retry_cb.after,
         ):
             with attempt:
                 results = sparql_wrapper.queryAndConvert()
