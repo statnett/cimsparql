@@ -16,11 +16,13 @@ from cimsparql.graphdb import RestApi
 from cimsparql.model import ServiceConfig
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from pytest_httpserver import HTTPServer
 
 
 def init_triple_store_server(
-    httpserver: HTTPServer, sparql_result: dict | None = None
+    httpserver: HTTPServer, sparql_result: dict[str, Any] | None = None
 ) -> ServiceConfig:
     """
     Create a triple store server that returns sparql_result_data when a call is made
@@ -32,7 +34,7 @@ def init_triple_store_server(
     )
 
 
-def empty_sparql_result():
+def empty_sparql_result() -> dict[str, Any]:
     return {"head": {"vars": []}, "results": {"bindings": []}}
 
 
@@ -128,7 +130,7 @@ def test_xsd_types(dtype: str, test: tuple):
 def test_have_cim_version(httpserver: HTTPServer, cim_version: int, have_cim_version: bool):
     service_cfg = init_triple_store_server(httpserver)
     tm = type_mapper.TypeMapper(service_cfg)
-    assert tm.have_cim_version(cim_version) == have_cim_version
+    assert tm.have_cim_version(str(cim_version)) == have_cim_version
 
 
 class FloatSchema(JsonSchemaOut):

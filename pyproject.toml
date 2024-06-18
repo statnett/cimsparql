@@ -9,14 +9,16 @@ include = ["pkg_data/*"]
 exclude = ["tests/*"]
 
 [tool.poetry.dependencies]
-SPARQLWrapper = "*"
-StrEnum = "*"
-pandera = "*"
+httpx = "*"
+numpy = "^1.26"  # pandera does not work with np 2.0. Should work after https://github.com/unionai-oss/pandera/pull/1690/files
 pandas = "*"
+pandera = "*"
 polyfactory = "^2.0.0"
 pydantic = "^2.0.0"
-python = "^3.10"
-httpx = "*"
+python = "^3.11"
+rdflib = "^7.0.0"
+SPARQLWrapper = "*"
+StrEnum = "*"
 tenacity = "*"
 
 [tool.poetry.group.test.dependencies]

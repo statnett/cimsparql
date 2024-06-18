@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import ClassVar
+from typing import ClassVar, Self
 
 import pandas as pd
 import pandera as pa
@@ -14,15 +14,15 @@ class JsonSchemaOut(pa.SchemaModel):
 
 
 class FullModelSchema(JsonSchemaOut):
-    model: Series[str] = pa.Field()
-    time: Series[str] = pa.Field()
-    profile: Series[str] = pa.Field()
-    version: Series[str] = pa.Field()
-    description: Series[str] = pa.Field()
+    model: Series[str]
+    time: Series[str]
+    profile: Series[str]
+    version: Series[str]
+    description: Series[str]
 
     @pa.dataframe_check
-    def unique_time(cls, df: DataFrame) -> bool:
-        return len(df["time"].unique()) == 1
+    def unique_time(cls, df: DataFrame[Self]) -> bool:
+        return df["time"].unique().size == 1
 
 
 FullModelDataFrame = DataFrame[FullModelSchema]
@@ -41,7 +41,7 @@ class NamedResourceSchema(MridResourceSchema):
     Common class for resources with an mrid and a name
     """
 
-    name: Series[str] = pa.Field()
+    name: Series[str]
 
 
 class NamedMarketResourceSchema(NamedResourceSchema):

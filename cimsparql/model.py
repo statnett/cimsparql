@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     from string import Template
     from types import TracebackType
 
+    from cimsparql.sparql_result_json import SparqlResultValue
     from cimsparql.value_mapper import ValueMapper
 
 
@@ -97,8 +98,8 @@ class Model:
 
     @property
     def distinct_clients(self) -> list[GraphDBClient]:
-        obj_ids = set()
-        distinct = []
+        obj_ids = set[int]()
+        distinct = list[GraphDBClient]()
         for client in self.clients.values():
             if id(client) not in obj_ids:
                 obj_ids.add(id(client))
@@ -116,6 +117,7 @@ class Model:
         transaction_id = str(uuid4())
         for client in self.clients.values():
             client.add_correlation_id_to_header(transaction_id)
+        return self
 
     def __exit__(
         self, exc_type: type[BaseException], exc: BaseException, exc_tb: TracebackType
@@ -133,14 +135,16 @@ class Model:
         self.clients["default"] = default_client
 
     @staticmethod
-    def _col_map(data_row: dict[str, str]) -> dict[str, str]:
+    def _col_map(data_row: dict[str, SparqlResultValue]) -> dict[str, str]:
         return {
             column: data.datatype if data.datatype else data.value_type
             for column, data in data_row.items()
         }
 
     @classmethod
-    def col_map(cls, data_row: dict[str, str], columns: dict[str, str]) -> dict[str, str]:
+    def col_map(
+        cls, data_row: dict[str, SparqlResultValue], columns: dict[str, str]
+    ) -> dict[str, str]:
         columns = columns or {}
         col_map = cls._col_map(data_row)
         col_map.update(columns)
@@ -154,11 +158,11 @@ class Model:
     def _convert_result(
         self,
         result: pd.DataFrame,
-        data_row: list[dict],
+        data_row: dict[str, SparqlResultValue],
         index: str | None = None,
         columns: dict[str, str] | None = None,
     ) -> pd.DataFrame:
-        col_map = self.col_map(data_row, columns)
+        col_map = self.col_map(data_row, columns or {})
         result = self.mapper.map_data_types(result, col_map)
         for v_mapper in self.config.value_mappers:
             result = v_mapper.map(result)
@@ -194,7 +198,9 @@ class Model:
 
     @cached_property
     def cim_version(self) -> int:
-        return int(re.search("cim(\\d+)", self.client.prefixes["cim"]).group(1))
+        if m := re.search("cim(\\d+)", self.client.prefixes["cim"]):
+            return int(m.group(1))
+        return 0
 
     @property
     def full_model_query(self) -> str:
@@ -688,7 +694,7 @@ class SingleClientModel(Model):
         config: ModelConfig | None = None,
         mapper: TypeMapper | None = None,
     ) -> None:
-        clients = defaultdict(lambda: client)
+        clients = defaultdict[str, GraphDBClient](lambda: client)
         super().__init__(clients, config, mapper)
 
 
@@ -735,7 +741,9 @@ def get_federated_cim_model(
         tpsvhssh_client: Client that executes queries from the TP/SV/SSH repository
         model_cfg: Mode configurations that provides extra information
     """
-    clients = defaultdict(lambda: eq_client)  # By default queries are executed from the EQ repo
+    clients = defaultdict[str, GraphDBClient](
+        lambda: eq_client
+    )  # By default queries are executed from the EQ repo
 
     # Setup client based on # Name in the pre-defined queries
     exec_from_tpssvssh = (

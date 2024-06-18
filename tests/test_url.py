@@ -1,8 +1,8 @@
 import os
 
 import pytest
-import t_utils.custom_models as t_custom
 
+import tests.t_utils.custom_models as t_custom
 from cimsparql.graphdb import GraphDBClient
 
 

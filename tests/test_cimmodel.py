@@ -2,7 +2,6 @@ from collections import defaultdict
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock
 
 import pytest
 import werkzeug
@@ -27,23 +26,16 @@ from cimsparql.type_mapper import TypeMapper
 from cimsparql.utils import query_name
 
 
-def test_map_data_types(monkeypatch: pytest.MonkeyPatch):
-    def cim_init(self: Model, *_: Any) -> None:
-        self.mapper = Mock(have_cim_version=Mock(return_value=True))
-        self.clients = {"default": Mock(prefixes={"cim": None})}
-
-    monkeypatch.setattr(Model, "__init__", cim_init)
-    cim_model = Model()
+def test_map_data_types():
+    config = ServiceConfig(rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
+    cim_model = Model({"default": GraphDBClient(config)}, mapper=LocalTypeMapper(config))
     assert cim_model.map_data_types
 
 
-def test_not_map_data_types(monkeypatch: pytest.MonkeyPatch):
-    def cim_init(self: Model, *_: Any) -> None:
-        self.mapper = Mock(have_cim_version=Mock(return_value=False))
-        self.clients = {"default": Mock(prefixes={"cim": None})}
-
-    monkeypatch.setattr(Model, "__init__", cim_init)
-    cim_model = Model()
+def test_not_map_data_types():
+    config = ServiceConfig(rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
+    cim_model = Model({"default": GraphDBClient(config)}, mapper=LocalTypeMapper(config))
+    cim_model.client.prefixes.pop("cim")
     assert not cim_model.map_data_types
 
 
@@ -55,7 +47,7 @@ def test_name_in_header(sparql_query: Path):
 
 
 def test_unique_headers():
-    headers = []
+    headers = list[str]()
     for f in sparql_folder.glob("*.sparql"):
         with open(f) as infile:
             headers.append(infile.readline())
@@ -76,15 +68,14 @@ def test_query_without_name():
 
 
 def test_multi_client_model_defined_clients_exist():
-    class MockTypeMapper:
-        pass
-
-    eq = GraphDBClient()
-    tpsv = GraphDBClient()
+    config = ServiceConfig(rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
+    eq = GraphDBClient(config)
+    tpsv = GraphDBClient(config)
     m_cfg = ModelConfig()
-    model = get_federated_cim_model(eq, tpsv, m_cfg, MockTypeMapper())
 
-    query_names = []
+    model = get_federated_cim_model(eq, tpsv, m_cfg, LocalTypeMapper(config))
+
+    query_names = list[str]()
     for f in sparql_folder.glob("*.sparql"):
         with open(f) as infile:
             query_names.append(query_name(infile.read()))
@@ -134,6 +125,7 @@ def test_correlation_id(httpserver: HTTPServer):
     # Run from within context
     with model:
         model.get_table_and_convert(query1)  # Runs from first client
+        assert correlation_picker.correlation_id
         assert is_uuid(correlation_picker.correlation_id)
 
         c_id = correlation_picker.correlation_id
@@ -189,7 +181,7 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
             head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[])
         )
 
-    def queryAndConvert(self) -> dict:  # noqa: N802
+    def queryAndConvert(self) -> dict[str, Any]:  # noqa: N802
         name = query_name(self.queryString)
         if name == "Transformer branches":
             result = self.three_winding_result()

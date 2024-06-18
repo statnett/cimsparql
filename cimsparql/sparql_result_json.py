@@ -7,7 +7,7 @@ from polyfactory.factories import pydantic_factory
 from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
-    from typing import Self
+    from typing import Any, Self
 
 
 class CimsparqlBaseModel(BaseModel):
@@ -27,6 +27,9 @@ class SparqlResultValue(CimsparqlBaseModel):
 
 class SparqlData(CimsparqlBaseModel):
     bindings: list[dict[str, SparqlResultValue]]
+
+    def values_as_dict(self) -> list[dict[str, str]]:
+        return [{k: item.value for k, item in record.items()} for record in self.bindings]
 
 
 class SparqlResultJson(CimsparqlBaseModel):
@@ -54,8 +57,7 @@ class SparqlResultJson(CimsparqlBaseModel):
         return self
 
 
-class SparqlResultValueFactory(pydantic_factory.ModelFactory):
-    __model__ = SparqlResultValue
+class SparqlResultValueFactory(pydantic_factory.ModelFactory[SparqlResultValue]): ...
 
 
 def build_sparql_result(variables: list[str]) -> SparqlData:
@@ -67,16 +69,18 @@ def build_sparql_result(variables: list[str]) -> SparqlData:
     )
 
 
-class SparqlResultJsonFactory(pydantic_factory.ModelFactory):
-    __model__ = SparqlResultJson
-
+class SparqlResultJsonFactory(pydantic_factory.ModelFactory[SparqlResultJson]):
     @post_generated
     @classmethod
     def results(cls, head: SparqlResultHead) -> SparqlData:
         return build_sparql_result(head.variables)
 
     @classmethod
-    def build(cls) -> SparqlResultJson:
-        result: SparqlResultJson = super().build()
+    def build(
+        cls, factory_use_construct: bool = False, **kwargs: dict[str, Any]
+    ) -> SparqlResultJson:
+        result: SparqlResultJson = super().build(
+            factory_use_construct=factory_use_construct, **kwargs
+        )
         result.validate_column_consistency()
         return result

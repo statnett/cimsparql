@@ -18,20 +18,28 @@ from SPARQLWrapper import JSON, POST, SPARQLWrapper
 from strenum import StrEnum
 
 from cimsparql.retry_cb import RetryCallback, RetryCallbackFactory
-from cimsparql.sparql_result_json import SparqlResultJson
+from cimsparql.sparql_result_json import (
+    SparqlData,
+    SparqlResultHead,
+    SparqlResultJson,
+    SparqlResultValue,
+)
 from cimsparql.url import service, service_blazegraph
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from cimsparql.sparql_result_json import SparqlResultValue
+
 
 class SparqlResult(TypedDict):
     cols: list[str]
-    data: list[dict[str, dict[str, str]]]
-    out: list[dict[str, str]]
+    data: list[dict[str, SparqlResultValue]]
 
 
-def data_row(cols: list[str], rows: list[dict[str, dict[str, str]]]) -> dict[str, str]:
+def data_row(
+    cols: list[str], rows: list[dict[str, SparqlResultValue]]
+) -> dict[str, SparqlResultValue]:
     """Get a sample row for extraction of data types
 
     Args:
@@ -41,9 +49,9 @@ def data_row(cols: list[str], rows: list[dict[str, dict[str, str]]]) -> dict[str
     Returns:
        samples result of all columns in query
     """
-    full_row = {}
+    full_row: dict[str, SparqlResultValue] = {}
     for row in rows:
-        if set(cols).difference(full_row):
+        if set(cols).difference(full_row.keys()):
             full_row.update(row)
         else:
             break
@@ -179,7 +187,7 @@ class GraphDBClient:
             self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
         if self.service_cfg.timeout:
             self.sparql.setTimeout(self.service_cfg.timeout)
-        self._update_sparql_parameters()
+        self.update_sparql_parameters()
         if custom_headers:
             for name, value in custom_headers.items():
                 self.sparql.addCustomHttpHeader(name, value)
@@ -194,7 +202,7 @@ class GraphDBClient:
     def create_sparql_wrapper(self) -> SPARQLWrapper:
         return SPARQLWrapper(self.service_cfg.url)
 
-    def _update_sparql_parameters(self) -> None:
+    def update_sparql_parameters(self) -> None:
         for key, value in self.service_cfg.parameters.items():
             if value is not None:
                 self.set_parameter(key, str(value))
@@ -202,10 +210,6 @@ class GraphDBClient:
     def set_parameter(self, key: str, value: str) -> None:
         self.sparql.clearParameter(key)
         self.sparql.addParameter(key, value)
-
-    def set_repo(self, repo: str) -> None:
-        self.service_cfg.repo = repo
-        self.sparql.endpoint = self.service_cfg.url
 
     @property
     def prefixes(self) -> dict[str, str]:
@@ -222,14 +226,7 @@ class GraphDBClient:
     def __str__(self) -> str:
         return f"<GraphDBClient object, service: {self.service_cfg.url}>"
 
-    @staticmethod
-    def _process_result(results: SparqlResultJson) -> dict:
-        cols = results.head.variables
-        data = results.results.bindings
-        out = [{c: row[c].value if c in row else None for c in cols} for row in data]
-        return {"out": out, "cols": cols, "data": data}
-
-    def _exec_query(self, query: str) -> SparqlResult:
+    def exec_query(self, query: str) -> SparqlResultJson:
         # To allow exec query to be run in threads, we use a deepcopy of the underlying
         # sparql wrapper .This is needed since setQuery changes the state of the SPARQLWrapper
         sparql_wrapper = deepcopy(self.sparql)
@@ -238,6 +235,7 @@ class GraphDBClient:
         retry_cb = self.service_cfg.retry_callback_factory()
         retry_cb.pre_call(query)
 
+        sparql_result = None
         for attempt in tenacity.Retrying(
             stop=tenacity.stop_after_attempt(self.service_cfg.num_retries + 1),
             wait=tenacity.wait_exponential(max=self.service_cfg.max_delay_seconds),
@@ -247,28 +245,33 @@ class GraphDBClient:
             with attempt:
                 results = sparql_wrapper.queryAndConvert()
 
-        sparql_result = SparqlResultJson(**results)
-        if self.service_cfg.validate:
-            sparql_result.validate_column_consistency()
-        return self._process_result(sparql_result)
+                sparql_result = SparqlResultJson.model_validate(results)
+                if self.service_cfg.validate:
+                    sparql_result.validate_column_consistency()
+        return sparql_result or SparqlResultJson(
+            head=SparqlResultHead(), results=SparqlData(bindings=[])
+        )
 
-    def exec_query(self, query: str) -> list[dict[str, str]]:
-        out = self._exec_query(query)
-        return out["out"]
+    def _convert_query_result_to_df(
+        self, sparql_result: SparqlResultJson
+    ) -> tuple[pd.DataFrame, dict[str, SparqlResultValue]]:
+        df = (
+            pd.DataFrame(
+                sparql_result.results.values_as_dict(), columns=sparql_result.head.variables
+            )
+            if len(sparql_result.results.bindings)
+            else pd.DataFrame(columns=sparql_result.head.variables)
+        )
+        return df, data_row(sparql_result.head.variables, sparql_result.results.bindings)
 
-    def _convert_query_result_to_df(self, res: SparqlResult) -> tuple[pd.DataFrame, dict[str, str]]:
-        df = pd.DataFrame(res["out"]) if len(res["out"]) else pd.DataFrame(columns=res["cols"])
-        return df, data_row(res["cols"], res["data"])
-
-    def get_table(self, query: str) -> tuple[pd.DataFrame, dict[str, str]]:
+    def get_table(self, query: str) -> tuple[pd.DataFrame, dict[str, SparqlResultValue]]:
         """Get result from sparql query as a pandas dataframe
 
         Args:
            query: to sparql server
            limit: limit number of resulting rows
         """
-        res = self._exec_query(query)
-        return self._convert_query_result_to_df(res)
+        return self._convert_query_result_to_df(self.exec_query(query))
 
     @property
     def empty(self) -> bool:
@@ -380,7 +383,7 @@ def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
 
     service_cfg = service_cfg or ServiceConfig()
 
-    auth = None
+    auth = httpx.USE_CLIENT_DEFAULT
     if service_cfg.user and service_cfg.passwd:
         auth = httpx.BasicAuth(service_cfg.user, service_cfg.passwd)
 
@@ -390,7 +393,7 @@ def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
         response = client.get(url, auth=auth, headers={"Accept": "application/json"})
     response.raise_for_status()
 
-    def _repo_info(repo: dict[str, str]) -> RepoInfo:
+    def _repo_info(repo: dict[str, dict[str, str]]) -> RepoInfo:
         def get(key: str, default: str = "") -> str:
             return repo.get(key, {}).get("value", default)
 
@@ -418,7 +421,7 @@ def new_repo(
             Otherwise an error is raised if a repository with the same name already exists
         protocol: Default https
     """
-    ignored_errors = {HTTPStatus.CONFLICT} if allow_exist else set()
+    ignored_errors = {HTTPStatus.CONFLICT} if allow_exist else set[HTTPStatus]()
     url = service(repo, server, protocol)
     response = httpx.put(url, content=config, headers={"Content-Type": "text/turtle"})
     if response.status_code not in ignored_errors:

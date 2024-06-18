@@ -7,8 +7,8 @@ from string import Template
 from typing import TYPE_CHECKING
 
 import pytest
-import t_utils.common as t_common
 
+import tests.t_utils.common as t_common
 from cimsparql.graphdb import GraphDBClient, RestApi
 
 if TYPE_CHECKING:
@@ -43,7 +43,7 @@ def rdf4j_gdb() -> GraphDBClient:
 )
 def test_rdf4j_picasso_data(rdf4j_gdb: GraphDBClient, query: str, expect: list[dict[str, str]]):
     prefixes = Template("PREFIX ex:<${ex}>\nPREFIX foaf:<${foaf}>").substitute(rdf4j_gdb.prefixes)
-    result = rdf4j_gdb.exec_query(f"{prefixes}\n{query}")
+    result = rdf4j_gdb.exec_query(f"{prefixes}\n{query}").results.values_as_dict()
     assert result == expect
 
 
@@ -71,8 +71,10 @@ def test_upload_rdf_xml(upload_client: GraphDBClient):
     upload_client.upload_rdf(xml_file, "rdf/xml")
 
     prefixes = Template("PREFIX rdf:<${rdf}>\nPREFIX md:<${md}>").substitute(upload_client.prefixes)
-    df = upload_client.exec_query(f"{prefixes}\nSELECT * WHERE {{?s rdf:type md:FullModel}}")
-    assert len(df) == 1
+    sparql_result = upload_client.exec_query(
+        f"{prefixes}\nSELECT * WHERE {{?s rdf:type md:FullModel}}"
+    )
+    assert len(sparql_result.results.bindings) == 1
 
 
 def test_get_table_default_arg(rdf4j_gdb: GraphDBClient):
@@ -93,10 +95,10 @@ def test_upload_with_context(upload_client: GraphDBClient):
     upload_client.upload_rdf(xml_file, "rdf/xml", {"context": graph})
 
     prefixes = Template("PREFIX rdf:<${rdf}>\nPREFIX md:<${md}>").substitute(upload_client.prefixes)
-    df = upload_client.exec_query(
+    sparql_result = upload_client.exec_query(
         f"{prefixes}\nSELECT * WHERE {{GRAPH {graph} {{?s rdf:type md:FullModel}}}}"
     )
-    assert len(df) == 1
+    assert len(sparql_result.results.bindings) == 1
 
 
 def test_direct_sparql_endpoint(rdf4j_gdb: GraphDBClient):

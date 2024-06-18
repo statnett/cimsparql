@@ -10,11 +10,11 @@ from typing import Any
 import httpx
 import pandas as pd
 import pytest
-import t_utils.common as t_common
-import t_utils.custom_models as t_custom
 from pytest_httpserver import HeaderValueMatcher, HTTPServer
 from SPARQLWrapper import SPARQLWrapper
 
+import tests.t_utils.common as t_common
+import tests.t_utils.custom_models as t_custom
 from cimsparql.graphdb import (
     GraphDBClient,
     RepoInfo,
@@ -90,7 +90,7 @@ async def test_not_empty(test_model: t_common.ModelTest):
 
 
 @pytest.fixture
-def model() -> SingleClientModel:
+def model() -> Model:
     test_model = t_custom.combined_model()
     if not test_model.model:
         pytest.skip("Require access to GraphDB")
@@ -115,7 +115,7 @@ def test_regions(model: SingleClientModel):
 def test_hvdc_converters_bidzones(model: SingleClientModel):
     df = model.hvdc_converter_bidzones()
 
-    corridors = set(zip(df["bidzone_1"], df["bidzone_2"], strict=True))
+    corridors = set[tuple[str, str]](zip(df["bidzone_1"], df["bidzone_2"], strict=True))
 
     # Check data quality in the models
     expect_corridors = {("SE4", "SE3"), ("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB"), ("NO2", "NL")}
@@ -226,6 +226,7 @@ def test_repos_with_auth(httpserver: HTTPServer):
     url = httpserver.url_for("/repositories")
 
     matches = re.match(r"^([a-z]+):\/\/([a-z:0-9]+)", url)
+    assert matches
     protocol, server = matches.groups()
 
     cfg = ServiceConfig("repo", server=server, protocol=protocol, user=user, passwd=password)
@@ -256,7 +257,7 @@ class FixedResultSparqlWrapper(SPARQLWrapper):
         super().__init__("http://fixed-result-endpoint")
         self.result = SparqlResultJsonFactory.build()
 
-    def queryAndConvert(self) -> dict:  # noqa: N802
+    def queryAndConvert(self) -> dict[str, Any]:  # noqa: N802
         return self.result.model_dump(mode="json")
 
 

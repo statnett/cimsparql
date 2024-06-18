@@ -40,7 +40,7 @@ def str_preserve_none(x: Any) -> str | None:
     return None if pd.isna(x) else str(x)
 
 
-XSD_TYPE_MAP = {
+XSD_TYPE_MAP: dict[str, TYPE_CASTER] = {
     # Primitive types (https://www.w3.org/TR/xmlschema11-2/#built-in-primitive-datatypes)
     "boolean": lambda x: x.lower() in {"true", "1"},
     "date": pd.to_datetime,
@@ -54,7 +54,7 @@ XSD_TYPE_MAP = {
 }
 
 
-CIM_TYPE_MAP = {
+CIM_TYPE_MAP: dict[str, TYPE_CASTER] = {
     "String": str_preserve_none,
     "Integer": int,
     "Boolean": bool,
@@ -69,19 +69,19 @@ sparql_type_map = {"literal": str_preserve_none, "uri": str_preserve_none}
 def enforce_no_limit(client: GraphDBClient) -> Generator[GraphDBClient, None, None]:
     orig_cfg = client.service_cfg
     client.service_cfg = dataclasses.replace(orig_cfg, limit=None)
-    client._update_sparql_parameters()
+    client.update_sparql_parameters()
 
     try:
         yield client
     finally:
         client.service_cfg = orig_cfg
-        client._update_sparql_parameters()
+        client.update_sparql_parameters()
 
 
 def build_type_map(prefixes: dict[PREFIX, URI]) -> dict[SPARQL_TYPE, TYPE_CASTER]:
     short_map = {"xsd": XSD_TYPE_MAP, "cim": CIM_TYPE_MAP}
 
-    type_map = {}
+    type_map: dict[SPARQL_TYPE, TYPE_CASTER] = {}
     for namespace, prim_types in short_map.items():
         if namespace not in prefixes:
             continue

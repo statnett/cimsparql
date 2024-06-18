@@ -7,9 +7,10 @@ from string import Template
 from typing import TYPE_CHECKING
 
 import pytest
-import t_utils.common as t_common
-import t_utils.custom_models as t_custom
-import t_utils.entsoe_models as t_entsoe
+
+import tests.t_utils.common as t_common
+import tests.t_utils.custom_models as t_custom
+import tests.t_utils.entsoe_models as t_entsoe
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -97,7 +98,7 @@ def nc_data() -> CONSISTENCY_DATA:
     return {"model": res[0]}
 
 
-def skip_on_missing(data: CONSISTENCY_DATA, model_name: str):
+def skip_on_missing(data: CONSISTENCY_DATA | NodeConsistencyData | None, model_name: str):
     if not data:
         pytest.skip(f"No data collected for {model_name}")
 
@@ -106,8 +107,9 @@ def skip_on_missing(data: CONSISTENCY_DATA, model_name: str):
 def test_node_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
     data = nc_data[model_name]
     skip_on_missing(data, model_name)
+    assert data
 
-    mrids = set(data.bus.index)
+    mrids = set[str](data.bus.index)
     for name, df in data.two_node_dfs.items():
         msg = f"Error two node: {name}"
         assert set(df["node_1"]).issubset(mrids), msg
@@ -133,7 +135,7 @@ async def test_all_connectivity_nodes_fetched(test_model: t_common.ModelTest):
         Template("select (count(?s) as ?count) where {?s a <${cim}ConnectivityNode>}")
     )
     num_nodes_df = test_model.model.get_table_and_convert(count_query)
-    num_connectivity_nodes = num_nodes_df["count"].iloc[0]
+    num_connectivity_nodes = int(num_nodes_df["count"].iloc[0])
 
     # Verify that we get some nodes
     assert num_connectivity_nodes > 0

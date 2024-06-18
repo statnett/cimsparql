@@ -3,8 +3,9 @@ from string import Template
 
 import pandas as pd
 import pytest
-import t_utils.common as t_common
-import t_utils.entsoe_models as t_entsoe
+
+import tests.t_utils.common as t_common
+import tests.t_utils.entsoe_models as t_entsoe
 
 
 def check_service_available(test_model: t_common.ModelTest):
@@ -25,6 +26,7 @@ def test_eq_query(test_model: t_common.ModelTest):
     )
 
     model = test_model.model
+    assert model
     query = model.template_to_query(query_template)
     df = model.get_table_and_convert(query)
     df = df.sort_values("voltage").reset_index(drop=True)
@@ -37,6 +39,7 @@ def test_eq_query(test_model: t_common.ModelTest):
 def test_tpsv_query(test_model: t_common.ModelTest):
     check_service_available(test_model)
     model = test_model.model
+    assert model
     repo = model.config.system_state_repo
     query_template = Template(
         "PREFIX rdf:<${rdf}>\nPREFIX cim:<${cim}>\n"

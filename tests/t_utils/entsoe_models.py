@@ -4,7 +4,7 @@ import os
 import re
 from pathlib import Path
 
-import t_utils.common as t_common
+import tests.t_utils.common as t_common
 from cimsparql.adaptions import XmlModelAdaptor
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig, new_repo_blazegraph
 from cimsparql.model import (
@@ -32,9 +32,9 @@ def micro_t1_nl_graphdb() -> t_common.ModelTest:
     return t_common.ModelTest(model, False, False)
 
 
-def split_tpsvssh(fname: Path) -> tuple[list[str], list[str]]:
-    tpsvssh_lines = []
-    remaining_lines = []
+def split_tpsvssh(fname: Path) -> tuple[str, str]:
+    tpsvssh_lines = list[str]()
+    remaining_lines = list[str]()
 
     tpsvssh_contexts = {
         "http://entsoe.eu/CIM/StateVariables/4/1",
