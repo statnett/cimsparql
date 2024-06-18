@@ -3,8 +3,9 @@ from collections.abc import Generator
 from contextlib import suppress
 
 import pytest
-import t_utils.common as t_common
-import t_utils.entsoe_models as t_entsoe
+
+import tests.t_utils.common as t_common
+import tests.t_utils.entsoe_models as t_entsoe
 
 this_dir = pathlib.Path(__file__).parent
 

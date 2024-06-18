@@ -2,7 +2,8 @@ import os
 from string import Template
 
 import pytest
-import t_utils.common as t_common
+
+import tests.t_utils.common as t_common
 
 
 @pytest.mark.parametrize(
@@ -25,5 +26,5 @@ def test_rdf4j_picasso_data(query: str, expect: list[dict[str, str]]):
             pytest.skip(f"{exc}")
 
     prefixes = Template("PREFIX ex:<${ex}>\nPREFIX foaf:<${foaf}>").substitute(client.prefixes)
-    result = client.exec_query(f"{prefixes}\n{query}")
+    result = client.exec_query(f"{prefixes}\n{query}").results.values_as_dict()
     assert result == expect

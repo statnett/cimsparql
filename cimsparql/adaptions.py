@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from rdflib import ConjunctiveGraph
 from rdflib.namespace import XSD
 from rdflib.plugins.sparql import prepareUpdate
+from rdflib.query import ResultRow
 from rdflib.term import BNode, Literal, URIRef
 
 if TYPE_CHECKING:
@@ -49,9 +50,12 @@ class XmlModelAdaptor:
         for result in self.graph.query(
             "select ?s ?g where {graph ?g {?s cim:IdentifiedObject.name ?name}}", initNs=ns
         ):
+            assert isinstance(result, ResultRow)
             mrid_str = str(result["s"]).rpartition("#_")[-1]
             mrid = mrid_str if is_uuid(mrid_str) else generate_uuid(mrid_str)
-            self.graph.add((result["s"], identified_obj_mrid, Literal(mrid), result["g"]))
+
+            ctx = self.graph.get_context(result["g"])
+            self.graph.add((result["s"], identified_obj_mrid, Literal(mrid), ctx))
 
     def set_generation_type(self) -> None:
         self.graph.update(
@@ -95,20 +99,20 @@ class XmlModelAdaptor:
         }
         for s, predicate, o, g in self.graph.quads():
             with suppress(StopIteration):
-                f = next(f for f in fields if f in predicate)
+                f = next(f for f in fields if f in str(predicate))
                 self.graph.remove((s, predicate, o, g))
 
                 literal = Literal(str(o), datatype=fields[f])
                 self.graph.add((s, predicate, literal, g))
 
-    def tpsvssh_contexts(self) -> list[URIRef]:
+    def tpsvssh_contexts(self) -> list[Graph]:
         return [
             ctx
             for ctx in self.graph.contexts()
             if any(token in str(ctx) for token in ("SSH", "TP", "SV"))
         ]
 
-    def nq_bytes(self, contexts: list[URIRef] | None = None) -> bytes:
+    def nq_bytes(self, contexts: list[Graph] | None = None) -> bytes:
         """
         Return the contexts as bytes. If contexts is None, the entire graph
         is exported
@@ -118,7 +122,7 @@ class XmlModelAdaptor:
 
         graph = ConjunctiveGraph()
         for ctx in contexts:
-            graph += self.graph.get_context(ctx.identifier)
+            graph += ctx
         return graph.serialize(format="nquads", encoding="utf8")
 
     def add_internal_eq_link(self, eq_uri: str) -> None:

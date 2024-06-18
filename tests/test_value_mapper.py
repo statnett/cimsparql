@@ -2,9 +2,9 @@ from copy import deepcopy
 from string import Template
 
 import pandas as pd
-import t_utils.common as t_common
-import t_utils.entsoe_models as t_entsoe
 
+import tests.t_utils.common as t_common
+import tests.t_utils.entsoe_models as t_entsoe
 from cimsparql.value_mapper import MridMapper
 
 subj_template = Template(
@@ -32,6 +32,7 @@ select ?t_mrid ?connected where
 def test_subj_conversion():
     tm = t_entsoe.micro_t1_nl()
     t_common.check_model(tm)
+    assert tm.model
     model = tm.model
     model2 = deepcopy(model)
     model2.config.value_mappers = [MridMapper()]

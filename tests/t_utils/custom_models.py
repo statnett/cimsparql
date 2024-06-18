@@ -2,7 +2,7 @@ import functools
 import logging
 import os
 
-import t_utils.common as t_common
+import tests.t_utils.common as t_common
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.model import ModelConfig, get_federated_cim_model, get_single_client_model
 

@@ -5,9 +5,9 @@ from typing import Any
 
 import pandas as pd
 import pytest
-import t_utils.common as t_common
-import t_utils.entsoe_models as t_entsoe
 
+import tests.t_utils.common as t_common
+import tests.t_utils.entsoe_models as t_entsoe
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.model import SingleClientModel
 
@@ -61,6 +61,7 @@ def test_cim_converters_micro_t1_nl(test_model: t_common.ModelTest):
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_full_model_micro_t1_nl(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
+    assert test_model.model
     data = test_model.model.full_model()
 
     profiles = {
@@ -327,6 +328,6 @@ def test_sv_power_deviation(test_model: t_common.ModelTest) -> None:
     )
 
     # Count number of tp nodes connected to a terminal
-    num = int(client.get_table(count_query)[0]["num"].iloc[0])
+    num = int(client.exec_query(count_query).results.bindings[0]["num"].value)
     assert num > 0
     assert len(df) == num
