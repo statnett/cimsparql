@@ -76,6 +76,15 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
+      - name: Export virtual env path
+        run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+
+      - name: Static type checking
+        uses: jakebailey/pyright-action@v2.3.1
+        with:
+          version: 1.1.367
+        continue-on-error: true
+
       - name: Run pytest
         if: ${{ ( runner.os != 'Linux' ) || ( matrix.python-version  != '3.9' ) }}
         run: poetry run pytest -q tests
