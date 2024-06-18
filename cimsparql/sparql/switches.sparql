@@ -5,6 +5,7 @@ select ?mrid ?is_open (strafter(str(?type), "#") as ?equipment_type) ?connectivi
         select * {
             ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
             service ?eq_repo {
+                values ?type {cim:Breaker cim:Disconnector}
                 ?switch cim:IdentifiedObject.mRID ?mrid;
                         a ?type;
                         cim:Switch.normalOpen ?normal_open;
