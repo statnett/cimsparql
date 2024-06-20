@@ -278,7 +278,7 @@ class GraphDBClient:
         """Identify empty GraphDB repo"""
         return self.get_table("select * where {?s ?p ?o} limit 1")[0].empty
 
-    def get_prefixes(self) -> dict[str, str]:
+    def get_prefixes(self, http_transport: httpx.BaseTransport | None = None) -> dict[str, str]:
         prefixes = default_namespaces()
 
         if self.service_cfg.rest_api in (RestApi.BLAZEGRAPH, RestApi.DIRECT_SPARQL_ENDPOINT):
@@ -286,11 +286,12 @@ class GraphDBClient:
             # via `update_prefixes`. By default we load a pre-defined set of prefixes
             return prefixes
 
-        response = httpx.get(
-            self.service_cfg.url + "/namespaces",
-            auth=self.service_cfg.auth,
-            headers=self.sparql.customHttpHeaders,
-        )
+        with httpx.Client(transport=http_transport) as client:
+            response = client.get(
+                self.service_cfg.url + "/namespaces",
+                auth=self.service_cfg.auth or httpx.USE_CLIENT_DEFAULT,
+                headers=self.sparql.customHttpHeaders,
+            )
         if response.status_code == HTTPStatus.OK:
             prefixes.update(parse_namespaces_rdf4j(response))
             return prefixes

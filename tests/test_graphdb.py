@@ -18,6 +18,7 @@ import tests.t_utils.custom_models as t_custom
 from cimsparql.graphdb import (
     GraphDBClient,
     RepoInfo,
+    RestApi,
     ServiceConfig,
     config_bytes_from_template,
     confpath,
@@ -152,11 +153,12 @@ def test_dtypes(model: SingleClientModel):
     assert df["sparql_type"].isna().sum() == 0
 
 
-def test_prefix_resp_not_ok(monkeypatch: pytest.MonkeyPatch):
+def test_prefix_resp_not_ok():
     resp = httpx.Response(status_code=HTTPStatus.UNAUTHORIZED, text="Something went wrong")
-    monkeypatch.setattr(httpx, "get", lambda *_, **__: resp)
     with pytest.raises(RuntimeError) as exc:
-        GraphDBClient(ServiceConfig(server="some-serever")).get_prefixes()
+        GraphDBClient(ServiceConfig(server="some-serever")).get_prefixes(
+            http_transport=httpx.MockTransport(lambda _: resp)
+        )
     assert resp.reason_phrase in str(exc)
     assert f"{resp.status_code}" in str(exc)
 
@@ -236,14 +238,14 @@ def test_repos_with_auth(httpserver: HTTPServer):
     assert repo_info == [expect]
 
 
-def test_update_prefixes(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(GraphDBClient, "get_prefixes", lambda *_: {})
-    client = GraphDBClient(ServiceConfig(server="some-server"))
-    assert client.prefixes == {}
+def test_update_prefixes():
+    client = GraphDBClient(
+        ServiceConfig(server="some-server", rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
+    )
 
     new_pref = {"eq": "http://eq"}
     client.update_prefixes(new_pref)
-    assert client.prefixes == new_pref
+    assert client.prefixes["eq"] == new_pref["eq"]
 
 
 def test_custom_headers():
