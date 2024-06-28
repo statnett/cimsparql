@@ -3,7 +3,7 @@ PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
 PREFIX SN:<${SN}>
 PREFIX ALG:<${ALG}>
-select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un
+select ?mrid ?name ?alias ?p ?q ?status ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn
 where {
   {
     select * where {
@@ -30,10 +30,7 @@ where {
                   cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
         ?con_node cim:IdentifiedObject.mRID ?connectivity_node;
 		  cim:ConnectivityNode.ConnectivityNodeContainer ?con_node_container.
-	?con_node_container cim:VoltageLevel.Substation ?substation;
-		      cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un.
-        ?substation cim:IdentifiedObject.mRID ?substation_mrid;
-          cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+	?con_node_container cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
         optional {?converter SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
 	optional {
           ?converter ALG:VoltageSourceConverter.loss0 ?_loss0;
