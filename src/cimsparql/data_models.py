@@ -160,7 +160,6 @@ PhaseTapChangerDataFrame = DataFrame[PhaseTapChangerSchema]
 
 class ConvertersSchema(NamedResourceSchema):
     alias: Series[str] = pa.Field(nullable=True)
-    substation_mrid: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     node: Series[str] = pa.Field()
     p: Series[float] = pa.Field()
@@ -173,7 +172,6 @@ class ConvertersSchema(NamedResourceSchema):
     loss1: Series[float] = pa.Field()
     loss2: Series[float] = pa.Field()
     vdcn: Series[float] = pa.Field()
-    un: Series[float] = pa.Field()
 
 
 ConvertersDataFrame = DataFrame[ConvertersSchema]
