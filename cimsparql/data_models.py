@@ -1,15 +1,13 @@
 import datetime as dt
-from typing import ClassVar, Self
+from typing import Self
 
 import pandas as pd
 import pandera as pa
 from pandera.typing import DataFrame, Index, Series
 
 
-class JsonSchemaOut(pa.SchemaModel):
+class JsonSchemaOut(pa.DataFrameModel):
     class Config:
-        to_format = "json"
-        to_format_kwargs: ClassVar[dict[str, str]] = {"orient": "table"}
         coerce = True
 
 

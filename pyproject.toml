@@ -10,7 +10,7 @@ exclude = ["tests/*"]
 
 [tool.poetry.dependencies]
 httpx = "*"
-numpy = "^1.26"  # pandera does not work with np 2.0. Should work after https://github.com/unionai-oss/pandera/pull/1690/files
+numpy = "*"
 pandas = "*"
 pandera = "*"
 polyfactory = "^2.0.0"
@@ -20,6 +20,7 @@ rdflib = "^7.0.0"
 SPARQLWrapper = "*"
 StrEnum = "*"
 tenacity = "*"
+pyarrow = "*"
 
 [tool.poetry.group.test.dependencies]
 asyncio = "*"
@@ -29,6 +30,7 @@ pytest = ">= 6"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-httpserver = "*"
+pytest-benchmark = "*"
 pytest-integration = "*"
 pytest-profiling = "*"
 

@@ -286,7 +286,7 @@ class GraphDBClient:
             # via `update_prefixes`. By default we load a pre-defined set of prefixes
             return prefixes
 
-        with httpx.Client(transport=http_transport) as client:
+        with httpx.Client(transport=http_transport, timeout=5.0) as client:
             response = client.get(
                 self.service_cfg.url + "/namespaces",
                 auth=self.service_cfg.auth or httpx.USE_CLIENT_DEFAULT,
@@ -306,7 +306,7 @@ class GraphDBClient:
 
     def delete_repo(self) -> None:
         endpoint = delete_repo_endpoint(self.service_cfg)
-        response = httpx.delete(endpoint)
+        response = httpx.delete(endpoint, timeout=5.0)
         response.raise_for_status()
 
     def upload_rdf(
@@ -333,6 +333,7 @@ class GraphDBClient:
             content=xml_content,
             params=params,
             headers={"Content-Type": MIME_TYPE_RDF_FORMATS[rdf_format]},
+            timeout=5.0,
         )
         response.raise_for_status()
 
@@ -346,6 +347,7 @@ class GraphDBClient:
             headers=self.sparql.customHttpHeaders
             | {"Content-Type": "application/x-www-form-urlencoded"},
             auth=self.service_cfg.auth,
+            timeout=5.0,
         )
         response.raise_for_status()
 
@@ -356,14 +358,16 @@ class GraphDBClient:
             content=value,
             headers={"Content-Type": "text/plain"},
             auth=self.service_cfg.auth,
+            timeout=5.0,
         )
         response.raise_for_status()
 
     @require_rdf4j
     def get_namespace(self, prefix: str) -> str:
         response = httpx.get(
-            self.service_cfg.url + f"/namespaces/{prefix}", auth=self.service_cfg.auth
+            self.service_cfg.url + f"/namespaces/{prefix}", auth=self.service_cfg.auth, timeout=5.0
         )
+
         response.raise_for_status()
         return response.text
 
@@ -390,7 +394,7 @@ def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
 
     url = f"{service_cfg.protocol}://{service_cfg.server}/repositories"
 
-    with httpx.Client() as client:
+    with httpx.Client(timeout=5.0) as client:
         response = client.get(url, auth=auth, headers={"Accept": "application/json"})
     response.raise_for_status()
 
@@ -424,7 +428,7 @@ def new_repo(
     """
     ignored_errors = {HTTPStatus.CONFLICT} if allow_exist else set[HTTPStatus]()
     url = service(repo, server, protocol)
-    response = httpx.put(url, content=config, headers={"Content-Type": "text/turtle"})
+    response = httpx.put(url, content=config, headers={"Content-Type": "text/turtle"}, timeout=5.0)
     if response.status_code not in ignored_errors:
         response.raise_for_status()
 
@@ -438,7 +442,10 @@ def new_repo_blazegraph(
     config = config_bytes_from_template(template, {"repo": repo})
 
     response = httpx.post(
-        f"{protocol}://{url}", content=config, headers={"Content-type": "application/xml"}
+        f"{protocol}://{url}",
+        content=config,
+        headers={"Content-type": "application/xml"},
+        timeout=5.0,
     )
     response.raise_for_status()
     client = GraphDBClient(
