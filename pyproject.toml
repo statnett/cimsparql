@@ -20,7 +20,6 @@ rdflib = "^7.0.0"
 SPARQLWrapper = "*"
 StrEnum = "*"
 tenacity = "*"
-pyarrow = "*"
 
 [tool.poetry.group.test.dependencies]
 asyncio = "*"
