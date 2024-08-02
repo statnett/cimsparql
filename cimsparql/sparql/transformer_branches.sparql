@@ -3,7 +3,7 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
 # Name: Transformer branches
-select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate (?bidzone as ?bidzone_1) (?bidzone as ?bidzone_2) ?angle ?ratio ?connectivity_node_1 (?node_2 as ?connectivity_node_2)
+select ?node_1 ?node_2 ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate ?angle ?ratio ?connectivity_node_1 (?node_2 as ?connectivity_node_2)
 where {
   {
     select * where {
@@ -32,10 +32,6 @@ where {
         ?terminal cim:Terminal.ConnectivityNode ?con_node .
         ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un ;
           cim:IdentifiedObject.mRID ?connectivity_node_1 .
-
-        # Optionally extract bidzone for substations
-        optional {?Substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
-
         # Optionally extract active power limits
         optional {
           ?_lim a cim:ActivePowerLimit;

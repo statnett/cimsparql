@@ -75,7 +75,6 @@ BusDataFrame = DataFrame[BusDataSchema]
 class LoadsSchema(NamedResourceSchema):
     node: Series[str] = pa.Field()
     substation_mrid: Series[str] = pa.Field()
-    bidzone: Series[str] = pa.Field(nullable=True)
     status: Series[bool] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
@@ -105,7 +104,6 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     maxP: Series[float] = pa.Field()
     minP: Series[float] = pa.Field()
     MO: Series[float] = pa.Field(nullable=True)
-    bidzone: Series[str] = pa.Field(nullable=True)
     sn: Series[float] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
@@ -200,8 +198,6 @@ CoordinatesDataFrame = DataFrame[CoordinatesSchema]
 
 
 class BranchComponentSchema(NamedResourceSchema):
-    bidzone_1: Series[str] = pa.Field(nullable=True)
-    bidzone_2: Series[str] = pa.Field(nullable=True)
     node_1: Series[str] = pa.Field()
     node_2: Series[str] = pa.Field()
     ploss_1: Series[float] = pa.Field(nullable=True)

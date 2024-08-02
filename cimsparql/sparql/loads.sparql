@@ -1,7 +1,7 @@
 # Name: Loads
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select ?mrid ?name ?node ?substation_mrid ?bidzone ?status ?p ?q ?station_group ?connectivity_node
+select ?mrid ?name ?node ?substation_mrid ?status ?p ?q ?station_group ?connectivity_node
 where {
   {
     # Appears to be significantly faster to run the query if the EQ part is executed within its own sub-query
@@ -18,8 +18,6 @@ where {
                     cim:IdentifiedObject.mRID ?substation_mrid .
         filter regex(?area, '${region}')
 
-        # Optionally extract bidzone for each substation and station_group for each load
-        optional {?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
         optional {?load cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
         optional {?load SN:Equipment.networkAnalysisEnable ?_network_analysis} .
         bind(coalesce(?_network_analysis, True) as ?network_analysis)
