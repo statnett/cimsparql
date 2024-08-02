@@ -5,8 +5,6 @@ PREFIX xsd: <${xsd}>
 select
   (max(?mrid) as ?mrid)
   (max(?name) as ?name)
-  (max(?bidzone_1) as ?bidzone_1)
-  (max(?bidzone_2) as ?bidzone_2)
   (max(?node_1) as ?node_1)
   (max(?node_2) as ?node_2)
   (if (xsd:double(max(?p_1)) < xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_1)
@@ -36,9 +34,6 @@ where {
   ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation ;
             cim:IdentifiedObject.mRID ?connectivity_node .
   ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-  optional {
-    ?substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone
-  }
   optional {?compensator SN:Equipment.networkAnalysisEnable ?network_analysis}
   filter(regex(?area, '${region}'))
 
@@ -68,11 +63,9 @@ where {
   bind(if(?nr = 1, str(?p), '') as ?p_1)
   bind(if(?nr = 1, ?node, '') as ?node_1)
   bind(if(?nr = 1, ?connected, False) as ?connected_1)
-  bind(if(?nr = 1, ?bidzone, '') as ?bidzone_1)
   bind(if(?nr = 2, str(?p), '') as ?p_2)
   bind(if(?nr = 2, ?node, '') as ?node_2)
   bind(if(?nr = 2, ?connected, False) as ?connected_2)
-  bind(if(?nr = 2, ?bidzone, '') as  ?bidzone_2)
   bind(if(?nr = 1, ?connectivity_node, '') as ?connectivity_node_1)
   bind(if(?nr = 2, ?connectivity_node, '') as ?connectivity_node_2)
 } group by ?compensator
