@@ -4,7 +4,7 @@ import os
 
 import tests.t_utils.common as t_common
 from cimsparql.graphdb import GraphDBClient, ServiceConfig
-from cimsparql.model import ModelConfig, get_federated_cim_model, get_single_client_model
+from cimsparql.model import ModelConfig, get_federated_cim_model
 
 logger = logging.getLogger()
 
@@ -15,26 +15,11 @@ def combined_graphdb_service() -> ServiceConfig:
 
 
 @functools.lru_cache
-def combined_model() -> t_common.ModelTest:
-    if os.getenv("CI") or os.getenv("GRAPHDB_TOKEN") is None:
-        return t_common.ModelTest(None, False, False)
-    service = combined_graphdb_service()
-    system_state_repo = f"repository:{service.repo},infer=false"
-    eq_repo = f"repository:{service.repo},infer=false"
-    model = None
-    try:
-        model = get_single_client_model(service, ModelConfig(system_state_repo, eq_repo))
-    except Exception:
-        logger.exception("Failed to get single client model")
-    return t_common.ModelTest(model, False, False)
-
-
-@functools.lru_cache
 def federated_model() -> t_common.ModelTest:
     if os.getenv("CI") or os.getenv("GRAPHDB_TOKEN") is None:
         return t_common.ModelTest(None, False, False)
-    eq_repo = os.getenv("GRAPHDB_EQ", "abot_222-2-1_2")
-    system_state_repo = os.getenv("GRAPHDB_STATE", "abot_20220825T1621Z")
+    eq_repo = os.getenv("GRAPHDB_EQ", "abot-eq-1")
+    system_state_repo = os.getenv("GRAPHDB_STATE", "abot-situations-1")
     eq_client_cfg = ServiceConfig(eq_repo, max_delay_seconds=1)
     tpsvssh_client_cfg = ServiceConfig(system_state_repo, max_delay_seconds=1)
     eq_client = GraphDBClient(eq_client_cfg)
@@ -52,4 +37,4 @@ def federated_model() -> t_common.ModelTest:
 
 
 def all_custom_models() -> list[t_common.ModelTest]:
-    return [combined_model(), federated_model()]
+    return [federated_model()]
