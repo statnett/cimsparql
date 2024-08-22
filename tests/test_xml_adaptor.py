@@ -49,3 +49,11 @@ def test_add_sv_injection(xml_adaptor: XmlModelAdaptor) -> None:
     orig_number = len(xml_adaptor.graph.query(query))
     xml_adaptor.add_zero_sv_injection()
     assert len(xml_adaptor.graph.query(query)) > orig_number
+
+
+def test_add_eic_code(xml_adaptor: XmlModelAdaptor) -> None:
+    query = "select * where {?s a cim:Substation}"
+    num_substations = len(xml_adaptor.graph.query(query))
+    xml_adaptor.add_eic_code()
+    query = "select * where {?s entsoe:IdentifiedObject.energyIdentCodeEIC ?eic}"
+    assert len(xml_adaptor.graph.query(query)) == num_substations
