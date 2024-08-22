@@ -92,7 +92,7 @@ async def test_not_empty(test_model: t_common.ModelTest):
 
 @pytest.fixture
 def model() -> Model:
-    test_model = t_custom.combined_model()
+    test_model = t_custom.federated_model()
     if not test_model.model:
         pytest.skip("Require access to GraphDB")
     return test_model.model
