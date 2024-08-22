@@ -1,6 +1,7 @@
 # Name: Bus
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
+PREFIX entsoe:<${entsoe}>
 select (?mrid as ?node) ?busname (?substation_name as ?substation) ?un ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus
 where {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
@@ -26,7 +27,17 @@ where {
           cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
 
     # Extract the bidzone of each substation if it exists
-    optional {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone} .
+    {
+      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoe:IdentifiedObject.energyIdentCodeEIC ?bidzone
+    } union {
+      filter not exists {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoe:IdentifiedObject.energyIdentCodeEIC ?non_existent_bz}
+      # When an EIC code does not exist, look for an EIC code in neighbouring nodes
+      {
+      select (max(?related_bidzone) as ?bidzone) where {
+          # Collect bidzones from substations connected to the current substation via a ConductingEquipment
+        ?tp_node ^cim:ConnectivityNode.TopologicalNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoe:IdentifiedObject.energyIdentCodeEIC ?related_bidzone .
+          }}
+      }
   }
   FILTER regex(?area, '${region}')
   bind(if(bound(?angle_ref), True, False) as ?is_swing_bus)
