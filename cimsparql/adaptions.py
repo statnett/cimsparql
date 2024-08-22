@@ -14,6 +14,8 @@ from rdflib.plugins.sparql import prepareUpdate
 from rdflib.query import ResultRow
 from rdflib.term import BNode, Literal, URIRef
 
+from cimsparql.graphdb import default_namespaces
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -30,9 +32,10 @@ class XmlModelAdaptor:
             uri = URIRef(f"http://cimsparql/xml-adpator/{profile}")
             destination_graph = self.graph.get_context(uri)
             destination_graph.parse(filename, publicID="http://cim")
+        self.ns = default_namespaces()
 
     def namespaces(self) -> dict[str, str]:
-        return {str(prefix): str(name) for prefix, name in self.graph.namespaces()}
+        return self.ns | {str(prefix): str(name) for prefix, name in self.graph.namespaces()}
 
     def graphs(self) -> set[Graph]:
         return {graph for _, _, _, graph in self.graph.quads() if graph}
@@ -76,6 +79,7 @@ class XmlModelAdaptor:
         self.add_dtypes()
         self.set_generation_type()
         self.add_internal_eq_link(eq_uri)
+        self.add_eic_code()
 
     def add_zero_sv_power_flow(self) -> None:
         with open(
@@ -136,6 +140,16 @@ class XmlModelAdaptor:
         with open(
             Path(__file__).parent
             / "sparql/test_configuration_modifications/add_sv_injection.sparql"
+        ) as f:
+            query = Template(f.read())
+
+        prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
+        self.graph.update(prepared_update_query)
+
+    def add_eic_code(self) -> None:
+        with open(
+            Path(__file__).parent
+            / "sparql/test_configuration_modifications/add_eic_bidding_area_code.sparql"
         ) as f:
             query = Template(f.read())
 
