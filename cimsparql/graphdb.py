@@ -115,7 +115,11 @@ class ServiceConfig:
 
     @property
     def auth(self) -> httpx.BasicAuth | None:
-        return httpx.BasicAuth(self.user, self.passwd) if self.user and self.passwd else None
+        return (
+            httpx.BasicAuth(self.user, self.passwd)
+            if self.user and self.passwd and not self.token
+            else None
+        )
 
 
 # Available formats from RDF4J API
@@ -182,7 +186,7 @@ class GraphDBClient:
         self.sparql.setReturnFormat(JSON)
         self.sparql.setMethod(POST)
         if self.service_cfg.token:
-            self.sparql.addCustomHttpHeader("authorization", self.service_cfg.token)
+            self.sparql.addCustomHttpHeader("Authorization", self.service_cfg.token)
         else:
             self.sparql.setCredentials(self.service_cfg.user, self.service_cfg.passwd)
         if self.service_cfg.timeout:
