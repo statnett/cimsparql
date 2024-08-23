@@ -3,6 +3,7 @@ import logging
 import os
 import re
 from base64 import b64encode
+from collections import defaultdict
 from collections.abc import Callable
 from functools import lru_cache
 from http import HTTPStatus
@@ -80,8 +81,13 @@ async def collect_data(model: Model) -> dict[str, pd.DataFrame]:
         model.transformers_connected_to_converter,
         model.wind_generating_units,
     )
+
+    args = defaultdict(tuple, {"exchange": ("NO|SE",)})
     result = await asyncio.gather(
-        *[loop.run_in_executor(None, exception_logging, query) for query in queries]
+        *[
+            loop.run_in_executor(None, exception_logging, query, *args[query.__name__])
+            for query in queries
+        ]
     )
     return {query.__name__: res for query, res in zip(queries, result, strict=False)}
 
@@ -277,3 +283,44 @@ def test_inject_subclassed_sparql_wrapper():
     # Confirm that we can sucessfully run a query
     df = client.get_table("select * where {?s ?p ?o}")[0]
     assert set(df.columns) == set(wrapper.result.head.variables)
+
+
+def test_xnodes(model: Model):
+    dfs = all_data(model)
+    bus = dfs["bus_data"]
+    ac_lines = dfs["ac_lines"].assign(
+        bidzone_1=lambda df: df["node_1"].map(bus["bidzone"]),
+        bidzone_2=lambda df: df["node_2"].map(bus["bidzone"]),
+    )
+    xnode_branches = ac_lines[ac_lines["name"].str.contains("Xnode")]
+    non_xnode_branches = ac_lines[~ac_lines["name"].str.contains("Xnode")]
+    assert not xnode_branches.empty
+    assert not xnode_branches["bidzone_1"].isna().any()
+    assert not xnode_branches["bidzone_2"].isna().any()
+
+    non_xnode_bidzones = set(non_xnode_branches["bidzone_1"]) | set(non_xnode_branches["bidzone_2"])
+    xnode_bidzones = set(xnode_branches["bidzone_1"]) | set(xnode_branches["bidzone_2"])
+
+    # Verify that there are no distinct bidzones among the xnodes such as EU, EU-ELSP-1 etc.
+    assert xnode_bidzones.issubset(non_xnode_bidzones)
+
+
+def test_bidzone_consistency(model: Model):
+    dfs = all_data(model)
+
+    # Verify that all bidzones are consistent regardless of whether they are collected via
+    # topological nodes or connectivity nodes
+    bus = dfs["bus_data"]
+    con_nodes = dfs["connectivity_nodes"]
+    ac_lines = dfs["ac_lines"]
+
+    pd.testing.assert_series_equal(
+        ac_lines["node_1"].map(bus["bidzone"]),
+        ac_lines["connectivity_node_1"].map(con_nodes["bidzone"]),
+        check_names=False,
+    )
+    pd.testing.assert_series_equal(
+        ac_lines["node_2"].map(bus["bidzone"]),
+        ac_lines["connectivity_node_2"].map(con_nodes["bidzone"]),
+        check_names=False,
+    )
