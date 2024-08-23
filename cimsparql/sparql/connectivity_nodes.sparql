@@ -2,10 +2,12 @@
 
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
+PREFIX entsoe:<${entsoe}>
 
-select ?mrid (?container_mrid as ?container) ?container_name ?un ?bidzone (strafter(str(?cnt_type), "#") as ?container_type)
+select ?mrid (?container_mrid as ?container) ?container_name ?un ?bidzone ?container_type
 where {
-   ?con_node_container ^cim:ConnectivityNode.ConnectivityNodeContainer/cim:IdentifiedObject.mRID ?mrid .
+   ?con_node cim:ConnectivityNode.ConnectivityNodeContainer ?con_node_container;
+      cim:IdentifiedObject.mRID ?mrid .
 
   # Extract properties from the connectivity node container associated with each topoligical node
   {
@@ -14,16 +16,27 @@ where {
 
     # Extract information about the substation associated with the connectivity node container
     ?_substation cim:IdentifiedObject.mRID ?container_mrid;
-      a ?cnt_type;
       cim:IdentifiedObject.name ?container_name;
       cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-    # Extract the bidzone of each substation if it exists
-    optional{?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone }
+     # Extract the bidzone of each substation if it exists
+    {
+      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoe:IdentifiedObject.energyIdentCodeEIC ?bidzone
+    } union {
+      filter not exists {?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoe:IdentifiedObject.energyIdentCodeEIC ?non_existent_bz}
+      # When an EIC code does not exist, look for an EIC code in neighbouring nodes
+      {
+      select (max(?related_bidzone) as ?bidzone) where {
+          # Collect bidzones from substations connected to the current substation via a ConductingEquipment
+        ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoe:IdentifiedObject.energyIdentCodeEIC ?related_bidzone .
+          }
+      }
+      }
+      bind("Substation" as ?container_type)
   } union {
     ?con_node_container cim:Line.Region/cim:IdentifiedObject.name ?area ;
-      a ?cnt_type;
       cim:IdentifiedObject.mRID ?container_mrid;
       cim:IdentifiedObject.name ?container_name
+      bind("Line" as ?container_type)
   }
   FILTER regex(?area, '.*')
 }
