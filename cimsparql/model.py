@@ -578,7 +578,7 @@ class Model:
     @time_it
     def dc_active_flow(self, region: str | None = None) -> DcActiveFlowDataFrame:
         query = self.dc_active_flow_query(region)
-        df = self.get_table_and_convert(query)
+        df = self.get_table_and_convert(query).astype({"p": float})
         # Unable to group on max within the sparql query so we do it here.
         df = df.iloc[df.groupby("mrid")["p"].idxmax()].set_index("mrid")
         df["p"] *= df["direction"]
