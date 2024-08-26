@@ -1,7 +1,7 @@
 # Name: Bus
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-PREFIX entsoe:<${entsoe}>
+PREFIX entsoeSecretariat:<${entsoeSecretariat}>
 select (?mrid as ?node) ?busname (?substation_name as ?substation) ?un ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus
 where {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
@@ -28,7 +28,7 @@ where {
 
     # Extract the bidzone of each substation if it exists
     optional {
-      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoe:IdentifiedObject.energyIdentCodeEIC ?direct_bidzone
+      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?direct_bidzone
     }
   } .
   optional {
@@ -40,7 +40,7 @@ where {
         ?_eq_subj2 <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo2 .
         service ?eq_repo2 {
           # Collect bidzones from substations connected to the current substation via a ConductingEquipment
-          ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoe:IdentifiedObject.energyIdentCodeEIC ?connected_bidzone .
+          ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?connected_bidzone .
         }} group by ?top_node}
   }
   bind(coalesce(?direct_bidzone, ?nearby_bidzone) as ?bidzone)

@@ -1,11 +1,11 @@
 prefix cim:<${cim}>
 prefix SN:<${SN}>
-prefix entsoe:<${entsoe}>
+prefix entsoeSecretariat:<${entsoeSecretariat}>
 insert {
     graph <http://cimsparql/xml-adpator/EQ-modifications> {
         ?substation SN:Substation.MarketDeliveryPoint _:b0 .
         _:b0 SN:MarketDeliveryPoint.BiddingArea _:b1 .
-        _:b1 entsoe:IdentifiedObject.energyIdentCodeEIC "10Y1001A1001A48H"
+        _:b1 entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC "10Y1001A1001A48H"
 }}
 where {
     ?substation a cim:Substation
