@@ -79,6 +79,7 @@ async def collect_data(model: Model) -> dict[str, pd.DataFrame]:
         model.transformer_windings,
         model.transformers,
         model.transformers_connected_to_converter,
+        model.transformer_center_nodes,
         model.wind_generating_units,
     )
 

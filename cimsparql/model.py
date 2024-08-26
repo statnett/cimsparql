@@ -248,7 +248,7 @@ class Model:
         """
         dfs = [
             self.get_table_and_convert(self.bus_data_query(region), index="node"),
-            self.get_table_and_convert(self.transformer_center_nodes_query(region), index="node"),
+            self.transformer_center_nodes(region),
         ]
         df = pd.concat(dfs)
         return BusDataFrame(df)
@@ -256,6 +256,11 @@ class Model:
     def loads_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
         return self.template_to_query(templates.LOADS_QUERY, substitutes)
+
+    @time_it
+    def transformer_center_nodes(self, region: str | None = None) -> BusDataFrame:
+        df = self.get_table_and_convert(self.transformer_center_nodes_query(region), index="node")
+        return BusDataFrame(df)
 
     @time_it
     def loads(self, region: str | None = None) -> LoadsDataFrame:

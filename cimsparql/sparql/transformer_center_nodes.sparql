@@ -1,7 +1,8 @@
 # Name: Transformer center nodes
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select ?node ?busname (?container_name as ?substation) ?un (?container_mrid as ?substation_mrid) ?bidzone ?island (False as ?is_swing_bus) ?connectivity_node
+PREFIX entsoeSecretariat:<${entsoeSecretariat}>
+select ?node ?busname (?container_name as ?substation) ?un (?container_mrid as ?substation_mrid) ?bidzone ?island (False as ?is_swing_bus) ?connectivity_node (?un as ?sv_voltage)
 where
 {
   optional{
@@ -23,7 +24,7 @@ where
     ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
     ?container cim:IdentifiedObject.mRID ?container_mrid;
         cim:IdentifiedObject.name ?container_name.
-    optional {?container SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/SN:BiddingArea.marketCode ?bidzone}
+    ?container SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?bidzone
     optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
   }
   filter(?network_analysis)
