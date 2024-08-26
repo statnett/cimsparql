@@ -63,7 +63,7 @@ class BusDataSchema(JsonSchemaOut):
     substation: Series[str] = pa.Field()
     un: Series[float] = pa.Field()
     substation_mrid: Series[str] = pa.Field()
-    bidzone: Series[str] = pa.Field(nullable=True)
+    bidzone: Series[str] = pa.Field()
     sv_voltage: Series[float] = pa.Field(nullable=True)
     island: Series[str] = pa.Field()
     is_swing_bus: Series[bool] = pa.Field()
@@ -365,7 +365,7 @@ class ConnectivityNode(JsonSchemaOut):
     container: Series[str] = pa.Field()
     container_name: Series[str] = pa.Field()
     un: Series[float] = pa.Field(nullable=True)
-    bidzone: Series[str] = pa.Field(nullable=True)
+    bidzone: Series[str] = pa.Field()
     container_type: Series[str] = pa.Field()
 
 
