@@ -4,6 +4,7 @@ import os
 import re
 from base64 import b64encode
 from collections.abc import Callable
+from functools import lru_cache
 from http import HTTPStatus
 from typing import Any
 
@@ -42,52 +43,58 @@ def exception_logging(func: Callable[[Any], pd.DataFrame], *args: Any):
         return pd.DataFrame()
 
 
-async def collect_data(model: Model) -> list[pd.DataFrame]:
+@lru_cache
+def all_data(model: Model) -> dict[str, pd.DataFrame]:
+    return asyncio.run(collect_data(model))
+
+
+async def collect_data(model: Model) -> dict[str, pd.DataFrame]:
     loop = asyncio.get_event_loop()
-    result = await asyncio.gather(
-        loop.run_in_executor(None, exception_logging, model.ac_lines),
-        loop.run_in_executor(None, exception_logging, model.borders),
-        loop.run_in_executor(None, exception_logging, model.branch_node_withdraw),
-        loop.run_in_executor(None, exception_logging, model.bus_data),
-        loop.run_in_executor(None, exception_logging, model.connections),
-        loop.run_in_executor(None, exception_logging, model.connectivity_nodes),
-        loop.run_in_executor(None, exception_logging, model.converters),
-        loop.run_in_executor(None, exception_logging, model.coordinates),
-        loop.run_in_executor(None, exception_logging, model.dc_active_flow),
-        loop.run_in_executor(None, exception_logging, model.disconnected),
-        loop.run_in_executor(None, exception_logging, model.exchange, "NO|SE"),
-        loop.run_in_executor(None, exception_logging, model.full_model),
-        loop.run_in_executor(None, exception_logging, model.hvdc_converter_bidzones),
-        loop.run_in_executor(None, exception_logging, model.loads),
-        loop.run_in_executor(None, exception_logging, model.market_dates),
-        loop.run_in_executor(None, exception_logging, model.phase_tap_changer),
-        loop.run_in_executor(None, exception_logging, model.powerflow),
-        loop.run_in_executor(None, exception_logging, model.regions),
-        loop.run_in_executor(None, exception_logging, model.series_compensators),
-        loop.run_in_executor(None, exception_logging, model.station_group_codes_and_names),
-        loop.run_in_executor(None, exception_logging, model.substation_voltage_level),
-        loop.run_in_executor(None, exception_logging, model.sv_power_deviation),
-        loop.run_in_executor(None, exception_logging, model.switches),
-        loop.run_in_executor(None, exception_logging, model.synchronous_machines),
-        loop.run_in_executor(None, exception_logging, model.transformer_branches),
-        loop.run_in_executor(None, exception_logging, model.transformer_windings),
-        loop.run_in_executor(None, exception_logging, model.transformers),
-        loop.run_in_executor(None, exception_logging, model.transformers_connected_to_converter),
-        loop.run_in_executor(None, exception_logging, model.wind_generating_units),
+    queries = (
+        model.ac_lines,
+        model.borders,
+        model.bus_data,
+        model.connections,
+        model.connectivity_nodes,
+        model.converters,
+        model.coordinates,
+        model.dc_active_flow,
+        model.disconnected,
+        model.exchange,
+        model.full_model,
+        model.hvdc_converter_bidzones,
+        model.loads,
+        model.market_dates,
+        model.phase_tap_changer,
+        model.powerflow,
+        model.regions,
+        model.series_compensators,
+        model.station_group_codes_and_names,
+        model.substation_voltage_level,
+        model.sv_power_deviation,
+        model.switches,
+        model.synchronous_machines,
+        model.transformer_branches,
+        model.transformer_windings,
+        model.transformers,
+        model.transformers_connected_to_converter,
+        model.wind_generating_units,
     )
-    return result
+    result = await asyncio.gather(
+        *[loop.run_in_executor(None, exception_logging, query) for query in queries]
+    )
+    return {query.__name__: res for query, res in zip(queries, result, strict=False)}
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("test_model", t_custom.all_custom_models())
-async def test_not_empty(test_model: t_common.ModelTest):
+def test_not_empty(test_model: t_common.ModelTest):
     model = test_model.model
     if not model:
         pytest.skip("Require access to GraphDB")
-    dfs = await collect_data(model)
+    dfs = all_data(model)
 
-    for i, df in enumerate(dfs):
-        assert not df.empty, f"Failed for dataframe {i}"
+    for name, df in dfs.items():
+        assert not df.empty, f"Failed for dataframe {name}"
 
 
 @pytest.fixture
