@@ -331,3 +331,12 @@ def test_sv_power_deviation(test_model: t_common.ModelTest) -> None:
     num = int(client.exec_query(count_query).results.bindings[0]["num"].value)
     assert num > 0
     assert len(df) == num
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+def test_base_voltage(test_model: t_common.ModelTest) -> None:
+    t_common.check_model(test_model)
+    assert test_model.model
+
+    df = test_model.model.base_voltage()
+    assert len(df) == 8

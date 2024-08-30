@@ -17,6 +17,7 @@ import pandas as pd
 from cimsparql import templates
 from cimsparql.data_models import (
     AcLinesDataFrame,
+    BaseVoltageDataFrame,
     BordersDataFrame,
     BranchComponentDataFrame,
     BranchWithdrawDataFrame,
@@ -701,6 +702,11 @@ class Model:
             self.get_table_and_convert(self.sv_power_deviation_query())
         )
 
+    @time_it
+    def base_voltage(self) -> BaseVoltageDataFrame:
+        query = self.template_to_query(templates.BASE_VOLTAGE)
+        return BaseVoltageDataFrame(self.get_table_and_convert(query))
+
 
 class SingleClientModel(Model):
     def __init__(
@@ -763,6 +769,7 @@ def get_federated_cim_model(
     # Setup client based on # Name in the pre-defined queries
     exec_from_tpssvssh = (
         "AC Lines",
+        "Base voltage",
         "Branch node withdraw",
         "Bus",
         "Converters",

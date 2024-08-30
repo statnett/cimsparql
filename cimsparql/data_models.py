@@ -391,3 +391,12 @@ class HVDC(JsonSchemaOut):
 
 
 HVDCDataFrame = DataFrame[HVDC]
+
+
+class BaseVoltage(JsonSchemaOut):
+    mrid: str = pa.Field(unique=True)
+    un: float = pa.Field()
+    operating_voltage: float = pa.Field()
+
+
+BaseVoltageDataFrame = DataFrame[BaseVoltage]
