@@ -67,6 +67,7 @@ class BusDataSchema(JsonSchemaOut):
     sv_voltage: Series[float] = pa.Field()
     island: Series[str] = pa.Field()
     is_swing_bus: Series[bool] = pa.Field()
+    base_voltage_mrid: Series[str] = pa.Field()
 
 
 BusDataFrame = DataFrame[BusDataSchema]
@@ -367,6 +368,7 @@ class ConnectivityNode(JsonSchemaOut):
     un: Series[float] = pa.Field(nullable=True)
     bidzone: Series[str] = pa.Field(nullable=True)
     container_type: Series[str] = pa.Field()
+    base_voltage_mrid: Series[str] = pa.Field()
 
 
 ConnectivityNodeDataFrame = DataFrame[ConnectivityNode]

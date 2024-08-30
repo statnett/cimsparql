@@ -2,30 +2,34 @@
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 PREFIX entsoeSecretariat:<${entsoeSecretariat}>
-select ?node ?busname (?container_name as ?substation) ?un (?container_mrid as ?substation_mrid) ?bidzone ?island (False as ?is_swing_bus) ?connectivity_node (?un as ?sv_voltage)
+select ?node ?busname (?container_name as ?substation) ?un ?base_voltage_mrid (?container_mrid as ?substation_mrid) ?bidzone ?island (False as ?is_swing_bus) ?connectivity_node (?un as ?sv_voltage)
 where
 {
-  optional{
+  optional {
     ?con_node cim:ConnectivityNode.TopologicalNode ?top_node .
     ?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name
   }.
+
 
 
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   service ?eq_repo {
     ?p_transformer cim:IdentifiedObject.mRID ?node;
       cim:IdentifiedObject.name ?busname;
-                  cim:Equipment.EquipmentContainer ?container.
+      cim:Equipment.EquipmentContainer ?container.
     ?winding cim:TransformerEnd.endNumber 1;
-            cim:PowerTransformerEnd.ratedU ?un;
             cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
             cim:TransformerEnd.Terminal ?terminal .
     ?terminal cim:Terminal.ConnectivityNode ?con_node.
-    ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
+    ?con_node cim:IdentifiedObject.mRID ?connectivity_node;
+      cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage ?base_voltage .
     ?container cim:IdentifiedObject.mRID ?container_mrid;
         cim:IdentifiedObject.name ?container_name.
     ?container SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?bidzone
     optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis}
+
+    ?base_voltage cim:IdentifiedObject.mRID ?base_voltage_mrid ;
+      cim:BaseVoltage.nominalVoltage ?un
   }
   filter(?network_analysis)
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
