@@ -4,15 +4,18 @@ PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 PREFIX entsoeSecretariat:<${entsoeSecretariat}>
 
-select ?mrid (?container_mrid as ?container) ?container_name ?un ?bidzone ?container_type
+select ?mrid (?container_mrid as ?container) ?container_name ?un ?base_voltage_mrid ?bidzone ?container_type
 where {
    ?con_node cim:ConnectivityNode.ConnectivityNodeContainer ?con_node_container;
       cim:IdentifiedObject.mRID ?mrid .
 
   # Extract properties from the connectivity node container associated with each topoligical node
   {
-    ?con_node_container cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un ;
+    ?con_node_container cim:VoltageLevel.BaseVoltage ?base_voltage;
     	cim:VoltageLevel.Substation ?_substation .
+
+    ?base_voltage cim:BaseVoltage.nominalVoltage ?un;
+      cim:IdentifiedObject.mRID ?base_voltage_mrid .
 
     # Extract information about the substation associated with the connectivity node container
     ?_substation cim:IdentifiedObject.mRID ?container_mrid;
@@ -35,10 +38,21 @@ where {
     bind("Substation" as ?container_type)
     bind(coalesce(?direct_bidzone, ?nearby_bidzone) as ?bidzone)
   } union {
-    ?con_node_container cim:Line.Region/cim:IdentifiedObject.name ?area ;
-      cim:IdentifiedObject.mRID ?container_mrid;
-      cim:IdentifiedObject.name ?container_name
-      bind("Line" as ?container_type)
+    ?con_node_container cim:Line.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+      cim:IdentifiedObject.name ?container_name;
+      cim:IdentifiedObject.mRID ?container_mrid
+
+    # Extract voltage levels connectivity nodes related via a conducting equipment (cim:Line has no cim:VoltageLeve.BaseVoltage)
+    {
+      select ?base_voltage_mrid ?un {
+        ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage ?base_voltage .
+        ?base_voltage cim:IdentifiedObject.mRID ?base_voltage_mrid;
+          cim:BaseVoltage.nominalVoltage ?un
+      } order by desc (xsd:double(str(?un)))
+      limit 1
+    }
+
+    bind("Line" as ?container_type)
   }
   FILTER regex(?area, '.*')
 }
