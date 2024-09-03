@@ -29,6 +29,8 @@ from cimsparql.url import service, service_blazegraph
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from tenacity.stop import stop_base
+
     from cimsparql.sparql_result_json import SparqlResultValue
 
 
@@ -80,6 +82,7 @@ class ServiceConfig:
     rest_api: RestApi = field(default=RestApi(os.getenv("SPARQL_REST_API", "RDF4J")))
     ca_bundle: str | None = field(default=None)
     retry_callback_factory: RetryCallbackFactory = field(default=RetryCallback)
+    retry_stop_criteria: stop_base = field(default=tenacity.stop_after_attempt(1))
 
     # Parameters for rest api
     # https://rdf4j.org/documentation/reference/rest-api/
@@ -88,7 +91,6 @@ class ServiceConfig:
     limit: int | None = None
     offset: int | None = None
     timeout: int | None = None
-    num_retries: int = 0
     max_delay_seconds: int = 60
     validate: bool = False
 
@@ -241,7 +243,7 @@ class GraphDBClient:
 
         sparql_result = None
         for attempt in tenacity.Retrying(
-            stop=tenacity.stop_after_attempt(self.service_cfg.num_retries + 1),
+            stop=self.service_cfg.retry_stop_criteria,
             wait=tenacity.wait_exponential(max=self.service_cfg.max_delay_seconds),
             before=retry_cb.before,
             after=retry_cb.after,
