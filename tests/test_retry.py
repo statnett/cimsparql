@@ -42,7 +42,9 @@ def test_retry_sync(
     url = fail_first_ok_second_server(httpserver)
 
     config = ServiceConfig(
-        server=url, rest_api=RestApi.DIRECT_SPARQL_ENDPOINT, num_retries=num_retries
+        server=url,
+        rest_api=RestApi.DIRECT_SPARQL_ENDPOINT,
+        retry_stop_criteria=tenacity.stop_after_attempt(num_retries + 1),
     )
 
     client = GraphDBClient(config)
