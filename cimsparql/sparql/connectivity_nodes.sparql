@@ -21,10 +21,25 @@ where {
     ?_substation cim:IdentifiedObject.mRID ?container_mrid;
       cim:IdentifiedObject.name ?container_name;
       cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-     # Extract the bidzone of each substation if it exists
-    optional {
-      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?direct_bidzone
-    } .
+      SN:Substation.MarketDeliveryPoint ?mdp .
+
+      optional {
+            {?mdp SN:MarketDeliveryPoint.BiddingArea ?direct_bidding_area} union {
+                # Hard-coded mapping which should not be done. But MarkedDeliveryPoint.BiddingArea seems to be missing for these
+                values (?mdp ?direct_bidding_area) {
+                (<urn:uuid:cce92f5a-aea9-936e-e040-1e828c94f337> <urn:uuid:68724b5b-627a-4ba3-b1c7-4616f10b4b04>)  # Flatabo -> NO5
+                (<urn:uuid:20448bdb-8daa-42ac-9ff9-09c0ad7747df> <urn:uuid:4d642344-9775-4222-b7b8-44ce1142de37>)  # Vollesfjord -> NO2
+                (<urn:uuid:5185e008-3e38-1ee5-e050-1e828c94c211> <urn:uuid:99f992d3-5c94-4f18-bbba-d986cafea9e1>) # FuruDigi -> NO1
+                (<urn:uuid:cce92f5a-aec5-936e-e040-1e828c94f337> <urn:uuid:68724b5b-627a-4ba3-b1c7-4616f10b4b04>) # Sandosen -> NO5
+                (<urn:uuid:cce92f5a-ae38-936e-e040-1e828c94f337> <urn:uuid:4d642344-9775-4222-b7b8-44ce1142de37>) # Valhall -> NO2
+                (<urn:uuid:d3411a3a-87f2-5e08-e040-1e828c94538d> <urn:uuid:99f992d3-5c94-4f18-bbba-d986cafea9e1>) # H2 -> NO1
+                (<urn:uuid:dc1c4041-9215-79d5-e040-1e828c94b481> <urn:uuid:4d642344-9775-4222-b7b8-44ce1142de37>) # Grosoya -> NO2
+                (<urn:uuid:e96e3cd6-2e0b-4589-e040-1e828c94c368> <urn:uuid:f8ebf1b4-18f6-4fde-a530-cb66daf421c3>) # BALSLOK -> NO4
+                (<urn:uuid:dc1c4041-921d-79d5-e040-1e828c94b481> <urn:uuid:d3323018-7cc0-faf9-e040-1e828c947b8e>) # LOVNS -> DK2
+            }
+            }
+            ?direct_bidding_area entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?direct_bidzone
+      } .
     {
       filter(!bound(?bidzone))
       # When an EIC code does not exist, look for an EIC code in neighbouring nodes
