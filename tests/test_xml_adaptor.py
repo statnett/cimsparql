@@ -58,3 +58,9 @@ def test_add_eic_code(xml_adaptor: XmlModelAdaptor) -> None:
     xml_adaptor.add_eic_code()
     query = "select * where {?s entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?eic}"
     assert len(xml_adaptor.graph.query(query, initNs=xml_adaptor.namespaces())) == num_substations
+
+
+def test_add_network_analysis_enable(xml_adaptor: XmlModelAdaptor) -> None:
+    xml_adaptor.add_network_analysis_enable()
+    query = "select * {?terminal cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable True}"
+    assert len(xml_adaptor.graph.query(query, initNs=xml_adaptor.namespaces())) > 0

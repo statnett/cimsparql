@@ -131,9 +131,19 @@ def test_swing_bus_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
 async def test_all_connectivity_nodes_fetched(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     assert test_model.model
-    count_query = test_model.model.template_to_query(
-        Template("select (count(?s) as ?count) where {?s a <${cim}ConnectivityNode>}")
+
+    query = Template(
+        """
+        PREFIX cim:<${cim}>
+        PREFIX SN:<${SN}>
+
+        select (count(distinct ?s) as ?count) where  {
+            values ?true {True "true"}
+            ?s ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true
+        }
+        """
     )
+    count_query = test_model.model.template_to_query(query)
     num_nodes_df = test_model.model.get_table_and_convert(count_query)
     num_connectivity_nodes = int(num_nodes_df["count"].iloc[0])
 
