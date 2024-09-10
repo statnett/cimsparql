@@ -402,3 +402,13 @@ class BaseVoltage(JsonSchemaOut):
 
 
 BaseVoltageDataFrame = DataFrame[BaseVoltage]
+
+
+class AssociatedSwitches(JsonSchemaOut):
+    mrid: str = pa.Field(unique=True)
+    name: str
+    switch_mrids: str
+    switch_names: str
+
+
+AssociatedSwitchesDataFrame = DataFrame[AssociatedSwitches]

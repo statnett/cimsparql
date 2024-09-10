@@ -340,3 +340,16 @@ def test_base_voltage(test_model: t_common.ModelTest) -> None:
 
     df = test_model.model.base_voltage()
     assert len(df) == 8
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+def test_associated_switches(test_model: t_common.ModelTest) -> None:
+    t_common.check_model(test_model)
+    assert test_model.model
+
+    df = test_model.model.associated_switches()
+    assert not df.empty
+
+    # Test values for power transformer BE-TR3. Should be connected to two switches
+    switches = set(df.query("name == 'BE-TR2_1'")["switch_names"].iloc[0].split(","))
+    assert switches == {"BE_Breaker_1", "BE_Breaker_2"}
