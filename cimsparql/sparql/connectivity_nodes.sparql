@@ -9,6 +9,15 @@ where {
    ?con_node cim:ConnectivityNode.ConnectivityNodeContainer ?con_node_container;
       cim:IdentifiedObject.mRID ?mrid .
 
+    {
+      select ?con_node (count(*) as ?num_active) {
+        # Support both typed and not typed networkAnalysisEnable flag
+        values ?true {True "true"}
+        ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true
+      } group by ?con_node
+    }
+    filter(?num_active > 0)
+
   # Extract properties from the connectivity node container associated with each topoligical node
   {
     ?con_node_container cim:VoltageLevel.BaseVoltage ?base_voltage;

@@ -50,9 +50,7 @@ class XmlModelAdaptor:
         """
         ns = self.namespaces()
         identified_obj_mrid = URIRef(f"{ns['cim']}IdentifiedObject.mRID")
-        for result in self.graph.query(
-            "select ?s ?g where {graph ?g {?s cim:IdentifiedObject.name ?name}}", initNs=ns
-        ):
+        for result in self.graph.query("select ?s ?g where {graph ?g {?s cim:IdentifiedObject.name ?name}}", initNs=ns):
             assert isinstance(result, ResultRow)
             mrid_str = str(result["s"]).rpartition("#_")[-1]
             mrid = mrid_str if is_uuid(mrid_str) else generate_uuid(mrid_str)
@@ -80,12 +78,10 @@ class XmlModelAdaptor:
         self.set_generation_type()
         self.add_internal_eq_link(eq_uri)
         self.add_eic_code()
+        self.add_network_analysis_enable()
 
     def add_zero_sv_power_flow(self) -> None:
-        with open(
-            Path(__file__).parent
-            / "sparql/test_configuration_modifications/add_zero_sv_power.sparql"
-        ) as f:
+        with open(Path(__file__).parent / "sparql/test_configuration_modifications/add_zero_sv_power.sparql") as f:
             query = Template(f.read())
 
         prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
@@ -110,11 +106,7 @@ class XmlModelAdaptor:
                 self.graph.add((s, predicate, literal, g))
 
     def tpsvssh_contexts(self) -> list[Graph]:
-        return [
-            ctx
-            for ctx in self.graph.contexts()
-            if any(token in str(ctx) for token in ("SSH", "TP", "SV"))
-        ]
+        return [ctx for ctx in self.graph.contexts() if any(token in str(ctx) for token in ("SSH", "TP", "SV"))]
 
     def nq_bytes(self, contexts: list[Graph] | None = None) -> bytes:
         """
@@ -132,15 +124,10 @@ class XmlModelAdaptor:
     def add_internal_eq_link(self, eq_uri: str) -> None:
         # Insert in one SV graph
         ctx = next(c for c in self.tpsvssh_contexts() if "SV" in str(c))
-        self.graph.get_context(ctx.identifier).add(
-            (BNode(), URIRef(self.eq_predicate), URIRef(eq_uri))
-        )
+        self.graph.get_context(ctx.identifier).add((BNode(), URIRef(self.eq_predicate), URIRef(eq_uri)))
 
     def add_zero_sv_injection(self) -> None:
-        with open(
-            Path(__file__).parent
-            / "sparql/test_configuration_modifications/add_sv_injection.sparql"
-        ) as f:
+        with open(Path(__file__).parent / "sparql/test_configuration_modifications/add_sv_injection.sparql") as f:
             query = Template(f.read())
 
         prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
@@ -148,11 +135,18 @@ class XmlModelAdaptor:
 
     def add_eic_code(self) -> None:
         with open(
-            Path(__file__).parent
-            / "sparql/test_configuration_modifications/add_eic_bidding_area_code.sparql"
+            Path(__file__).parent / "sparql/test_configuration_modifications/add_eic_bidding_area_code.sparql"
         ) as f:
             query = Template(f.read())
 
+        prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
+        self.graph.update(prepared_update_query)
+
+    def add_network_analysis_enable(self) -> None:
+        with open(
+            Path(__file__).parent / "sparql/test_configuration_modifications/add_network_analysis_enable.sparql"
+        ) as f:
+            query = Template(f.read())
         prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
         self.graph.update(prepared_update_query)
 
