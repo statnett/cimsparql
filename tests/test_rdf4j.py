@@ -71,9 +71,7 @@ def test_upload_rdf_xml(upload_client: GraphDBClient):
     upload_client.upload_rdf(xml_file, "rdf/xml")
 
     prefixes = Template("PREFIX rdf:<${rdf}>\nPREFIX md:<${md}>").substitute(upload_client.prefixes)
-    sparql_result = upload_client.exec_query(
-        f"{prefixes}\nSELECT * WHERE {{?s rdf:type md:FullModel}}"
-    )
+    sparql_result = upload_client.exec_query(f"{prefixes}\nSELECT * WHERE {{?s rdf:type md:FullModel}}")
     assert len(sparql_result.results.bindings) == 1
 
 

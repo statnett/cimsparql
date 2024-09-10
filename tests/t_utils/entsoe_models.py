@@ -66,9 +66,7 @@ def federated_micro_t1() -> t_common.ModelTest:
         adaptor.adapt(eq_client.service_cfg.url)
         tpsvssh_ctx = adaptor.tpsvssh_contexts()
         tpsvssh = adaptor.nq_bytes(tpsvssh_ctx)
-        remaining = adaptor.nq_bytes(
-            [ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx]
-        )
+        remaining = adaptor.nq_bytes([ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx])
         tpsvssh_client.upload_rdf(tpsvssh, "n-quads")
         eq_client.upload_rdf(remaining, "n-quads")
 
@@ -122,9 +120,7 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
         tpsvssh_ctx = adaptor.tpsvssh_contexts()
         tpsvssh_client.upload_rdf(adaptor.nq_bytes(tpsvssh_ctx), "n-quads")
 
-        remaining = adaptor.nq_bytes(
-            [ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx]
-        )
+        remaining = adaptor.nq_bytes([ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx])
 
         eq_client.upload_rdf(remaining, "n-quads")
 

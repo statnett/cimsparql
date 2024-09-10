@@ -121,9 +121,7 @@ class Model:
             client.add_correlation_id_to_header(transaction_id)
         return self
 
-    def __exit__(
-        self, exc_type: type[BaseException], exc: BaseException, exc_tb: TracebackType
-    ) -> None:
+    def __exit__(self, exc_type: type[BaseException], exc: BaseException, exc_tb: TracebackType) -> None:
         _, _, _ = exc_type, exc, exc_tb
         for client in self.clients.values():
             client.clear_correlation_id_from_header()
@@ -138,15 +136,10 @@ class Model:
 
     @staticmethod
     def _col_map(data_row: dict[str, SparqlResultValue]) -> dict[str, str]:
-        return {
-            column: data.datatype if data.datatype else data.value_type
-            for column, data in data_row.items()
-        }
+        return {column: data.datatype if data.datatype else data.value_type for column, data in data_row.items()}
 
     @classmethod
-    def col_map(
-        cls, data_row: dict[str, SparqlResultValue], columns: dict[str, str]
-    ) -> dict[str, str]:
+    def col_map(cls, data_row: dict[str, SparqlResultValue], columns: dict[str, str]) -> dict[str, str]:
         columns = columns or {}
         col_map = cls._col_map(data_row)
         col_map.update(columns)
@@ -181,9 +174,7 @@ class Model:
         result, data_row = client.get_table(query)
         return self._convert_result(result, data_row, index, columns)
 
-    def template_to_query(
-        self, template: Template, substitutes: dict[str, str] | None = None
-    ) -> str:
+    def template_to_query(self, template: Template, substitutes: dict[str, str] | None = None) -> str:
         """Convert provided template to query."""
         substitutes = substitutes or {}
 
@@ -194,9 +185,7 @@ class Model:
         state_repo = self.config.system_state_repo or client.service_cfg.url
         eq_repo = self.config.eq_repo or client.service_cfg.url
 
-        return template.safe_substitute(
-            {"repo": state_repo, "eq_repo": eq_repo} | substitutes | self.client.prefixes
-        )
+        return template.safe_substitute({"repo": state_repo, "eq_repo": eq_repo} | substitutes | self.client.prefixes)
 
     @cached_property
     def cim_version(self) -> int:
@@ -380,14 +369,10 @@ class Model:
 
     def transformers_connected_to_converter_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
-        return self.template_to_query(
-            templates.TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY, substitutes
-        )
+        return self.template_to_query(templates.TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY, substitutes)
 
     @time_it
-    def transformers_connected_to_converter(
-        self, region: str | None = None
-    ) -> TransfConToConverterDataFrame:
+    def transformers_connected_to_converter(self, region: str | None = None) -> TransfConToConverterDataFrame:
         """Query list of transformer connected at a converter (Voltage source or DC)
 
         Args:
@@ -424,9 +409,7 @@ class Model:
         return self.template_to_query(templates.SERIES_COMPENSATORS_QUERY, substitutes)
 
     @time_it
-    def series_compensators(
-        self, region: str | None = None, rate: str | None = None
-    ) -> BranchComponentDataFrame:
+    def series_compensators(self, region: str | None = None, rate: str | None = None) -> BranchComponentDataFrame:
         """Query series compensators
 
         Args:
@@ -441,9 +424,7 @@ class Model:
         return self.template_to_query(templates.TRANSFORMERS_QUERY, substitutes)
 
     @time_it
-    def transformers(
-        self, region: str | None = None, rate: str | None = None
-    ) -> TransformersDataFrame:
+    def transformers(self, region: str | None = None, rate: str | None = None) -> TransformersDataFrame:
         """Query transformer windings.
 
         Args:
@@ -473,9 +454,7 @@ class Model:
         return self.template_to_query(templates.TRANSFORMER_BRANCHES_QUERY, substitutes)
 
     @time_it
-    def transformer_branches(
-        self, region: str | None = None, rate: str | None = None
-    ) -> TransformerWindingDataFrame:
+    def transformer_branches(self, region: str | None = None, rate: str | None = None) -> TransformerWindingDataFrame:
         """Query transformer branches. For two winding transformers will
         give two "branches" (x are nodes, o is the fictisous center node)
 
@@ -698,9 +677,7 @@ class Model:
 
     @time_it
     def sv_power_deviation(self) -> SvPowerDeviationDataFrame:
-        return SvPowerDeviationDataFrame(
-            self.get_table_and_convert(self.sv_power_deviation_query())
-        )
+        return SvPowerDeviationDataFrame(self.get_table_and_convert(self.sv_power_deviation_query()))
 
     @time_it
     def base_voltage(self) -> BaseVoltageDataFrame:
@@ -762,9 +739,7 @@ def get_federated_cim_model(
         tpsvhssh_client: Client that executes queries from the TP/SV/SSH repository
         model_cfg: Mode configurations that provides extra information
     """
-    clients = defaultdict[str, GraphDBClient](
-        lambda: eq_client
-    )  # By default queries are executed from the EQ repo
+    clients = defaultdict[str, GraphDBClient](lambda: eq_client)  # By default queries are executed from the EQ repo
 
     # Setup client based on # Name in the pre-defined queries
     exec_from_tpssvssh = (

@@ -21,17 +21,13 @@ if TYPE_CHECKING:
     from pytest_httpserver import HTTPServer
 
 
-def init_triple_store_server(
-    httpserver: HTTPServer, sparql_result: dict[str, Any] | None = None
-) -> ServiceConfig:
+def init_triple_store_server(httpserver: HTTPServer, sparql_result: dict[str, Any] | None = None) -> ServiceConfig:
     """
     Create a triple store server that returns sparql_result_data when a call is made
     """
     sparql_result = sparql_result or empty_sparql_result()
     httpserver.expect_request("/sparql").respond_with_json(sparql_result)
-    return ServiceConfig(
-        server=httpserver.url_for("/sparql"), rest_api=RestApi.DIRECT_SPARQL_ENDPOINT
-    )
+    return ServiceConfig(server=httpserver.url_for("/sparql"), rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
 
 
 def empty_sparql_result() -> dict[str, Any]:
@@ -59,10 +55,7 @@ def test_map_data_types(httpserver: HTTPServer):
     sparql_result = {
         "head": {"vars": list(results.keys())},
         "results": {
-            "bindings": [
-                {k: {"type": "literal", "value": v[i]} for k, v in results.items()}
-                for i in range(3)
-            ]
+            "bindings": [{k: {"type": "literal", "value": v[i]} for k, v in results.items()} for i in range(3)]
         },
     }
     service_cfg = init_triple_store_server(httpserver, sparql_result)

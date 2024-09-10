@@ -62,10 +62,7 @@ class SparqlResultValueFactory(pydantic_factory.ModelFactory[SparqlResultValue])
 
 def build_sparql_result(variables: list[str]) -> SparqlData:
     return SparqlData(
-        bindings=[
-            {variable: SparqlResultValueFactory.build() for variable in variables}
-            for _ in range(10)
-        ]
+        bindings=[{variable: SparqlResultValueFactory.build() for variable in variables} for _ in range(10)]
     )
 
 
@@ -76,11 +73,7 @@ class SparqlResultJsonFactory(pydantic_factory.ModelFactory[SparqlResultJson]):
         return build_sparql_result(head.variables)
 
     @classmethod
-    def build(
-        cls, factory_use_construct: bool = False, **kwargs: dict[str, Any]
-    ) -> SparqlResultJson:
-        result: SparqlResultJson = super().build(
-            factory_use_construct=factory_use_construct, **kwargs
-        )
+    def build(cls, factory_use_construct: bool = False, **kwargs: dict[str, Any]) -> SparqlResultJson:
+        result: SparqlResultJson = super().build(factory_use_construct=factory_use_construct, **kwargs)
         result.validate_column_consistency()
         return result

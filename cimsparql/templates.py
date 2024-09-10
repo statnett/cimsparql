@@ -32,9 +32,7 @@ POWER_FLOW_QUERY = _read_template(sparql_folder / "power_flow.sparql")
 RAS_EQUIPMENT_QUERY = _read_template(sparql_folder / "ras_equipment.sparql")
 REGIONS_QUERY = _read_template(sparql_folder / "regions.sparql")
 SERIES_COMPENSATORS_QUERY = _read_template(sparql_folder / "series_compensators.sparql")
-STATION_GROUP_CODE_NAME_QUERY = _read_template(
-    sparql_folder / "station_group_code_and_names.sparql"
-)
+STATION_GROUP_CODE_NAME_QUERY = _read_template(sparql_folder / "station_group_code_and_names.sparql")
 SUBSTATION_VOLTAGE_LEVEL_QUERY = _read_template(sparql_folder / "substation_voltage_level.sparql")
 SV_BRANCH_QUERY = _read_template(sparql_folder / "sv_branch.sparql")
 SV_INJECTION_QUERY = _read_template(sparql_folder / "sv_injection.sparql")
@@ -43,9 +41,7 @@ SWITCHES_QUERY = _read_template(sparql_folder / "switches.sparql")
 SYNCHRONOUS_MACHINES_QUERY = _read_template(sparql_folder / "synchronous_machines.sparql")
 TRANSFORMER_BRANCHES_QUERY = _read_template(sparql_folder / "transformer_branches.sparql")
 TRANSFORMER_CENTER_NODES_QUERY = _read_template(sparql_folder / "transformer_center_nodes.sparql")
-TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY = _read_template(
-    sparql_folder / "transformers_connected_to_converter.sparql"
-)
+TRANSFORMERS_CONNECTED_TO_CONVERTER_QUERY = _read_template(sparql_folder / "transformers_connected_to_converter.sparql")
 TRANSFORMERS_QUERY = _read_template(sparql_folder / "transformers.sparql")
 TRANSFORMER_WINDINGS_QUERY = _read_template(sparql_folder / "transformer_windings.sparql")
 TRANSFORMER_WINDING_ANGLE_QUERY = _read_template(sparql_folder / "transformer_winding_angle.sparql")
