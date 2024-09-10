@@ -33,12 +33,8 @@ def fail_first_ok_second_server(httpserver: HTTPServer) -> str:
     return httpserver.url_for("/sparql")
 
 
-@pytest.mark.parametrize(
-    "num_retries,exception_context", [(0, pytest.raises(tenacity.RetryError)), (1, nullcontext())]
-)
-def test_retry_sync(
-    httpserver: HTTPServer, num_retries: int, exception_context: AbstractContextManager[None]
-):
+@pytest.mark.parametrize("num_retries,exception_context", [(0, pytest.raises(tenacity.RetryError)), (1, nullcontext())])
+def test_retry_sync(httpserver: HTTPServer, num_retries: int, exception_context: AbstractContextManager[None]):
     url = fail_first_ok_second_server(httpserver)
 
     config = ServiceConfig(

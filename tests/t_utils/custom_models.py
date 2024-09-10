@@ -25,9 +25,7 @@ def federated_model() -> t_common.ModelTest:
     eq_client = GraphDBClient(eq_client_cfg)
     tpsvssh_client = GraphDBClient(tpsvssh_client_cfg)
 
-    m_cfg = ModelConfig(
-        f"repository:{system_state_repo},infer=false", f"repository:{eq_repo},infer=false"
-    )
+    m_cfg = ModelConfig(f"repository:{system_state_repo},infer=false", f"repository:{eq_repo},infer=false")
     model = None
     try:
         model = get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)

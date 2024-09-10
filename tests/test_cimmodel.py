@@ -103,12 +103,8 @@ class CorrelationIdPicker:
 
 def test_correlation_id(httpserver: HTTPServer):
     correlation_picker = CorrelationIdPicker()
-    httpserver.expect_request("/sparql").respond_with_handler(
-        correlation_picker.extract_correlation_id
-    )
-    config = ServiceConfig(
-        server=httpserver.url_for("/sparql"), rest_api=RestApi.DIRECT_SPARQL_ENDPOINT
-    )
+    httpserver.expect_request("/sparql").respond_with_handler(correlation_picker.extract_correlation_id)
+    config = ServiceConfig(server=httpserver.url_for("/sparql"), rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
 
     model = Model(
         {"name1": GraphDBClient(config), "name2": GraphDBClient(config)},
@@ -129,9 +125,7 @@ def test_correlation_id(httpserver: HTTPServer):
         assert is_uuid(correlation_picker.correlation_id)
 
         c_id = correlation_picker.correlation_id
-        model.get_table_and_convert(
-            query2
-        )  # Runs from second client (but should have same correlation id)
+        model.get_table_and_convert(query2)  # Runs from second client (but should have same correlation id)
         assert correlation_picker.correlation_id == c_id
 
     # Run again and confirm that correlation id is removed
@@ -166,20 +160,14 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
             "connectivity_node_1",
             "connectivity_node_2",
         ]
-        return SparqlResultJson(
-            head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[])
-        )
+        return SparqlResultJson(head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[]))
 
     def angle(self) -> SparqlResultJson:
-        return SparqlResultJson(
-            head=SparqlResultHead(vars=["mrid", "angle"]), results=SparqlData(bindings=[])
-        )
+        return SparqlResultJson(head=SparqlResultHead(vars=["mrid", "angle"]), results=SparqlData(bindings=[]))
 
     def three_winding_loss(self) -> SparqlResultJson:
         variables = ["mrid", "ploss_2"]
-        return SparqlResultJson(
-            head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[])
-        )
+        return SparqlResultJson(head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[]))
 
     def queryAndConvert(self) -> dict[str, Any]:  # noqa: N802
         name = query_name(self.queryString)
@@ -196,8 +184,6 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
 
 def test_three_winding_empty_result():
     config = ServiceConfig(server="http://some-server", rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
-    client = GraphDBClient(
-        service_cfg=config, sparql_wrapper=EmptyThreeWindingTransformerSPARQLWrapper()
-    )
+    client = GraphDBClient(service_cfg=config, sparql_wrapper=EmptyThreeWindingTransformerSPARQLWrapper())
     model = Model(defaultdict(lambda: client), mapper=LocalTypeMapper(config))
     assert model.transformer_branches().empty

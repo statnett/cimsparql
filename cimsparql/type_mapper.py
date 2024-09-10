@@ -108,10 +108,7 @@ class TypeMapper:
         return any(cim in val for val in self.map)
 
     def type_map(self, df: pd.DataFrame) -> dict[str, Any]:
-        return {
-            row.sparql_type: self.prim_type_map.get(row.range, str_preserve_none)
-            for row in df.itertuples()
-        }
+        return {row.sparql_type: self.prim_type_map.get(row.range, str_preserve_none) for row in df.itertuples()}
 
     def get_map(self) -> dict[str, Any]:
         """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
@@ -131,17 +128,13 @@ class TypeMapper:
             return {}
         return self.type_map(df)
 
-    def build_type_caster(
-        self, col_map: dict[COL_NAME, SPARQL_TYPE]
-    ) -> dict[COL_NAME, TYPE_CASTER]:
+    def build_type_caster(self, col_map: dict[COL_NAME, SPARQL_TYPE]) -> dict[COL_NAME, TYPE_CASTER]:
         """
         Construct a direct mapping from column names to a type caster from the
         """
         return {col: self.map[dtype] for col, dtype in col_map.items() if dtype in self.map}
 
-    def map_data_types(
-        self, df: pd.DataFrame, col_map: dict[COL_NAME, SPARQL_TYPE]
-    ) -> pd.DataFrame:
+    def map_data_types(self, df: pd.DataFrame, col_map: dict[COL_NAME, SPARQL_TYPE]) -> pd.DataFrame:
         """Maps the dtypes of a DataFrame to the python-corresponding types of the sparql-types from
         the source data
 

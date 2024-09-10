@@ -39,9 +39,7 @@ class SparqlResult(TypedDict):
     data: list[dict[str, SparqlResultValue]]
 
 
-def data_row(
-    cols: list[str], rows: list[dict[str, SparqlResultValue]]
-) -> dict[str, SparqlResultValue]:
+def data_row(cols: list[str], rows: list[dict[str, SparqlResultValue]]) -> dict[str, SparqlResultValue]:
     """Get a sample row for extraction of data types
 
     Args:
@@ -117,11 +115,7 @@ class ServiceConfig:
 
     @property
     def auth(self) -> httpx.BasicAuth | None:
-        return (
-            httpx.BasicAuth(self.user, self.passwd)
-            if self.user and self.passwd and not self.token
-            else None
-        )
+        return httpx.BasicAuth(self.user, self.passwd) if self.user and self.passwd and not self.token else None
 
 
 # Available formats from RDF4J API
@@ -254,17 +248,13 @@ class GraphDBClient:
                 sparql_result = SparqlResultJson.model_validate(results)
                 if self.service_cfg.validate:
                     sparql_result.validate_column_consistency()
-        return sparql_result or SparqlResultJson(
-            head=SparqlResultHead(), results=SparqlData(bindings=[])
-        )
+        return sparql_result or SparqlResultJson(head=SparqlResultHead(), results=SparqlData(bindings=[]))
 
     def _convert_query_result_to_df(
         self, sparql_result: SparqlResultJson
     ) -> tuple[pd.DataFrame, dict[str, SparqlResultValue]]:
         df = (
-            pd.DataFrame(
-                sparql_result.results.values_as_dict(), columns=sparql_result.head.variables
-            )
+            pd.DataFrame(sparql_result.results.values_as_dict(), columns=sparql_result.head.variables)
             if len(sparql_result.results.bindings)
             else pd.DataFrame(columns=sparql_result.head.variables)
         )
@@ -306,18 +296,14 @@ class GraphDBClient:
             "Verify that user and password are correctly set in the "
             "GRAPHDB_USER and GRAPHDB_USER_PASSWD environment variable"
         )
-        raise RuntimeError(
-            f"{msg} Status code: {response.status_code} Reason: {response.reason_phrase}"
-        )
+        raise RuntimeError(f"{msg} Status code: {response.status_code} Reason: {response.reason_phrase}")
 
     def delete_repo(self) -> None:
         endpoint = delete_repo_endpoint(self.service_cfg)
         response = httpx.delete(endpoint, timeout=5.0)
         response.raise_for_status()
 
-    def upload_rdf(
-        self, content: Path | bytes, rdf_format: str, params: dict[str, str] | None = None
-    ) -> None:
+    def upload_rdf(self, content: Path | bytes, rdf_format: str, params: dict[str, str] | None = None) -> None:
         """
         Upload data in RDF format to a srevice
 
@@ -350,8 +336,7 @@ class GraphDBClient:
         response = httpx.post(
             self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
             data={"update": query},
-            headers=self.sparql.customHttpHeaders
-            | {"Content-Type": "application/x-www-form-urlencoded"},
+            headers=self.sparql.customHttpHeaders | {"Content-Type": "application/x-www-form-urlencoded"},
             auth=self.service_cfg.auth,
             timeout=5.0,
         )
@@ -370,9 +355,7 @@ class GraphDBClient:
 
     @require_rdf4j
     def get_namespace(self, prefix: str) -> str:
-        response = httpx.get(
-            self.service_cfg.url + f"/namespaces/{prefix}", auth=self.service_cfg.auth, timeout=5.0
-        )
+        response = httpx.get(self.service_cfg.url + f"/namespaces/{prefix}", auth=self.service_cfg.auth, timeout=5.0)
 
         response.raise_for_status()
         return response.text
@@ -418,9 +401,7 @@ def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
     return [_repo_info(repo) for repo in response.json()["results"]["bindings"]]
 
 
-def new_repo(
-    server: str, repo: str, config: bytes, allow_exist: bool = True, protocol: str = "http"
-) -> GraphDBClient:
+def new_repo(server: str, repo: str, config: bytes, allow_exist: bool = True, protocol: str = "http") -> GraphDBClient:
     """
     Initiialzie a new repository
 
@@ -441,9 +422,7 @@ def new_repo(
     return GraphDBClient(ServiceConfig(repo, protocol, server))
 
 
-def new_repo_blazegraph(
-    url: str, repo: str, protocol: str = "https", token: str | None = None
-) -> GraphDBClient:
+def new_repo_blazegraph(url: str, repo: str, protocol: str = "https", token: str | None = None) -> GraphDBClient:
     template = confpath() / "blazegraph_repo_config.xml"
     config = config_bytes_from_template(template, {"repo": repo})
 
@@ -454,15 +433,11 @@ def new_repo_blazegraph(
         timeout=5.0,
     )
     response.raise_for_status()
-    client = GraphDBClient(
-        ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH, token=token)
-    )
+    client = GraphDBClient(ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH, token=token))
     return client
 
 
-def config_bytes_from_template(
-    template: Path, params: dict[str, str], encoding: str = "utf-8"
-) -> bytes:
+def config_bytes_from_template(template: Path, params: dict[str, str], encoding: str = "utf-8") -> bytes:
     """
     Replace value in template file with items in params
 

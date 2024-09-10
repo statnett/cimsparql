@@ -86,10 +86,7 @@ async def collect_data(model: Model) -> dict[str, pd.DataFrame]:
 
     args = defaultdict(tuple, {"exchange": ("NO|SE",)})
     result = await asyncio.gather(
-        *[
-            loop.run_in_executor(None, exception_logging, query, *args[query.__name__])
-            for query in queries
-        ]
+        *[loop.run_in_executor(None, exception_logging, query, *args[query.__name__]) for query in queries]
     )
     return {query.__name__: res for query, res in zip(queries, result, strict=False)}
 
@@ -254,9 +251,7 @@ def test_repos_with_auth(httpserver: HTTPServer):
 
 
 def test_update_prefixes():
-    client = GraphDBClient(
-        ServiceConfig(server="some-server", rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
-    )
+    client = GraphDBClient(ServiceConfig(server="some-server", rest_api=RestApi.DIRECT_SPARQL_ENDPOINT))
 
     new_pref = {"eq": "http://eq"}
     client.update_prefixes(new_pref)
