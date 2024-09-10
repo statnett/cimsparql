@@ -17,6 +17,7 @@ import pandas as pd
 from cimsparql import templates
 from cimsparql.data_models import (
     AcLinesDataFrame,
+    AssociatedSwitchesDataFrame,
     BaseVoltageDataFrame,
     BordersDataFrame,
     BranchComponentDataFrame,
@@ -683,6 +684,11 @@ class Model:
     def base_voltage(self) -> BaseVoltageDataFrame:
         query = self.template_to_query(templates.BASE_VOLTAGE)
         return BaseVoltageDataFrame(self.get_table_and_convert(query))
+
+    @time_it
+    def associated_switches(self) -> AssociatedSwitchesDataFrame:
+        query = self.template_to_query(templates.ASSOCIATED_SWITCHES)
+        return AssociatedSwitchesDataFrame(self.get_table_and_convert(query))
 
 
 class SingleClientModel(Model):

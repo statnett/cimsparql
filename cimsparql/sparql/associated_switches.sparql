@@ -1,0 +1,16 @@
+# Name: Associated switches
+PREFIX cim: <${cim}>
+
+select (SAMPLE(?equipment_mrid) as ?mrid) (SAMPLE(?name) as ?name) (GROUP_CONCAT(?switch_mrid; SEPARATOR=',') as ?switch_mrids) (GROUP_CONCAT(?switch_name; SEPARATOR=',') as ?switch_names) where {
+    {
+    ?equipment ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?switch;
+    	cim:IdentifiedObject.name ?name ;
+		  cim:IdentifiedObject.mRID ?equipment_mrid .
+     ?switch cim:Switch.normalOpen ?_normalOpen;
+		  cim:IdentifiedObject.mRID ?switch_mrid ;
+    	cim:IdentifiedObject.name ?switch_name .
+    } minus {
+      ?equipment cim:Switch.normalOpen ?_open
+    }
+
+} group by ?equipment

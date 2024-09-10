@@ -11,6 +11,7 @@ sparql_folder = pathlib.Path(__file__).parent / "sparql"
 
 AC_LINE_QUERY = _read_template(sparql_folder / "ac_lines.sparql")
 ADD_MRID_QUERY = _read_template(sparql_folder / "add_mrid.sparql")
+ASSOCIATED_SWITCHES = _read_template(sparql_folder / "associated_switches.sparql")
 BASE_VOLTAGE = _read_template(sparql_folder / "base_voltage.sparql")
 BORDERS_QUERY = _read_template(sparql_folder / "borders.sparql")
 BRANCH_NODE_WITHDRAW_QUERY = _read_template(sparql_folder / "branch_node_withdraw.sparql")

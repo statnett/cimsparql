@@ -53,6 +53,7 @@ async def collect_data(model: Model) -> dict[str, pd.DataFrame]:
     loop = asyncio.get_event_loop()
     queries = (
         model.ac_lines,
+        model.associated_switches,
         model.base_voltage,
         model.borders,
         model.bus_data,
