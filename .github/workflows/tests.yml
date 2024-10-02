@@ -10,29 +10,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
-
       - name: Get full python version
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v3.0.0
-        with:
-          poetry-version: 1.8.3
-
-      - name: Set poetry virtualenv to local
-        run: poetry config virtualenvs.in-project true
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies
-        run: |
-          poetry install --no-interaction
+        run: uv sync
 
       - name: Linting
-        run: poetry run pre-commit run --all-files
+        run: uvx pre-commit run --all-files
 
   Tests:
     needs: Linting
@@ -42,7 +31,6 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ['3.11', '3.12']
-        poetry-version: [1.8.3]
 
     services:
       rdf4j:
@@ -60,13 +48,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v3.0.0
-        with:
-          poetry-version: ${{ matrix.poetry-version }}
-
-      - name: Set poetry virtualenv to local
-        run: poetry config virtualenvs.in-project true
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
 
       - name: Get full python version
         id: full-python-version
@@ -74,10 +57,7 @@ jobs:
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
       - name: Install dependencies
-        run: poetry install --no-interaction
-
-      - name: Export virtual env path
-        run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+        run: uv sync
 
       - name: Static type checking
         uses: jakebailey/pyright-action@v2.3.2
@@ -87,11 +67,11 @@ jobs:
 
       - name: Run pytest
         if: ${{ ( runner.os != 'Linux' ) || ( matrix.python-version  != '3.10' ) }}
-        run: poetry run pytest -q tests
+        run: uv run pytest -q tests
 
       - name: Run pytest with coverage
         if: ${{ ( runner.os == 'Linux' ) && ( matrix.python-version  == '3.10' ) }}
-        run: poetry run pytest -q --cov=cimsparql --cov-report=xml tests
+        run: uv run pytest -q --cov=cimsparql --cov-report=xml tests
 
       - name: Upload coverage
         if: ${{ ( runner.os == 'Linux' ) && ( matrix.python-version  == '3.10' ) }}

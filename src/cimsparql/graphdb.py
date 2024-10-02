@@ -6,7 +6,7 @@ import json
 import os
 from copy import deepcopy
 from dataclasses import dataclass, field
-from enum import auto
+from enum import StrEnum
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict, TypeVar
@@ -15,15 +15,9 @@ import httpx
 import pandas as pd
 import tenacity
 from SPARQLWrapper import JSON, POST, SPARQLWrapper
-from strenum import StrEnum
 
 from cimsparql.retry_cb import RetryCallback, RetryCallbackFactory
-from cimsparql.sparql_result_json import (
-    SparqlData,
-    SparqlResultHead,
-    SparqlResultJson,
-    SparqlResultValue,
-)
+from cimsparql.sparql_result_json import SparqlData, SparqlResultHead, SparqlResultJson, SparqlResultValue
 from cimsparql.url import service, service_blazegraph
 
 if TYPE_CHECKING:
@@ -59,9 +53,9 @@ def data_row(cols: list[str], rows: list[dict[str, SparqlResultValue]]) -> dict[
 
 
 class RestApi(StrEnum):
-    RDF4J = auto()
-    BLAZEGRAPH = auto()
-    DIRECT_SPARQL_ENDPOINT = auto()
+    RDF4J = "RDF4J"
+    BLAZEGRAPH = "BLAZEGRAPH"
+    DIRECT_SPARQL_ENDPOINT = "DIRECT_SPARQL_ENDPOINT"
 
 
 def parse_namespaces_rdf4j(response: httpx.Response) -> dict[str, str]:

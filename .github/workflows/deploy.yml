@@ -34,15 +34,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
-      - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v3.0.0
-        with:
-          poetry-version: 1.8.2
-      - name: Install dynamic versioning
-        run: poetry self add "poetry-dynamic-versioning[plugin]"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
       - name: build package
-        run: |
-          poetry build
+        run: uv build
       - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
@@ -61,21 +56,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
-      - name: Install and configure Poetry
-        uses: abatilo/actions-poetry@v3.0.0
-        with:
-          poetry-version: 1.8.2
-      - name: Install dynamic versioning
-        run: poetry self add "poetry-dynamic-versioning[plugin]"
-      - name: Install dependencies
-        shell: bash
-        run: poetry install
-      - name: install dependencies
-        run: |
-          poetry install --with docs
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
       - name: build docs
-        run: |
-          poetry run sphinx-build docs html
+        run: uvx --with cimsparql --with sphinx-autodoc-typehints --with recommonmark --with sphinx-rtd-theme --from sphinx sphinx-build docs html
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5

@@ -1,0 +1,2 @@
+include src/pkg_data/*
+include src/cimsparql/sparql/*.sparql

@@ -2,7 +2,7 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?market_code ?node ?status ?station_group ?station_group_name ?substation_mrid ?maxP ?minP ?MO ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource
+select ?mrid ?name ?market_code ?node ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?MO ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource
 where {
   # Extract properties for synchronous machines.
   {
@@ -70,7 +70,7 @@ where {
 
   bind(coalesce(?_network_analysis, True) as ?network_analysis)
   bind(coalesce(?in_service, ?connected) as ?status)
-  bind(coalesce(?nullable_maxP, if(xsd:double(str(?p)) >= 0.0, ?p, 0.0), 0.0) as ?maxP)
-  bind(coalesce(?nullable_minP, if(xsd:double(str(?p)) < 0.0, ?p, 0.0), 0.0) as ?minP)
+  bind(coalesce(?nullable_maxP, if(xsd:double(str(?p)) >= 0.0, ?p, 0.0), 0.0) as ?max_p)
+  bind(coalesce(?nullable_minP, if(xsd:double(str(?p)) < 0.0, ?p, 0.0), 0.0) as ?min_p)
   filter(?network_analysis)
 }
