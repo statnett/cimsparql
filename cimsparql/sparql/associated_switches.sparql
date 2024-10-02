@@ -8,7 +8,10 @@ select (SAMPLE(?equipment_mrid) as ?mrid) (SAMPLE(?name) as ?name) (GROUP_CONCAT
 		  cim:IdentifiedObject.mRID ?equipment_mrid .
      ?switch cim:Switch.normalOpen ?_normalOpen;
 		  cim:IdentifiedObject.mRID ?switch_mrid ;
-    	cim:IdentifiedObject.name ?switch_name .
+    	cim:IdentifiedObject.name ?switch_name ;
+      # Only included switches that has a "second" terminal. There are switches
+      # that only have one terminal. These switches can not connect/disconnect anything
+      ^cim:Terminal.ConductingEquipment/cim:ACDCTerminal.sequenceNumber 2 .
     } minus {
       ?equipment cim:Switch.normalOpen ?_open
     }
