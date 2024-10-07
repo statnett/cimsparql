@@ -1,0 +1,29 @@
+# Name: Remaining capacity per station group
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+SELECT ?station_group
+       (SUM(?capacity_up) AS ?capacity_up)
+       (SUM(?capacity_down) AS ?capacity_down)
+       (SAMPLE(?balance_responsible_name) AS ?balance_responsible_name)
+       (SAMPLE(?balance_responsible_mrid) AS ?balance_responsible_mrid) WHERE {
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  SERVICE ?eq_repo {
+    ?s SN:ScheduleResource.marketCode ?station_group ;
+       cim:IdentifiedObject.name ?name ;
+       SN:ScheduleResource.BalanceResponsible ?balance_responsible ;
+       ^SN:GeneratingUnit.ScheduleResource ?generating_unit .
+    ?balance_responsible cim:IdentifiedObject.name ?balance_responsible_name ;
+                         cim:IdentifiedObject.mRID ?balance_responsible_mrid .
+    ?generating_unit cim:GeneratingUnit.maxOperatingP ?maxP ;
+                     cim:GeneratingUnit.minOperatingP ?minP ;
+                     ^cim:SynchronousMachine.GeneratingUnit/^cim:Terminal.ConductingEquipment ?terminal
+  }
+  ?flow cim:SvPowerFlow.Terminal ?terminal ;
+        cim:SvPowerFlow.p ?terminal_flow .
+  BIND (xsd:double(STR(?maxP)) + xsd:double(STR(?terminal_flow)) AS ?calculated_capacity_up)
+  BIND (IF(?calculated_capacity_up > 0.0,?calculated_capacity_up,0.0) AS ?capacity_up)
+  BIND (xsd:double(STR(?minP)) - xsd:double(STR(?terminal_flow)) AS ?calculated_capacity_down)
+  BIND (IF(?calculated_capacity_down > 0.0,?calculated_capacity_down,0.0) AS ?capacity_down)
+}
+GROUP BY (?station_group)
