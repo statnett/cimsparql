@@ -1,16 +1,16 @@
 # Name: Coordinates
 PREFIX cim: <${cim}>
-select ?mrid ?x ?y ?epsg ?rdf_type
+select ?mrid ?x ?y ?epsg (str(?resource_type) as ?rdf_type)
 where {
   ?s cim:PositionPoint.Location ?location;
      cim:PositionPoint.sequenceNumber ?nr;
      cim:PositionPoint.xPosition ?x;
      cim:PositionPoint.yPosition ?y.
-  ?location cim:Location.PowerSystemResources ?_mrid;
+  ?location cim:Location.PowerSystemResources ?resource;
             cim:Location.CoordinateSystem/cim:CoordinateSystem.crsUrn ?co.
-  ?_mrid a ?_rdf_type;
+  values ?resource_type {cim:Substation cim:ACLineSegment}
+  ?resource a ?resource_type;
          cim:IdentifiedObject.mRID ?mrid.
   bind(strafter(?co, 'EPSG::') as ?epsg)
   bind(concat(str(?mrid), str(?nr)) as ?sequence)
-  bind(str(?_rdf_type) as ?rdf_type)
 } order by (?sequece)
