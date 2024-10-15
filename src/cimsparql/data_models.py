@@ -1,7 +1,6 @@
 import datetime as dt
 from typing import Self
 
-import pandas as pd
 import pandera as pa
 from pandera.typing import DataFrame, Index, Series
 
@@ -189,10 +188,10 @@ TransfConToConverterDataFrame = DataFrame[TransfConToConverterSchema]
 
 class CoordinatesSchema(JsonSchemaOut):
     mrid: Series[str] = pa.Field()
-    x: Series[str] = pa.Field()
-    y: Series[str] = pa.Field()
-    epsg: Series[pd.CategoricalDtype] = pa.Field()
-    rdf_type: Series[pd.CategoricalDtype] = pa.Field()
+    x: Series[float] = pa.Field()
+    y: Series[float] = pa.Field()
+    epsg: Series[str] = pa.Field()
+    rdf_type: Series[str] = pa.Field()
 
 
 CoordinatesDataFrame = DataFrame[CoordinatesSchema]

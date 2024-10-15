@@ -3,7 +3,6 @@ from copy import deepcopy
 from string import Template
 from typing import Any
 
-import pandas as pd
 import pytest
 
 import tests.t_utils.common as t_common
@@ -268,11 +267,11 @@ def test_coordinates(test_model: t_common.ModelTest):
     assert test_model.model
     model = test_model.model
     crd = model.coordinates()
-    pd.testing.assert_index_equal(crd["epsg"].cat.categories, pd.Index(["4326"], dtype=str))
+    assert set(crd["epsg"]), {"4326"}
 
     cim = model.client.prefixes["cim"]
     categories = {f"{cim}ACLineSegment", f"{cim}Substation"}
-    assert crd["rdf_type"].cat.categories.difference(categories).empty
+    assert set(crd["rdf_type"]).difference(categories) == set()
 
     assert len(crd) == 49
     coordinates = crd.astype({"x": float, "y": float})
