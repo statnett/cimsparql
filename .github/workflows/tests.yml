@@ -35,7 +35,7 @@ jobs:
     services:
       rdf4j:
         # Docker Hub image
-        image: eclipse/rdf4j-workbench:4.3.13
+        image: eclipse/rdf4j-workbench:4.3.15
         ports:
           - 8080:8080
 
