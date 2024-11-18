@@ -11,7 +11,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from cimsparql import type_mapper
-from cimsparql.data_models import JsonSchemaOut
+from cimsparql.data_models import CoercingSchema
 from cimsparql.graphdb import RestApi
 from cimsparql.model import ServiceConfig
 
@@ -126,8 +126,8 @@ def test_have_cim_version(httpserver: HTTPServer, cim_version: int, have_cim_ver
     assert tm.have_cim_version(str(cim_version)) == have_cim_version
 
 
-class FloatSchema(JsonSchemaOut):
-    float_col: pa.typing.Series[float] = pa.Field(nullable=True)
+class FloatSchema(CoercingSchema):
+    float_col: float = pa.Field(nullable=True)
 
 
 @pytest.mark.parametrize(
