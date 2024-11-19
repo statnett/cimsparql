@@ -39,11 +39,11 @@ jobs:
       - name: build package
         run: uv build
       - name: Publish package distributions to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.11
+        uses: pypa/gh-action-pypi-publish@release/v1.10
         with:
           repository-url: https://test.pypi.org/legacy/
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.11 # Use v1.11 because in v1.12 https://github.com/pypa/twine/pull/1172
+        uses: pypa/gh-action-pypi-publish@release/v1.10 # Use v1.10 https://github.com/pypa/twine/pull/1172
   build_docs:
     needs: build_and_publish_pypi
     runs-on: ubuntu-latest
