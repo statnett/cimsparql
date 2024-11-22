@@ -31,6 +31,7 @@ from cimsparql.data_models import (
     DisconnectedDataFrame,
     ExchangeDataFrame,
     FullModelDataFrame,
+    GenUnitAndSyncMachineMridDataFrame,
     HVDCBidzonesDataFrame,
     HVDCDataFrame,
     LoadsDataFrame,
@@ -689,6 +690,11 @@ class Model:
     def associated_switches(self) -> AssociatedSwitchesDataFrame:
         query = self.template_to_query(templates.ASSOCIATED_SWITCHES)
         return AssociatedSwitchesDataFrame(self.get_table_and_convert(query))
+
+    @time_it
+    def gen_unit_and_sync_machine_mrid(self) -> GenUnitAndSyncMachineMridDataFrame:
+        query = self.template_to_query(templates.GEN_UNIT_MRID_AND_SYNC_MACHINE)
+        return GenUnitAndSyncMachineMridDataFrame(self.get_table_and_convert(query))
 
 
 class SingleClientModel(Model):

@@ -65,6 +65,7 @@ async def collect_data(model: Model) -> dict[str, pd.DataFrame]:
         model.disconnected,
         model.exchange,
         model.full_model,
+        model.gen_unit_and_sync_machine_mrid,
         model.hvdc_converter_bidzones,
         model.loads,
         model.market_dates,

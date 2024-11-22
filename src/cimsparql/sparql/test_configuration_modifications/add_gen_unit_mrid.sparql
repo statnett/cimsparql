@@ -1,0 +1,12 @@
+prefix cim:<${cim}>
+prefix SN:<${SN}>
+insert {
+    graph <http://cimsparql/xml-adpator/EQ-modifications> {
+        _:b0 a SN:GeneratingUnit;
+            cim:IdentifiedObject.name "GeneratingUnit" .
+        ?machine cim:SynchronousMachine.GeneratingUnit _:b0
+            }}
+where {
+    ?machine a cim:SynchronousMachine
+    filter not exists{?machine cim:SynchronousMachine.GeneratingUnit ?unit}
+}

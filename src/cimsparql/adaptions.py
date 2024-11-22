@@ -73,6 +73,7 @@ class XmlModelAdaptor:
     def adapt(self, eq_uri: str) -> None:
         self.add_zero_sv_power_flow()
         self.add_zero_sv_injection()
+        self.add_generating_unit()
         self.add_mrid()
         self.add_dtypes()
         self.set_generation_type()
@@ -147,6 +148,13 @@ class XmlModelAdaptor:
             Path(__file__).parent / "sparql/test_configuration_modifications/add_network_analysis_enable.sparql"
         ) as f:
             query = Template(f.read())
+        prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
+        self.graph.update(prepared_update_query)
+
+    def add_generating_unit(self) -> None:
+        with open(Path(__file__).parent / "sparql/test_configuration_modifications/add_gen_unit_mrid.sparql") as f:
+            query = Template(f.read())
+
         prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
         self.graph.update(prepared_update_query)
 
