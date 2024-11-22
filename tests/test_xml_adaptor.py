@@ -64,3 +64,9 @@ def test_add_network_analysis_enable(xml_adaptor: XmlModelAdaptor) -> None:
     xml_adaptor.add_network_analysis_enable()
     query = "select * {?terminal cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable True}"
     assert len(xml_adaptor.graph.query(query, initNs=xml_adaptor.namespaces())) > 0
+
+
+def test_add_generating_unit(xml_adaptor: XmlModelAdaptor) -> None:
+    xml_adaptor.add_generating_unit()
+    query = "select * {?machine cim:SynchronousMachine.GeneratingUnit ?unit}"
+    assert len(xml_adaptor.graph.query(query, initNs=xml_adaptor.namespaces())) > 0

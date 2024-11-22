@@ -412,3 +412,11 @@ class AssociatedSwitches(CoercingSchema):
 
 
 AssociatedSwitchesDataFrame = DataFrame[AssociatedSwitches]
+
+
+class GenUnitAndSyncMachineMridSchema(CoercingSchema):
+    gen_unit_mrid: str = pa.Field(unique=True)
+    sync_machine_mrid: str = pa.Field(unique=True)
+
+
+GenUnitAndSyncMachineMridDataFrame = DataFrame[GenUnitAndSyncMachineMridSchema]

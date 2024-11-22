@@ -24,6 +24,7 @@ DC_ACTIVE_POWER_FLOW_QUERY = _read_template(sparql_folder / "dc_active_power_flo
 DISCONNECTED_QUERY = _read_template(sparql_folder / "disconnected.sparql")
 EXCHANGE_QUERY = _read_template(sparql_folder / "exchange.sparql")
 FULL_MODEL_QUERY = _read_template(sparql_folder / "full_model.sparql")
+GEN_UNIT_MRID_AND_SYNC_MACHINE = _read_template(sparql_folder / "gen_unit_and_sync_machine_mapping.sparql")
 HVDC = _read_template(sparql_folder / "hvdc.sparql")
 HVDC_CONVERTER_BIDZONES = _read_template(sparql_folder / "converter_hvdc_bidzones.sparql")
 LOADS_QUERY = _read_template(sparql_folder / "loads.sparql")
