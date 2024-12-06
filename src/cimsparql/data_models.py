@@ -104,7 +104,7 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     substation_mrid: Series[str] = pa.Field()
     max_p: Series[float] = pa.Field()
     min_p: Series[float] = pa.Field()
-    MO: Series[float] = pa.Field(nullable=True)
+    merit_order: Series[float] = pa.Field(nullable=True)
     sn: Series[float] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
     q: Series[float] = pa.Field(nullable=True)
