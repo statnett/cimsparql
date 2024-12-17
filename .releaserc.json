@@ -1,7 +1,5 @@
 {
-  "release": {
-    "tagFormat": "${version}"
-  },
+  "tagFormat": "${version}",
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/git",
