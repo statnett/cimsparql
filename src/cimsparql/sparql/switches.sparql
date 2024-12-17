@@ -5,6 +5,17 @@ select ?mrid ?is_open (strafter(str(?type), "#") as ?equipment_type) ?connectivi
         select * {
             ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
             service ?eq_repo {
+                {
+                    # Extract the maximum terminal number per switch. This number is used to deduce the second terminal
+                    # Normally this equals 2, but occasionally it can be one. In that case it means that the switch
+                    # has only one termainal. A switch with only one terminal can not connect or disconnect anything
+                    # which is equivalent of setting terminal 2 equal to terminal 1
+                    select ?switch (max(?nr) as ?max_terminal_number) {
+                        ?switch cim:Switch.normalOpen ?_unused_normal_open;
+                        ^cim:Terminal.ConductingEquipment/cim:ACDCTerminal.sequenceNumber ?nr
+                    } group by ?switch
+                }
+
                 values ?type {cim:Breaker cim:Disconnector cim:GroundDisconnector cim:LoadBreakSwitch cim:Recloser cim:MktSwitch cim:Fuse cim:Sectionaliser cim:Cut cim:Jumper}
                 ?switch cim:IdentifiedObject.mRID ?mrid;
                         a ?type;
@@ -14,8 +25,8 @@ select ?mrid ?is_open (strafter(str(?type), "#") as ?equipment_type) ?connectivi
                         cim:IdentifiedObject.name ?name .
             ?terminal1 cim:ACDCTerminal.sequenceNumber 1;
                         cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_1 .
-            ?terminal2 cim:ACDCTerminal.sequenceNumber 2;
-                        cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_2 .
+                ?terminal2 cim:ACDCTerminal.sequenceNumber ?max_terminal_number;
+                    cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_2 .
             }
         }
     }
