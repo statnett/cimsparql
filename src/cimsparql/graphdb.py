@@ -153,6 +153,8 @@ class GraphDBClient:
     Args:
         service_cfg: Service configuration (see ServiceConfig)
         custom_headers: Added to SPARQLWrapper using addCustomHttpHeader
+        sparql_wrapper: SPARQLWrapper instance used to post queries. If not given,
+        a SPARQLWrapper create posting queries to the URL given in service_cfg
 
     Example:
     >>> from cimsparql.graphdb import GraphDBClient
