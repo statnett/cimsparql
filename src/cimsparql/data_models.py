@@ -356,6 +356,7 @@ class Switches(CoercingSchema):
     equipment_type: Series[str] = pa.Field()
     connectivity_node_1: Series[str] = pa.Field()
     connectivity_node_2: Series[str] = pa.Field()
+    name: Series[str] = pa.Field()
 
 
 SwitchesDataFrame = DataFrame[Switches]
