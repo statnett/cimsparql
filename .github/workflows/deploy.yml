@@ -40,7 +40,7 @@ jobs:
   build_docs:
     needs: build_and_publish_pypi
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'statnett' && ${{ inputs.build_docs }}
+    if: github.repository_owner == 'statnett' && ${{ inputs.build_docs == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
