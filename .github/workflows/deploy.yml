@@ -5,10 +5,14 @@ name: Deploy to PyPI
 on:
   workflow_call:
     inputs:
-        deploy_docs:
-          required: false
-          type: boolean
-          default: false
+      build_docs:
+        required: false
+        type: boolean
+        default: false
+      deploy_docs:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build_and_publish_pypi:
@@ -36,7 +40,7 @@ jobs:
   build_docs:
     needs: build_and_publish_pypi
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'statnett'
+    if: github.repository_owner == 'statnett' && ${{ inputs.build_docs }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
