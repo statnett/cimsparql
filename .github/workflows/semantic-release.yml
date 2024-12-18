@@ -29,4 +29,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Pulibsh to PyPI
-      uses: ./.github/worflows/deploy.yml
+      uses: ./.github/workflows/deploy.yml
