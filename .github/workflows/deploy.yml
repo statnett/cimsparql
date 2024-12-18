@@ -4,11 +4,11 @@ name: Deploy to PyPI
 
 on:
   workflow_call:
-  inputs:
-      deploy_docs:
-        required: false
-        type: boolean
-        default: false
+    inputs:
+        deploy_docs:
+          required: false
+          type: boolean
+          default: false
 
 jobs:
   build_and_publish_pypi:
