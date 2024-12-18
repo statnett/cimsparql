@@ -16,20 +16,24 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        persist-credentials: false
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-    - name: Semantic Release
-      uses: cycjimmy/semantic-release-action@v4
-      with:
-        semantic_version: 24.0.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Semantic Release
+        id: create_release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          semantic_version: 24.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      release_created: ${{ steps.create_release.outputs.new_release_published }}
 
   publish-to-pypi:
     needs: semantic-release
+    if: needs.semantic-release.outputs.release_created == 'true'
     permissions:
       contents: write
       pages: write
