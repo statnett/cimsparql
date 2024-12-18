@@ -27,3 +27,6 @@ jobs:
         semantic_version: 24.0.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Pulibsh to PyPI
+      uses: ./.github/worflows/deploy.yml
