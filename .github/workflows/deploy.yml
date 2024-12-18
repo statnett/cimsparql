@@ -1,10 +1,9 @@
 ---
 name: Deploy to PyPI
 
+
 on:
-  push:
-    tags:
-      - '*'
+  workflow_call:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
