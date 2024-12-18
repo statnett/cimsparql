@@ -4,20 +4,11 @@ name: Deploy to PyPI
 
 on:
   workflow_call:
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress
-# and latest queued.  However, do NOT cancel in-progress runs as we want to allow these
-# production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
+  inputs:
+      deploy_docs:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build_and_publish_pypi:
@@ -46,6 +37,9 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1.10 # Use v1.10 https://github.com/pypa/twine/pull/1172
   build_docs:
     needs: build_and_publish_pypi
+    permissions:
+      contents: write
+      pages: write
     runs-on: ubuntu-latest
     if: github.repository_owner == 'statnett'
     steps:
@@ -74,6 +68,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build_docs
+    if: ${{ inputs.deploy_docs }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
