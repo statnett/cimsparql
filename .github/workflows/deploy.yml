@@ -14,8 +14,6 @@ jobs:
   build_and_publish_pypi:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'statnett'
-    permissions:
-      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,9 +35,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1.10 # Use v1.10 https://github.com/pypa/twine/pull/1172
   build_docs:
     needs: build_and_publish_pypi
-    permissions:
-      contents: write
-      pages: write
     runs-on: ubuntu-latest
     if: github.repository_owner == 'statnett'
     steps:
