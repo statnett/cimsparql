@@ -544,8 +544,12 @@ class Model:
 
     @time_it
     def station_group_codes_and_names(self) -> StationGroupCodeNameDataFrame:
-        df = self.get_table_and_convert(self.st_group_codes_names_query)
-        return StationGroupCodeNameDataFrame(df.set_index("station_group"))
+        df = self.get_table_and_convert(self.st_group_codes_names_query).set_index("station_group")
+        if df.index.has_duplicates:
+            duplicate_indices = df.index[df.index.duplicated(keep="first")]
+            logger.warning("Found duplicated names for following station groups: %s", df.loc[duplicate_indices])
+
+        return StationGroupCodeNameDataFrame(df[~df.index.duplicated(keep="first")])
 
     def branch_node_withdraw_query(self, region: str | None = None) -> str:
         substitutes = {"region": region or ".*"}
