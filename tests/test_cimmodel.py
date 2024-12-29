@@ -10,17 +10,8 @@ from SPARQLWrapper import SPARQLWrapper
 
 from cimsparql.adaptions import is_uuid
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig
-from cimsparql.model import (
-    Model,
-    ModelConfig,
-    get_federated_cim_model,
-)
-from cimsparql.sparql_result_json import (
-    SparqlData,
-    SparqlResultHead,
-    SparqlResultJson,
-    SparqlResultJsonFactory,
-)
+from cimsparql.model import Model, ModelConfig, get_federated_cim_model
+from cimsparql.sparql_result_json import SparqlData, SparqlResultHead, SparqlResultJson, SparqlResultJsonFactory
 from cimsparql.templates import sparql_folder
 from cimsparql.type_mapper import TypeMapper
 from cimsparql.utils import query_name
