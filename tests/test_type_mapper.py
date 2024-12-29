@@ -162,4 +162,5 @@ def test_coerce_float_from_literal(httpserver: HTTPServer):
 
     # Now the None value should be casted into np.nan
     missing = df.loc[1, "float_col"]
-    assert missing is not None and pd.isna(missing)
+    assert missing is not None
+    assert pd.isna(missing)
