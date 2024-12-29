@@ -44,7 +44,7 @@ def split_tpsvssh(fname: Path) -> tuple[str, str]:
 
     # Regex extracts the content between < > of the last occurence on each line
     prog = re.compile(r"<([^>]+)>[^>]+$")
-    with open(fname) as infile:
+    with fname.open() as infile:
         for line in infile:
             m = prog.search(line)
             if m and m.group(1) in tpsvssh_contexts:

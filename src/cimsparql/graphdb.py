@@ -309,7 +309,7 @@ class GraphDBClient:
         """
 
         def read_xml_content(file: Path) -> bytes:
-            with open(file, "rb") as infile:
+            with file.open("rb") as infile:
                 return infile.read()
 
         xml_content = read_xml_content(content) if isinstance(content, Path) else content
@@ -434,7 +434,7 @@ def config_bytes_from_template(template: Path, params: dict[str, str], encoding:
             in the template file ({{}}). {{key}} will be replaced by value
         encoding: use this encoding when replacing items
     """
-    with open(template, "rb") as infile:
+    with template.open("rb") as infile:
         data = infile.read()
 
     for param, value in params.items():
@@ -449,7 +449,7 @@ def confpath() -> Path:
 
 
 def default_namespaces() -> dict[str, str]:
-    with open(confpath() / "namespaces.json") as infile:
+    with (confpath() / "namespaces.json").open() as infile:
         return json.load(infile)
 
 

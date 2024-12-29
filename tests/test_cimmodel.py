@@ -41,7 +41,7 @@ def test_not_map_data_types():
 
 @pytest.mark.parametrize("sparql_query", sparql_folder.glob("*.sparql"))
 def test_name_in_header(sparql_query: Path):
-    with open(sparql_query) as infile:
+    with sparql_query.open() as infile:
         line = infile.readline()
     assert line.startswith("# Name: ")
 
@@ -49,7 +49,7 @@ def test_name_in_header(sparql_query: Path):
 def test_unique_headers():
     headers = list[str]()
     for f in sparql_folder.glob("*.sparql"):
-        with open(f) as infile:
+        with f.open() as infile:
             headers.append(infile.readline())
 
     assert len(headers) == len(set(headers))
@@ -77,7 +77,7 @@ def test_multi_client_model_defined_clients_exist():
 
     query_names = list[str]()
     for f in sparql_folder.glob("*.sparql"):
-        with open(f) as infile:
+        with f.open() as infile:
             query_names.append(query_name(infile.read()))
 
     queries_with_client = set(model.clients.keys())
