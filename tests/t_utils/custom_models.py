@@ -17,7 +17,7 @@ def combined_graphdb_service() -> ServiceConfig:
 @functools.lru_cache
 def federated_model() -> t_common.ModelTest:
     if os.getenv("CI") or os.getenv("GRAPHDB_TOKEN") is None:
-        return t_common.ModelTest(None, False, False)
+        return t_common.ModelTest(None, must_run_in_ci=False, cleanup=False)
     eq_repo = os.getenv("GRAPHDB_EQ", "abot-eq-1")
     system_state_repo = os.getenv("GRAPHDB_STATE", "abot-situations-1")
     eq_client_cfg = ServiceConfig(eq_repo, max_delay_seconds=1)
@@ -31,7 +31,7 @@ def federated_model() -> t_common.ModelTest:
         model = get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
     except Exception:
         logger.exception("Failed to get federated model")
-    return t_common.ModelTest(model, False, False)
+    return t_common.ModelTest(model, must_run_in_ci=False, cleanup=False)
 
 
 def all_custom_models() -> list[t_common.ModelTest]:
