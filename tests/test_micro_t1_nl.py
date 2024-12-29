@@ -111,7 +111,7 @@ def test_loads(test_model: t_common.ModelTest):
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 @pytest.mark.parametrize(
-    "region,expected_names",
+    ("region", "expected_names"),
     [
         (".*", {"BE-G1", "NL-G2", "NL-G3", "NL-G1"}),
         ("NL", {"NL-G2", "NL-G3", "NL-G1"}),

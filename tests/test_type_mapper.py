@@ -82,7 +82,7 @@ def test_map_data_types(httpserver: HTTPServer):
 
 
 @pytest.mark.parametrize(
-    "dtype,test",
+    ("dtype", "test"),
     [
         ("boolean", ("true", True)),
         ("boolean", ("false", False)),
@@ -111,7 +111,7 @@ def test_xsd_types(dtype: str, test: tuple):
 
 
 @pytest.mark.parametrize(
-    "cim_version, have_cim_version",
+    ("cim_version", "have_cim_version"),
     [
         ("10", False),
         # Because of the default prefixes, 16 is default. Thus, it should be present
@@ -129,7 +129,7 @@ class FloatSchema(CoercingSchema):
 
 
 @pytest.mark.parametrize(
-    "in_data, out_data",
+    ("in_data", "out_data"),
     [
         ({"float_col": ["1.0", "2.0"]}, {"float_col": [1.0, 2.0]}),
         ({"float_col": ["1.0", None]}, {"float_col": [1.0, np.nan]}),

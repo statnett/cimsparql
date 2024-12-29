@@ -7,7 +7,7 @@ import tests.t_utils.common as t_common
 
 
 @pytest.mark.parametrize(
-    "query, expect",
+    ("query", "expect"),
     [
         ("select ?name where {ex:Picasso foaf:firstName ?name}", [{"name": "Pablo"}]),
         (
