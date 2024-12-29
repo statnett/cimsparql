@@ -6,7 +6,7 @@ import pandas as pd
 class ValueMapper:
     """Base value mapper."""
 
-    def map(self, df: pd.DataFrame) -> pd.DataFrame:  # A003
+    def map(self, df: pd.DataFrame) -> pd.DataFrame:
         return df
 
 

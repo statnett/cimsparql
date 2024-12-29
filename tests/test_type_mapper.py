@@ -91,7 +91,7 @@ def test_map_data_types(httpserver: HTTPServer):
         ("date", ("2021-12-14", pd.Timestamp("2021-12-14 00:00:00"))),
         (
             "dateTime",
-            ("2002-10-14T12:00:00", datetime.datetime(2002, 10, 14, 12, 0, 0)),  # noqa DTZ001
+            ("2002-10-14T12:00:00", datetime.datetime(2002, 10, 14, 12, 0, 0)),  # noqa: DTZ001
         ),
         ("dateTime", ("2002-10-14T12:00:00Z", pd.Timestamp("2002-10-14 12:00:00+0000", tz="UTC"))),
         ("duration", ("P365D", datetime.timedelta(365))),
@@ -105,7 +105,7 @@ def test_map_data_types(httpserver: HTTPServer):
         ("time", ("21:32:52Z", pd.Timestamp("21:32:52", tz="UTC"))),
     ],
 )
-def test_xsd_types(dtype: str, test: tuple):
+def test_xsd_types(dtype: str, test: tuple[str, Any]):
     value, expect = test
     assert type_mapper.XSD_TYPE_MAP[dtype](value) == expect
 
@@ -135,7 +135,7 @@ class FloatSchema(CoercingSchema):
         ({"float_col": ["1.0", None]}, {"float_col": [1.0, np.nan]}),
     ],
 )
-def test_coerce_missing_type(httpserver: HTTPServer, in_data: dict, out_data: dict):
+def test_coerce_missing_type(httpserver: HTTPServer, in_data: dict[str, Any], out_data: dict[str, Any]):
     client = init_triple_store_server(httpserver)
     in_df, out_df = pd.DataFrame(in_data), pd.DataFrame(out_data)
     mapper = type_mapper.TypeMapper(client)

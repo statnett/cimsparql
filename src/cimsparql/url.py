@@ -5,8 +5,6 @@ variables ("GRAPHDB_USER" & "GRAPHDB_USER_PASSWD").
 
 """
 
-from __future__ import annotations
-
 
 def service(repo: str | None = None, server: str = "127.0.0.1:7200", protocol: str = "https", path: str = "") -> str:
     """Service url for GraphdDBClient.
