@@ -7,12 +7,7 @@ from pathlib import Path
 import tests.t_utils.common as t_common
 from cimsparql.adaptions import XmlModelAdaptor
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig, new_repo_blazegraph
-from cimsparql.model import (
-    ModelConfig,
-    SingleClientModel,
-    get_federated_cim_model,
-    get_single_client_model,
-)
+from cimsparql.model import ModelConfig, SingleClientModel, get_federated_cim_model, get_single_client_model
 
 this_dir = Path(__file__).parent
 
