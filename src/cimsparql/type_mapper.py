@@ -144,8 +144,7 @@ class TypeMapper:
             return df
         type_caster = self.build_type_caster(col_map)
         df = map_base_types(df, type_caster)
-        df = map_exceptions(df, type_caster)
-        return df
+        return map_exceptions(df, type_caster)
 
 
 def map_base_types(df: pd.DataFrame, type_map: dict[COL_NAME, TYPE_CASTER]) -> pd.DataFrame:
