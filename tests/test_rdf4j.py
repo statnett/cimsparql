@@ -32,7 +32,7 @@ def rdf4j_gdb() -> GraphDBClient:
 
 
 @pytest.mark.parametrize(
-    "query, expect",
+    ("query", "expect"),
     [
         ("select ?name where {ex:Picasso foaf:firstName ?name}", [{"name": "Pablo"}]),
         (

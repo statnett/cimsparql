@@ -28,7 +28,7 @@ def test_tpsvssh_contexts(xml_adaptor: XmlModelAdaptor):
 
 
 @pytest.mark.parametrize(
-    "value, result",
+    ("value", "result"),
     [
         ("17086487-56ba-4979-b8de-064025a6b4da", True),
         ("1708648756ba-4979-b8de-064025a6b4da", False),
