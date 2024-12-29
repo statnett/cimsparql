@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class XmlModelAdaptor:
     eq_predicate = "http://entsoe.eu/CIM/EquipmentCore/3/1"
 
-    def __init__(self, filenames: Iterable[Path]) -> None:
+    def __init__(self, filenames: Iterable[Path], sparql_folder: Path | None = None) -> None:
         self.graph = ConjunctiveGraph()
         for filename in filenames:
             profile = filename.stem.rpartition("/")[-1]
@@ -33,6 +33,7 @@ class XmlModelAdaptor:
             destination_graph = self.graph.get_context(uri)
             destination_graph.parse(filename, publicID="http://cim")
         self.ns = default_namespaces()
+        self.sparql_folder = sparql_folder or Path(__file__).parent / "sparql" / "test_configuration_modifications"
 
     def namespaces(self) -> dict[str, str]:
         return self.ns | {str(prefix): str(name) for prefix, name in self.graph.namespaces()}
@@ -81,12 +82,16 @@ class XmlModelAdaptor:
         self.add_eic_code()
         self.add_network_analysis_enable()
 
-    def add_zero_sv_power_flow(self) -> None:
-        with open(Path(__file__).parent / "sparql/test_configuration_modifications/add_zero_sv_power.sparql") as f:
+    def update_graph(self, filename: str) -> None:
+        """Update graph file sparql query."""
+        with (self.sparql_folder / filename).open() as f:
             query = Template(f.read())
 
         prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
         self.graph.update(prepared_update_query)
+
+    def add_zero_sv_power_flow(self) -> None:
+        self.update_graph("add_zero_sv_power.sparql")
 
     def add_dtypes(self) -> None:
         fields = {
@@ -128,35 +133,16 @@ class XmlModelAdaptor:
         self.graph.get_context(ctx.identifier).add((BNode(), URIRef(self.eq_predicate), URIRef(eq_uri)))
 
     def add_zero_sv_injection(self) -> None:
-        with open(Path(__file__).parent / "sparql/test_configuration_modifications/add_sv_injection.sparql") as f:
-            query = Template(f.read())
-
-        prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
-        self.graph.update(prepared_update_query)
+        self.update_graph("add_sv_injection.sparql")
 
     def add_eic_code(self) -> None:
-        with open(
-            Path(__file__).parent / "sparql/test_configuration_modifications/add_eic_bidding_area_code.sparql"
-        ) as f:
-            query = Template(f.read())
-
-        prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
-        self.graph.update(prepared_update_query)
+        self.update_graph("add_eic_bidding_area_code.sparql")
 
     def add_network_analysis_enable(self) -> None:
-        with open(
-            Path(__file__).parent / "sparql/test_configuration_modifications/add_network_analysis_enable.sparql"
-        ) as f:
-            query = Template(f.read())
-        prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
-        self.graph.update(prepared_update_query)
+        self.update_graph("add_network_analysis_enable.sparql")
 
     def add_generating_unit(self) -> None:
-        with open(Path(__file__).parent / "sparql/test_configuration_modifications/add_gen_unit_mrid.sparql") as f:
-            query = Template(f.read())
-
-        prepared_update_query = prepareUpdate(query.substitute(self.namespaces()))
-        self.graph.update(prepared_update_query)
+        self.update_graph("add_gen_unit_mrid.sparql")
 
 
 def is_uuid(x: str) -> bool:
