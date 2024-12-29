@@ -76,8 +76,8 @@ def test_upload_rdf_xml(upload_client: GraphDBClient):
 
 
 def test_get_table_default_arg(rdf4j_gdb: GraphDBClient):
-    df = rdf4j_gdb.get_table("SELECT * {?s ?o ?p}")[0]
-    assert len(df) == 6
+    data = rdf4j_gdb.get_table("SELECT * {?s ?o ?p}")[0]
+    assert len(data) == 6
 
 
 def test_namespaces(rdf4j_gdb: GraphDBClient):

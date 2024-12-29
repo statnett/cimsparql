@@ -61,7 +61,7 @@ def test_map_data_types(httpserver: HTTPServer):
     types = {"http://c#Degrees": float, "http://c#Status": bool, "http://c#Amount": int}
     tm = type_mapper.TypeMapper(service_cfg, custom_additions=types)
 
-    df = pd.DataFrame(
+    angles = pd.DataFrame(
         {
             "angle": ["1.0", "2.0", "3.0"],
             "active": ["true", "true", "false"],
@@ -69,16 +69,16 @@ def test_map_data_types(httpserver: HTTPServer):
         }
     )
 
-    expect_df = df.astype({"angle": float, "active": bool, "number": int})
+    expect_angles = angles.astype({"angle": float, "active": bool, "number": int})
 
     col_map = {
         "angle": "http://c#Degrees",
         "active": "http://c#Status",
         "number": "http://c#Amount",
     }
-    result = tm.map_data_types(df, col_map)
+    result = tm.map_data_types(angles, col_map)
 
-    assert_frame_equal(result, expect_df)
+    assert_frame_equal(result, expect_angles)
 
 
 @pytest.mark.parametrize(

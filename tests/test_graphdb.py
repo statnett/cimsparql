@@ -128,9 +128,11 @@ def test_regions(model: SingleClientModel):
 
 
 def test_hvdc_converters_bidzones(model: SingleClientModel):
-    df = model.hvdc_converter_bidzones()
+    hvdc_converter_bidzone = model.hvdc_converter_bidzones()
 
-    corridors = set[tuple[str, str]](zip(df["bidzone_1"], df["bidzone_2"], strict=True))
+    corridors = set[tuple[str, str]](
+        zip(hvdc_converter_bidzone["bidzone_1"], hvdc_converter_bidzone["bidzone_2"], strict=True)
+    )
 
     # Check data quality in the models
     expect_corridors = {("SE4", "SE3"), ("NO2", "DE"), ("NO2", "DK1"), ("NO2", "GB"), ("NO2", "NL")}
@@ -163,8 +165,8 @@ def test_data_row_missing_column():
 
 def test_dtypes(model: SingleClientModel):
     mapper = TypeMapper(model.client.service_cfg)
-    df = model.client.get_table(mapper.query)[0]
-    assert df["sparql_type"].isna().sum() == 0
+    data = model.client.get_table(mapper.query)[0]
+    assert data["sparql_type"].isna().sum() == 0
 
 
 def test_prefix_resp_not_ok():
@@ -280,8 +282,8 @@ def test_inject_subclassed_sparql_wrapper():
     client = GraphDBClient(sparql_wrapper=wrapper)
 
     # Confirm that we can sucessfully run a query
-    df = client.get_table("select * where {?s ?p ?o}")[0]
-    assert set(df.columns) == set(wrapper.result.head.variables)
+    data = client.get_table("select * where {?s ?p ?o}")[0]
+    assert set(data.columns) == set(wrapper.result.head.variables)
 
 
 def test_xnodes(model: Model):
