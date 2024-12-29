@@ -1,9 +1,11 @@
+"""Templates for miscellaneous queries."""
+
 import pathlib
 from string import Template
 
 
 def _read_template(filename: pathlib.Path) -> Template:
-    with open(filename) as file:
+    with filename.open() as file:
         return Template(file.read())
 
 

@@ -1,3 +1,5 @@
+"""Provide retry call back."""
+
 import logging
 from collections.abc import Callable
 

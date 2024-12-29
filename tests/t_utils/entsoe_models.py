@@ -7,12 +7,7 @@ from pathlib import Path
 import tests.t_utils.common as t_common
 from cimsparql.adaptions import XmlModelAdaptor
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig, new_repo_blazegraph
-from cimsparql.model import (
-    ModelConfig,
-    SingleClientModel,
-    get_federated_cim_model,
-    get_single_client_model,
-)
+from cimsparql.model import ModelConfig, SingleClientModel, get_federated_cim_model, get_single_client_model
 
 this_dir = Path(__file__).parent
 
@@ -29,7 +24,7 @@ def micro_t1_nl_graphdb() -> t_common.ModelTest:
             model = get_single_client_model(s_cfg, m_cfg)
     except Exception:
         logger.exception("Failed to get single model")
-    return t_common.ModelTest(model, False, False)
+    return t_common.ModelTest(model, must_run_in_ci=False, cleanup=False)
 
 
 def split_tpsvssh(fname: Path) -> tuple[str, str]:
@@ -44,7 +39,7 @@ def split_tpsvssh(fname: Path) -> tuple[str, str]:
 
     # Regex extracts the content between < > of the last occurence on each line
     prog = re.compile(r"<([^>]+)>[^>]+$")
-    with open(fname) as infile:
+    with fname.open() as infile:
         for line in infile:
             m = prog.search(line)
             if m and m.group(1) in tpsvssh_contexts:
@@ -89,10 +84,7 @@ def upload_micro_model(client: GraphDBClient) -> None:
 
 @functools.lru_cache
 def micro_t1_nl() -> t_common.ModelTest:
-    """
-    Micro model in RDF4J. It is cached, so multiple calls with the same url
-    returns the same model
-    """
+    """Micro model in RDF4J. It is cached, so multiple calls with the same url returns the same model."""
     model = None
     try:
         url = t_common.rdf4j_url()

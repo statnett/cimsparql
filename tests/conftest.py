@@ -12,9 +12,7 @@ this_dir = pathlib.Path(__file__).parent
 
 @pytest.fixture(scope="session", autouse=True)
 def delete_models() -> Generator[None, None, None]:
-    """
-    Fixture for deleting micro model repos created in during tests
-    """
+    """Fixture for deleting micro model repos created in during tests."""
     yield
     models = t_entsoe.micro_models() + t_entsoe.smallgrid_models()
     for test_model in filter(lambda tm: tm.model is not None and tm.cleanup, models):

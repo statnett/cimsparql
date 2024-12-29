@@ -1,3 +1,5 @@
+"""Pydantic model for sparql result."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -33,8 +35,7 @@ class SparqlData(CimsparqlBaseModel):
 
 
 class SparqlResultJson(CimsparqlBaseModel):
-    """
-    Data model for rest api resonse of MIME type
+    """Data model for rest api resonse of MIME type.
 
     application/sparql-result+json
 
@@ -45,7 +46,8 @@ class SparqlResultJson(CimsparqlBaseModel):
     results: SparqlData
 
     def validate_column_consistency(self) -> Self:
-        """
+        """Validate column consistency.
+
         This is an quite expensive validation since it iterates over the entire result.
         Therefore, it is not implemented as a validator, but it must be explicitly called
         when it is desired to perform the validation

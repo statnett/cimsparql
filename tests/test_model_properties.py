@@ -80,20 +80,16 @@ async def get_node_consistency_test_data(
     )
 
 
-async def collect_node_consistency_data() -> list[NodeConsistencyData]:
+async def collect_node_consistency_data() -> list[NodeConsistencyData | None]:
     test_models = [t_custom.federated_model(), t_entsoe.micro_t1_nl()]
     if any(m.model is None and m.must_run_in_ci and os.getenv("CI") for m in test_models):
         pytest.fail("Model that must run in CI is None")
-    res = await asyncio.gather(*[get_node_consistency_test_data(m.model) for m in test_models])
-    return res
+    return await asyncio.gather(*[get_node_consistency_test_data(m.model) for m in test_models])
 
 
 @pytest.fixture(scope="session")
 def nc_data() -> CONSISTENCY_DATA:
-    """
-    Return test data which in a datastructure suitable for consistency checks
-    for node data
-    """
+    """Return test data which in a datastructure suitable for consistency checks for node data."""
     res = asyncio.run(collect_node_consistency_data())
     return {"model": res[0]}
 
@@ -150,7 +146,7 @@ async def test_all_connectivity_nodes_fetched(test_model: t_common.ModelTest):
     # Verify that we get some nodes
     assert num_connectivity_nodes > 0
 
-    df = test_model.model.connectivity_nodes()
+    connectivity_nodes = test_model.model.connectivity_nodes()
 
     # Verify that we get information for all nodes in the model
-    assert len(df) == num_connectivity_nodes
+    assert len(connectivity_nodes) == num_connectivity_nodes

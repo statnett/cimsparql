@@ -47,27 +47,67 @@ select = [
   "C4", # flake8-comprehensions
   "C90", # mccabe
   "COM", # flake8-commas
+  "D", # pydocstyle
   "DTZ", # flake8-datetimez
   "E", "W", # pycodestyle
+  "ERA", # eradicate
   "F", # Pyflakes
+  "FA",
+  "FBT", # boolean trap
+  "FIX", # fix me
   "FLY", # flynt
   "FURB", # refurb
+  "G", # flake8-logging-format
   "I", # isort
+  "ICN", # import conventions
+  "INP", # no pep420
+  "INT", # gettext
+  "ISC", # implicit str concat
+  "LOG",  # flake8-logging
   "N", # pep8-nameing
   "NPY", # numpy specific rules
+  "PD", # pandas vet
   "PERF", # Perflint
+  "PGH",
   "PIE", # flake8-pie
+  "PL", # pylint
+  "PT", # pytest style
+  "PTH", # Pathlib
+  "Q", # quotes
+  "RET", # Return
+  "RSE", # raise
   "RUF", # Ruff specific rules
   "S", # flake8-bandit
   "SIM", # flake8-simplify
+  "SLF", # Self
+  "SLOT",
+  "T10", # debug statements
   "T20", # flake8-print
+  "TC", # Type checking
   "TCH", # flake8-type-checking
+  "TID", # tidy import
   "TRY", # tryceratops
   "UP", # pyupgrade
   "YTT", # flake8-2020
 ]
 
-ignore = ['S101', 'COM812', 'ANN101', 'ANN102', 'ANN401', 'TRY003']
+ignore = [
+  'ANN401',
+  'COM812',
+  'D101',
+  'D102',
+  'D103',
+  'D105',
+  'D107',
+  'D203',
+  'D213',
+  'D413',
+  'FBT001',
+  'FBT002',
+  'FIX002',
+  'S101',
+  'TRY003'
+]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
@@ -101,11 +141,15 @@ exclude = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-
 [tool.ruff.lint.per-file-ignores]
-"cimsparql/data_models.py" = ["N815"]
-"docs/conf.py" = ["A001"]
+"docs/conf.py" = ["A001", "INP001", "D100"]
+"src/cimsparql/data_models.py" = ["N815"]
+"src/cimsparql/graphdb.py" = ["PD901"]
+"src/cimsparql/model.py" = ["PD901"]
+"src/cimsparql/type_mapper.py" = ["PD901"]
+"tests/**/*.py" = [ "D100", "D101", "D103", "D104", "PLR2004"]
 "tests/test*.py" = ["ANN201"]
+"tests/test_type_mapper.py" = ["PD901"]
 
 [tool.ruff.lint.pep8-naming]
 # Allow Pydantic's `@validator` decorator to trigger class method treatment.

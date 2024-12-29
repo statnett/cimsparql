@@ -22,9 +22,7 @@ if TYPE_CHECKING:
 
 
 def init_triple_store_server(httpserver: HTTPServer, sparql_result: dict[str, Any] | None = None) -> ServiceConfig:
-    """
-    Create a triple store server that returns sparql_result_data when a call is made
-    """
+    """Create a triple store server that returns sparql_result_data when a call is made."""
     sparql_result = sparql_result or empty_sparql_result()
     httpserver.expect_request("/sparql").respond_with_json(sparql_result)
     return ServiceConfig(server=httpserver.url_for("/sparql"), rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
@@ -63,7 +61,7 @@ def test_map_data_types(httpserver: HTTPServer):
     types = {"http://c#Degrees": float, "http://c#Status": bool, "http://c#Amount": int}
     tm = type_mapper.TypeMapper(service_cfg, custom_additions=types)
 
-    df = pd.DataFrame(
+    angles = pd.DataFrame(
         {
             "angle": ["1.0", "2.0", "3.0"],
             "active": ["true", "true", "false"],
@@ -71,20 +69,20 @@ def test_map_data_types(httpserver: HTTPServer):
         }
     )
 
-    expect_df = df.astype({"angle": float, "active": bool, "number": int})
+    expect_angles = angles.astype({"angle": float, "active": bool, "number": int})
 
     col_map = {
         "angle": "http://c#Degrees",
         "active": "http://c#Status",
         "number": "http://c#Amount",
     }
-    result = tm.map_data_types(df, col_map)
+    result = tm.map_data_types(angles, col_map)
 
-    assert_frame_equal(result, expect_df)
+    assert_frame_equal(result, expect_angles)
 
 
 @pytest.mark.parametrize(
-    "dtype,test",
+    ("dtype", "test"),
     [
         ("boolean", ("true", True)),
         ("boolean", ("false", False)),
@@ -93,7 +91,7 @@ def test_map_data_types(httpserver: HTTPServer):
         ("date", ("2021-12-14", pd.Timestamp("2021-12-14 00:00:00"))),
         (
             "dateTime",
-            ("2002-10-14T12:00:00", datetime.datetime(2002, 10, 14, 12, 0, 0)),  # noqa DTZ001
+            ("2002-10-14T12:00:00", datetime.datetime(2002, 10, 14, 12, 0, 0)),  # noqa: DTZ001
         ),
         ("dateTime", ("2002-10-14T12:00:00Z", pd.Timestamp("2002-10-14 12:00:00+0000", tz="UTC"))),
         ("duration", ("P365D", datetime.timedelta(365))),
@@ -107,13 +105,13 @@ def test_map_data_types(httpserver: HTTPServer):
         ("time", ("21:32:52Z", pd.Timestamp("21:32:52", tz="UTC"))),
     ],
 )
-def test_xsd_types(dtype: str, test: tuple):
+def test_xsd_types(dtype: str, test: tuple[str, Any]):
     value, expect = test
     assert type_mapper.XSD_TYPE_MAP[dtype](value) == expect
 
 
 @pytest.mark.parametrize(
-    "cim_version, have_cim_version",
+    ("cim_version", "have_cim_version"),
     [
         ("10", False),
         # Because of the default prefixes, 16 is default. Thus, it should be present
@@ -131,13 +129,13 @@ class FloatSchema(CoercingSchema):
 
 
 @pytest.mark.parametrize(
-    "in_data, out_data",
+    ("in_data", "out_data"),
     [
         ({"float_col": ["1.0", "2.0"]}, {"float_col": [1.0, 2.0]}),
         ({"float_col": ["1.0", None]}, {"float_col": [1.0, np.nan]}),
     ],
 )
-def test_coerce_missing_type(httpserver: HTTPServer, in_data: dict, out_data: dict):
+def test_coerce_missing_type(httpserver: HTTPServer, in_data: dict[str, Any], out_data: dict[str, Any]):
     client = init_triple_store_server(httpserver)
     in_df, out_df = pd.DataFrame(in_data), pd.DataFrame(out_data)
     mapper = type_mapper.TypeMapper(client)
@@ -164,4 +162,5 @@ def test_coerce_float_from_literal(httpserver: HTTPServer):
 
     # Now the None value should be casted into np.nan
     missing = df.loc[1, "float_col"]
-    assert missing is not None and pd.isna(missing)
+    assert missing is not None
+    assert pd.isna(missing)

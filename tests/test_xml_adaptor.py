@@ -7,7 +7,7 @@ from cimsparql.adaptions import XmlModelAdaptor, is_uuid
 
 @pytest.fixture
 def xml_adaptor():
-    folder = Path(__file__).parent / "data/micro"
+    folder = Path(__file__).parent / "data" / "micro"
     return XmlModelAdaptor.from_folder(folder)
 
 
@@ -28,7 +28,7 @@ def test_tpsvssh_contexts(xml_adaptor: XmlModelAdaptor):
 
 
 @pytest.mark.parametrize(
-    "value, result",
+    ("value", "result"),
     [
         ("17086487-56ba-4979-b8de-064025a6b4da", True),
         ("1708648756ba-4979-b8de-064025a6b4da", False),

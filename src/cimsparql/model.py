@@ -111,9 +111,9 @@ class Model:
         return distinct
 
     def get_client(self, query_name: str) -> GraphDBClient:
-        """
-        Return the corret graph db client to execute a query. By default
-        there is only one client so the same client is returned in all cases
+        """Return the corret graph db client to execute a query.
+
+        By default there is only one client so the same client is returned in all cases
         """
         return self.clients[query_name]
 
@@ -201,7 +201,7 @@ class Model:
 
     @time_it
     def full_model(self) -> FullModelDataFrame:
-        """Return all models where all depencies has been created and is available
+        """Return all models where all depencies has been created and is available.
 
         All profiles EQ/SSH/TP/SV will define a md:FullModel with possible dependencies. One profile
         could be dependent on more than one other. This function will return the models for SSH/TP
@@ -274,14 +274,13 @@ class Model:
         """Query wind generating units.
 
         Args:
-           region:
+           region: regexp that limits to region
 
         Example:
             >>> from cimsparql.model import get_single_client_model
             >>> server_url = "127.0.0.1:7200"
             >>> model = get_single_client_model(server_url, "LATEST")
             >>> model.wind_generating_units()
-
         """
         query = self.wind_generating_units_query(region)
         df = self.get_table_and_convert(query, index="mrid")
@@ -303,14 +302,10 @@ class Model:
 
     @time_it
     def connections(self, region: str | None = None) -> ConnectionsDataFrame:
-        """Query connectors
+        """Query connectors.
 
         Args:
-           rdf_types: Only cim:breaker and cim:Disconnector allowed
-        Returns:
-
-        Example:
-           region: Limit to region
+           region: regexp that limits to region
 
         Example:
             >>> from cimsparql.model import get_single_client_model
@@ -328,7 +323,7 @@ class Model:
 
     @time_it
     def borders(self, region: str | None = None) -> BordersDataFrame:
-        """Retrieve ACLineSegments where one terminal is inside and the other is outside the region
+        """Retrieve ACLineSegments where one terminal is inside and the other is outside the region.
 
         Args:
             region: Inside area
@@ -349,7 +344,6 @@ class Model:
         Args:
             region: Inside area
         """
-
         if region is None:
             cols = ["name", "node", "status", "p", "market_code"]
             index = pd.Index([], name="mrid")
@@ -375,10 +369,10 @@ class Model:
 
     @time_it
     def transformers_connected_to_converter(self, region: str | None = None) -> TransfConToConverterDataFrame:
-        """Query list of transformer connected at a converter (Voltage source or DC)
+        """Query list of transformer connected at a converter (Voltage source or DC).
 
         Args:
-           region: Limit to region
+           region: regexp that limits to region
 
         """
         query = self.transformers_connected_to_converter_query(region)
@@ -391,10 +385,11 @@ class Model:
 
     @time_it
     def ac_lines(self, region: str | None = None, rate: str | None = None) -> AcLinesDataFrame:
-        """Query ac line segments
+        """Query ac line segments.
 
         Args:
-           region: Limit to region
+           region: regexp that limits to region
+           rate: specific rate (default: Normal@20)
 
         Example:
             >>> from cimsparql.model import get_single_client_model
@@ -412,10 +407,11 @@ class Model:
 
     @time_it
     def series_compensators(self, region: str | None = None, rate: str | None = None) -> BranchComponentDataFrame:
-        """Query series compensators
+        """Query series compensators.
 
         Args:
-           region: Limit to region
+           region: regexp that limits to region
+           rate: specific rate (default: Normal@20)
         """
         query = self.series_compensators_query(region, rate)
         df = self.get_table_and_convert(query, index="mrid")
@@ -430,7 +426,8 @@ class Model:
         """Query transformer windings.
 
         Args:
-           region: Limit to region
+           region: regexp that limits to region
+           rate: specific rate (default: Normal@20)
         """
         query = self.transformers_query(region, rate)
         df = self.get_table_and_convert(query)
@@ -457,8 +454,9 @@ class Model:
 
     @time_it
     def transformer_branches(self, region: str | None = None, rate: str | None = None) -> TransformerWindingDataFrame:
-        """Query transformer branches. For two winding transformers will
-        give two "branches" (x are nodes, o is the fictisous center node)
+        """Query transformer branches.
+
+        For two winding transformers will give two "branches" (x are nodes, o is the fictisous center node)
 
         x --- o ---- x
 
@@ -590,7 +588,7 @@ class Model:
 
     @time_it
     def regions(self) -> RegionsDataFrame:
-        """Query regions
+        """Query regions.
 
         Property:
            regions: List of regions in database
@@ -621,10 +619,7 @@ class Model:
 
     @time_it
     def hvdc_converter_bidzones(self) -> HVDCBidzonesDataFrame:
-        """
-        Fetching mrid of converters placed on HVDC exchange corridors together with
-        to/from bidzone
-        """
+        """Fetch mrid of converters placed on HVDC exchange corridors together with to/from bidzone."""
         df = self.get_table_and_convert(self.hvdc_converter_bidzone_query, index="mrid")
         return HVDCBidzonesDataFrame(df)
 
@@ -647,10 +642,10 @@ class Model:
         graph: str | None = None,
         client: GraphDBClient | None = None,
     ) -> None:
-        """
-        Add cim:IdentifiedObject.mRID to all records. It is copied from rdf:about (or rdf:ID) if
-        replace is not specified. The query is executed with the passed client. If not given,
-        the default client is used.
+        """Add cim:IdentifiedObject.mRID to all records.
+
+        It is copied from rdf:about (or rdf:ID) if replace is not specified. The query is executed with the passed
+        client. If not given, the default client is used.
 
         Args:
             graph: Name of graph where mrids should be added. Note, mrid is added to all objects
@@ -717,7 +712,8 @@ def get_cim_model(
     model_cfg: ModelConfig | None = None,
     custom_headers: dict[str, str] | None = None,
 ) -> SingleClientModel:
-    """
+    """Get cim model.
+
     Function kept for backward compatibility. Use `get_single_client_model` instead.
     """
     return get_single_client_model(service_cfg, model_cfg, custom_headers)
@@ -746,14 +742,16 @@ def get_federated_cim_model(
     model_cfg: ModelConfig,
     mapper: TypeMapper | None = None,
 ) -> Model:
-    """
+    """Get federated CIM model.
+
     Return a CIM model where the equipment profile is located in one repo and the topology,
     state variables and steady state hypothesis profile is located in another.
 
     Args:
         eq_client: Client that executes queries from the EQ repository
-        tpsvhssh_client: Client that executes queries from the TP/SV/SSH repository
+        tpsvssh_client: Client that executes queries from the TP/SV/SSH repository
         model_cfg: Mode configurations that provides extra information
+        mapper: Type mapper
     """
     clients = defaultdict[str, GraphDBClient](lambda: eq_client)  # By default queries are executed from the EQ repo
 
