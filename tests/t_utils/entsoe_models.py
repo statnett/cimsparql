@@ -89,10 +89,7 @@ def upload_micro_model(client: GraphDBClient) -> None:
 
 @functools.lru_cache
 def micro_t1_nl() -> t_common.ModelTest:
-    """
-    Micro model in RDF4J. It is cached, so multiple calls with the same url
-    returns the same model
-    """
+    """Micro model in RDF4J. It is cached, so multiple calls with the same url returns the same model."""
     model = None
     try:
         url = t_common.rdf4j_url()

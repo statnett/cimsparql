@@ -22,9 +22,7 @@ if TYPE_CHECKING:
 
 
 def init_triple_store_server(httpserver: HTTPServer, sparql_result: dict[str, Any] | None = None) -> ServiceConfig:
-    """
-    Create a triple store server that returns sparql_result_data when a call is made
-    """
+    """Create a triple store server that returns sparql_result_data when a call is made."""
     sparql_result = sparql_result or empty_sparql_result()
     httpserver.expect_request("/sparql").respond_with_json(sparql_result)
     return ServiceConfig(server=httpserver.url_for("/sparql"), rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)

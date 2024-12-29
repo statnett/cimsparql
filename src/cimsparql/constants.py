@@ -1,5 +1,4 @@
-# Tuple with all cim-types where cimsparql assumes mRID exists
-
+"""Miscellaneous constants used by cimsparql."""
 
 CIM_TYPES_WITH_MRID = (
     "ACDCConverterDCTerminal",
@@ -73,3 +72,4 @@ CIM_TYPES_WITH_MRID = (
     "VsConverter",
     "WindGeneratingUnit",
 )
+"Tuple with all cim-types where cimsparql assumes mRID exists."

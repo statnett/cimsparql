@@ -1,3 +1,5 @@
+"""Data models used to describe and validate sparql queries from cimsparql."""
+
 import datetime as dt
 from typing import Self
 
@@ -7,11 +9,17 @@ from pandera.typing import DataFrame, Index, Series
 
 
 class CoercingSchema(pa.DataFrameModel):
+    """Base schema that configures coercing."""
+
     class Config(BaseConfig):
+        """Pandas DataFrameSchema options."""
+
         coerce = True
 
 
 class FullModelSchema(CoercingSchema):
+    """Full model schema that ensures unique time for all profiles."""
+
     model: Series[str]
     time: Series[str]
     profile: Series[str]
@@ -27,25 +35,19 @@ FullModelDataFrame = DataFrame[FullModelSchema]
 
 
 class MridResourceSchema(CoercingSchema):
-    """
-    Common class for resources with an mrid as index
-    """
+    """Common class for resources with an mrid as index."""
 
     mrid: Index[str] = pa.Field(unique=True)
 
 
 class NamedResourceSchema(MridResourceSchema):
-    """
-    Common class for resources with an mrid and a name
-    """
+    """Common class for resources with an mrid and a name."""
 
     name: Series[str]
 
 
 class NamedMarketResourceSchema(NamedResourceSchema):
-    """
-    Common class for named resources with an (optional) associated market_code
-    """
+    """Common class for named resources with an (optional) associated market_code."""
 
     market_code: Series[str] = pa.Field(nullable=True)
 

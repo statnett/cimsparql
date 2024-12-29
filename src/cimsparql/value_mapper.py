@@ -1,15 +1,19 @@
+"""Provide value mappers."""
+
 import pandas as pd
 
 
 class ValueMapper:
+    """Base value mapper."""
+
     def map(self, df: pd.DataFrame) -> pd.DataFrame:  # A003
         return df
 
 
 class MridMapper(ValueMapper):
-    """
-    Mapper which replaces all matches of uri_regex with an empty string
-    in columns which constains mrid in the name
+    """Mrid mapper.
+
+    Replaces all matches of uri_regex with an empty string in columns which constains mrid in the name
     """
 
     def __init__(self, uri_regex: str = "^([^#_|^#]+)(#_|#)") -> None:

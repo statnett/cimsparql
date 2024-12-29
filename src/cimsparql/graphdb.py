@@ -1,4 +1,4 @@
-"""Graphdb CIM sparql client"""
+"""Graphdb CIM sparql client."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ class SparqlResult(TypedDict):
 
 
 def data_row(cols: list[str], rows: list[dict[str, SparqlResultValue]]) -> dict[str, SparqlResultValue]:
-    """Get a sample row for extraction of data types
+    """Get a sample row for extraction of data types.
 
     Args:
        cols: queried columns (optional might return None)
@@ -148,7 +148,7 @@ def require_rdf4j(
 
 
 class GraphDBClient:
-    """GraphDB client for sending sparql queries to GraphDB server
+    """GraphDB client for sending sparql queries to GraphDB server.
 
     Args:
         service_cfg: Service configuration (see ServiceConfig)
@@ -214,9 +214,7 @@ class GraphDBClient:
         return self._prefixes
 
     def update_prefixes(self, pref: dict[str, str]) -> None:
-        """
-        Update prefixes from a dict
-        """
+        """Update prefixes from a dict."""
         self.prefixes.update(pref)
 
     def __str__(self) -> str:
@@ -257,17 +255,18 @@ class GraphDBClient:
         return df, data_row(sparql_result.head.variables, sparql_result.results.bindings)
 
     def get_table(self, query: str) -> tuple[pd.DataFrame, dict[str, SparqlResultValue]]:
-        """Get result from sparql query as a pandas dataframe
+        """Get result from sparql query as a pandas dataframe.
 
         Args:
            query: to sparql server
            limit: limit number of resulting rows
+
         """
         return self._convert_query_result_to_df(self.exec_query(query))
 
     @property
     def empty(self) -> bool:
-        """Identify empty GraphDB repo"""
+        """Identify empty GraphDB repo."""
         return self.get_table("select * where {?s ?p ?o} limit 1")[0].empty
 
     def get_prefixes(self, http_transport: httpx.BaseTransport | None = None) -> dict[str, str]:
@@ -300,11 +299,10 @@ class GraphDBClient:
         response.raise_for_status()
 
     def upload_rdf(self, content: Path | bytes, rdf_format: str, params: dict[str, str] | None = None) -> None:
-        """
-        Upload data in RDF format to a srevice
+        """Upload data in RDF format to a srevice.
 
-        Args
-            fname: Filename to the RDF file to upload
+        Args:
+            content: Filename to the RDF file to upload
             rdf_format: RDF file type (e.g. rdf/xml, rdf/json etc. Consult the RDF4J rest api
                 doc for a complete list of available options)
             params: Additional parameters passed to the post request
@@ -326,9 +324,7 @@ class GraphDBClient:
         response.raise_for_status()
 
     def update_query(self, query: str) -> None:
-        """
-        Function that passes a query via a post API call
-        """
+        """Pass a query via a post API call."""
         response = httpx.post(
             self.service_cfg.url + UPLOAD_END_POINT[self.service_cfg.rest_api],
             data={"update": query},
@@ -367,10 +363,7 @@ class RepoInfo:
 
 
 def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
-    """
-    List available repositories
-    """
-
+    """List available repositories."""
     service_cfg = service_cfg or ServiceConfig()
 
     auth = httpx.USE_CLIENT_DEFAULT
@@ -398,8 +391,7 @@ def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
 
 
 def new_repo(server: str, repo: str, config: bytes, allow_exist: bool = True, protocol: str = "http") -> GraphDBClient:
-    """
-    Initiialzie a new repository
+    """Initiialzie a new repository.
 
     Args:
         server: URL to service
@@ -434,13 +426,13 @@ def new_repo_blazegraph(url: str, repo: str, protocol: str = "https", token: str
 
 
 def config_bytes_from_template(template: Path, params: dict[str, str], encoding: str = "utf-8") -> bytes:
-    """
-    Replace value in template file with items in params
+    """Replace value in template file with items in params.
 
     Args:
         template: Path to template file
         params: Dict with key-value pairs where key must be enclode by double curly braces
             in the template file ({{}}). {{key}} will be replaced by value
+        encoding: use this encoding when replacing items
     """
     with open(template, "rb") as infile:
         data = infile.read()

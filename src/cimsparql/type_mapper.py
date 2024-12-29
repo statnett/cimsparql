@@ -1,3 +1,5 @@
+"""Type mapper functionality for graphdb data."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -111,16 +113,11 @@ class TypeMapper:
         return {row.sparql_type: self.prim_type_map.get(row.range, str_preserve_none) for row in df.itertuples()}
 
     def get_map(self) -> dict[str, Any]:
-        """Reads all metadata from the sparql backend & creates a sparql-type -> python type map
-
-        Args:
-            client: initialized SingleClientModel
+        """Read all metadata from the sparql backend & creates a sparql-type -> python type map.
 
         Returns:
             sparql-type -> python type map
-
         """
-
         with enforce_no_limit(self.client) as c:
             res = c.get_table(self.query)
             df = res[0]
@@ -129,17 +126,15 @@ class TypeMapper:
         return self.type_map(df)
 
     def build_type_caster(self, col_map: dict[COL_NAME, SPARQL_TYPE]) -> dict[COL_NAME, TYPE_CASTER]:
-        """
-        Construct a direct mapping from column names to a type caster from the
-        """
+        """Construct a direct mapping from column names to a type caster from the."""
         return {col: self.map[dtype] for col, dtype in col_map.items() if dtype in self.map}
 
     def map_data_types(self, df: pd.DataFrame, col_map: dict[COL_NAME, SPARQL_TYPE]) -> pd.DataFrame:
-        """Maps the dtypes of a DataFrame to the python-corresponding types of the sparql-types from
-        the source data
+        """Map the dtypes of a DataFrame to the python-corresponding types of the sparql-types from the source data.
 
         Args:
             df: DataFrame with columns to be converted
+            col_map: type mapper for columns
 
         Returns:
             mapped DataFrame
@@ -154,10 +149,11 @@ class TypeMapper:
 
 
 def map_base_types(df: pd.DataFrame, type_map: dict[COL_NAME, TYPE_CASTER]) -> pd.DataFrame:
-    """Maps the datatypes in type_map which can be used with the df.astype function
+    """Map the datatypes in type_map which can be used with the df.astype function.
 
     Args:
-        df:
+        df: DataFrame with columns to be converted
+        type_map: type mapper for columns
 
     Returns:
         mapped DataFrame
@@ -170,10 +166,11 @@ def map_base_types(df: pd.DataFrame, type_map: dict[COL_NAME, TYPE_CASTER]) -> p
 
 
 def map_exceptions(df: pd.DataFrame, type_map: dict[COL_NAME, TYPE_CASTER]) -> pd.DataFrame:
-    """Maps the functions/datatypes in type_map which cant be done with the df.astype function
+    """Map the functions/datatypes in type_map which cant be done with the df.astype function.
 
     Args:
-        df:
+        df: DataFrame with columns to be converted
+        type_map: type mapper for columns
 
     Returns:
         mapped DataFrame
