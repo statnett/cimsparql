@@ -28,10 +28,10 @@ def test_eq_query(test_model: t_common.ModelTest):
     model = test_model.model
     assert model
     query = model.template_to_query(query_template)
-    df = model.get_table_and_convert(query)
-    df = df.sort_values("voltage").reset_index(drop=True)
+    voltage = model.get_table_and_convert(query)
+    voltage = voltage.sort_values("voltage").reset_index(drop=True)
     expect = pd.DataFrame({"voltage": [33.0, 132.0, 220.0]})
-    pd.testing.assert_frame_equal(df, expect)
+    pd.testing.assert_frame_equal(voltage, expect)
 
 
 @pytest.mark.slow
@@ -46,5 +46,5 @@ def test_tpsv_query(test_model: t_common.ModelTest):
         f"select * where {{service <{repo}> {{?s rdf:type cim:TopologicalNode}}}}"
     )
     query = model.template_to_query(query_template)
-    df = model.get_table_and_convert(query)
-    assert df.shape == (115, 1)
+    topological_nodes = model.get_table_and_convert(query)
+    assert topological_nodes.shape == (115, 1)

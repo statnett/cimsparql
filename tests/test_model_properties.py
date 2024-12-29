@@ -146,7 +146,7 @@ async def test_all_connectivity_nodes_fetched(test_model: t_common.ModelTest):
     # Verify that we get some nodes
     assert num_connectivity_nodes > 0
 
-    df = test_model.model.connectivity_nodes()
+    connectivity_nodes = test_model.model.connectivity_nodes()
 
     # Verify that we get information for all nodes in the model
-    assert len(df) == num_connectivity_nodes
+    assert len(connectivity_nodes) == num_connectivity_nodes
