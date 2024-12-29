@@ -421,8 +421,7 @@ def new_repo_blazegraph(url: str, repo: str, protocol: str = "https", token: str
         timeout=5.0,
     )
     response.raise_for_status()
-    client = GraphDBClient(ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH, token=token))
-    return client
+    return GraphDBClient(ServiceConfig(repo, protocol, url, rest_api=RestApi.BLAZEGRAPH, token=token))
 
 
 def config_bytes_from_template(template: Path, params: dict[str, str], encoding: str = "utf-8") -> bytes:

@@ -84,8 +84,7 @@ async def collect_node_consistency_data() -> list[NodeConsistencyData]:
     test_models = [t_custom.federated_model(), t_entsoe.micro_t1_nl()]
     if any(m.model is None and m.must_run_in_ci and os.getenv("CI") for m in test_models):
         pytest.fail("Model that must run in CI is None")
-    res = await asyncio.gather(*[get_node_consistency_test_data(m.model) for m in test_models])
-    return res
+    return await asyncio.gather(*[get_node_consistency_test_data(m.model) for m in test_models])
 
 
 @pytest.fixture(scope="session")
