@@ -36,7 +36,7 @@ logger = logging.getLogger()
 
 
 def exception_logging(func: Callable[[Any], pd.DataFrame], *args: Any):
-    logger.debug(f"Starting {func.__name__}")
+    logger.debug("Starting %s", func.__name__)
     try:
         return func(*args)
     except Exception:

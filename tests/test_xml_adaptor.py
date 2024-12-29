@@ -7,7 +7,7 @@ from cimsparql.adaptions import XmlModelAdaptor, is_uuid
 
 @pytest.fixture
 def xml_adaptor():
-    folder = Path(__file__).parent / "data/micro"
+    folder = Path(__file__).parent / "data" / "micro"
     return XmlModelAdaptor.from_folder(folder)
 
 

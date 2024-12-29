@@ -94,7 +94,7 @@ class ServiceConfig:
     def url(self) -> str:
         if self.rest_api == RestApi.BLAZEGRAPH:
             return service_blazegraph(self.server, self.repo, self.protocol)
-        elif self.rest_api == RestApi.DIRECT_SPARQL_ENDPOINT:
+        if self.rest_api == RestApi.DIRECT_SPARQL_ENDPOINT:
             return self.server
         return service(self.repo, self.server, self.protocol, self.path)
 
