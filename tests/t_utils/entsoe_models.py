@@ -24,7 +24,7 @@ def micro_t1_nl_graphdb() -> t_common.ModelTest:
             model = get_single_client_model(s_cfg, m_cfg)
     except Exception:
         logger.exception("Failed to get single model")
-    return t_common.ModelTest(model, False, False)
+    return t_common.ModelTest(model, must_run_in_ci=False, cleanup=False)
 
 
 def split_tpsvssh(fname: Path) -> tuple[str, str]:

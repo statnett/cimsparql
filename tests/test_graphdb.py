@@ -248,7 +248,7 @@ def test_repos_with_auth(httpserver: HTTPServer):
     cfg = ServiceConfig("repo", server=server, protocol=protocol, user=user, passwd=password)
     repo_info = repos(cfg)
 
-    expect = RepoInfo("uri", "id", "title", True, False)
+    expect = RepoInfo("uri", "id", "title", readable=True, writable=False)
     assert repo_info == [expect]
 
 
