@@ -90,10 +90,7 @@ async def collect_node_consistency_data() -> list[NodeConsistencyData]:
 
 @pytest.fixture(scope="session")
 def nc_data() -> CONSISTENCY_DATA:
-    """
-    Return test data which in a datastructure suitable for consistency checks
-    for node data
-    """
+    """Return test data which in a datastructure suitable for consistency checks for node data."""
     res = asyncio.run(collect_node_consistency_data())
     return {"model": res[0]}
 

@@ -1,3 +1,5 @@
+"""Templates for miscellaneous queries."""
+
 import pathlib
 from string import Template
 

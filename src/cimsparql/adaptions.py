@@ -1,3 +1,5 @@
+"""Adaption functionality used to modify test cases."""
+
 from __future__ import annotations
 
 import hashlib
@@ -46,9 +48,7 @@ class XmlModelAdaptor:
         return XmlModelAdaptor(list(folder.glob("*.xml")))
 
     def add_mrid(self) -> None:
-        """
-        Adds cim:IdentifiedObject.mRID if not present
-        """
+        """Add cim:IdentifiedObject.mRID if not present."""
         ns = self.namespaces()
         identified_obj_mrid = URIRef(f"{ns['cim']}IdentifiedObject.mRID")
         for result in self.graph.query("select ?s ?g where {graph ?g {?s cim:IdentifiedObject.name ?name}}", initNs=ns):
@@ -115,10 +115,7 @@ class XmlModelAdaptor:
         return [ctx for ctx in self.graph.contexts() if any(token in str(ctx) for token in ("SSH", "TP", "SV"))]
 
     def nq_bytes(self, contexts: list[Graph] | None = None) -> bytes:
-        """
-        Return the contexts as bytes. If contexts is None, the entire graph
-        is exported
-        """
+        """Return the contexts as bytes. If contexts is None, the entire graph is exported."""
         if contexts is None:
             return self.graph.serialize(format="nquads", encoding="utf8")
 
