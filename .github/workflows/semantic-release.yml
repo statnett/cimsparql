@@ -30,17 +30,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       release_created: ${{ steps.create_release.outputs.new_release_published }}
+      new_tag: ${{ steps.create_release.outputs.new_release_git_tag }}
+      release_notes: ${{ steps.create_release.outputs.new_release_notes }}
+
 
   github-release:
     needs: semantic-release
-    uses: statnett/github-workflows/.github/workflows/release-please.yaml@main
+    uses: softprops/action-gh-release@v2.2.0
     with:
-      config-file: release-please-config.json
-      manifest-file: .release-please-manifest.json
-    secrets: inherit
+      tag_name: ${{ needs.semantic-release.outputs.new_tag }}
+      body: ${{ needs.semantic-release.outputs.release_notes }}
     permissions:
       contents: write
-      pull-requests: write
+
 
   publish-to-pypi:
     needs: semantic-release
