@@ -33,7 +33,7 @@ jobs:
 
   github-release:
     needs: semantic-release
-    uses: statnett/github-workflows/.github/workflows/release-please.yaml
+    uses: statnett/github-workflows/.github/workflows/release-please.yaml@main
     secrets: inherit
     permissions:
       contents: write
