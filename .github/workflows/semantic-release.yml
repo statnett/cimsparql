@@ -34,6 +34,9 @@ jobs:
   github-release:
     needs: semantic-release
     uses: statnett/github-workflows/.github/workflows/release-please.yaml@main
+    with:
+      config-file: release-please-config.json
+      manifest-file: .release-please-manifest.json
     secrets: inherit
     permissions:
       contents: write
