@@ -28,20 +28,17 @@ jobs:
           semantic_version: 24.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Github Release
+        uses: softprops/action-gh-release@v2.2.0
+        if: ${{ steps.create_release.outputs.new_release_published }} == 'true'
+        with:
+          tag_name: ${{ steps.create_release.outputs.new_release_git_tag }}
+          body: ${{ steps.create_release.outputs.new_release_notes }}
     outputs:
       release_created: ${{ steps.create_release.outputs.new_release_published }}
       new_tag: ${{ steps.create_release.outputs.new_release_git_tag }}
       release_notes: ${{ steps.create_release.outputs.new_release_notes }}
-
-
-  github-release:
-    needs: semantic-release
-    uses: softprops/action-gh-release@v2.2.0
-    with:
-      tag_name: ${{ needs.semantic-release.outputs.new_tag }}
-      body: ${{ needs.semantic-release.outputs.release_notes }}
-    permissions:
-      contents: write
 
 
   publish-to-pypi:
