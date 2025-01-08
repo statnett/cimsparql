@@ -170,6 +170,7 @@ class ConvertersSchema(NamedResourceSchema):
     loss2: Series[float] = pa.Field()
     vdcn: Series[float] = pa.Field()
     un: Series[float] = pa.Field()
+    capacity: Series[float] = pa.Field()
 
 
 ConvertersDataFrame = DataFrame[ConvertersSchema]
