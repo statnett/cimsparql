@@ -3,16 +3,18 @@ PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
 PREFIX SN:<${SN}>
 PREFIX ALG:<${ALG}>
-select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un
+select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un ?capacity
 where {
   {
     select * where {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       service ?eq_repo {
-        # Extract mrid, name, substation and optionally aliasName of the converter
+        # Extract converter data
         ?converter cim:IdentifiedObject.mRID ?mrid;
-                  cim:IdentifiedObject.name ?name;
-		  ALG:VoltageSourceConverter.DCPole|ALG:DCConverter.DCPole ?pole.
+                   cim:IdentifiedObject.name ?name;
+                   ALG:VoltageSourceConverter.DCPole|ALG:DCConverter.DCPole ?pole;
+                   ALG:VoltageSourceConverter.bridgeNominalVoltage|ALG:DCConverter.bridgeNominalVoltage ?ur;
+                   ALG:VoltageSourceConverter.ratedIAC|ALG:DCConverter.currentRating ?ir.
 
         ?pole ALG:DCPole.DCController/cim:IdentifiedObject.mRID ?controller.
 	{
@@ -23,7 +25,11 @@ where {
 	  } group by ?pole
 	}
 
-        optional {?converter cim:IdentifiedObject.aliasName ?alias .}
+        optional{
+          ?converter cim:IdentifiedObject.aliasName ?alias ;
+                     ALG:VoltageSourceConverter.bridges ?bridges
+        }
+
         # Extract properties for the terminals for the converter
         ?terminal cim:Terminal.ConductingEquipment ?converter;
                   cim:Terminal.ConnectivityNode ?con_node;
@@ -41,12 +47,13 @@ where {
 		     ALG:VoltageSourceConverter.loss2 ?_loss2.
 	  ?pole cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?_vdcn;
 	}
-        bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
+	bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
 	bind(coalesce(?_loss0, 0.0) as ?loss0)
 	bind(coalesce(?_loss1, 0.0) as ?loss1)
 	bind(coalesce(?_loss2, 0.0) as ?loss2)
 	bind(coalesce(?_vdcn, 0.0) as ?vdcn)
-        filter(?analysis_enabled)
+	bind((xsd:float(?ir) * xsd:float(?ur) * xsd:float(coalesce(?bridges, 1))/1000) as ?capacity)
+	filter(?analysis_enabled)       
       }
     }
   }
@@ -54,7 +61,7 @@ where {
   # Extract active and reactive power for the converter
   ?converter cim:ACDCConverter.p ?p;
              cim:ACDCConverter.q ?q.
-
+  
   optional {?converter cim:ACDCConverter.poleLossP ?_pole_loss.}
   optional {?converter ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .}
 
