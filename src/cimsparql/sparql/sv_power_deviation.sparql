@@ -1,42 +1,39 @@
 # Name: Sv power deviation
 PREFIX xsd:<${xsd}>
 PREFIX cim:<${cim}>
-select
-?node
-(sum(xsd:double(str(?p))) as ?sum_terminal_flow)
-(max(xsd:double(str(?p_inj))) as ?reported_sv_injection)
-(group_concat(distinct(?con_node_mrid);
-        SEPARATOR=",") as ?connectivity_nodes)
-(group_concat(?terminal_name;
-        SEPARATOR=",") as ?terminal_names)
-where {
-    {
-        select * {
-            ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-            service ?eq_repo {
-                ?terminal cim:Terminal.ConnectivityNode ?con_node ;
-                cim:Terminal.ConductingEquipment ?equipment;
-                cim:IdentifiedObject.name ?terminal_name .
-                ?con_node cim:IdentifiedObject.mRID ?con_node_mrid
-            }
-        }
+SELECT ?node (SUM(xsd:double(STR(?p))) AS ?sum_terminal_flow) (MAX(xsd:double(STR(?p_inj))) AS ?reported_sv_injection) (GROUP_CONCAT(DISTINCT (?con_node_mrid); SEPARATOR=",") AS ?connectivity_nodes) (GROUP_CONCAT(?terminal_name; SEPARATOR=",") AS ?terminal_names) WHERE {
+  {
+    SELECT * {
+      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      SERVICE ?eq_repo {
+        ?terminal cim:Terminal.ConnectivityNode ?con_node ;
+                  cim:Terminal.ConductingEquipment ?equipment ;
+                  cim:IdentifiedObject.name ?terminal_name .
+        ?con_node cim:IdentifiedObject.mRID ?con_node_mrid
+      }
     }
-    {
-        ?sv_power_flow cim:SvPowerFlow.Terminal ?terminal ;
-                    cim:SvPowerFlow.p ?p
-    } union {
-        ?equipment cim:ACDCConverter.p ?p
-        filter not exists {?sv_power_flow cim:SvPowerFlow.Terminal ?terminal}
+  }
+  {
+    ?sv_power_flow cim:SvPowerFlow.Terminal ?terminal ;
+                   cim:SvPowerFlow.p ?p
+  }
+  UNION {
+    ?equipment cim:ACDCConverter.p ?p
+    FILTER NOT EXISTS {
+      ?sv_power_flow cim:SvPowerFlow.Terminal ?terminal
     }
-    {
-        ?con_node cim:ConnectivityNode.TopologicalNode ?tp_node
-    } union {
-        filter not exists {
-            ?con_node cim:ConnectivityNode.TopologicalNode ?tp_node
-        }
-        ?terminal cim:Terminal.TopologicalNode ?tp_node
+  }
+  {
+    ?con_node cim:ConnectivityNode.TopologicalNode ?tp_node
+  }
+  UNION {
+    FILTER NOT EXISTS {
+      ?con_node cim:ConnectivityNode.TopologicalNode ?tp_node
     }
-    ?tp_node cim:IdentifiedObject.mRID ?node;
-    cim:IdentifiedObject.name ?name;
-    ^cim:SvInjection.TopologicalNode/cim:SvInjection.pInjection ?p_inj
-} group by ?node
+    ?terminal cim:Terminal.TopologicalNode ?tp_node
+  }
+  ?tp_node cim:IdentifiedObject.mRID ?node ;
+           cim:IdentifiedObject.name ?name ;
+           ^cim:SvInjection.TopologicalNode/cim:SvInjection.pInjection ?p_inj
+}
+GROUP BY ?node

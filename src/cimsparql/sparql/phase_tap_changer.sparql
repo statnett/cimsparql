@@ -1,22 +1,21 @@
 # Name: Phase tap changer
 PREFIX cim: <${cim}>
-select ?mrid ?phase_shift_increment ?enabled ?neutral_step ?high_step ?low_step ?mode ?target_value ?monitored_winding
-where {
-  ?tap_changer cim:TapChanger.controlEnabled ?enabled_1.
-  ?tap_changer_control cim:RegulatingControl.enabled ?enabled_2;
-		       cim:RegulatingControl.targetValue ?target_value.
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo.
-   service ?eq_repo {
-     ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_shift_increment;
-		  cim:TapChanger.TapChangerControl ?tap_changer_control;
-                  cim:TapChanger.neutralStep ?neutral_step;
-		  cim:TapChanger.highStep ?high_step;
-                  cim:TapChanger.lowStep ?low_step;
-		  ^cim:TransformerEnd.PhaseTapChanger ?winding.
-     ?winding cim:IdentifiedObject.mRID ?mrid.
-     ?tap_changer_control cim:RegulatingControl.mode ?control_mode;
-			  cim:RegulatingControl.Terminal/^cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?monitored_winding.
+SELECT ?mrid ?phase_shift_increment ?enabled ?neutral_step ?high_step ?low_step ?mode ?target_value ?monitored_winding WHERE {
+  ?tap_changer cim:TapChanger.controlEnabled ?enabled_1 .
+  ?tap_changer_control cim:RegulatingControl.enabled ?enabled_2 ;
+                       cim:RegulatingControl.targetValue ?target_value .
+  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  SERVICE ?eq_repo {
+    ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_shift_increment ;
+                 cim:TapChanger.TapChangerControl ?tap_changer_control ;
+                 cim:TapChanger.neutralStep ?neutral_step ;
+                 cim:TapChanger.highStep ?high_step ;
+                 cim:TapChanger.lowStep ?low_step ;
+                 ^cim:TransformerEnd.PhaseTapChanger ?winding .
+    ?winding cim:IdentifiedObject.mRID ?mrid .
+    ?tap_changer_control cim:RegulatingControl.mode ?control_mode ;
+                         cim:RegulatingControl.Terminal/^cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?monitored_winding .
   }
-  bind(replace(str(?control_mode), str(cim:), "") as ?mode)
-  bind(?enabled_1 && ?enabled_2 as ?enabled)
+  BIND (replace(STR(?control_mode), STR(cim:), "") AS ?mode)
+  BIND (?enabled_1 && ?enabled_2 AS ?enabled)
 }

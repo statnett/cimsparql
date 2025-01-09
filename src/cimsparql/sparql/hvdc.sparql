@@ -2,22 +2,20 @@
 PREFIX cim: <${cim}>
 PREFIX ALG: <${ALG}>
 PREFIX xsd: <${xsd}>
-select ?converter_mrid_1 ?converter_mrid_2 (group_concat(?name; separator="--") as ?name) (sum(xsd:float(str(?r))) as ?r)
-where
-{
-  ?converter_1 a ALG:VoltageSourceConverter;
-	       cim:IdentifiedObject.mRID ?converter_mrid_1.
-  ?converter_2 a ALG:VoltageSourceConverter;
-	       cim:IdentifiedObject.mRID ?converter_mrid_2.
-  ?t_1 cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter_1;
-       cim:Terminal.ConductingEquipment ?line;
+SELECT ?converter_mrid_1 ?converter_mrid_2 (GROUP_CONCAT(?name; SEPARATOR="--") AS ?name) (SUM(xsd:float(STR(?r))) AS ?r) WHERE {
+  ?converter_1 a ALG:VoltageSourceConverter ;
+               cim:IdentifiedObject.mRID ?converter_mrid_1 .
+  ?converter_2 a ALG:VoltageSourceConverter ;
+               cim:IdentifiedObject.mRID ?converter_mrid_2 .
+  ?t_1 cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter_1 ;
+       cim:Terminal.ConductingEquipment ?line ;
        cim:ACDCTerminal.sequenceNumber 1 .
-  ?t_2 cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter_2;
-       cim:Terminal.ConductingEquipment ?line;
+  ?t_2 cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter_2 ;
+       cim:Terminal.ConductingEquipment ?line ;
        cim:ACDCTerminal.sequenceNumber 2 .
-  ?line a ALG:DCLineSegment;
-  	ALG:DCLineSegment.dcSegmentResistance ?r;
-        cim:IdentifiedObject.name ?name.
+  ?line a ALG:DCLineSegment ;
+        ALG:DCLineSegment.dcSegmentResistance ?r ;
+        cim:IdentifiedObject.name ?name .
 }
-group by ?converter_mrid_1 ?converter_mrid_2
-having (count(*) > 1)
+GROUP BY ?converter_mrid_1 ?converter_mrid_2
+HAVING (COUNT(*) > 1)

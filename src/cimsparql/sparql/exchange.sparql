@@ -1,60 +1,57 @@
 # Name: Exchange
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select ?name ?node ?mrid ?status ?p ?market_code
-where
-{
-  ?terminal1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p;
-              cim:ACDCTerminal.connected ?connected_1 .
+SELECT ?name ?node ?mrid ?status ?p ?market_code WHERE {
+  ?terminal1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p ;
+             cim:ACDCTerminal.connected ?connected_1 .
   ?terminal2 cim:ACDCTerminal.connected ?connected_2 .
-
   {
     ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
-  } union {
-    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
+  }
+  UNION {
+    FILTER NOT EXISTS {
+      ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node
+    }
     ?terminal1 cim:Terminal.TopologicalNode ?topological_node .
   }
   ?topological_node cim:IdentifiedObject.mRID ?node .
-
   # Extract a connection flag that is composed of the inService flag for all conducting equipment connected
   # to an acline.
-  optional{?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service } .
-
+  OPTIONAL {
+    ?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
+  } .
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-  service ?eq_repo {
+  SERVICE ?eq_repo {
     # Extract name and mrid for aclines
-    ?acline a cim:ACLineSegment;
-      cim:IdentifiedObject.name ?name;
-      cim:IdentifiedObject.mRID ?mrid .
-    filter (!regex(?name, 'HVDC')) .
-    optional {?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code . }
-
+    ?acline a cim:ACLineSegment ;
+            cim:IdentifiedObject.name ?name ;
+            cim:IdentifiedObject.mRID ?mrid .
+    FILTER (!REGEX(?name,'HVDC')) .
+    OPTIONAL {
+      ?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code .
+    }
     # Extract properties for the terminal at sequenceNumber 1 for the acline
-    ?terminal1 cim:Terminal.ConductingEquipment ?acline;
-               cim:ACDCTerminal.sequenceNumber 1;
+    ?terminal1 cim:Terminal.ConductingEquipment ?acline ;
+               cim:ACDCTerminal.sequenceNumber 1 ;
                cim:Terminal.ConnectivityNode ?con_node .
-
     # Extract from the connectivity node of terminal1
     ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 .
-
     # Extract propertoes for the terminal at squenceNumber 2 for the acline
-    ?terminal2 cim:Terminal.ConductingEquipment ?acline;
-              cim:ACDCTerminal.sequenceNumber 2;
-              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .
-
+    ?terminal2 cim:Terminal.ConductingEquipment ?acline ;
+               cim:ACDCTerminal.sequenceNumber 2 ;
+               cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .
     # When a region is provided: only keep results that satisfy either
     # 1) area_1 = region and area_2 != region
     # 2) area_2 = region and area_1 != region
-    filter ((regex(?area_1, '${region}') && !regex(?area_2, '${region}')) || (regex(?area_1, '${region}') && !regex(?area_2, '${region}')))
-
-    optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
+    FILTER ((REGEX(?area_1,'${region}') && !REGEX(?area_2,'${region}')) || (REGEX(?area_1,'${region}') && !REGEX(?area_2,'${region}')))
+    OPTIONAL {
+      ?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .
+    }
   }
-
-  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  filter(?analysis_enabled)
-
+  BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
+  FILTER (?analysis_enabled)
   # Assign an overall status. The status is derived from the first existing entry of
   # 1) The computed in_service flag for each acline
   # 2) The connected status for the terminals. If one of the terminals is off, the status is False
-  bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status)
+  BIND (COALESCE(?in_service, ?connected_1 && ?connected_2) AS ?status)
 }

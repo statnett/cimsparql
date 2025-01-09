@@ -1,45 +1,45 @@
 # Name: Loads
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_node
-where {
+SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_node WHERE {
   {
     # Appears to be significantly faster to run the query if the EQ part is executed within its own sub-query
-    select * where {
+    SELECT * WHERE {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-      service ?eq_repo {
+      SERVICE ?eq_repo {
         # Extract mRID, name and substation for each load
-        ?load cim:IdentifiedObject.mRID ?mrid;
-              cim:IdentifiedObject.name ?name;
-              cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation.
-
+        ?load cim:IdentifiedObject.mRID ?mrid ;
+              cim:IdentifiedObject.name ?name ;
+              cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
         # Extract area and mRID (referred to as 'station') for the substation of each load
-        ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+        ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
                     cim:IdentifiedObject.mRID ?substation_mrid .
-        filter regex(?area, '${region}')
-
-        optional {?load cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group} .
-        optional {?load SN:Equipment.networkAnalysisEnable ?_network_analysis} .
-        bind(coalesce(?_network_analysis, True) as ?network_analysis)
-        filter (?network_analysis)
-
+        FILTER REGEX(?area,'${region}')
+        OPTIONAL {
+          ?load cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group
+        } .
+        OPTIONAL {
+          ?load SN:Equipment.networkAnalysisEnable ?_network_analysis
+        } .
+        BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
+        FILTER (?network_analysis)
         # Extract mRID and connectivity node for each terminal associated with a load
-        ?terminal cim:Terminal.ConductingEquipment ?load;
-                cim:Terminal.ConnectivityNode ?con_node .
+        ?terminal cim:Terminal.ConductingEquipment ?load ;
+                  cim:Terminal.ConnectivityNode ?con_node .
         ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
       } .
     }
   }
-
   # Extrcact connected flag and optionally the mRID of the topological node associated with the terminal
   ?terminal cim:ACDCTerminal.connected ?connected .
-
   # Optionally extract in_service flag and active and reactive energy consumption for each load
-  optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service }.
-  ?load cim:EnergyConsumer.p ?p; cim:EnergyConsumer.q ?q .
-
+  OPTIONAL {
+    ?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
+  } .
+  ?load cim:EnergyConsumer.p ?p ;
+        cim:EnergyConsumer.q ?q .
   # Assign status flag for load. The status flag is set to the first existing of
   # 1) in_service flag
   # 2) connected flag the terminal
-  bind(coalesce(?in_service, ?connected) as ?status)
+  BIND (COALESCE(?in_service, ?connected) AS ?status)
 }

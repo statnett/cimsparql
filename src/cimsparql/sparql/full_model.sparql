@@ -1,34 +1,45 @@
 # Name: Full model
 PREFIX md:<${md}>
-
-select ?model ?time ?profile ?version ?description
-where
-{
-   {
-   ?model md:Model.profile ?profile;
-          md:Model.scenarioTime ?time;
-          md:Model.version ?version;
-          md:Model.description ?description .
+SELECT ?model ?time ?profile ?version ?description WHERE {
+  {
+    ?model md:Model.profile ?profile ;
+           md:Model.scenarioTime ?time ;
+           md:Model.version ?version ;
+           md:Model.description ?description .
     {
-        select ?model (min(?dependency_exists) as ?all_dependencies_exist) {
-            ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-            ?model md:Model.DependentOn ?depend_on .
-
-            # Extract created time from both tp/sv/ssh profile and eq.
-            optional{{?depend_on md:Model.created ?created} union {service ?eq_repo {?depend_on md:Model.created ?created}}}
-            bind(bound(?created) as ?dependency_exists)
-        } group by ?model
-    }
-    filter(?all_dependencies_exist)
-    } union {
+      SELECT ?model (MIN(?dependency_exists) AS ?all_dependencies_exist) {
         ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-        service ?eq_repo {
-            ?model md:Model.description ?description ;
-            	md:Model.created ?time .
-            optional{?model md:Model.profile ?nullable_profile}
-            optional{?model md:Model.version ?nullable_version}
-            bind(coalesce(?nullable_profile, "http://entsoe.eu/CIM/EquipmentCore/3/1") as ?profile)
-            bind(coalesce(?nullable_version, "") as ?version)
+        ?model md:Model.DependentOn ?depend_on .
+        # Extract created time from both tp/sv/ssh profile and eq.
+        OPTIONAL {
+          {
+            ?depend_on md:Model.created ?created
+          }
+          UNION {
+            SERVICE ?eq_repo {
+              ?depend_on md:Model.created ?created
+            }
+          }
         }
+        BIND (BOUND(?created) AS ?dependency_exists)
+      }
+      GROUP BY ?model
     }
+    FILTER (?all_dependencies_exist)
+  }
+  UNION {
+    ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+    SERVICE ?eq_repo {
+      ?model md:Model.description ?description ;
+             md:Model.created ?time .
+      OPTIONAL {
+        ?model md:Model.profile ?nullable_profile
+      }
+      OPTIONAL {
+        ?model md:Model.version ?nullable_version
+      }
+      BIND (COALESCE(?nullable_profile, "http://entsoe.eu/CIM/EquipmentCore/3/1") AS ?profile)
+      BIND (COALESCE(?nullable_version, "") AS ?version)
+    }
+  }
 }

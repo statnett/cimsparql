@@ -36,6 +36,7 @@ pip-log.txt
 nosetests.xml
 coverage.xml
 htmlcov
+**/pytest.log
 
 # Translations
 *.mo

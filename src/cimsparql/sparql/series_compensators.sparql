@@ -2,64 +2,52 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select
-  (max(?mrid) as ?mrid)
-  (max(?name) as ?name)
-  (if (xsd:double(max(?p_1)) < xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_1)
-  (if (xsd:double(max(?p_1)) > xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_2)
-  (max(?r) as ?r)
-  (max(?rate) as ?rate)
-  (coalesce(max(?in_service), max(?connected_1) && max(?connected_2)) as ?status)
-  (max(?un) as ?un)
-  (max(?x) as ?x)
-  (max(?connectivity_node_1) as ?connectivity_node_1)
-  (max(?connectivity_node_2) as ?connectivity_node_2)
-where {
+SELECT (MAX(?mrid) AS ?mrid) (MAX(?name) AS ?name) (IF(xsd:double(MAX(?p_1)) < xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_1) (IF(xsd:double(MAX(?p_1)) > xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_2) (MAX(?r) AS ?r) (MAX(?rate) AS ?rate) (COALESCE(MAX(?in_service), MAX(?connected_1) && MAX(?connected_2)) AS ?status) (MAX(?un) AS ?un) (MAX(?x) AS ?x) (MAX(?connectivity_node_1) AS ?connectivity_node_1) (MAX(?connectivity_node_2) AS ?connectivity_node_2) WHERE {
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for series compensator
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-  service ?eq_repo {
-  ?compensator cim:SeriesCompensator.r ?r;
-         cim:SeriesCompensator.x ?x;
-         cim:IdentifiedObject.mRID ?mrid;
-         cim:IdentifiedObject.name ?name;
-         cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
-         ^cim:Terminal.ConductingEquipment ?terminal .
-
-  # Extract terminal properties
-  ?terminal cim:Terminal.ConnectivityNode ?con_node;
-            cim:ACDCTerminal.sequenceNumber ?nr .
-  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation ;
-            cim:IdentifiedObject.mRID ?connectivity_node .
-  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-  optional {?compensator SN:Equipment.networkAnalysisEnable ?network_analysis}
-  filter(regex(?area, '${region}'))
-
-
-  # Optionally extract current limits
-  optional {
-    ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?compensator;
-          a cim:CurrentLimit;
-          cim:IdentifiedObject.name '${rate}';
-          cim:CurrentLimit.value ?_rate .
-    # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
-    bind(1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rate)) / 1000.0 as ?rate)
-  }.}
-
-
+  SERVICE ?eq_repo {
+    ?compensator cim:SeriesCompensator.r ?r ;
+                 cim:SeriesCompensator.x ?x ;
+                 cim:IdentifiedObject.mRID ?mrid ;
+                 cim:IdentifiedObject.name ?name ;
+                 cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un ;
+                 ^cim:Terminal.ConductingEquipment ?terminal .
+    # Extract terminal properties
+    ?terminal cim:Terminal.ConnectivityNode ?con_node ;
+              cim:ACDCTerminal.sequenceNumber ?nr .
+    ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation ;
+              cim:IdentifiedObject.mRID ?connectivity_node .
+    ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+    OPTIONAL {
+      ?compensator SN:Equipment.networkAnalysisEnable ?network_analysis
+    }
+    FILTER (REGEX(?area,'${region}'))
+    # Optionally extract current limits
+    OPTIONAL {
+      ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?compensator ;
+            a cim:CurrentLimit ;
+            cim:IdentifiedObject.name '${rate}' ;
+            cim:CurrentLimit.value ?_rate .
+      # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
+      BIND (1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rate)) / 1000.0 AS ?rate)
+    } .
+  }
   # Optionally extract in_service associated with compensator
-  optional {?compensator ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
-
-  # Extract connected flag and optionally power for each terminal
+  OPTIONAL {
+    ?compensator ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
+  } .
   ?terminal cim:ACDCTerminal.connected ?connected .
-  optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
-
+  OPTIONAL {
+    ?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .
+  }
   # Create variables for node 1 and node 2
-  bind(if(?nr = 1, str(?p), '') as ?p_1)
-  bind(if(?nr = 1, ?connected, False) as ?connected_1)
-  bind(if(?nr = 2, str(?p), '') as ?p_2)
-  bind(if(?nr = 2, ?connected, False) as ?connected_2)
-  bind(if(?nr = 1, ?connectivity_node, '') as ?connectivity_node_1)
-  bind(if(?nr = 2, ?connectivity_node, '') as ?connectivity_node_2)
-} group by ?compensator
-having ((count(*) > 1) && (max(?connectivity_node_1) != max(?connectivity_node_2)) && coalesce(max(?analysis_enabled), True))
+  BIND (IF(?nr = 1,STR(?p),'') AS ?p_1)
+  BIND (IF(?nr = 1,?connected,False) AS ?connected_1)
+  BIND (IF(?nr = 2,STR(?p),'') AS ?p_2)
+  BIND (IF(?nr = 2,?connected,False) AS ?connected_2)
+  BIND (IF(?nr = 1,?connectivity_node,'') AS ?connectivity_node_1)
+  BIND (IF(?nr = 2,?connectivity_node,'') AS ?connectivity_node_2)
+}
+GROUP BY ?compensator
+HAVING ((COUNT(*) > 1) && (MAX(?connectivity_node_1) != MAX(?connectivity_node_2)) && COALESCE(MAX(?analysis_enabled), True))
