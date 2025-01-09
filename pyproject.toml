@@ -39,60 +39,11 @@ target-version = "py311"
 line-length = 120
 
 [tool.ruff.lint]
-select = [
-  "A", # flake8-builtins
-  "ANN", # flake8-annotations
-  "ARG", # flake8-unused-arguments
-  "B", # flake8-bugbear
-  "C4", # flake8-comprehensions
-  "C90", # mccabe
-  "COM", # flake8-commas
-  "D", # pydocstyle
-  "DTZ", # flake8-datetimez
-  "E", "W", # pycodestyle
-  "ERA", # eradicate
-  "F", # Pyflakes
-  "FA",
-  "FBT", # boolean trap
-  "FIX", # fix me
-  "FLY", # flynt
-  "FURB", # refurb
-  "G", # flake8-logging-format
-  "I", # isort
-  "ICN", # import conventions
-  "INP", # no pep420
-  "INT", # gettext
-  "ISC", # implicit str concat
-  "LOG",  # flake8-logging
-  "N", # pep8-nameing
-  "NPY", # numpy specific rules
-  "PD", # pandas vet
-  "PERF", # Perflint
-  "PGH",
-  "PIE", # flake8-pie
-  "PL", # pylint
-  "PT", # pytest style
-  "PTH", # Pathlib
-  "Q", # quotes
-  "RET", # Return
-  "RSE", # raise
-  "RUF", # Ruff specific rules
-  "S", # flake8-bandit
-  "SIM", # flake8-simplify
-  "SLF", # Self
-  "SLOT",
-  "T10", # debug statements
-  "T20", # flake8-print
-  "TC", # Type checking
-  "TCH", # flake8-type-checking
-  "TID", # tidy import
-  "TRY", # tryceratops
-  "UP", # pyupgrade
-  "YTT", # flake8-2020
-]
+select = ["ALL"]
 
 ignore = [
   'ANN401',
+  'BLE001',
   'COM812',
   'D101',
   'D102',
@@ -102,15 +53,19 @@ ignore = [
   'D203',
   'D213',
   'D413',
+  'EM101',
+  'EM102',
   'FBT001',
   'FBT002',
   'FIX002',
   'S101',
+  'TD002',
+  'TD003',
   'TRY003'
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
+fixable = ["ALL"]
 unfixable = []
 
 # Exclude a variety of commonly ignored directories.

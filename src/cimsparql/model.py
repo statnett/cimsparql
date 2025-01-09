@@ -9,7 +9,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, ParamSpec, Self, TypeVar
 from uuid import uuid4
 
 import pandas as pd
@@ -117,13 +117,15 @@ class Model:
         """
         return self.clients[query_name]
 
-    def __enter__(self) -> Model:
+    def __enter__(self) -> Self:
         transaction_id = str(uuid4())
         for client in self.clients.values():
             client.add_correlation_id_to_header(transaction_id)
         return self
 
-    def __exit__(self, exc_type: type[BaseException], exc: BaseException, exc_tb: TracebackType) -> None:
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc: BaseException | None, exc_tb: TracebackType | None
+    ) -> None:
         _, _, _ = exc_type, exc, exc_tb
         for client in self.clients.values():
             client.clear_correlation_id_from_header()
