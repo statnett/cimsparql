@@ -13,9 +13,19 @@ repos:
       - id: check-toml
       - id: end-of-file-fixer
       - id: trailing-whitespace
+        exclude: \.sparql$
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+    rev: v0.9.6
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: sparql-formatter
+        name: sparql-formatter
+        entry: sh -c 'for file in "$@"; do uv run qlue-ls format "$file" -w; done' --
+        language: python
+        types: [file]
+        files: \.sparql$
+        additional_dependencies: [qlue-ls==0.3.3]
