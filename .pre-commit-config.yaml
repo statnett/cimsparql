@@ -19,3 +19,12 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: sparql-formatter
+        name: sparql-formatter
+        entry: sh -c 'for file in "$@"; do uv run qlue-ls format "$file" -w; done' --
+        language: python
+        types: [file]
+        files: \.sparql$
+        additional_dependencies: [qlue-ls==0.6.2]

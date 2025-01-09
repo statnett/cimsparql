@@ -2,33 +2,32 @@
 PREFIX ALG:<${ALG}>
 PREFIX SN: <${SN}>
 PREFIX cim:<${cim}>
-
 # TODO: We probably need distinct since we get a hit on cim:VsConverter in SSH-profile and ALG:VoltageSourceConverter
 # in EQ-repo. This was caused by correcting the ALG-namespace which lacked # at the end
-select distinct ?mrid ?name ?t_mrid ?p_mrid
-where {
-  values ?converter_type {cim:VsConverter cim:CsConverter cim:DCConvertUnit ALG:VoltageSourceConverter ALG:DCConverter }
-
+SELECT DISTINCT ?mrid ?name ?t_mrid ?p_mrid WHERE {
+  VALUES ?converter_type { cim:VsConverter cim:CsConverter cim:DCConvertUnit ALG:VoltageSourceConverter ALG:DCConverter }
   # Extract mRID for the converters
-  ?converter a ?converter_type;
-        cim:IdentifiedObject.mRID ?mrid .
-
+  ?converter a ?converter_type ;
+             cim:IdentifiedObject.mRID ?mrid .
   # Extract mRID name for the power transformer associated with the converter
-  ?p_transformer a cim:PowerTransformer;
-         cim:IdentifiedObject.mRID ?p_mrid;
-         cim:IdentifiedObject.aliasName ?name;
-         cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
-         ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter .
-
+  ?p_transformer a cim:PowerTransformer ;
+                 cim:IdentifiedObject.mRID ?p_mrid ;
+                 cim:IdentifiedObject.aliasName ?name ;
+                 cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
+                 ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter .
   # Extract the mRID of the terminal associated with the first winding on each power transformer
-  ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-            cim:TransformerEnd.endNumber 1;
-            cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid .
-  FILTER regex(?area, '${region}')
-  optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_transformer_analysis_enabled .}
-  optional {?converter SN:Equipment.networkAnalysisEnable ?_converter_analysis_enabled .}
-  bind(coalesce(?_transformer_analysis_enabled, True) as ?transformer_analysis_enabled)
-  bind(coalesce(?_converter_analysis_enabled, True) as ?converter_analysis_enabled)
-  filter(?transformer_analysis_enabled)
-  filter(?converter_analysis_enabled)
+  ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
+           cim:TransformerEnd.endNumber 1 ;
+           cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid .
+  FILTER REGEX(?area,'${region}')
+  OPTIONAL {
+    ?p_transformer SN:Equipment.networkAnalysisEnable ?_transformer_analysis_enabled .
+  }
+  OPTIONAL {
+    ?converter SN:Equipment.networkAnalysisEnable ?_converter_analysis_enabled .
+  }
+  BIND (COALESCE(?_transformer_analysis_enabled, True) AS ?transformer_analysis_enabled)
+  BIND (COALESCE(?_converter_analysis_enabled, True) AS ?converter_analysis_enabled)
+  FILTER (?transformer_analysis_enabled)
+  FILTER (?converter_analysis_enabled)
 }

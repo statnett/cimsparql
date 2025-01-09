@@ -1,25 +1,23 @@
 # Name: Connections
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select ?mrid ?t_mrid_1 ?t_mrid_2
-where {
+SELECT ?mrid ?t_mrid_1 ?t_mrid_2 WHERE {
   # Declare connector types
-  values ?connector_type {cim:Breaker cim:Disconnector}
-
+  VALUES ?connector_type { cim:Breaker cim:Disconnector }
   # Extact mRID for each connector
-  ?connector a ?connector_type;
-         cim:IdentifiedObject.mRID ?mrid .
-
+  ?connector a ?connector_type ;
+             cim:IdentifiedObject.mRID ?mrid .
   # Extract properties for the terminal connected to sequenceNumber 1
-  ?terminal1  cim:Terminal.ConductingEquipment ?connector;
-              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
-              cim:IdentifiedObject.mRID ?t_mrid_1 .
-
+  ?terminal1 cim:Terminal.ConductingEquipment ?connector ;
+             cim:Terminal.sequenceNumber | cim:ACDCTerminal.sequenceNumber 1 ;
+             cim:IdentifiedObject.mRID ?t_mrid_1 .
   # Extract properties for the terminal conencted to sequenceNumber 2
-  ?terminal2  cim:Terminal.ConductingEquipment ?connector;
-              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
-              cim:IdentifiedObject.mRID ?t_mrid_2
-  optional {?connector SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
-  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  filter(?analysis_enabled)
+  ?terminal2 cim:Terminal.ConductingEquipment ?connector ;
+             cim:Terminal.sequenceNumber | cim:ACDCTerminal.sequenceNumber 2 ;
+             cim:IdentifiedObject.mRID ?t_mrid_2
+  OPTIONAL {
+    ?connector SN:Equipment.networkAnalysisEnable ?_analysis_enabled .
+  }
+  BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
+  FILTER (?analysis_enabled)
 }

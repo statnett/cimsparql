@@ -2,68 +2,65 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource
-where {
+SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource WHERE {
   # Extract properties for synchronous machines.
   {
-    select * where {
+    SELECT * WHERE {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-      service ?eq_repo {
-        ?machine a cim:SynchronousMachine;
-              cim:IdentifiedObject.mRID ?machine_mrid;
-              cim:IdentifiedObject.name ?name;
-              cim:RotatingMachine.ratedS ?sn;
-              ^cim:Terminal.ConductingEquipment ?terminal;
-              cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
-
+      SERVICE ?eq_repo {
+        ?machine a cim:SynchronousMachine ;
+                 cim:IdentifiedObject.mRID ?machine_mrid ;
+                 cim:IdentifiedObject.name ?name ;
+                 cim:RotatingMachine.ratedS ?sn ;
+                 ^cim:Terminal.ConductingEquipment ?terminal ;
+                 cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
         # TODO: Seems like cim15 uses SynchronousMachine while cim16 uses RotatingMachine. Will fix this when we have a proper cim16 model
-        optional{
-          values ?gen_type {cim:NuclearGeneratingUnit cim:MktGeneratingUnit cim:HydroGeneratingUnit cim:WindGeneratingUnit cim:ThermalGeneratingUnit cim:SolarGeneratingUnit}
-          ?machine cim:SynchronousMachine.GeneratingUnit|cim:RotatingMachine.GeneratingUnit ?nullable_gen_unit .
+        OPTIONAL {
+          VALUES ?gen_type { cim:NuclearGeneratingUnit cim:MktGeneratingUnit cim:HydroGeneratingUnit cim:WindGeneratingUnit cim:ThermalGeneratingUnit cim:SolarGeneratingUnit }
+          ?machine cim:SynchronousMachine.GeneratingUnit | cim:RotatingMachine.GeneratingUnit ?nullable_gen_unit .
           ?nullable_gen_unit a ?gen_type
         }
-        bind(coalesce(?nullable_gen_unit, URI("http://no-gen-unit")) as ?gen_unit)
-
+        BIND (COALESCE(?nullable_gen_unit, URI("http://no-gen-unit")) AS ?gen_unit)
         ?terminal cim:Terminal.ConnectivityNode ?con_node .
         ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
-
         # Extract area and mrid for the substation associated with a sync machine
-        ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
+        ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
                     cim:IdentifiedObject.mRID ?substation_mrid .
-
         # Optionally extract min/max operating power for each machin
-        optional {
-          ?gen_unit cim:IdentifiedObject.mRID ?gen_unit_mrid;
-          	cim:GeneratingUnit.minOperatingP ?nullable_minP;
-            cim:GeneratingUnit.maxOperatingP ?nullable_maxP.
-
-        optional {
-          ?gen_unit SN:GeneratingUnit.marketCode ?market_code;
-                  SN:GeneratingUnit.groupAllocationWeight ?merit_order;
-                  SN:GeneratingUnit.ScheduleResource ?ScheduleResource .
-          ?ScheduleResource SN:ScheduleResource.marketCode ?station_group;
-                          cim:IdentifiedObject.mRID ?schedule_resource;
-                          cim:IdentifiedObject.name ?station_group_name .
-        }
+        OPTIONAL {
+          ?gen_unit cim:IdentifiedObject.mRID ?gen_unit_mrid ;
+                    cim:GeneratingUnit.minOperatingP ?nullable_minP ;
+                    cim:GeneratingUnit.maxOperatingP ?nullable_maxP .
+          OPTIONAL {
+            ?gen_unit SN:GeneratingUnit.marketCode ?market_code ;
+                      SN:GeneratingUnit.groupAllocationWeight ?merit_order ;
+                      SN:GeneratingUnit.ScheduleResource ?ScheduleResource .
+            ?ScheduleResource SN:ScheduleResource.marketCode ?station_group ;
+                              cim:IdentifiedObject.mRID ?schedule_resource ;
+                              cim:IdentifiedObject.name ?station_group_name .
           }
-        filter regex(?area, '${region}')
-
+        }
+        FILTER REGEX(?area,'${region}')
         # Opionally extract non-CIM standard properties generating units
-        optional {?machine SN:Equipment.networkAnalysisEnable ?_network_analysis}
-        bind(if(bound(?gen_type), replace(str(?gen_type), str(cim:), ""), "unknown") as ?generator_type)
-        bind(coalesce(?gen_unit_mrid, ?machine_mrid) as ?mrid)
+        OPTIONAL {
+          ?machine SN:Equipment.networkAnalysisEnable ?_network_analysis
+        }
+        BIND (IF(BOUND(?gen_type),replace(STR(?gen_type), STR(cim:), ""),"unknown") AS ?generator_type)
+        BIND (COALESCE(?gen_unit_mrid, ?machine_mrid) AS ?mrid)
       }
     }
   }
-
   ?terminal cim:ACDCTerminal.connected ?connected .
-
-  optional {?machine ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
-  optional {?machine cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}
-
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
-  bind(coalesce(?in_service, ?connected) as ?status)
-  bind(coalesce(?nullable_maxP, if(xsd:double(str(?p)) >= 0.0, ?p, 0.0), 0.0) as ?max_p)
-  bind(coalesce(?nullable_minP, if(xsd:double(str(?p)) < 0.0, ?p, 0.0), 0.0) as ?min_p)
-  filter(?network_analysis)
+  OPTIONAL {
+    ?machine ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
+  } .
+  OPTIONAL {
+    ?machine cim:RotatingMachine.p ?p ;
+             cim:RotatingMachine.q ?q .
+  }
+  BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
+  BIND (COALESCE(?in_service, ?connected) AS ?status)
+  BIND (COALESCE(?nullable_maxP, IF(xsd:double(STR(?p)) >= 0.0,?p,0.0), 0.0) AS ?max_p)
+  BIND (COALESCE(?nullable_minP, IF(xsd:double(STR(?p)) < 0.0,?p,0.0), 0.0) AS ?min_p)
+  FILTER (?network_analysis)
 }

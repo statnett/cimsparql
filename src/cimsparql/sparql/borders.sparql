@@ -1,32 +1,32 @@
 # Name: Borders
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select  ?mrid ?name ?market_code ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2
-where {
+SELECT ?mrid ?name ?market_code ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2 WHERE {
   # Extract mRID, name and optionally market_code for aclines
-  ?acline a cim:ACLineSegment;
-         cim:IdentifiedObject.mRID ?mrid;
-         cim:IdentifiedObject.name ?name.
-  optional {?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code} .
-  optional {?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
-
+  ?acline a cim:ACLineSegment ;
+          cim:IdentifiedObject.mRID ?mrid ;
+          cim:IdentifiedObject.name ?name .
+  OPTIONAL {
+    ?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code
+  } .
+  OPTIONAL {
+    ?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .
+  }
   # Extract properties for the terminal connected to one end of the acline (sequenceNumber 1)
-  ?terminal1  a cim:Terminal;
-              cim:Terminal.ConductingEquipment ?acline;
-              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1;
-              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1;
-              cim:IdentifiedObject.mRID ?t_mrid_1 .
-
+  ?terminal1 a cim:Terminal ;
+             cim:Terminal.ConductingEquipment ?acline ;
+             cim:Terminal.sequenceNumber | cim:ACDCTerminal.sequenceNumber 1 ;
+             cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 ;
+             cim:IdentifiedObject.mRID ?t_mrid_1 .
   # Extract properties for the terminal connected to the other end of the acline (sequenceNumber 2)
-  ?terminal2  a cim:Terminal;
-              cim:Terminal.ConductingEquipment ?acline;
-              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2;
-              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 ;
-              cim:IdentifiedObject.mRID ?t_mrid_2 .
-
-  filter (?area_1 != ?area_2)
-  filter (regex(?area_1, '${region}') || regex(?area_2, '${region}'))
-  filter (!regex(?name, 'HVDC'))  # Ignore HVDC
-  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  filter(?analysis_enabled)
+  ?terminal2 a cim:Terminal ;
+             cim:Terminal.ConductingEquipment ?acline ;
+             cim:Terminal.sequenceNumber | cim:ACDCTerminal.sequenceNumber 2 ;
+             cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 ;
+             cim:IdentifiedObject.mRID ?t_mrid_2 .
+  FILTER (?area_1 != ?area_2)
+  FILTER (REGEX(?area_1,'${region}') || REGEX(?area_2,'${region}'))
+  FILTER (!REGEX(?name,'HVDC')) # Ignore HVDC
+  BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
+  FILTER (?analysis_enabled)
 }

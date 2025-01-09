@@ -1,67 +1,61 @@
 # Name: Connectivity nodes
-
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 PREFIX entsoeSecretariat:<${entsoeSecretariat}>
-
-select ?mrid (?container_mrid as ?container) ?container_name ?un ?base_voltage_mrid ?bidzone ?container_type
-where {
-   ?con_node cim:ConnectivityNode.ConnectivityNodeContainer ?con_node_container;
-      cim:IdentifiedObject.mRID ?mrid .
-
-    {
-      select ?con_node (count(*) as ?num_active) {
-        # Support both typed and not typed networkAnalysisEnable flag
-        values ?true {True "true"}
-        ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true
-      } group by ?con_node
+SELECT ?mrid (?container_mrid AS ?container) ?container_name ?un ?base_voltage_mrid ?bidzone ?container_type WHERE {
+  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer ?con_node_container ;
+            cim:IdentifiedObject.mRID ?mrid .
+  {
+    SELECT ?con_node (COUNT(*) AS ?num_active) {
+      # Support both typed and not typed networkAnalysisEnable flag
+      VALUES ?true { True "true" }
+      ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true
     }
-    filter(?num_active > 0)
-
+    GROUP BY ?con_node
+  }
+  FILTER (?num_active > 0)
   # Extract properties from the connectivity node container associated with each topoligical node
   {
-    ?con_node_container cim:VoltageLevel.BaseVoltage ?base_voltage;
-    	cim:VoltageLevel.Substation ?_substation .
-
-    ?base_voltage cim:BaseVoltage.nominalVoltage ?un;
-      cim:IdentifiedObject.mRID ?base_voltage_mrid .
-
+    ?con_node_container cim:VoltageLevel.BaseVoltage ?base_voltage ;
+                        cim:VoltageLevel.Substation ?_substation .
+    ?base_voltage cim:BaseVoltage.nominalVoltage ?un ;
+                  cim:IdentifiedObject.mRID ?base_voltage_mrid .
     # Extract information about the substation associated with the connectivity node container
-    ?_substation cim:IdentifiedObject.mRID ?container_mrid;
-      cim:IdentifiedObject.name ?container_name;
-      cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-     # Extract the bidzone of each substation if it exists
-    optional {
+    ?_substation cim:IdentifiedObject.mRID ?container_mrid ;
+                 cim:IdentifiedObject.name ?container_name ;
+                 cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+    # Extract the bidzone of each substation if it exists
+    OPTIONAL {
       ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?direct_bidzone
     } .
     {
-      filter(!bound(?bidzone))
+      FILTER (!BOUND(?bidzone))
       # When an EIC code does not exist, look for an EIC code in neighbouring nodes
       {
-      select (max(?related_bidzone) as ?nearby_bidzone) where {
+        SELECT (MAX(?related_bidzone) AS ?nearby_bidzone) WHERE {
           # Collect bidzones from substations connected to the current substation via a ConductingEquipment
-        ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?related_bidzone .
-          }
+          ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?related_bidzone .
+        }
       }
     }
-    bind("Substation" as ?container_type)
-    bind(coalesce(?direct_bidzone, ?nearby_bidzone) as ?bidzone)
-  } union {
-    ?con_node_container cim:Line.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area;
-      cim:IdentifiedObject.name ?container_name;
-      cim:IdentifiedObject.mRID ?container_mrid
-
+    BIND ("Substation" AS ?container_type)
+    BIND (COALESCE(?direct_bidzone, ?nearby_bidzone) AS ?bidzone)
+  }
+  UNION {
+    ?con_node_container cim:Line.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
+                        cim:IdentifiedObject.name ?container_name ;
+                        cim:IdentifiedObject.mRID ?container_mrid
     # Extract voltage levels connectivity nodes related via a conducting equipment (cim:Line has no cim:VoltageLeve.BaseVoltage)
     {
-      select ?base_voltage_mrid ?un {
+      SELECT ?base_voltage_mrid ?un {
         ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage ?base_voltage .
-        ?base_voltage cim:IdentifiedObject.mRID ?base_voltage_mrid;
-          cim:BaseVoltage.nominalVoltage ?un
-      } order by desc (xsd:double(str(?un)))
-      limit 1
+        ?base_voltage cim:IdentifiedObject.mRID ?base_voltage_mrid ;
+                      cim:BaseVoltage.nominalVoltage ?un
+      }
+      ORDER BY DESC(xsd:double(STR(?un)))
+      LIMIT 1
     }
-
-    bind("Line" as ?container_type)
+    BIND ("Line" AS ?container_type)
   }
-  FILTER regex(?area, '.*')
+  FILTER REGEX(?area,'.*')
 }

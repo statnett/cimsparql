@@ -1,44 +1,45 @@
 # Name: Branch node withdraw
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select ?mrid ?node ?p ?q ?connectivity_node
-where {
+SELECT ?mrid ?node ?p ?q ?connectivity_node WHERE {
   {
-    select * where {
-        ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-        service ?eq_repo {
-          # Specify components wer are interested in
-          values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer} .
-          ?component a ?rdf_type .
-          optional {?component SN:Equipment.networkAnalysisEnable ?_analysis_enabled .}
-          ?terminal cim:Terminal.ConductingEquipment ?component;
-                  cim:IdentifiedObject.mRID ?mrid;
+    SELECT * WHERE {
+      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      SERVICE ?eq_repo {
+        # Specify components wer are interested in
+        VALUES ?rdf_type { cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer } .
+        ?component a ?rdf_type .
+        OPTIONAL {
+          ?component SN:Equipment.networkAnalysisEnable ?_analysis_enabled .
+        }
+        ?terminal cim:Terminal.ConductingEquipment ?component ;
+                  cim:IdentifiedObject.mRID ?mrid ;
                   cim:Terminal.ConnectivityNode ?con_node .
-          ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
-
-          # Find area for the connectivity node of the terminal
-          ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-          filter(regex(?area, '${region}'))
+        ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
+        # Find area for the connectivity node of the terminal
+        ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+        FILTER (REGEX(?area,'${region}'))
       }
     }
   }
-
   # Extract properties of each terminal from the SV/TP/SSH profile.
   # If exists, the mRID of the topological node associated with the terminal is etracted
   ?terminal cim:ACDCTerminal.connected ?connected .
-  ?_sv_t cim:SvPowerFlow.Terminal ?terminal;
-          cim:SvPowerFlow.p ?p;
-          cim:SvPowerFlow.q ?q .
+  ?_sv_t cim:SvPowerFlow.Terminal ?terminal ;
+         cim:SvPowerFlow.p ?p ;
+         cim:SvPowerFlow.q ?q .
   {
     ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
-  } union {
-    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
+  }
+  UNION {
+    FILTER NOT EXISTS {
+      ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node
+    }
     ?terminal cim:Terminal.TopologicalNode ?topological_node .
   }
   ?topological_node cim:IdentifiedObject.mRID ?node .
-
   # Assign analysis enabled (all True if not exist)
-  bind(coalesce(?_analysis_enabled, True) as ?analysis_enabled)
-  filter(?analysis_enabled)
-  filter(?connected)
+  BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
+  FILTER (?analysis_enabled)
+  FILTER (?connected)
 }

@@ -125,3 +125,16 @@ This can be done when initializing the `ServiceCfg` class or by specifying the `
 export SPARQL_REST_API=RDF4J  # To use RDF4J
 export SPARQL_REST_API=BLAZEGRAPH  # To use BlazeGraph
 ```
+
+## Contributing
+
+Contributions are always welcome and encouraged! Whether it's reporting a bug, suggesting an enhancement, or submitting a pull request, your input helps improve the project.
+
+### Development
+
+Dependencies are managed through uv, install with `uv sync`.
+
+It's recommended to install the pre-commit hooks so checks are run automatically on every commit.
+After installing pre-commit itself, install the hooks with `pre-commit install`.
+Checks are normally only run on modified files when committing, but you can run all checks on all files with
+`pre-commit run --all`.

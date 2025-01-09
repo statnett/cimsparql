@@ -1,38 +1,33 @@
 # Name: DC Active Power Flow
 PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
-select ?mrid ?p ?direction
-where {
+SELECT ?mrid ?p ?direction WHERE {
   ?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-  service ?eq_repo {
-  {{
-    # Declare components we are interested in
-    values ?rdf_type {cim:ACLineSegment cim:SeriesCompensator} .
-    ?component a ?rdf_type;
-            cim:Equipment.EquipmentContainer/(cim:Line.Region|cim:VoltageLevel.Substation/cim:Substation.Region) ?region .
-
-    # Extract properties for the terminal associated with the component
-    ?terminal cim:Terminal.ConductingEquipment ?component;
-              cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
-  }
-  union
-  {
-
-      # Extract the region for the transformer
-      ?p_transformer cim:Equipment.EquipmentContainer/cim:Substation.Region ?region .
-
-      # For each power transformer extract all windngs and terminal
-      ?component cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-              cim:TransformerEnd.Terminal ?terminal .
-      bind (1 as ?nr)
-    }
-  } .
-  ?region cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?regionName .
-
-  # Extract the mRID for the component
-  ?component cim:IdentifiedObject.mRID ?mrid .
-  filter(regex(?regionName, '${region}'))
-  bind(if (?nr = 1, 1, -1) as ?direction)
+  SERVICE ?eq_repo {
+    {
+      {
+        # Declare components we are interested in
+        VALUES ?rdf_type { cim:ACLineSegment cim:SeriesCompensator } .
+        ?component a ?rdf_type ;
+                   cim:Equipment.EquipmentContainer/(cim:Line.Region | cim:VoltageLevel.Substation/cim:Substation.Region) ?region .
+        # Extract properties for the terminal associated with the component
+        ?terminal cim:Terminal.ConductingEquipment ?component ;
+                  cim:Terminal.sequenceNumber | cim:ACDCTerminal.sequenceNumber ?nr .
+      }
+      UNION {
+        # Extract the region for the transformer
+        ?p_transformer cim:Equipment.EquipmentContainer/cim:Substation.Region ?region .
+        # For each power transformer extract all windngs and terminal
+        ?component cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
+                   cim:TransformerEnd.Terminal ?terminal .
+        BIND (1 AS ?nr)
+      }
+    } .
+    ?region cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?regionName .
+    # Extract the mRID for the component
+    ?component cim:IdentifiedObject.mRID ?mrid .
+    FILTER (REGEX(?regionName,'${region}'))
+    BIND (IF(?nr = 1,1,-1) AS ?direction)
   }
 }

@@ -2,38 +2,36 @@
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
 PREFIX entsoeSecretariat:<${entsoeSecretariat}>
-select (?mrid as ?node) ?busname (?substation_name as ?substation) ?un ?base_voltage_mrid ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus
-where {
+SELECT (?mrid AS ?node) ?busname (?substation_name AS ?substation) ?un ?base_voltage_mrid ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus WHERE {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
-  ?top_node cim:TopologicalNode.BaseVoltage ?base_voltage;
-            cim:TopologicalNode.ConnectivityNodeContainer ?container;
-            cim:IdentifiedObject.mRID ?mrid;
-            cim:IdentifiedObject.name ?busname;
+  ?top_node cim:TopologicalNode.BaseVoltage ?base_voltage ;
+            cim:TopologicalNode.ConnectivityNodeContainer ?container ;
+            cim:IdentifiedObject.mRID ?mrid ;
+            cim:IdentifiedObject.name ?busname ;
             ^cim:SvVoltage.TopologicalNode/cim:SvVoltage.v ?sv_voltage .
-  optional{?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name .}
-  optional{?top_node ^cim:TopologicalIsland.AngleRefTopoligicalNode ?angle_ref .}
-
+  OPTIONAL {
+    ?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name .
+  }
+  OPTIONAL {
+    ?top_node ^cim:TopologicalIsland.AngleRefTopoligicalNode ?angle_ref .
+  }
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-  service ?eq_repo {
+  SERVICE ?eq_repo {
     # Find the nominal voltage from the base voltage associated with the topological node
-    ?base_voltage cim:BaseVoltage.nominalVoltage ?un;
-      cim:IdentifiedObject.mRID ?base_voltage_mrid .
-
+    ?base_voltage cim:BaseVoltage.nominalVoltage ?un ;
+                  cim:IdentifiedObject.mRID ?base_voltage_mrid .
     # Extract properties from the connectivity node container associated with each topoligical node
     ?container cim:VoltageLevel.Substation ?_substation .
-
     # Extract information about the substation associated with the connectivity node container
-    ?_substation cim:IdentifiedObject.mRID ?substation_mrid;
-          cim:IdentifiedObject.name ?substation_name;
-          cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-
+    ?_substation cim:IdentifiedObject.mRID ?substation_mrid ;
+                 cim:IdentifiedObject.name ?substation_name ;
+                 cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
     # Extract the bidzone of each substation if it exists
-    optional {
+    OPTIONAL {
       ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?bidzone
     }
   } .
-
-  FILTER regex(?area, '${region}')
-  bind(if(bound(?angle_ref), True, False) as ?is_swing_bus)
-  bind(coalesce(?island_name, "Unknown") as ?island)
+  FILTER REGEX(?area,'${region}')
+  BIND (IF(BOUND(?angle_ref),True,False) AS ?is_swing_bus)
+  BIND (COALESCE(?island_name, "Unknown") AS ?island)
 }

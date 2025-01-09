@@ -1,18 +1,17 @@
 # Name: Winding transformer angle
 PREFIX cim: <${cim}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?angle
-where {
+SELECT ?mrid ?angle WHERE {
   ?tap_changer cim:TapChanger.step ?ssh_position .
-  optional{ ?tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?sv_position } .
-
+  OPTIONAL {
+    ?tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?sv_position
+  } .
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-  service ?eq_repo {
-    ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc;
-                cim:TapChanger.neutralStep ?neutralstep;
-                ^cim:TransformerEnd.PhaseTapChanger/cim:IdentifiedObject.mRID ?mrid .
+  SERVICE ?eq_repo {
+    ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc ;
+                 cim:TapChanger.neutralStep ?neutralstep ;
+                 ^cim:TransformerEnd.PhaseTapChanger/cim:IdentifiedObject.mRID ?mrid .
   }
-
-  bind(coalesce(?sv_position, ?ssh_position) as ?position)
-  bind((xsd:double(str(?position)) - xsd:double(str(?neutralstep))) * xsd:double(str(?inc)) as ?angle)
+  BIND (COALESCE(?sv_position, ?ssh_position) AS ?position)
+  BIND ((xsd:double(STR(?position)) - xsd:double(STR(?neutralstep))) * xsd:double(STR(?inc)) AS ?angle)
 }
