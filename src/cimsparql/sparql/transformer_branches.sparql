@@ -3,67 +3,69 @@ PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
 # Name: Transformer branches
-select ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate ?angle ?ratio ?connectivity_node_1 (?node_2 as ?connectivity_node_2)
-where {
+SELECT ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate ?angle ?ratio ?connectivity_node_1 (?node_2 AS ?connectivity_node_2) WHERE {
   {
-    select * where {
+    SELECT * WHERE {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-      service ?eq_repo {
+      SERVICE ?eq_repo {
         # Use mrid of transformer as dummy node
-        ?p_transformer cim:IdentifiedObject.mRID ?node_2;
-                cim:Equipment.EquipmentContainer ?Substation .
+        ?p_transformer cim:IdentifiedObject.mRID ?node_2 ;
+                       cim:Equipment.EquipmentContainer ?Substation .
         ?Substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-        filter(regex(?area, '${region}'))
-
+        FILTER (REGEX(?area,'${region}'))
         # Extract properties for the windings associated with p_transformer
-        ?winding cim:TransformerEnd.Terminal ?terminal;
-              cim:IdentifiedObject.mRID ?mrid;
-              cim:IdentifiedObject.name ?name;
-              cim:PowerTransformerEnd.PowerTransformer ?p_transformer;
-              cim:PowerTransformerEnd.ratedU ?ubase;
-              cim:PowerTransformerEnd.r ?r;
-              cim:PowerTransformerEnd.x ?x;
-              cim:PowerTransformerEnd.b ?b;
-              cim:PowerTransformerEnd.g ?g .
-        optional{?winding cim:PowerTransformerEnd.phaseAngleClock ?aclock .}
-        bind(coalesce(?aclock, 0.0) as ?angleclock)
-
+        ?winding cim:TransformerEnd.Terminal ?terminal ;
+                 cim:IdentifiedObject.mRID ?mrid ;
+                 cim:IdentifiedObject.name ?name ;
+                 cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
+                 cim:PowerTransformerEnd.ratedU ?ubase ;
+                 cim:PowerTransformerEnd.r ?r ;
+                 cim:PowerTransformerEnd.x ?x ;
+                 cim:PowerTransformerEnd.b ?b ;
+                 cim:PowerTransformerEnd.g ?g .
+        OPTIONAL {
+          ?winding cim:PowerTransformerEnd.phaseAngleClock ?aclock .
+        }
+        BIND (COALESCE(?aclock, 0.0) AS ?angleclock)
         # Extract the connectivity node for each termina, and find the nominal voltage from the connectivity node
         ?terminal cim:Terminal.ConnectivityNode ?con_node .
         ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un ;
-          cim:IdentifiedObject.mRID ?connectivity_node_1 .
+                  cim:IdentifiedObject.mRID ?connectivity_node_1 .
         # Optionally extract active power limits
-        optional {
-          ?_lim a cim:ActivePowerLimit;
-                cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?terminal;
-                cim:IdentifiedObject.name '${rate}';
+        OPTIONAL {
+          ?_lim a cim:ActivePowerLimit ;
+                cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?terminal ;
+                cim:IdentifiedObject.name '${rate}' ;
                 cim:ActivePowerLimit.value ?rate .
         }
-        optional {?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis} .
-        optional {
-            ?tap_changer cim:RatioTapChanger.TransformerEnd ?winding ;
-              cim:RatioTapChanger.stepVoltageIncrement ?inc;
-              cim:TapChanger.neutralStep ?neutral_step;
-              cim:TapChanger.normalStep ?normal_step
+        OPTIONAL {
+          ?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis
         } .
-        bind(coalesce(?tap_changer, <http://non-existing-tap-changer>) as ?ratio_tap_changer)
+        OPTIONAL {
+          ?tap_changer cim:RatioTapChanger.TransformerEnd ?winding ;
+                       cim:RatioTapChanger.stepVoltageIncrement ?inc ;
+                       cim:TapChanger.neutralStep ?neutral_step ;
+                       cim:TapChanger.normalStep ?normal_step
+        } .
+        BIND (COALESCE(?tap_changer, <http://non-existing-tap-changer>) AS ?ratio_tap_changer)
       }
     }
   }
-
-
   ?terminal cim:ACDCTerminal.connected ?connected .
-  optional {?winding ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
-  optional {?ratio_tap_changer cim:TapChanger.step ?ssh_step }.
-  bind(coalesce(?ssh_step, ?normal_step) as ?step)
-  bind(if(bound(?inc), 1+(xsd:integer(str(?step)) - xsd:integer(str(?neutral_step)))*xsd:double(str(?inc))/100.0, 1.0) as ?tau)
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
-  filter(?network_analysis)
-
+  OPTIONAL {
+    ?winding ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
+  } .
+  OPTIONAL {
+    ?ratio_tap_changer cim:TapChanger.step ?ssh_step
+  } .
+  BIND (COALESCE(?ssh_step, ?normal_step) AS ?step)
+  BIND (IF(BOUND(?inc),1 + (xsd:integer(STR(?step)) - xsd:integer(STR(?neutral_step))) * xsd:double(STR(?inc)) / 100.0,1.0) AS ?tau)
+  BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
+  FILTER (?network_analysis)
   # Assign status flag to the transformer. The first that exists is used
   # 1) in_service flag on the transformer
   # 2) Connected flag for the terminal
-  bind(coalesce(?in_service, ?connected) as ?status)
-  bind(xsd:double(str(?un))*?tau / xsd:double(str(?ubase)) as ?ratio)
-  bind(xsd:double(30.0) * ?angleclock as ?angle)
+  BIND (COALESCE(?in_service, ?connected) AS ?status)
+  BIND (xsd:double(STR(?un)) * ?tau / xsd:double(STR(?ubase)) AS ?ratio)
+  BIND (xsd:double(30.0) * ?angleclock AS ?angle)
 }

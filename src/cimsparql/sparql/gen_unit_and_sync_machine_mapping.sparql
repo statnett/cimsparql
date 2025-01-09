@@ -1,6 +1,6 @@
 # Name: GeneratingUnit mrid to physical equipment mrid
 PREFIX cim: <${cim}>
-select ?gen_unit_mrid ?sync_machine_mrid where {
-    ?s cim:SynchronousMachine.GeneratingUnit/cim:IdentifiedObject.mRID ?gen_unit_mrid;
-    	cim:IdentifiedObject.mRID ?sync_machine_mrid
+SELECT ?gen_unit_mrid ?sync_machine_mrid WHERE {
+  ?s cim:SynchronousMachine.GeneratingUnit/cim:IdentifiedObject.mRID ?gen_unit_mrid ;
+     cim:IdentifiedObject.mRID ?sync_machine_mrid
 }
