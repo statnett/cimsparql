@@ -6,7 +6,7 @@ PREFIX xsd: <${xsd}>
 select ?p_transformer (sum(?_count) as ?count) (max(?_name) as ?name) (sum(?in_service) as ?nr_on) (sum(xsd:double(str(?sv_p))) as ?p)
 where
 {
-  optional {{?winding ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service .} .
+  optional {?winding ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service .} .
   optional {?terminal cim:ACDCTerminal.connected ?_connected .}
   optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?_sv_p  .}
 
