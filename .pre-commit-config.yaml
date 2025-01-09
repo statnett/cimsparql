@@ -19,3 +19,21 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: sparql-formatter
+        name: sparql-formatter
+        verbose: true  # To be able to warn on missing npx
+        entry: |
+          bash -c '
+          if ! command -v npx &> /dev/null; then
+            echo "Warning: npx is not installed. Skipping all SPARQL formatting." >&2
+            exit 0
+          fi
+          for file in "$@"; do
+            ./scripts/format-sparql.sh "$file"
+          done
+          ' --
+        language: system
+        types: [file]
+        files: \.sparql$

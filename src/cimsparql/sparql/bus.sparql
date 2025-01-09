@@ -1,52 +1,58 @@
 # Name: Bus
-PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
-PREFIX entsoeSecretariat:<${entsoeSecretariat}>
-select (?mrid as ?node) ?busname (?substation_name as ?substation) ?un ?base_voltage_mrid ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus
-where {
+
+PREFIX cim: <${cim}>
+PREFIX SN: <${SN}>
+PREFIX entsoeSecretariat: <${entsoeSecretariat}>
+
+SELECT (?mrid AS ?node) ?busname (?substation_name AS ?substation) ?un ?base_voltage_mrid
+  ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus
+WHERE {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
-  ?top_node cim:TopologicalNode.BaseVoltage ?base_voltage;
-            cim:TopologicalNode.ConnectivityNodeContainer ?container;
-            cim:IdentifiedObject.mRID ?mrid;
-            cim:IdentifiedObject.name ?busname;
+  ?top_node cim:TopologicalNode.BaseVoltage ?base_voltage ;
+            cim:TopologicalNode.ConnectivityNodeContainer ?container ;
+            cim:IdentifiedObject.mRID ?mrid ;
+            cim:IdentifiedObject.name ?busname ;
             ^cim:SvVoltage.TopologicalNode/cim:SvVoltage.v ?sv_voltage .
-  optional{?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name .}
-  optional{?top_node ^cim:TopologicalIsland.AngleRefTopoligicalNode ?angle_ref .}
-
+  OPTIONAL {
+    ?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name .
+  }
+  OPTIONAL {
+    ?top_node ^cim:TopologicalIsland.AngleRefTopoligicalNode ?angle_ref .
+  }
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-  service ?eq_repo {
+  SERVICE ?eq_repo {
     # Find the nominal voltage from the base voltage associated with the topological node
-    ?base_voltage cim:BaseVoltage.nominalVoltage ?un;
-      cim:IdentifiedObject.mRID ?base_voltage_mrid .
-
+    ?base_voltage cim:BaseVoltage.nominalVoltage ?un ;
+                  cim:IdentifiedObject.mRID ?base_voltage_mrid .
     # Extract properties from the connectivity node container associated with each topoligical node
     ?container cim:VoltageLevel.Substation ?_substation .
-
     # Extract information about the substation associated with the connectivity node container
-    ?_substation cim:IdentifiedObject.mRID ?substation_mrid;
-          cim:IdentifiedObject.name ?substation_name;
-          cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-
+    ?_substation cim:IdentifiedObject.mRID ?substation_mrid ;
+                 cim:IdentifiedObject.name ?substation_name ;
+                 cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
     # Extract the bidzone of each substation if it exists
-    optional {
-      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?direct_bidzone
+    OPTIONAL {
+      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?direct_bidzone .
     }
-  } .
-  optional {
+  }
+  OPTIONAL {
     # When an EIC code does not exist, look for an EIC code in neighbouring nodes
-    filter(!bound(?direct_bidzone))
+    FILTER (!bound(?direct_bidzone))
     {
-      select ?top_node (max(?connected_bidzone) as ?nearby_bidzone) {
+      SELECT ?top_node (MAX(?connected_bidzone) AS ?nearby_bidzone)
+      WHERE {
         ?con_node cim:ConnectivityNode.TopologicalNode ?top_node .
         ?_eq_subj2 <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo2 .
-        service ?eq_repo2 {
+        SERVICE ?eq_repo2 {
           # Collect bidzones from substations connected to the current substation via a ConductingEquipment
           ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?connected_bidzone .
-        }} group by ?top_node}
+        }
+      }
+      GROUP BY ?top_node
+    }
   }
-  bind(coalesce(?direct_bidzone, ?nearby_bidzone) as ?bidzone)
-
+  BIND (COALESCE(?direct_bidzone, ?nearby_bidzone) AS ?bidzone)
   FILTER regex(?area, '${region}')
-  bind(if(bound(?angle_ref), True, False) as ?is_swing_bus)
-  bind(coalesce(?island_name, "Unknown") as ?island)
+  BIND (IF(bound(?angle_ref), true, false) AS ?is_swing_bus)
+  BIND (COALESCE(?island_name, "Unknown") AS ?island)
 }
