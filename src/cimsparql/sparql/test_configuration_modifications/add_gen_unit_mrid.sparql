@@ -4,7 +4,9 @@ insert {
     graph <http://cimsparql/xml-adpator/EQ-modifications> {
         _:b0 a SN:GeneratingUnit;
             cim:IdentifiedObject.name "GeneratingUnit" .
-        ?machine cim:SynchronousMachine.GeneratingUnit _:b0
+        ?machine cim:SynchronousMachine.GeneratingUnit _:b0 .
+        _:b0 SN:GeneratingUnit.ScheduleResource _:b1 .
+        _:b1 SN:ScheduleResource.marketCode "market0001"
             }}
 where {
     ?machine a cim:SynchronousMachine

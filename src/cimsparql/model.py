@@ -41,6 +41,7 @@ from cimsparql.data_models import (
     RASEquipmentDataFrame,
     RegionsDataFrame,
     StationGroupCodeNameDataFrame,
+    StationGroupForPowerUnitDataFrame,
     SubstationVoltageDataFrame,
     SvInjectionDataFrame,
     SvPowerDeviationDataFrame,
@@ -696,6 +697,11 @@ class Model:
     def gen_unit_and_sync_machine_mrid(self) -> GenUnitAndSyncMachineMridDataFrame:
         query = self.template_to_query(templates.GEN_UNIT_MRID_AND_SYNC_MACHINE)
         return GenUnitAndSyncMachineMridDataFrame(self.get_table_and_convert(query))
+
+    @time_it
+    def station_group_for_power_unit(self) -> StationGroupForPowerUnitDataFrame:
+        query = self.template_to_query(templates.STATION_GROUP_FOR_POWER_UNIT_QUERY)
+        return StationGroupForPowerUnitDataFrame(self.get_table_and_convert(query))
 
 
 class SingleClientModel(Model):
