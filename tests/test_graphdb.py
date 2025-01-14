@@ -75,6 +75,7 @@ async def collect_data(model: Model) -> dict[str, pd.DataFrame]:
         model.series_compensators,
         model.station_group_codes_and_names,
         model.substation_voltage_level,
+        model.station_group_for_power_unit,
         model.sv_power_deviation,
         model.switches,
         model.synchronous_machines,
