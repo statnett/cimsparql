@@ -427,7 +427,7 @@ GenUnitAndSyncMachineMridDataFrame = DataFrame[GenUnitAndSyncMachineMridSchema]
 
 class StationGroupForPowerUnitSchema(CoercingSchema):
     power_system_model_mrid: str = pa.Field(unique=True)
-    market_unit_mrid: str = pa.Field(unique=True)
+    market_unit_mrid: str = pa.Field()
     resource_name: str
     market_code: str
 

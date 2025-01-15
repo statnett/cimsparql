@@ -1,0 +1,14 @@
+prefix cim:<${cim}>
+prefix SN:<${SN}>
+
+# Assign all loads that does not have a load group to the newly created load group
+insert {
+    graph <http://cimsparql/xml-adpator/EQ-modifications> {
+        ?load cim:NonConformLoad.LoadGroup ?created_group
+    }
+}
+where {
+    ?load a cim:EnergyConsumer .
+    ?created_group cim:IdentifiedObject.name "created-group" .
+    filter not exists{?load cim:NonConformLoad.LoadGroup ?group}
+}
