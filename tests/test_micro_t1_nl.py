@@ -369,4 +369,4 @@ def test_station_group_for_power_unit(test_model: t_common.ModelTest) -> None:
     assert test_model.model
 
     group_for_units = test_model.model.station_group_for_power_unit()
-    assert len(group_for_units) == 4
+    assert len(group_for_units) == 10

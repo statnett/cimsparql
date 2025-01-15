@@ -70,3 +70,11 @@ def test_add_generating_unit(xml_adaptor: XmlModelAdaptor) -> None:
     xml_adaptor.add_generating_unit()
     query = "select * {?machine cim:SynchronousMachine.GeneratingUnit ?unit}"
     assert len(xml_adaptor.graph.query(query, initNs=xml_adaptor.namespaces())) > 0
+
+
+def test_add_market_code_to_non_conform_load(xml_adaptor: XmlModelAdaptor) -> None:
+    query = "select * {?group SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?code}"
+    assert len(xml_adaptor.graph.query(query, initNs=xml_adaptor.namespaces())) == 0
+
+    xml_adaptor.add_market_code_to_non_conform_load()
+    assert len(xml_adaptor.graph.query(query, initNs=xml_adaptor.namespaces())) == 1

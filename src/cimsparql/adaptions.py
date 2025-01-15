@@ -71,10 +71,15 @@ class XmlModelAdaptor:
             """
         )
 
+    def add_market_code_to_non_conform_load(self) -> None:
+        self.update_graph("add_non_conform_load_group.sparql")
+        self.update_graph("add_market_code_for_load_groups.sparql")
+
     def adapt(self, eq_uri: str) -> None:
         self.add_zero_sv_power_flow()
         self.add_zero_sv_injection()
         self.add_generating_unit()
+        self.add_market_code_to_non_conform_load()
         self.add_mrid()
         self.add_dtypes()
         self.set_generation_type()
