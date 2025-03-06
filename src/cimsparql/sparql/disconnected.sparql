@@ -1,13 +1,13 @@
 # Name: Disconnected
-PREFIX cim:<${cim}>
-select ?mrid where
-{
+PREFIX cim: <${cim}>
+SELECT ?mrid
+WHERE {
   {
-    ?mrid a cim:Disconnector;
-          cim:Switch.open True .
-  } union {
-    ?mrid a cim:Terminal;
-          cim:Terminal.connected|cim:ACDCTerminal.connected False .
-
+    ?mrid a cim:Disconnector ;
+          cim:Switch.open true .
+  }
+  UNION {
+    ?mrid a cim:Terminal ;
+          cim:Terminal.connected | cim:ACDCTerminal.connected false .
   }
 }
