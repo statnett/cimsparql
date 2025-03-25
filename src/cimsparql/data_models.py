@@ -37,7 +37,7 @@ FullModelDataFrame = DataFrame[FullModelSchema]
 class MridResourceSchema(CoercingSchema):
     """Common class for resources with an mrid as index."""
 
-    mrid: Index[str] = pa.Field(unique=True)
+    mrid: Index[str] = pa.Field(unique=True, check_name=True)
 
 
 class NamedResourceSchema(MridResourceSchema):
@@ -60,7 +60,7 @@ MarketDatesDataFrame = DataFrame[MarketDatesSchema]
 
 
 class BusDataSchema(CoercingSchema):
-    node: Index[str] = pa.Field(unique=True)
+    node: Index[str] = pa.Field(unique=True, check_name=True)
     busname: Series[str] = pa.Field()
     substation: Series[str] = pa.Field()
     un: Series[float] = pa.Field()
@@ -257,7 +257,7 @@ TransformerWindingDataFrame = DataFrame[TransformerWindingSchema]
 
 
 class SubstationVoltageSchema(CoercingSchema):
-    substation: Index[str] = pa.Field()
+    substation: Index[str] = pa.Field(check_name=True)
     container: Series[str] = pa.Field()
     v: Series[float] = pa.Field()
 
@@ -309,7 +309,7 @@ RegionsDataFrame = DataFrame[RegionsSchema]
 
 
 class StationGroupCodeNameSchema(CoercingSchema):
-    station_group: Index[str] = pa.Field(unique=True)
+    station_group: Index[str] = pa.Field(unique=True, check_name=True)
     name: Series[str] = pa.Field()
     alias_name: Series[str] = pa.Field(nullable=True)
 
@@ -328,7 +328,7 @@ HVDCBidzonesDataFrame = DataFrame[HVDCBidzonesSchema]
 class TransformerWindingsSchema(CoercingSchema):
     mrid: Series[str] = pa.Field()
     end_number: Series[int] = pa.Field(gt=0)
-    w_mrid: Index[str] = pa.Field(unique=True)
+    w_mrid: Index[str] = pa.Field(unique=True, check_name=True)
 
 
 TransformerWindingsDataFrame = DataFrame[TransformerWindingsSchema]
@@ -353,7 +353,7 @@ RASEquipmentDataFrame = DataFrame[RASEquipmentSchema]
 
 
 class Switches(CoercingSchema):
-    mrid: Index[str] = pa.Field(unique=True)
+    mrid: Index[str] = pa.Field(unique=True, check_name=True)
     is_open: Series[bool] = pa.Field()
     equipment_type: Series[str] = pa.Field()
     connectivity_node_1: Series[str] = pa.Field()
@@ -365,7 +365,7 @@ SwitchesDataFrame = DataFrame[Switches]
 
 
 class ConnectivityNode(CoercingSchema):
-    mrid: Index[str] = pa.Field(unique=True)
+    mrid: Index[str] = pa.Field(unique=True, check_name=True)
     container: Series[str] = pa.Field()
     container_name: Series[str] = pa.Field()
     un: Series[float] = pa.Field(nullable=True)
