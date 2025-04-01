@@ -10,10 +10,10 @@ select ?mrid ?is_open (strafter(str(?type), "#") as ?equipment_type) ?connectivi
                     # Normally this equals 2, but occasionally it can be one. In that case it means that the switch
                     # has only one termainal. A switch with only one terminal can not connect or disconnect anything
                     # which is equivalent of setting terminal 2 equal to terminal 1
-                    select ?switch (max(?nr) as ?max_terminal_number) {
-                        ?switch cim:Switch.normalOpen ?_unused_normal_open;
+                    select (?internal_switch as ?switch) (max(?nr) as ?max_terminal_number) {
+                        ?internal_switch cim:Switch.normalOpen ?_unused_normal_open;
                         ^cim:Terminal.ConductingEquipment/cim:ACDCTerminal.sequenceNumber ?nr
-                    } group by ?switch
+                    } group by ?internal_switch
                 }
 
                 values ?type {cim:Breaker cim:Disconnector cim:GroundDisconnector cim:LoadBreakSwitch cim:Recloser cim:MktSwitch cim:Fuse cim:Sectionaliser cim:Cut cim:Jumper}
