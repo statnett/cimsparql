@@ -20,8 +20,9 @@ def federated_model() -> t_common.ModelTest:
         return t_common.ModelTest(None, must_run_in_ci=False, cleanup=False)
     eq_repo = os.getenv("GRAPHDB_EQ", "abot-eq-1")
     system_state_repo = os.getenv("GRAPHDB_STATE", "abot-situations-1")
-    eq_client_cfg = ServiceConfig(eq_repo, max_delay_seconds=1)
-    tpsvssh_client_cfg = ServiceConfig(system_state_repo, max_delay_seconds=1)
+    server = os.getenv("GRAPHDB_SERVER", "modelstore.dev.form.statnett.no:8443")
+    eq_client_cfg = ServiceConfig(eq_repo, server=server, max_delay_seconds=1)
+    tpsvssh_client_cfg = ServiceConfig(system_state_repo, server=server, max_delay_seconds=1)
     eq_client = GraphDBClient(eq_client_cfg)
     tpsvssh_client = GraphDBClient(tpsvssh_client_cfg)
 

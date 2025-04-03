@@ -230,7 +230,7 @@ def test_windings(test_model: t_common.ModelTest):
 
     # On transformer branches, the mrid of node_2 should be a transformer
     transformers = test_model.model.transformers()
-    assert set(transformer_branches["node_2"]).issubset(set(transformers["p_mrid"]))
+    assert set(transformer_branches["connectivity_node_2"]).issubset(set(transformers["p_mrid"]))
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())

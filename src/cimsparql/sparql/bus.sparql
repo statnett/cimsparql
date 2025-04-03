@@ -29,22 +29,9 @@ where {
 
     # Extract the bidzone of each substation if it exists
     optional {
-      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?direct_bidzone
+      ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?bidzone
     }
   } .
-  optional {
-    # When an EIC code does not exist, look for an EIC code in neighbouring nodes
-    filter(!bound(?direct_bidzone))
-    {
-      select ?top_node (max(?connected_bidzone) as ?nearby_bidzone) {
-        ?con_node cim:ConnectivityNode.TopologicalNode ?top_node .
-        ?_eq_subj2 <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo2 .
-        service ?eq_repo2 {
-          # Collect bidzones from substations connected to the current substation via a ConductingEquipment
-          ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?connected_bidzone .
-        }} group by ?top_node}
-  }
-  bind(coalesce(?direct_bidzone, ?nearby_bidzone) as ?bidzone)
 
   FILTER regex(?area, '${region}')
   bind(if(bound(?angle_ref), True, False) as ?is_swing_bus)

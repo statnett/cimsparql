@@ -5,8 +5,6 @@ PREFIX xsd: <${xsd}>
 select
   (max(?mrid) as ?mrid)
   (max(?name) as ?name)
-  (max(?node_1) as ?node_1)
-  (max(?node_2) as ?node_2)
   (if (xsd:double(max(?p_1)) < xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_1)
   (if (xsd:double(max(?p_1)) > xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_2)
   (max(?r) as ?r)
@@ -49,24 +47,19 @@ where {
   }.}
 
 
-   # Extract the mRID of the topological node of the connectivity node
-  ?con_node cim:ConnectivityNode.TopologicalNode/cim:IdentifiedObject.mRID ?node_mrid .
   # Optionally extract in_service associated with compensator
   optional {?compensator ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
 
   # Extract connected flag and optionally power for each terminal
   ?terminal cim:ACDCTerminal.connected ?connected .
   optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
-  bind(coalesce(?node_mrid, ?t_mrid) as ?node)
 
   # Create variables for node 1 and node 2
   bind(if(?nr = 1, str(?p), '') as ?p_1)
-  bind(if(?nr = 1, ?node, '') as ?node_1)
   bind(if(?nr = 1, ?connected, False) as ?connected_1)
   bind(if(?nr = 2, str(?p), '') as ?p_2)
-  bind(if(?nr = 2, ?node, '') as ?node_2)
   bind(if(?nr = 2, ?connected, False) as ?connected_2)
   bind(if(?nr = 1, ?connectivity_node, '') as ?connectivity_node_1)
   bind(if(?nr = 2, ?connectivity_node, '') as ?connectivity_node_2)
 } group by ?compensator
-having ((count(*) > 1) && (max(?node_1) != max(?node_2)) && coalesce(max(?analysis_enabled), True))
+having ((count(*) > 1) && (max(?connectivity_node_1) != max(?connectivity_node_2)) && coalesce(max(?analysis_enabled), True))

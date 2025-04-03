@@ -289,10 +289,10 @@ def test_inject_subclassed_sparql_wrapper():
 
 def test_xnodes(model: Model):
     dfs = all_data(model)
-    bus = dfs["bus_data"]
+    con_nodes = dfs["connectivity_nodes"]
     ac_lines = dfs["ac_lines"].assign(
-        bidzone_1=lambda df: df["node_1"].map(bus["bidzone"]),
-        bidzone_2=lambda df: df["node_2"].map(bus["bidzone"]),
+        bidzone_1=lambda df: df["connectivity_node_1"].map(con_nodes["bidzone"]),
+        bidzone_2=lambda df: df["connectivity_node_2"].map(con_nodes["bidzone"]),
     )
     xnode_branches = ac_lines[ac_lines["name"].str.contains("Xnode")]
     non_xnode_branches = ac_lines[~ac_lines["name"].str.contains("Xnode")]
@@ -305,24 +305,3 @@ def test_xnodes(model: Model):
 
     # Verify that there are no distinct bidzones among the xnodes such as EU, EU-ELSP-1 etc.
     assert xnode_bidzones.issubset(non_xnode_bidzones)
-
-
-def test_bidzone_consistency(model: Model):
-    dfs = all_data(model)
-
-    # Verify that all bidzones are consistent regardless of whether they are collected via
-    # topological nodes or connectivity nodes
-    bus = dfs["bus_data"]
-    con_nodes = dfs["connectivity_nodes"]
-    ac_lines = dfs["ac_lines"]
-
-    pd.testing.assert_series_equal(
-        ac_lines["node_1"].map(bus["bidzone"]),
-        ac_lines["connectivity_node_1"].map(con_nodes["bidzone"]),
-        check_names=False,
-    )
-    pd.testing.assert_series_equal(
-        ac_lines["node_2"].map(bus["bidzone"]),
-        ac_lines["connectivity_node_2"].map(con_nodes["bidzone"]),
-        check_names=False,
-    )
