@@ -89,7 +89,7 @@ def test_branch_node_withdraw(test_model: t_common.ModelTest):
     t_common.check_model(test_model)
     assert test_model.model
     withdraw = test_model.model.branch_node_withdraw()
-    assert withdraw.empty
+    assert len(withdraw) == 29
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
