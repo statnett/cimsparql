@@ -1,9 +1,0 @@
-prefix cim:<${cim}>
-prefix SN:<${SN}>
-insert {
-    graph <http://cimsparql/xml-adpator/EQ-modifications> {
-        ?equipment SN:Equipment.networkAnalysisEnable True
-}}
-where {
-    ?terminal cim:Terminal.ConductingEquipment ?equipment
-}
