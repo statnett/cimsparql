@@ -11,8 +11,6 @@ select
 # thus max-aggregation will pick True if it exists in the group
 (max(?mrid) as ?mrid)
 (max(?name) as ?name)
-(max(?node_1) as ?node_1)
-(max(?node_2) as ?node_2)
 
 # If SvPower at node 1 is smaller than SvPower at node 2, we assign the loss (sum of the two) to node_1. In case
 # SvPower at node 1 is larger than on node 2, the loss is assigned to node_2
@@ -66,24 +64,14 @@ where {
   # Search for acline SV status will be combined with SSH connected
   optional {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service . }
 
-  {
-    ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
-  } union {
-    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
-    ?terminal cim:Terminal.TopologicalNode ?topological_node .
-  }
-  ?topological_node cim:IdentifiedObject.mRID ?node .
-
   # Find properties in TP/SV/SSH profile for each terminal.
   ?terminal cim:ACDCTerminal.connected ?connected .
   optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
 
   # Create variables for node 1 and node 2
   bind(if(?nr = 1, str(?p), '') as ?p_1)
-  bind(if(?nr = 1, ?node, '') as ?node_1)
   bind(if(?nr = 1, ?connected, False) as ?connected_1)
   bind(if(?nr = 2, str(?p), '') as ?p_2)
-  bind(if(?nr = 2, ?node, '') as ?node_2)
   bind(if(?nr = 2, ?connected, False) as ?connected_2)
   bind(if(?nr = 1, ?connectivity_node, '') as ?connectivity_node_1)
   bind(if(?nr = 2, ?connectivity_node, '') as ?connectivity_node_2)
@@ -93,4 +81,4 @@ where {
 # 1) We don't need lines connecting nodes to themselves
 # 2) Only extract lines where at least two nodes exist
 # 3) Only extract lines where SN:Equipment.networkAnalysisEnable is True (if the field exists)
-having((max(?node_1) != max(?node_2)) && (max(?node_1) != "") && (max(?node_2) != "") && (count(*) > 1) && coalesce(max(?analysis_enabled), True))
+having((max(?connectivity_node_1) != max(?connectivity_node_2)) && (max(?connectivity_node_1) != "") && (max(?connectivity_node_2) != "") && (count(*) > 1) && coalesce(max(?analysis_enabled), True))

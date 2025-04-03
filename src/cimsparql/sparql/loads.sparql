@@ -1,7 +1,7 @@
 # Name: Loads
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select ?mrid ?name ?node ?substation_mrid ?status ?p ?q ?station_group ?connectivity_node
+select ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_node
 where {
   {
     # Appears to be significantly faster to run the query if the EQ part is executed within its own sub-query
@@ -33,13 +33,6 @@ where {
 
   # Extrcact connected flag and optionally the mRID of the topological node associated with the terminal
   ?terminal cim:ACDCTerminal.connected ?connected .
-  {
-    ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
-  } union {
-    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
-    ?terminal cim:Terminal.TopologicalNode ?topological_node .
-  }
-  ?topological_node cim:IdentifiedObject.mRID ?node .
 
   # Optionally extract in_service flag and active and reactive energy consumption for each load
   optional {?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service }.
