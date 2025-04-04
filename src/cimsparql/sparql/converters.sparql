@@ -3,7 +3,7 @@ PREFIX cim:<${cim}>
 PREFIX xsd:<${xsd}>
 PREFIX SN:<${SN}>
 PREFIX ALG:<${ALG}>
-select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?node ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un
+select ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un
 where {
   {
     select * where {
@@ -60,14 +60,6 @@ where {
 
   # Extract connected and optionally the mrid for the topological node associated with the terminal
   ?terminal cim:ACDCTerminal.connected ?connected .
-
-  {
-    ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
-  } union {
-    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
-    ?terminal cim:Terminal.TopologicalNode ?topological_node .
-  }
-  ?topological_node cim:IdentifiedObject.mRID ?node .
 
   bind(coalesce(?in_service, ?connected) as ?status)
   bind(coalesce(?_pole_loss, 0.0) as ?pole_loss)

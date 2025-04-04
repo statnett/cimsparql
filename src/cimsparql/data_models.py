@@ -76,7 +76,6 @@ BusDataFrame = DataFrame[BusDataSchema]
 
 
 class LoadsSchema(NamedResourceSchema):
-    node: Series[str] = pa.Field()
     substation_mrid: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     p: Series[float] = pa.Field(nullable=True)
@@ -99,7 +98,6 @@ WindGeneratingUnitsDataFrame = DataFrame[WindGeneratingUnitsSchema]
 
 
 class SynchronousMachinesSchema(NamedMarketResourceSchema):
-    node: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
     station_group: Series[str] = pa.Field(nullable=True)
     station_group_name: Series[str] = pa.Field(nullable=True)
@@ -164,7 +162,6 @@ class ConvertersSchema(NamedResourceSchema):
     alias: Series[str] = pa.Field(nullable=True)
     substation_mrid: Series[str] = pa.Field()
     status: Series[bool] = pa.Field()
-    node: Series[str] = pa.Field()
     p: Series[float] = pa.Field()
     q: Series[float] = pa.Field()
     connectivity_node: Series[str] = pa.Field()
@@ -201,8 +198,6 @@ CoordinatesDataFrame = DataFrame[CoordinatesSchema]
 
 
 class BranchComponentSchema(NamedResourceSchema):
-    node_1: Series[str] = pa.Field()
-    node_2: Series[str] = pa.Field()
     ploss_1: Series[float] = pa.Field(nullable=True)
     ploss_2: Series[float] = pa.Field(nullable=True)
     r: Series[float] = pa.Field()

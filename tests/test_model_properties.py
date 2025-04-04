@@ -15,7 +15,7 @@ import tests.t_utils.entsoe_models as t_entsoe
 if TYPE_CHECKING:
     import pandas as pd
 
-    from cimsparql.data_models import BusDataFrame
+    from cimsparql.data_models import BusDataFrame, ConnectivityNodeDataFrame
 
 swing_bus_query = Template(
     """
@@ -31,6 +31,7 @@ where {
 @dataclass
 class NodeConsistencyData:
     bus: BusDataFrame
+    connectivity_nodes: ConnectivityNodeDataFrame
     two_node_dfs: dict[str, pd.DataFrame]
     single_node_dfs: dict[str, pd.DataFrame]
     swing_buses: pd.DataFrame
@@ -51,6 +52,7 @@ async def get_node_consistency_test_data(
         return None
     loop = asyncio.get_event_loop()
     bus = await loop.run_in_executor(None, model.bus_data)
+    con_nodes = await loop.run_in_executor(None, model.connectivity_nodes)
 
     # Results that has node_1 and node_2 which should be part of bus
     two_node_names = ["ac_lines", "series_compensators", "transformer_branches"]
@@ -62,18 +64,18 @@ async def get_node_consistency_test_data(
     )
 
     # Results that has node which should be part of bus
-    single_node_names = ["loads", "exchange", "converters", "branch_node_withdraw"]
+    single_node_names = ["loads", "sync_machines", "converters"]
     single_node_dfs = await asyncio.gather(
         loop.run_in_executor(None, model.loads),
-        loop.run_in_executor(None, model.exchange),
+        loop.run_in_executor(None, model.synchronous_machines),
         loop.run_in_executor(None, model.converters),
-        loop.run_in_executor(None, model.branch_node_withdraw),
     )
     swing_buses = await loop.run_in_executor(
         None, model.get_table_and_convert, model.template_to_query(swing_bus_query)
     )
     return NodeConsistencyData(
         bus,
+        con_nodes,
         dict(zip(two_node_names, two_node_dfs, strict=True)),
         dict(zip(single_node_names, single_node_dfs, strict=True)),
         swing_buses,
@@ -105,21 +107,24 @@ def test_node_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
     skip_on_missing(data, model_name)
     assert data
 
-    mrids = set[str](data.bus.index)
+    mrids = set[str](data.connectivity_nodes.index)
     for name, df in data.two_node_dfs.items():
         msg = f"Error two node: {name}"
-        assert set(df["node_1"]).issubset(mrids), msg
-        assert set(df["node_2"]).issubset(mrids), msg
+        assert set(df["connectivity_node_1"]).issubset(mrids), msg
+        if name != "transformer_branches":
+            # Connectivity node 2 is equal to the transformer mrid for transformer branches
+            assert set(df["connectivity_node_2"]).issubset(mrids), msg
 
     for name, df in data.single_node_dfs.items():
         msg = f"Error single node: {name}"
-        assert set(df["node"]).issubset(mrids), msg
+        assert set(df["connectivity_node"]).issubset(mrids), msg
 
 
 @pytest.mark.parametrize("model_name", ["model"])
 def test_swing_bus_consistency(nc_data: CONSISTENCY_DATA, model_name: str):
     data = nc_data[model_name]
     skip_on_missing(data, model_name)
+    assert data
     assert data.bus["is_swing_bus"].sum() == len(data.swing_buses)
 
 

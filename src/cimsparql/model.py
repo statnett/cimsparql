@@ -481,7 +481,7 @@ class Model:
         data = self.get_table_and_convert(query, index="mrid")
         query_loss = self.winding_loss_query(region)
         loss = self.get_table_and_convert(query_loss, index="mrid")
-        df = data.assign(ploss_1=0.0, ploss_2=lambda df: df["node_2"].map(loss["ploss_2"]))
+        df = data.assign(ploss_1=0.0, ploss_2=lambda df: df["connectivity_node_2"].map(loss["ploss_2"]))
         data.update(self.winding_angle())
         return TransformerWindingDataFrame(df)
 

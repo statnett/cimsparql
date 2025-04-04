@@ -2,7 +2,7 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select ?mrid ?name ?market_code ?node ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource
+select ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource
 where {
   # Extract properties for synchronous machines.
   {
@@ -57,13 +57,6 @@ where {
   }
 
   ?terminal cim:ACDCTerminal.connected ?connected .
-  {
-    ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
-  } union {
-    filter not exists {?con_node cim:ConnectivityNode.TopologicalNode ?topological_node}
-    ?terminal cim:Terminal.TopologicalNode ?topological_node .
-  }
-  ?topological_node cim:IdentifiedObject.mRID ?node .
 
   optional {?machine ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service} .
   optional {?machine cim:RotatingMachine.p ?p;cim:RotatingMachine.q ?q .}
