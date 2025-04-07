@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from cimsparql.graphdb import GraphDBClient, config_bytes_from_template, confpath, new_repo
+from cimsparql.graphdb import GraphDBClient, ServiceConfig, config_bytes_from_template, confpath, new_repo
 
 if TYPE_CHECKING:
     from cimsparql.model import Model
@@ -27,7 +27,8 @@ class ModelTest:
 def init_repo_rdf4j(url: str, name: str) -> GraphDBClient:
     template = confpath() / "native_store_config_template.ttl"
     config = config_bytes_from_template(template, {"repo": name})
-    return new_repo(url, name, config, allow_exist=False, protocol="http")
+    service_config = ServiceConfig(repo=name, server=url, protocol="http", timeout=30)
+    return new_repo(service_config, config, allow_exist=False)
 
 
 @functools.lru_cache

@@ -390,24 +390,16 @@ def repos(service_cfg: ServiceConfig | None = None) -> list[RepoInfo]:
     return [_repo_info(repo) for repo in response.json()["results"]["bindings"]]
 
 
-def new_repo(server: str, repo: str, config: bytes, allow_exist: bool = True, protocol: str = "http") -> GraphDBClient:
-    """Initiialzie a new repository.
-
-    Args:
-        server: URL to service
-        repo: Name of repo
-        config: Bytes representaiton of a Turtle config file
-        allow_exist: If True, a client pointing to the existing repo is returned.
-            Otherwise an error is raised if a repository with the same name already exists
-        protocol: Default https
-    """
+def new_repo(service_config: ServiceConfig, config: bytes, allow_exist: bool = True) -> GraphDBClient:
     ignored_errors = {HTTPStatus.CONFLICT} if allow_exist else set[HTTPStatus]()
-    url = service(repo, server, protocol)
-    response = httpx.put(url, content=config, headers={"Content-Type": "text/turtle"}, timeout=5.0)
+    url = service_config.url
+    response = httpx.put(
+        url, content=config, headers={"Content-Type": "text/turtle"}, timeout=service_config.timeout or 5.0
+    )
     if response.status_code not in ignored_errors:
         response.raise_for_status()
 
-    return GraphDBClient(ServiceConfig(repo, protocol, server))
+    return GraphDBClient(service_cfg=service_config)
 
 
 def new_repo_blazegraph(url: str, repo: str, protocol: str = "https", token: str | None = None) -> GraphDBClient:

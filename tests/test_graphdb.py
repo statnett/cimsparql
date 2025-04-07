@@ -210,7 +210,7 @@ def test_create_delete_repo():
     assert "test_repo" not in [i.repo_id for i in current_repos]
 
     # protocol is added internally. Thus, skip from t_common.rdf4j_url
-    client = new_repo(url, repo, conf_bytes, protocol="http")
+    client = new_repo(service_cfg, conf_bytes)
     current_repos = repos(service_cfg)
     assert "test_repo" in [i.repo_id for i in current_repos]
 
