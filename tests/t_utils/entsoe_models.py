@@ -59,9 +59,13 @@ def federated_micro_t1() -> t_common.ModelTest:
 
         adaptor = XmlModelAdaptor.from_folder(this_dir.parent / "data" / "micro")
         adaptor.adapt(eq_client.service_cfg.url)
+
+        logger.info("Number of quads: %d", len(adaptor.graph))
         tpsvssh_ctx = adaptor.tpsvssh_contexts()
         tpsvssh = adaptor.nq_bytes(tpsvssh_ctx)
         remaining = adaptor.nq_bytes([ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx])
+
+        logger.info("Federated micro model stats: EQ bytes: %d, TP/SH/SSH bytes: %d", len(remaining), len(tpsvssh))
         tpsvssh_client.upload_rdf(tpsvssh, "n-quads")
         eq_client.upload_rdf(remaining, "n-quads")
 
