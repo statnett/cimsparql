@@ -63,7 +63,9 @@ def federated_micro_t1() -> t_common.ModelTest:
         logger.info("Number of quads: %d", len(adaptor.graph))
         tpsvssh_ctx = adaptor.tpsvssh_contexts()
         tpsvssh = adaptor.nq_bytes(tpsvssh_ctx)
-        remaining = adaptor.nq_bytes([ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx])
+
+        eq_ctx = adaptor.eq_contexts()
+        remaining = adaptor.nq_bytes(eq_ctx)
 
         logger.info("Federated micro model stats: EQ bytes: %d, TP/SH/SSH bytes: %d", len(remaining), len(tpsvssh))
         tpsvssh_client.upload_rdf(tpsvssh, "n-quads")

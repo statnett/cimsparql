@@ -152,6 +152,9 @@ class XmlModelAdaptor:
     def tpsvssh_contexts(self) -> list[Graph]:
         return [ctx for ctx in self.graph.contexts() if any(token in str(ctx) for token in ("SSH", "TP", "SV"))]
 
+    def eq_contexts(self) -> list[Graph]:
+        return [ctx for ctx in self.graph.contexts() if any(token in str(ctx) for token in ("EQ", "GL"))]
+
     def nq_bytes(self, contexts: Iterable[Graph] | None = None) -> bytes:
         """Return the contexts as bytes. If contexts is None, the entire graph is exported."""
         if contexts is None:
