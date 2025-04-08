@@ -21,6 +21,7 @@ class ModelTest:
     model: Model | None = None
     must_run_in_ci: bool = True
     cleanup: bool = True
+    name: str = ""
 
 
 @functools.lru_cache

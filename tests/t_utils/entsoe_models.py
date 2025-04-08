@@ -72,7 +72,7 @@ def federated_micro_t1() -> t_common.ModelTest:
         model = get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
     except Exception:
         logger.exception("Failed to get federated cim model")
-    return t_common.ModelTest(model)
+    return t_common.ModelTest(model, name="micro-federated")
 
 
 def upload_micro_model(client: GraphDBClient) -> None:
@@ -93,7 +93,7 @@ def micro_t1_nl() -> t_common.ModelTest:
         model = SingleClientModel(client)
     except Exception:
         logger.exception("Failed to get single client model")
-    return t_common.ModelTest(model)
+    return t_common.ModelTest(model, name="micro-combined")
 
 
 @functools.lru_cache
@@ -123,7 +123,7 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
         model = get_federated_cim_model(eq_client, tpsvssh_client, m_cfg)
     except Exception:
         logger.exception("Failed to get federated model")
-    return t_common.ModelTest(model)
+    return t_common.ModelTest(model, name="small-grid-federated")
 
 
 def micro_models() -> list[t_common.ModelTest]:
