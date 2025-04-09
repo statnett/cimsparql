@@ -9,6 +9,7 @@ import pandas as pd
 import pandera as pa
 import pytest
 from pandas.testing import assert_frame_equal
+from pandera.typing import DataFrame
 
 from cimsparql import type_mapper
 from cimsparql.data_models import CoercingSchema
@@ -128,6 +129,9 @@ class FloatSchema(CoercingSchema):
     float_col: float = pa.Field(nullable=True)
 
 
+FloadDataFrame = DataFrame[FloatSchema]
+
+
 @pytest.mark.parametrize(
     ("in_data", "out_data"),
     [
@@ -141,7 +145,7 @@ def test_coerce_missing_type(httpserver: HTTPServer, in_data: dict[str, Any], ou
     mapper = type_mapper.TypeMapper(client)
 
     col_map = {"float_col": "http://non-existent#type"}
-    df = FloatSchema(mapper.map_data_types(in_df, col_map))
+    df = FloadDataFrame(mapper.map_data_types(in_df, col_map))
     pd.testing.assert_frame_equal(df, out_df)
 
 
@@ -158,7 +162,7 @@ def test_coerce_float_from_literal(httpserver: HTTPServer):
     df = mapper.map_data_types(df, col_map)
     assert df.loc[1, "float_col"] is None
 
-    df = FloatSchema(df)
+    df = FloadDataFrame(df)
 
     # Now the None value should be casted into np.nan
     missing = df.loc[1, "float_col"]

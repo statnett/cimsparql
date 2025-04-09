@@ -3,11 +3,12 @@ import logging
 import os
 import re
 from base64 import b64encode
-from collections import defaultdict
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict, dataclass
 from functools import lru_cache
 from http import HTTPStatus
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 
 import httpx
 import pandas as pd
@@ -15,6 +16,7 @@ import pytest
 from pytest_httpserver import HeaderValueMatcher, HTTPServer
 from SPARQLWrapper import SPARQLWrapper
 
+import cimsparql.data_models as cim_dm
 import tests.t_utils.common as t_common
 import tests.t_utils.custom_models as t_custom
 from cimsparql.graphdb import (
@@ -29,69 +31,179 @@ from cimsparql.graphdb import (
     repos,
 )
 from cimsparql.model import Model, SingleClientModel
-from cimsparql.sparql_result_json import SparqlResultJsonFactory
+from cimsparql.sparql_result_json import SparqlResultJsonFactory, SparqlResultValue
 from cimsparql.type_mapper import TypeMapper
 
 logger = logging.getLogger()
 
+T = TypeVar("T")
+P = ParamSpec("P")
+R = TypeVar("R")
 
-def exception_logging(func: Callable[[Any], pd.DataFrame], *args: Any):
+
+def exception_logging(func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
     logger.debug("Starting %s", func.__name__)
     try:
-        return func(*args)
+        return func(*args, **kwargs)
     except Exception:
         logger.exception("Exception for %s", func.__name__)
-        return pd.DataFrame()
+        return R() if callable(R) else R
+
+
+@dataclass
+class DataResult:
+    ac_lines: cim_dm.AcLinesDataFrame
+    associated_switches: cim_dm.AssociatedSwitchesDataFrame
+    base_voltage: cim_dm.BaseVoltageDataFrame
+    borders: cim_dm.BordersDataFrame
+    bus_data: cim_dm.BusDataFrame
+    connections: cim_dm.ConnectionsDataFrame
+    connectivity_nodes: cim_dm.ConnectivityNodeDataFrame
+    converters: cim_dm.ConvertersDataFrame
+    coordinates: cim_dm.CoordinatesDataFrame
+    dc_active_flow: cim_dm.DcActiveFlowDataFrame
+    disconnected: cim_dm.DisconnectedDataFrame
+    exchange: cim_dm.ExchangeDataFrame
+    full_model: cim_dm.FullModelDataFrame
+    gen_unit_and_sync_machine_mrid: cim_dm.GenUnitAndSyncMachineMridDataFrame
+    hvdc_converter_bidzones: cim_dm.HVDCBidzonesDataFrame
+    loads: cim_dm.LoadsDataFrame
+    market_dates: cim_dm.MarketDatesDataFrame
+    phase_tap_changer: cim_dm.PhaseTapChangerDataFrame
+    powerflow: cim_dm.PowerFlowDataFrame
+    regions: cim_dm.RegionsDataFrame
+    series_compensators: cim_dm.BranchComponentDataFrame
+    station_group_codes_and_names: cim_dm.StationGroupCodeNameDataFrame
+    substation_voltage_level: cim_dm.SubstationVoltageDataFrame
+    station_group_for_power_unit: cim_dm.StationGroupForPowerUnitDataFrame
+    sv_power_deviation: cim_dm.SvPowerDeviationDataFrame
+    switches: cim_dm.SwitchesDataFrame
+    synchronous_machines: cim_dm.SynchronousMachinesDataFrame
+    transformer_branches: cim_dm.TransformerWindingDataFrame
+    transformer_windings: cim_dm.TransformerWindingsDataFrame
+    transformers: cim_dm.TransformersDataFrame
+    transformers_connected_to_converter: cim_dm.TransfConToConverterDataFrame
+    transformer_center_nodes: cim_dm.BusDataFrame
+    wind_generating_units: cim_dm.WindGeneratingUnitsDataFrame
 
 
 @lru_cache
-def all_data(model: Model) -> dict[str, pd.DataFrame]:
+def all_data(model: Model) -> DataResult:
     return asyncio.run(collect_data(model))
 
 
-async def collect_data(model: Model) -> dict[str, pd.DataFrame]:
+async def collect_data(model: Model) -> DataResult:
     loop = asyncio.get_event_loop()
-    queries = (
-        model.ac_lines,
-        model.associated_switches,
-        model.base_voltage,
-        model.borders,
-        model.bus_data,
-        model.connections,
-        model.connectivity_nodes,
-        model.converters,
-        model.coordinates,
-        model.dc_active_flow,
-        model.disconnected,
-        model.exchange,
-        model.full_model,
-        model.gen_unit_and_sync_machine_mrid,
-        model.hvdc_converter_bidzones,
-        model.loads,
-        model.market_dates,
-        model.phase_tap_changer,
-        model.powerflow,
-        model.regions,
-        model.series_compensators,
-        model.station_group_codes_and_names,
-        model.substation_voltage_level,
-        model.station_group_for_power_unit,
-        model.sv_power_deviation,
-        model.switches,
-        model.synchronous_machines,
-        model.transformer_branches,
-        model.transformer_windings,
-        model.transformers,
-        model.transformers_connected_to_converter,
-        model.transformer_center_nodes,
-        model.wind_generating_units,
-    )
 
-    args = defaultdict(tuple, {"exchange": ("NO|SE",)})
-    result = await asyncio.gather(
-        *[loop.run_in_executor(None, exception_logging, query, *args[query.__name__]) for query in queries]
+    with ThreadPoolExecutor() as executor:
+        ac_line_future = loop.run_in_executor(executor, model.ac_lines)
+        associated_switches_future = loop.run_in_executor(executor, model.associated_switches)
+        base_voltage_future = loop.run_in_executor(executor, model.base_voltage)
+        borders_future = loop.run_in_executor(executor, model.borders)
+        bus_data_future = loop.run_in_executor(executor, model.bus_data)
+        connections_future = loop.run_in_executor(executor, model.connections)
+        connectivity_nodes_future = loop.run_in_executor(executor, model.connectivity_nodes)
+        converters_future = loop.run_in_executor(executor, model.converters)
+        coordinates_future = loop.run_in_executor(executor, model.coordinates)
+        dc_active_flow_future = loop.run_in_executor(executor, model.dc_active_flow)
+        disconnected_future = loop.run_in_executor(executor, model.disconnected)
+        exchange_future = loop.run_in_executor(executor, model.exchange)
+        full_model_future = loop.run_in_executor(executor, model.full_model)
+        gen_unit_and_sync_machine_mrid_future = loop.run_in_executor(executor, model.gen_unit_and_sync_machine_mrid)
+        hvdc_converter_bidzones_future = loop.run_in_executor(executor, model.hvdc_converter_bidzones)
+        loads_future = loop.run_in_executor(executor, model.loads)
+        market_dates_future = loop.run_in_executor(executor, model.market_dates)
+        phase_tap_changer_future = loop.run_in_executor(executor, model.phase_tap_changer)
+        powerflow_future = loop.run_in_executor(executor, model.powerflow)
+        regions_future = loop.run_in_executor(executor, model.regions)
+        series_compensators_future = loop.run_in_executor(executor, model.series_compensators)
+        station_group_codes_and_names_future = loop.run_in_executor(executor, model.station_group_codes_and_names)
+        substation_voltage_level_future = loop.run_in_executor(executor, model.substation_voltage_level)
+        station_group_for_power_unit_future = loop.run_in_executor(executor, model.station_group_for_power_unit)
+        sv_power_deviation_future = loop.run_in_executor(executor, model.sv_power_deviation)
+        switches_future = loop.run_in_executor(executor, model.switches)
+        synchronous_machines_future = loop.run_in_executor(executor, model.synchronous_machines)
+        transformer_branches_future = loop.run_in_executor(executor, model.transformer_branches)
+        transformer_windings_future = loop.run_in_executor(executor, model.transformer_windings)
+        transformers_future = loop.run_in_executor(executor, model.transformers)
+        transformers_connected_to_converter_future = loop.run_in_executor(
+            executor, model.transformers_connected_to_converter
+        )
+        transformer_center_nodes_future = loop.run_in_executor(executor, model.transformer_center_nodes)
+        wind_generating_units_future = loop.run_in_executor(executor, model.wind_generating_units)
+
+    await asyncio.wait(
+        [
+            ac_line_future,
+            associated_switches_future,
+            base_voltage_future,
+            borders_future,
+            bus_data_future,
+            connections_future,
+            connectivity_nodes_future,
+            converters_future,
+            coordinates_future,
+            dc_active_flow_future,
+            disconnected_future,
+            exchange_future,
+            full_model_future,
+            gen_unit_and_sync_machine_mrid_future,
+            hvdc_converter_bidzones_future,
+            loads_future,
+            market_dates_future,
+            phase_tap_changer_future,
+            powerflow_future,
+            regions_future,
+            series_compensators_future,
+            station_group_codes_and_names_future,
+            substation_voltage_level_future,
+            station_group_for_power_unit_future,
+            sv_power_deviation_future,
+            switches_future,
+            synchronous_machines_future,
+            transformer_branches_future,
+            transformer_windings_future,
+            transformers_future,
+            transformers_connected_to_converter_future,
+            transformer_center_nodes_future,
+            wind_generating_units_future,
+        ]
     )
-    return {query.__name__: res for query, res in zip(queries, result, strict=False)}
+    return DataResult(
+        ac_lines=ac_line_future.result(),
+        associated_switches=associated_switches_future.result(),
+        base_voltage=base_voltage_future.result(),
+        borders=borders_future.result(),
+        bus_data=bus_data_future.result(),
+        connections=connections_future.result(),
+        connectivity_nodes=connectivity_nodes_future.result(),
+        converters=converters_future.result(),
+        coordinates=coordinates_future.result(),
+        dc_active_flow=dc_active_flow_future.result(),
+        disconnected=disconnected_future.result(),
+        exchange=exchange_future.result(),
+        full_model=full_model_future.result(),
+        gen_unit_and_sync_machine_mrid=gen_unit_and_sync_machine_mrid_future.result(),
+        hvdc_converter_bidzones=hvdc_converter_bidzones_future.result(),
+        loads=loads_future.result(),
+        market_dates=market_dates_future.result(),
+        phase_tap_changer=phase_tap_changer_future.result(),
+        powerflow=powerflow_future.result(),
+        regions=regions_future.result(),
+        series_compensators=series_compensators_future.result(),
+        station_group_codes_and_names=station_group_codes_and_names_future.result(),
+        substation_voltage_level=substation_voltage_level_future.result(),
+        station_group_for_power_unit=station_group_for_power_unit_future.result(),
+        sv_power_deviation=sv_power_deviation_future.result(),
+        switches=switches_future.result(),
+        synchronous_machines=synchronous_machines_future.result(),
+        transformer_branches=transformer_branches_future.result(),
+        transformer_windings=transformer_windings_future.result(),
+        transformers=transformers_future.result(),
+        transformers_connected_to_converter=transformers_connected_to_converter_future.result(),
+        transformer_center_nodes=transformer_center_nodes_future.result(),
+        wind_generating_units=wind_generating_units_future.result(),
+    )
 
 
 @pytest.mark.parametrize("test_model", t_custom.all_custom_models())
@@ -101,7 +213,7 @@ def test_not_empty(test_model: t_common.ModelTest):
         pytest.skip("Require access to GraphDB")
     dfs = all_data(model)
 
-    for name, df in dfs.items():
+    for name, df in asdict(dfs).items():
         assert not df.empty, f"Failed for dataframe {name}"
 
 
@@ -125,7 +237,7 @@ def test_ltc_fixed_angle_equals_zero(model: SingleClientModel):
 
 def test_regions(model: SingleClientModel):
     regions = model.regions()
-    assert regions.groupby("region").count().loc["NO", "name"] > 16
+    assert pd.to_numeric(regions.groupby("region").count().loc["NO", "name"]) > 16
 
 
 def test_hvdc_converters_bidzones(model: SingleClientModel):
@@ -152,15 +264,33 @@ def test_borders_no(model: SingleClientModel):
     assert (borders["area_1"] != borders["area_2"]).all()
 
 
+def sparql_result_int(num: int) -> SparqlResultValue:
+    return SparqlResultValue(
+        type="literal",
+        datatype="http://www.w3.org/2001/XMLSchema#integer",
+        value=str(num),
+    )
+
+
 def test_data_row():
     cols = ["a", "b", "c", "d", "e"]
-    rows = [{"a": 1, "b": 2}, {"c": 3, "d": 4}, {"a": 5, "b": 6}, {"e": 7}]
+    rows = [
+        {"a": sparql_result_int(1), "b": sparql_result_int(2)},
+        {"c": sparql_result_int(3), "d": sparql_result_int(4)},
+        {"a": sparql_result_int(5), "b": sparql_result_int(6)},
+        {"e": sparql_result_int(7)},
+    ]
     assert not set(data_row(cols, rows)).symmetric_difference(cols)
 
 
 def test_data_row_missing_column():
     cols = ["a", "b", "c", "d", "e"]
-    rows = [{"a": 1, "b": 2}, {"c": 3}, {"a": 5, "b": 6}, {"e": 7}]
+    rows = [
+        {"a": sparql_result_int(1), "b": sparql_result_int(2)},
+        {"c": sparql_result_int(3)},
+        {"a": sparql_result_int(5), "b": sparql_result_int(6)},
+        {"e": sparql_result_int(7)},
+    ]
     assert set(data_row(cols, rows).keys()).symmetric_difference(cols) == {"d"}
 
 
@@ -289,8 +419,8 @@ def test_inject_subclassed_sparql_wrapper():
 
 def test_xnodes(model: Model):
     dfs = all_data(model)
-    con_nodes = dfs["connectivity_nodes"]
-    ac_lines = dfs["ac_lines"].assign(
+    con_nodes = dfs.connectivity_nodes
+    ac_lines = dfs.ac_lines.assign(
         bidzone_1=lambda df: df["connectivity_node_1"].map(con_nodes["bidzone"]),
         bidzone_2=lambda df: df["connectivity_node_2"].map(con_nodes["bidzone"]),
     )
