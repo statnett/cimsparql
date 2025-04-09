@@ -34,8 +34,10 @@ def empty_sparql_result() -> dict[str, Any]:
 
 
 def test_python_type_map_bool():
-    assert type_mapper.XSD_TYPE_MAP["boolean"]("TRUE")
-    assert not type_mapper.XSD_TYPE_MAP["boolean"]("FALSE")
+    type_converter = type_mapper.XSD_TYPE_MAP["boolean"]
+    assert callable(type_converter)
+    assert type_converter("TRUE")
+    assert not type_converter("FALSE")
 
 
 def test_get_map_empty_pandas(httpserver: HTTPServer):
@@ -108,7 +110,9 @@ def test_map_data_types(httpserver: HTTPServer):
 )
 def test_xsd_types(dtype: str, test: tuple[str, Any]):
     value, expect = test
-    assert type_mapper.XSD_TYPE_MAP[dtype](value) == expect
+    type_converter = type_mapper.XSD_TYPE_MAP[dtype]
+    assert callable(type_converter)
+    assert type_converter(value) == expect
 
 
 @pytest.mark.parametrize(
