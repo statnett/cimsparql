@@ -22,6 +22,7 @@ dependencies = [
 dev-dependencies = [
     "asyncio>=3.4.3",
     "coverage[toml]>=7.6.1",
+    "pandas-stubs>=2.2.3.250308",
     "pytest>=8.3.3",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
