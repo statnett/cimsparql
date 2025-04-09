@@ -110,7 +110,9 @@ class TypeMapper:
         return any(cim in val for val in self.map)
 
     def type_map(self, df: pd.DataFrame) -> dict[str, Any]:
-        return {row.sparql_type: self.prim_type_map.get(row.range, str_preserve_none) for row in df.itertuples()}
+        return {
+            str(row.sparql_type): self.prim_type_map.get(str(row.range), str_preserve_none) for row in df.itertuples()
+        }
 
     def get_map(self) -> dict[str, Any]:
         """Read all metadata from the sparql backend & creates a sparql-type -> python type map.
