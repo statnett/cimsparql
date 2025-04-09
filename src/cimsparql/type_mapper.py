@@ -162,7 +162,7 @@ def map_base_types(df: pd.DataFrame, type_map: dict[COL_NAME, TYPE_CASTER]) -> p
     """
     as_type_able_columns = {c for c, datatype in type_map.items() if datatype in as_type_able}
     if not df.empty:
-        df = df.astype({c: type_map[c] for c in as_type_able_columns})
+        df = df.astype({c: type_map[c] for c in as_type_able_columns})  # type: ignore[reportArgumentType]
     return df
 
 
@@ -179,5 +179,5 @@ def map_exceptions(df: pd.DataFrame, type_map: dict[COL_NAME, TYPE_CASTER]) -> p
     """
     ex_columns = {c for c, datatype in type_map.items() if datatype not in as_type_able}
     for column in ex_columns:
-        df[column] = df[column].apply(type_map[column])
+        df[column] = df[column].apply(type_map[column])  # type: ignore[reportArgumentType]
     return df
