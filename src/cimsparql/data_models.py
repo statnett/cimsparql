@@ -1,7 +1,6 @@
 """Data models used to describe and validate sparql queries from cimsparql."""
 
 import datetime as dt
-from typing import Self
 
 import pandera as pa
 from pandera.api.pandas.model_config import BaseConfig
@@ -25,10 +24,6 @@ class FullModelSchema(CoercingSchema):
     profile: Series[str]
     version: Series[str]
     description: Series[str]
-
-    @pa.dataframe_check
-    def unique_time(cls, df: DataFrame[Self]) -> bool:
-        return df["time"].unique().size == 1
 
 
 FullModelDataFrame = DataFrame[FullModelSchema]
