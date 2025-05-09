@@ -2,83 +2,72 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-select
+SELECT
 # Below a lot of max aggregation is performed. For variables without any suffix (_1 og _2) all values within the
 # group are equal and we might as well just pick the maximum value. For variables with the suffix _1 og _2, the
 # value we want to extract either exist as one entry in the group. The other entry is an empty string. Since
 # all strings are greater than the empty string, max-aggregation will pick the value we want. For the boolan
 # value ?connected_1 (or_2), the default value is False. By a similar argument True is larger than False,
 # thus max-aggregation will pick True if it exists in the group
-(max(?mrid) as ?mrid)
-(max(?name) as ?name)
-
+(MAX(?mrid) AS ?mrid) (MAX(?name) AS ?name)
 # If SvPower at node 1 is smaller than SvPower at node 2, we assign the loss (sum of the two) to node_1. In case
 # SvPower at node 1 is larger than on node 2, the loss is assigned to node_2
-(if (xsd:double(max(?p_1)) < xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_1)
-(if (xsd:double(max(?p_1)) > xsd:double(max(?p_2)), xsd:double(max(?p_1)) + xsd:double(max(?p_2)), xsd:double(0.0)) as ?ploss_2)
-(max(?r) as ?r)
-(max(?rate) as ?rate)
-(coalesce(max(?in_service), max(?connected_1) && max(?connected_2), True) as ?status)
-(max(?un) as ?un)
-(max(?x) as ?x)
-(max(?b) as ?b)
-(max(?g) as ?g)
-(max(?length) as ?length)
-(max(?connectivity_node_1) as ?connectivity_node_1)
-(max(?connectivity_node_2) as ?connectivity_node_2)
-where {
+(IF(xsd:double(MAX(?p_1)) < xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_1) (IF(xsd:double(MAX(?p_1)) > xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_2) (MAX(?r) AS ?r) (MAX(?rate) AS ?rate) (COALESCE(MAX(?in_service), MAX(?connected_1) && MAX(?connected_2), True) AS ?status) (MAX(?un) AS ?un) (MAX(?x) AS ?x) (MAX(?b) AS ?b) (MAX(?g) AS ?g) (MAX(?length) AS ?length) (MAX(?connectivity_node_1) AS ?connectivity_node_1) (MAX(?connectivity_node_2) AS ?connectivity_node_2) WHERE {
   # TODO: Check if SN:Equipment.networkAnalysisEnable is on it's way into the standard
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for ACLineSegments
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo
-  service ?eq_repo {
-  ?acline cim:ACLineSegment.r ?r;
-          cim:ACLineSegment.x ?x;
-          cim:ACLineSegment.bch ?b;
-          cim:IdentifiedObject.mRID ?mrid;
-          cim:IdentifiedObject.name ?name;
-          cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un;
-          cim:Conductor.length ?length .
-
-  ?terminal cim:Terminal.ConductingEquipment ?acline;
-            cim:Terminal.ConnectivityNode ?con_node;
-            cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber ?nr .
-
-  # Find substation of each connectivity node of the terminals above
-  ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation ;
-            cim:IdentifiedObject.mRID ?connectivity_node .
-
-  # Find area and optionally bidzone for each substation
-  ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-
-  optional {?acline cim:ACLineSegment.gch ?g .}
-  optional {?acline SN:Equipment.networkAnalysisEnable ?analysis_enabled .}
-
-  # If exists, extract active power limit for acline
-  optional {
-    ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?acline;
-          a cim:ActivePowerLimit;
-          cim:IdentifiedObject.name '${rate}';
-          cim:ActivePowerLimit.value ?rate .
-  }} .
-  # Search for acline SV status will be combined with SSH connected
-  optional {?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service . }
-
+  SERVICE ?eq_repo {
+    ?acline cim:ACLineSegment.r ?r ;
+            cim:ACLineSegment.x ?x ;
+            cim:ACLineSegment.bch ?b ;
+            cim:IdentifiedObject.mRID ?mrid ;
+            cim:IdentifiedObject.name ?name ;
+            cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un ;
+            cim:Conductor.length ?length .
+    ?terminal cim:Terminal.ConductingEquipment ?acline ;
+              cim:Terminal.ConnectivityNode ?con_node ;
+              cim:Terminal.sequenceNumber | cim:ACDCTerminal.sequenceNumber ?nr .
+    # Find substation of each connectivity node of the terminals above
+    ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation ?substation ;
+              cim:IdentifiedObject.mRID ?connectivity_node .
+    # Find area and optionally bidzone for each substation
+    ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
+    OPTIONAL {
+      ?acline cim:ACLineSegment.gch ?g .
+    }
+    OPTIONAL {
+      ?acline SN:Equipment.networkAnalysisEnable ?analysis_enabled .
+    }
+    # If exists, extract active power limit for acline
+    OPTIONAL {
+      ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?acline ;
+            a cim:ActivePowerLimit ;
+            cim:IdentifiedObject.name '${rate}' ;
+            cim:ActivePowerLimit.value ?rate .
+    }
+  } .
+  OPTIONAL {
+    # Search for acline SV status will be combined with SSH connected
+    ?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .
+  }
   # Find properties in TP/SV/SSH profile for each terminal.
   ?terminal cim:ACDCTerminal.connected ?connected .
-  optional {?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .}
-
+  OPTIONAL {
+    ?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .
+  }
   # Create variables for node 1 and node 2
-  bind(if(?nr = 1, str(?p), '') as ?p_1)
-  bind(if(?nr = 1, ?connected, False) as ?connected_1)
-  bind(if(?nr = 2, str(?p), '') as ?p_2)
-  bind(if(?nr = 2, ?connected, False) as ?connected_2)
-  bind(if(?nr = 1, ?connectivity_node, '') as ?connectivity_node_1)
-  bind(if(?nr = 2, ?connectivity_node, '') as ?connectivity_node_2)
-  filter(regex(?area, '${region}'))
-} group by ?acline
+  BIND (IF(?nr = 1,STR(?p),'') AS ?p_1)
+  BIND (IF(?nr = 1,?connected,False) AS ?connected_1)
+  BIND (IF(?nr = 2,STR(?p),'') AS ?p_2)
+  BIND (IF(?nr = 2,?connected,False) AS ?connected_2)
+  BIND (IF(?nr = 1,?connectivity_node,'') AS ?connectivity_node_1)
+  BIND (IF(?nr = 2,?connectivity_node,'') AS ?connectivity_node_2)
+  FILTER (REGEX(?area,'${region}'))
+}
+GROUP BY ?acline
 # Filtration rules
 # 1) We don't need lines connecting nodes to themselves
 # 2) Only extract lines where at least two nodes exist
 # 3) Only extract lines where SN:Equipment.networkAnalysisEnable is True (if the field exists)
-having((max(?connectivity_node_1) != max(?connectivity_node_2)) && (max(?connectivity_node_1) != "") && (max(?connectivity_node_2) != "") && (count(*) > 1) && coalesce(max(?analysis_enabled), True))
+HAVING ((MAX(?connectivity_node_1) != MAX(?connectivity_node_2)) && (MAX(?connectivity_node_1) != "") && (MAX(?connectivity_node_2) != "") && (COUNT(*) > 1) && COALESCE(MAX(?analysis_enabled), True))

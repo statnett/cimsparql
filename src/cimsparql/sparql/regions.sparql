@@ -1,14 +1,19 @@
 # Name: Regions
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select  ?mrid ?region ?short_name ?name ?alias_name ?region_name
-where {
-  ?subGeoRegion a cim:SubGeographicalRegion;
-         cim:IdentifiedObject.mRID ?mrid;
-         cim:IdentifiedObject.name ?name;
-         cim:SubGeographicalRegion.Region ?subgeoreg .
-  optional {?subGeoRegion SN:IdentifiedObject.shortName ?short_name} .
-  optional {?subGeoRegion cim:IdentifiedObject.aliasName ?alias_name} .
+SELECT ?mrid ?region ?short_name ?name ?alias_name ?region_name WHERE {
+  ?subGeoRegion a cim:SubGeographicalRegion ;
+                cim:IdentifiedObject.mRID ?mrid ;
+                cim:IdentifiedObject.name ?name ;
+                cim:SubGeographicalRegion.Region ?subgeoreg .
+  OPTIONAL {
+    ?subGeoRegion SN:IdentifiedObject.shortName ?short_name
+  } .
+  OPTIONAL {
+    ?subGeoRegion cim:IdentifiedObject.aliasName ?alias_name
+  } .
   ?subgeoreg cim:IdentifiedObject.name ?region .
-  optional {?subgeoreg cim:IdentifiedObject.aliasName ?region_name}
+  OPTIONAL {
+    ?subgeoreg cim:IdentifiedObject.aliasName ?region_name
+  }
 }

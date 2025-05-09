@@ -1,13 +1,12 @@
 # Name: station group for power resource
 PREFIX SN: <${SN}>
 PREFIX cim: <${cim}>
-
-select ?power_system_model_mrid  ?market_unit_mrid ?resource_name ?market_code where {
-    ?resource SN:ScheduleResource.marketCode ?market_code .
-    ?unit ?p ?resource;
-        cim:IdentifiedObject.name ?resource_name;
-        cim:IdentifiedObject.mRID ?market_unit_mrid;
-    values ?physical_model_predicate {cim:SynchronousMachine.GeneratingUnit cim:NonConformLoad.LoadGroup}
-    ?physical_object ?physical_model_predicate ?unit;
-        cim:IdentifiedObject.mRID ?power_system_model_mrid .
+SELECT ?power_system_model_mrid ?market_unit_mrid ?resource_name ?market_code WHERE {
+  ?resource SN:ScheduleResource.marketCode ?market_code .
+  ?unit ?p ?resource ;
+        cim:IdentifiedObject.name ?resource_name ;
+        cim:IdentifiedObject.mRID ?market_unit_mrid ;
+  VALUES ?physical_model_predicate { cim:SynchronousMachine.GeneratingUnit cim:NonConformLoad.LoadGroup }
+  ?physical_object ?physical_model_predicate ?unit ;
+                   cim:IdentifiedObject.mRID ?power_system_model_mrid .
 }

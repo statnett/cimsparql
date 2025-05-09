@@ -6,68 +6,61 @@
 #
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
-select ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?p_1 ?q_1 ?p_2 ?q_2 ?v_1 ?angle_1 ?v_2 ?angle_2
-where {
+SELECT ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?p_1 ?q_1 ?p_2 ?q_2 ?v_1 ?angle_1 ?v_2 ?angle_2 WHERE {
   # Extract key properties for ACLineSegment
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
-  service ?eq_repo {
-    ?acline cim:ACLineSegment.r ?r;
-            cim:ACLineSegment.x ?x;
-            cim:ACLineSegment.bch ?bch;
-            cim:ACLineSegment.gch ?gch;
-            cim:IdentifiedObject.mRID ?mrid;
-            cim:IdentifiedObject.name ?name;
+  SERVICE ?eq_repo {
+    ?acline cim:ACLineSegment.r ?r ;
+            cim:ACLineSegment.x ?x ;
+            cim:ACLineSegment.bch ?bch ;
+            cim:ACLineSegment.gch ?gch ;
+            cim:IdentifiedObject.mRID ?mrid ;
+            cim:IdentifiedObject.name ?name ;
             cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?un .
-
-    ?terminal_1 a cim:Terminal;
-                cim:Terminal.ConductingEquipment ?acline;
-                cim:Terminal.ConnectivityNode ?con_node_1;
-                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 1 .
-
-    ?terminal_2 a cim:Terminal;
-                cim:Terminal.ConductingEquipment ?acline;
-                cim:Terminal.ConnectivityNode ?con_node_2;
-                cim:Terminal.sequenceNumber|cim:ACDCTerminal.sequenceNumber 2 .
+    ?terminal_1 a cim:Terminal ;
+                cim:Terminal.ConductingEquipment ?acline ;
+                cim:Terminal.ConnectivityNode ?con_node_1 ;
+                cim:Terminal.sequenceNumber | cim:ACDCTerminal.sequenceNumber 1 .
+    ?terminal_2 a cim:Terminal ;
+                cim:Terminal.ConductingEquipment ?acline ;
+                cim:Terminal.ConnectivityNode ?con_node_2 ;
+                cim:Terminal.sequenceNumber | cim:ACDCTerminal.sequenceNumber 2 .
   }
   # Extract in_service flag for each acline
   ?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service .
-
   # Extract connectivity node, topological node, voltage ang angle
   ?con_node_1 cim:ConnectivityNode.TopologicalNode ?node_1 .
-  optional {
-    ?_sv_n_1 cim:SvVoltage.TopologicalNode ?node_1;
-             cim:SvVoltage.v ?v_1;
+  OPTIONAL {
+    ?_sv_n_1 cim:SvVoltage.TopologicalNode ?node_1 ;
+             cim:SvVoltage.v ?v_1 ;
              cim:SvVoltage.angle ?angle_1 .
   }
-
   # Extract conencted flag and active and reactive power for each terminal
-  ?terminal_1 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_1 .
-  optional
-  {
-    ?_sv_t_1 cim:SvPowerFlow.Terminal ?terminal_1;
-             cim:SvPowerFlow.p ?p_1;
-             cim:SvPowerFlow.q ?q_1.
-  }.
-
+  ?terminal_1 cim:Terminal.connected | cim:ACDCTerminal.connected ?connected_1 .
+  OPTIONAL {
+    ?_sv_t_1 cim:SvPowerFlow.Terminal ?terminal_1 ;
+             cim:SvPowerFlow.p ?p_1 ;
+             cim:SvPowerFlow.q ?q_1 .
+  } .
   ?con_node_2 cim:ConnectivityNode.TopologicalNode ?node_2 .
-  optional {
-    ?_sv_n_2 cim:SvVoltage.TopologicalNode ?node_2;
-             cim:SvVoltage.v ?v_2;
+  OPTIONAL {
+    ?_sv_n_2 cim:SvVoltage.TopologicalNode ?node_2 ;
+             cim:SvVoltage.v ?v_2 ;
              cim:SvVoltage.angle ?angle_2 .
   }
-  ?terminal_2 cim:Terminal.connected|cim:ACDCTerminal.connected ?connected_2 .
-  optional
-  {
-    ?_sv_t_2 cim:SvPowerFlow.Terminal ?terminal_2;
-             cim:SvPowerFlow.p ?p_2;
-             cim:SvPowerFlow.q ?q_2.
+  ?terminal_2 cim:Terminal.connected | cim:ACDCTerminal.connected ?connected_2 .
+  OPTIONAL {
+    ?_sv_t_2 cim:SvPowerFlow.Terminal ?terminal_2 ;
+             cim:SvPowerFlow.p ?p_2 ;
+             cim:SvPowerFlow.q ?q_2 .
   }
-  optional {?acline SN:Equipment.networkAnalysisEnable ?_network_analysis}
-  filter(?network_analysis)
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
-
+  OPTIONAL {
+    ?acline SN:Equipment.networkAnalysisEnable ?_network_analysis
+  }
+  FILTER (?network_analysis)
+  BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
   # Assign status flag for each branch. It is set to the first that exist of
   # 1) in_service flag for each acline
   # 2) Connected flags of the two terminals. Status is set to False if at least one of the terminals are disconnected
-  bind(coalesce(?in_service, ?connected_1 && ?connected_2) as ?status) .
+  BIND (COALESCE(?in_service, ?connected_1 && ?connected_2) AS ?status) .
 }

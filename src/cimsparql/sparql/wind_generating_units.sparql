@@ -1,19 +1,20 @@
 # Name: Wind generating units
 PREFIX cim:<${cim}>
 PREFIX SN:<${SN}>
-select  ?mrid ?name ?market_code ?station_group  ?min_p ?max_p ?plant_mrid
-where {
-  ?wind_gen_unit a cim:WindGeneratingUnit;
-         cim:IdentifiedObject.mRID ?mrid;
-         cim:IdentifiedObject.name ?name;
-         cim:GeneratingUnit.maxOperatingP ?max_p;
-         cim:GeneratingUnit.minOperatingP ?min_p .
-  optional{
-    ?wind_gen_unit SN:WindGeneratingUnit.WindPowerPlant/cim:IdentifiedObject.mRID ?plant_mrid;
-           SN:GeneratingUnit.marketCode ?market_code;
-           SN:GeneratingUnit.ScheduleResource/SN:ScheduleResource.marketCode ?station_group .
+SELECT ?mrid ?name ?market_code ?station_group ?min_p ?max_p ?plant_mrid WHERE {
+  ?wind_gen_unit a cim:WindGeneratingUnit ;
+                 cim:IdentifiedObject.mRID ?mrid ;
+                 cim:IdentifiedObject.name ?name ;
+                 cim:GeneratingUnit.maxOperatingP ?max_p ;
+                 cim:GeneratingUnit.minOperatingP ?min_p .
+  OPTIONAL {
+    ?wind_gen_unit SN:WindGeneratingUnit.WindPowerPlant/cim:IdentifiedObject.mRID ?plant_mrid ;
+                   SN:GeneratingUnit.marketCode ?market_code ;
+                   SN:GeneratingUnit.ScheduleResource/SN:ScheduleResource.marketCode ?station_group .
   }
-  optional {?wind_gen_unit SN:Equipment.networkAnalysisEnable ?_network_analysis}
-  filter(?network_analysis)
-  bind(coalesce(?_network_analysis, True) as ?network_analysis)
+  OPTIONAL {
+    ?wind_gen_unit SN:Equipment.networkAnalysisEnable ?_network_analysis
+  }
+  FILTER (?network_analysis)
+  BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
 }
