@@ -4,6 +4,7 @@ PREFIX md:<${md}>
 select ?model ?time ?profile ?version ?description
 where
 {
+   {
    ?model md:Model.profile ?profile;
           md:Model.scenarioTime ?time;
           md:Model.version ?version;
@@ -19,4 +20,15 @@ where
         } group by ?model
     }
     filter(?all_dependencies_exist)
+    } union {
+        ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+        service ?eq_repo {
+            ?model md:Model.description ?description ;
+            	md:Model.created ?time .
+            optional{?model md:Model.profile ?nullable_profile}
+            optional{?model md:Model.version ?nullable_version}
+            bind(coalesce(?nullable_profile, "http://entsoe.eu/CIM/EquipmentCore/3/1") as ?profile)
+            bind(coalesce(?nullable_version, "") as ?version)
+        }
+    }
 }
