@@ -106,6 +106,7 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     connectivity_node: Series[str] = pa.Field()
     generator_type: Series[str] = pa.Field()
     schedule_resource: Series[str] = pa.Field(nullable=True)
+    afrr_prequalified: Series[bool] = pa.Field()
 
 
 SynchronousMachinesDataFrame = DataFrame[SynchronousMachinesSchema]
