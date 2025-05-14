@@ -2,7 +2,7 @@
 PREFIX cim: <${cim}>
 PREFIX SN: <${SN}>
 PREFIX xsd: <${xsd}>
-SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource WHERE {
+SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource ?afrr_prequalified WHERE {
   # Extract properties for synchronous machines.
   {
     SELECT * WHERE {
@@ -47,6 +47,9 @@ SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?subs
         }
         BIND (IF(BOUND(?gen_type),replace(STR(?gen_type), STR(cim:), ""),"unknown") AS ?generator_type)
         BIND (COALESCE(?gen_unit_mrid, ?machine_mrid) AS ?mrid)
+        BIND (EXISTS {
+          ?gen_unit SN:GeneratingUnit.ScheduleFRRResource []
+        } AS ?afrr_prequalified)
       }
     }
   }
