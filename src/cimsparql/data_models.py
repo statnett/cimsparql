@@ -2,7 +2,7 @@
 
 import datetime as dt
 
-import pandera as pa
+import pandera.pandas as pa
 from pandera.api.pandas.model_config import BaseConfig
 from pandera.typing import DataFrame, Index, Series
 
