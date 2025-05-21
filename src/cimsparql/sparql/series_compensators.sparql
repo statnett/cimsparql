@@ -37,6 +37,7 @@ SELECT (MAX(?mrid) AS ?mrid) (MAX(?name) AS ?name) (IF(xsd:double(MAX(?p_1)) < x
   OPTIONAL {
     ?compensator ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
   } .
+  # Extract connected flag and optionally power for each terminal
   ?terminal cim:ACDCTerminal.connected ?connected .
   OPTIONAL {
     ?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .
