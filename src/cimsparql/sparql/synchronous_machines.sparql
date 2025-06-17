@@ -57,10 +57,9 @@ SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?subs
   OPTIONAL {
     ?machine ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
   } .
-  OPTIONAL {
-    ?machine cim:RotatingMachine.p ?p ;
-             cim:RotatingMachine.q ?q .
-  }
+  ?sv_power_flow cim:SvPowerFlow.Terminal ?terminal ;
+                 cim:SvPowerFlow.p ?p ;
+                 cim:SvPowerFlow.q ?q .
   BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
   BIND (COALESCE(?in_service, ?connected) AS ?status)
   BIND (COALESCE(?nullable_maxP, IF(xsd:double(STR(?p)) >= 0.0,?p,0.0), 0.0) AS ?max_p)
