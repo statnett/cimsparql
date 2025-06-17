@@ -8,7 +8,9 @@ SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_n
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
         # Extract mRID, name and substation for each load
-        ?load cim:IdentifiedObject.mRID ?mrid ;
+        VALUES ?load_type { cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer }
+        ?load a ?load_type ;
+              cim:IdentifiedObject.mRID ?mrid ;
               cim:IdentifiedObject.name ?name ;
               cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
         # Extract area and mRID (referred to as 'station') for the substation of each load
@@ -36,8 +38,9 @@ SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_n
   OPTIONAL {
     ?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
   } .
-  ?load cim:EnergyConsumer.p ?p ;
-        cim:EnergyConsumer.q ?q .
+  ?sv_power_flow cim:SvPowerFlow.Terminal ?terminal ;
+                 cim:SvPowerFlow.p ?p ;
+                 cim:SvPowerFlow.q ?q .
   # Assign status flag for load. The status flag is set to the first existing of
   # 1) in_service flag
   # 2) connected flag the terminal
