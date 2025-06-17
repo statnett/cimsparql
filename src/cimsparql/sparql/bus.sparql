@@ -1,7 +1,7 @@
 # Name: Bus
-PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
-PREFIX entsoeSecretariat:<${entsoeSecretariat}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX entsoeSecretariat: <http://entsoe.eu/Secretariat/ProfileExtension/1#>
 SELECT (?mrid AS ?node) ?busname (?substation_name AS ?substation) ?un ?base_voltage_mrid ?substation_mrid ?bidzone ?sv_voltage ?island ?is_swing_bus WHERE {
   # Extract propertoes from the TP/SV/SSH profile for each topological node
   ?top_node cim:TopologicalNode.BaseVoltage ?base_voltage ;

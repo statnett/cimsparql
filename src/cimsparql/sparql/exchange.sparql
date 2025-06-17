@@ -1,6 +1,6 @@
 # Name: Exchange
-PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 SELECT ?name ?node ?mrid ?status ?p ?market_code WHERE {
   ?terminal1 ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p ;
              cim:ACDCTerminal.connected ?connected_1 .

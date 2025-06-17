@@ -1,7 +1,7 @@
 # Name: Synchronous machines
-PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
-PREFIX xsd: <${xsd}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource ?afrr_prequalified WHERE {
   # Extract properties for synchronous machines.
   {

@@ -1,7 +1,7 @@
 # Name: Windings
-PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
-PREFIX xsd: <${xsd}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?p_transformer (SUM(?_count) AS ?count) (MAX(?_name) AS ?name) (SUM(?in_service) AS ?nr_on) (SUM(xsd:double(STR(?sv_p))) AS ?p) WHERE {
   OPTIONAL {
     ?winding ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service .

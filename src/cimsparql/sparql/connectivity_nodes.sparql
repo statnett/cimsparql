@@ -1,7 +1,7 @@
 # Name: Connectivity nodes
-PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
-PREFIX entsoeSecretariat:<${entsoeSecretariat}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX entsoeSecretariat: <http://entsoe.eu/Secretariat/ProfileExtension/1#>
 SELECT ?mrid (?container_mrid AS ?container) ?container_name ?un ?base_voltage_mrid ?bidzone ?container_type WHERE {
   ?con_node cim:ConnectivityNode.ConnectivityNodeContainer ?con_node_container ;
             cim:IdentifiedObject.mRID ?mrid .

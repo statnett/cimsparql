@@ -1,6 +1,6 @@
 # Name: Sv power deviation
-PREFIX xsd:<${xsd}>
-PREFIX cim:<${cim}>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?node (SUM(xsd:double(STR(?p))) AS ?sum_terminal_flow) (MAX(xsd:double(STR(?p_inj))) AS ?reported_sv_injection) (GROUP_CONCAT(DISTINCT (?con_node_mrid); SEPARATOR=",") AS ?connectivity_nodes) (GROUP_CONCAT(?terminal_name; SEPARATOR=",") AS ?terminal_names) WHERE {
   {
     SELECT * {

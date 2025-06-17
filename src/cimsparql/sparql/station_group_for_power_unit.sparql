@@ -1,6 +1,6 @@
 # Name: station group for power resource
-PREFIX SN: <${SN}>
-PREFIX cim: <${cim}>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?power_system_model_mrid ?market_unit_mrid ?resource_name ?market_code WHERE {
   ?resource SN:ScheduleResource.marketCode ?market_code .
   ?unit ?p ?resource ;

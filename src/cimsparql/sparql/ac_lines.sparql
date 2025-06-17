@@ -1,7 +1,7 @@
 # Name: AC Lines
-PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
-PREFIX xsd: <${xsd}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT
 # Below a lot of max aggregation is performed. For variables without any suffix (_1 og _2) all values within the
 # group are equal and we might as well just pick the maximum value. For variables with the suffix _1 og _2, the

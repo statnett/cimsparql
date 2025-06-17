@@ -1,5 +1,5 @@
 # Name: Associated switches
-PREFIX cim: <${cim}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT (SAMPLE(?equipment_mrid) AS ?mrid) (SAMPLE(?name) AS ?name) (GROUP_CONCAT(?switch_mrid; SEPARATOR=',') AS ?switch_mrids) (GROUP_CONCAT(?switch_name; SEPARATOR=',') AS ?switch_names) WHERE {
   {
     ?equipment ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?switch ;

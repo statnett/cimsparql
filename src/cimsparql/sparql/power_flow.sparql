@@ -1,5 +1,5 @@
 # Name: Power flow
-PREFIX cim:<${cim}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?mrid ?p ?q ?in_service WHERE {
   ?_s a cim:SvPowerFlow ;
       cim:SvPowerFlow.Terminal ?terminal ;

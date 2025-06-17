@@ -1,6 +1,6 @@
 # Name: DC Active Power Flow
-PREFIX cim:<${cim}>
-PREFIX xsd:<${xsd}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?mrid ?p ?direction WHERE {
   ?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?p .
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .

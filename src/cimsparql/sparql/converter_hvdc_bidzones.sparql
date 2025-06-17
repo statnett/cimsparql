@@ -1,7 +1,7 @@
 # Name: Converter HVDC bidzones
-PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
-PREFIX ALG:<${ALG}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX ALG: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
 SELECT DISTINCT ?mrid ?bidzone_1 ?bidzone_2 WHERE {
   ?converter ALG:DCConverter.DCPole | ALG:VoltageSourceConverter.DCPole ?pole ;
              cim:IdentifiedObject.mRID ?mrid .

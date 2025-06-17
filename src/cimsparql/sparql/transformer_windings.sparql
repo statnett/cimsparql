@@ -1,5 +1,5 @@
 # Name: Transformer Windings
-PREFIX cim: <${cim}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?mrid ?end_number ?w_mrid WHERE {
   ?power_transformer a cim:PowerTransformer ;
                      cim:IdentifiedObject.mRID ?mrid .

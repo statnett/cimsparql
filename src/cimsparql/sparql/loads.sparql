@@ -1,6 +1,6 @@
 # Name: Loads
-PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_node WHERE {
   {
     # Appears to be significantly faster to run the query if the EQ part is executed within its own sub-query
