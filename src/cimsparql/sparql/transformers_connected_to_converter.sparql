@@ -1,7 +1,7 @@
 # Name: Transforers connected to converter
-PREFIX ALG:<${ALG}>
-PREFIX SN: <${SN}>
-PREFIX cim:<${cim}>
+PREFIX ALG: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 # TODO: We probably need distinct since we get a hit on cim:VsConverter in SSH-profile and ALG:VoltageSourceConverter
 # in EQ-repo. This was caused by correcting the ALG-namespace which lacked # at the end
 SELECT DISTINCT ?mrid ?name ?t_mrid ?p_mrid WHERE {

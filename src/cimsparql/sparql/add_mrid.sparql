@@ -1,5 +1,5 @@
 # Name: Add MRID
-PREFIX cim: <${cim}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 INSERT {
   GRAPH ${g} {?s cim:IdentifiedObject.mRID ?mrid}}
 WHERE {

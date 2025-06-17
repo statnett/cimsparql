@@ -1,6 +1,6 @@
 # Name: Borders
-PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 SELECT ?mrid ?name ?market_code ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2 WHERE {
   # Extract mRID, name and optionally market_code for aclines
   ?acline a cim:ACLineSegment ;

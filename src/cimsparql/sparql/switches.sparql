@@ -1,5 +1,5 @@
 # Name: Switches
-PREFIX cim: <${cim}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivity_node_1 ?connectivity_node_2 ?name WHERE {
   {
     SELECT * {

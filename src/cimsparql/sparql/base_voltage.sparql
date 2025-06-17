@@ -1,6 +1,6 @@
 # Name: Base voltage
-PREFIX cim: <${cim}>
-PREFIX xsd: <${xsd}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?mrid ?un ?operating_voltage {
   {
     SELECT ?base_voltage (AVG(xsd:double(STR(?voltage))) AS ?operating_voltage) {

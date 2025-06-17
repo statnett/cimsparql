@@ -1,6 +1,6 @@
 # Name: Station group code and names
-PREFIX cim: <${cim}>
-PREFIX SN: <${SN}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 SELECT ?station_group ?name ?alias_name WHERE {
   # SN is not made optional here because then there is no filtering left.
   # TODO: Is ScheduleResource available in a another namespace?

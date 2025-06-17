@@ -1,5 +1,5 @@
 # Name: GeneratingUnit mrid to physical equipment mrid
-PREFIX cim: <${cim}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?gen_unit_mrid ?sync_machine_mrid WHERE {
   ?s cim:SynchronousMachine.GeneratingUnit/cim:IdentifiedObject.mRID ?gen_unit_mrid ;
      cim:IdentifiedObject.mRID ?sync_machine_mrid

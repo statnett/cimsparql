@@ -1,6 +1,6 @@
 # Name: Branch node withdraw
-PREFIX cim:<${cim}>
-PREFIX SN:<${SN}>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 SELECT ?mrid ?node ?p ?q ?connectivity_node WHERE {
   {
     SELECT * WHERE {

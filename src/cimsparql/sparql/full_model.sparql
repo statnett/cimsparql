@@ -1,5 +1,5 @@
 # Name: Full model
-PREFIX md:<${md}>
+PREFIX md: <http://iec.ch/TC57/61970-552/ModelDescription/1#>
 SELECT ?model ?time ?profile ?version ?description WHERE {
   {
     ?model md:Model.profile ?profile ;
