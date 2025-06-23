@@ -1,39 +1,74 @@
 [project]
 name = "cimsparql"
-dynamic = ["version"]
 description = "CIM query utilities"
 readme = "README.md"
-authors = [{name="Statnett Datascience", email="Datascience.Drift@Statnett.no"}]
-
 requires-python = ">=3.11"
+authors = [
+  { name = "Statnett Datascience", email = "Datascience.Drift@Statnett.no" },
+]
 dependencies = [
-    "httpx>=0.27.2",
-    "numpy>=1.9.0",
-    "pandas>=2.2.3",
-    "pandera[pandas]>=0.24.0",
-    "polyfactory>=2.17.0",
-    "pydantic>=2.9.2",
-    "rdflib>=7.0.0",
-    "sparqlwrapper>=2.0.0",
-    "tenacity>=9.0.0",
+  "httpx>=0.27.2",
+  "numpy>=1.9.0",
+  "pandas>=2.2.3",
+  "pandera[pandas]>=0.24.0",
+  "polyfactory>=2.17.0",
+  "pydantic>=2.9.2",
+  "rdflib>=7.0.0",
+  "sparqlwrapper>=2.0.0",
+  "tenacity>=9.0.0",
+]
+dynamic = ["version"]
+
+[dependency-groups]
+dev = [
+  "asyncio>=3.4.3",
+  "coverage[toml]>=7.6.1",
+  "pandas-stubs>=2.2.3.250308",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=5.0.0",
+  "pytest-httpserver>=1.1.0",
+  "pytest-integration>=0.2.3",
+  "pytest-profiling>=1.7.0",
+  "pytest>=8.3.3",
 ]
 
-[tool.uv]
-dev-dependencies = [
-    "asyncio>=3.4.3",
-    "coverage[toml]>=7.6.1",
-    "pandas-stubs>=2.2.3.250308",
-    "pytest>=8.3.3",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=5.0.0",
-    "pytest-httpserver>=1.1.0",
-    "pytest-integration>=0.2.3",
-    "pytest-profiling>=1.7.0",
-]
+[build-system]
+requires = ["setuptools-scm>=8", "setuptools>=64"]
+build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]
-version_scheme="release-branch-semver"
-local_scheme = "no-local-version"
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+  "pragma: no cover",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if verbose:",
+  "if 0:",
+  "if False:",
+  "if TYPE_CHECKING:",
+]
+skip_covered = true
+show_missing = true
+precision = 2
+
+[tool.coverage.run]
+branch = true
+source = ["cimsparql", "conftest", "tests"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+log_file = "pytest.log"
+log_level = "DEBUG"
+log_file_format = "%(asctime)s - %(name)s - %(levelname)s: %(message)s"
+norecursedirs = "_build tmp*  __pycache__ src prof wheel_files tests/t_utils"
+filterwarnings = [
+  "ignore: NQuadsSerializer does not use custom encoding. Given encoding was.*:UserWarning",
+]
+markers = [
+  "integration: Mark test as an integration test",
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 
 [tool.ruff]
 target-version = "py311"
@@ -41,59 +76,55 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["ALL"]
-
 ignore = [
-  'ANN401',
-  'BLE001',
-  'COM812',
-  'D101',
-  'D102',
-  'D103',
-  'D105',
-  'D107',
-  'D203',
-  'D213',
-  'D413',
-  'EM101',
-  'EM102',
-  'FBT001',
-  'FBT002',
-  'FIX002',
-  'S101',
-  'TD002',
-  'TD003',
-  'TRY003'
+  "ANN401",
+  "BLE001",
+  "COM812",
+  "D101",
+  "D102",
+  "D103",
+  "D105",
+  "D107",
+  "D203",
+  "D213",
+  "D413",
+  "EM101",
+  "EM102",
+  "FBT001",
+  "FBT002",
+  "FIX002",
+  "S101",
+  "TD002",
+  "TD003",
+  "TRY003",
 ]
-
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
-
 # Exclude a variety of commonly ignored directories.
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
 ]
-
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
@@ -103,7 +134,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 "src/cimsparql/graphdb.py" = ["PD901"]
 "src/cimsparql/model.py" = ["PD901"]
 "src/cimsparql/type_mapper.py" = ["PD901"]
-"tests/**/*.py" = [ "D100", "D101", "D103", "D104", "PLR2004"]
+"tests/**/*.py" = ["D100", "D101", "D103", "D104", "PLR2004"]
 "tests/test*.py" = ["ANN201"]
 "tests/test_type_mapper.py" = ["PD901"]
 
@@ -112,47 +143,11 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 classmethod-decorators = ["pandera.dataframe_check"]
 
 [tool.ruff.lint.flake8-import-conventions]
-
 [tool.ruff.lint.flake8-import-conventions.aliases]
 # Declare the default aliases.
 pandas = "pd"
 pandera = "pa"
 
-[tool.coverage.report]
-# Regexes for lines to exclude from consideration
-exclude_lines = [
-              "pragma: no cover",
-              "raise AssertionError",
-              "raise NotImplementedError",
-              "if verbose:",
-              "if 0:",
-              "if False:",
-              "if TYPE_CHECKING:",
-              ]
-skip_covered = true
-show_missing = true
-precision = 2
-
-[tool.coverage.run]
-branch = true
-source = ["cimsparql",  "conftest", "tests"]
-
-[tool.pytest.ini_options]
-asyncio_mode = 'auto'
-asyncio_default_fixture_loop_scope = "function"
-log_file = "pytest.log"
-log_level = "DEBUG"
-log_file_format = "%(asctime)s - %(name)s - %(levelname)s: %(message)s"
-norecursedirs = "_build tmp*  __pycache__ src prof wheel_files tests/t_utils"
-filterwarnings = [
-  "ignore: NQuadsSerializer does not use custom encoding. Given encoding was.*:UserWarning"
-]
-
-markers = [
-  "integration: Mark test as an integration test",
-  "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-]
-
-[build-system]
-requires = ["setuptools>=64", "setuptools-scm>=8"]
-build-backend = "setuptools.build_meta"
+[tool.setuptools_scm]
+version_scheme = "release-branch-semver"
+local_scheme = "no-local-version"
