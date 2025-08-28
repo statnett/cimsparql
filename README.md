@@ -67,51 +67,25 @@ which can be used in queries (such as `rdf` and `cim`) can by found by
 
 ### Running Tests Against Docker Databases
 
-Tests can be run agains RDF4J and/or BlazeGraph databases if a container with the correct images are available.
+Tests can be run agains RDF4J databases if a container with the correct images are available.
 
 ```
 docker pull eclipse/rdf4j-workbench
-docker pull openkbs/blazegraph
 ```
 
 Launch one or both containers and specify the following environment variables
 
 ```
 RDF4J_URL = "localhost:8080/rdf4j-server"
-BLAZEGRAPH_URL = "localhost:9999/blazegraph/namespace
 ```
 **Note 1**: The port numbers may differ depending on your local Docker configurations.
 **Note 2**: You don't *have* to install RDF4J or BlazeGraph. Tests requiring these will be skipped in case
 they are not available. They will in any case be run in the CI pipeline on GitHub (where both always are available).
 
-### Ontology (for developers)
-
-Ontologies for the CIM model can be found at (ENTSOE's webpages)[https://www.entsoe.eu/digital/common-information-model/cim-for-grid-models-exchange/].
-For convenience and testing purposes the ontology are located under `tests/data/ontology`. CIM models used for testing purposes in Cimsparql should
-be stored in N-quads format. In case you have a model in XML format it can be converted to N-quads by launching a DB (for example RDF4J) and upload
-all the XML files and the ontology.
-
-Execute
-
-```sparql
-PREFIX cims: <http://iec.ch/TC57/1999/rdf-schema-extensions-19990926#>
-
-DELETE {?s ?p ?o}
-INSERT {?s ?p ?o_cast} WHERE {
-  ?s ?p ?o .
-  ?p cims:dataType ?_dtype .
-  ?_dtype cims:stereotype ?stereotype .
-  BIND(IF(?stereotype = "Primitive",
-    URI(concat("http://www.w3.org/2001/XMLSchema#", lcase(strafter(str(?_dtype), "#")))),
-    ?_dtype) as ?dtype)
-  BIND(STRDT(?o, ?dtype) as ?o_cast)
-}
-```
-and export as N-quads.
-
 ### Test models
 
-1. *micro_t1_nl*: `MicroGrid/Type1_T1/CGMES_v2.4.15_MicroGridTestConfiguration_T1_NL_Complete_v2`
+1. *micro*: `MicroGrid/Type1_T1/CGMES_v2.4.15_MicroGridTestConfiguration_T1_NL_Complete_v2`
+2. *small*: See separate [documentation ](tests/data/small/README.md)
 
 
 ### Rest APIs
