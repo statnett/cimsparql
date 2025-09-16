@@ -1,7 +1,7 @@
 # Name: RAS Equipment
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX alg: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
-SELECT ?mrid ?equipment_mrid ?name WHERE {
+SELECT ?mrid ?equipment_mrid ?name ?flow_shift ?flow_shift_flip WHERE {
   ?rpact (alg:ProtectiveActionEquipment.Equipment | alg:ProtectiveActionAdjustmentAC.ConductingEquipment | alg:ProtectiveActionAdjustmentDCController.DCController)/cim:IdentifiedObject.mRID ?equipment_mrid ;
          cim:IdentifiedObject.mRID ?mrid ;
          cim:IdentifiedObject.name ?name ;
