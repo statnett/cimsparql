@@ -370,3 +370,12 @@ def test_station_group_for_power_unit(test_model: t_common.ModelTest) -> None:
 
     group_for_units = test_model.model.station_group_for_power_unit()
     assert len(group_for_units) == 10
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+def test_protective_action_equipment(test_model: t_common.ModelTest) -> None:
+    t_common.check_model(test_model)
+    assert test_model.model
+
+    ras = test_model.model.ras_equipment()
+    assert len(ras) == 1
