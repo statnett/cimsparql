@@ -101,6 +101,7 @@ class XmlModelAdaptor:
         self.add_zero_sv_injection()
         self.add_generating_unit()
         self.add_market_code_to_non_conform_load()
+        self.add_protective_action_equipment()
         self.add_mrid()
         self.add_dtypes()
         self.add_internal_eq_link(eq_uri)
@@ -231,7 +232,12 @@ class XmlModelAdaptor:
     def add_network_analysis_enable(self) -> None:
         used_equipment = set()
         for _, _, equipment, ctx in self.graph.quads(
-            (None, URIRef(f"{self.ns['cim']}Terminal.ConductingEquipment"), None, None)
+            (
+                None,
+                URIRef(f"{self.ns['cim']}Terminal.ConductingEquipment"),
+                None,
+                None,
+            )
         ):
             if equipment in used_equipment:
                 continue
@@ -250,7 +256,12 @@ class XmlModelAdaptor:
     def add_generating_unit(self) -> None:
         updated = set()
         for sync_machine, _, _, ctx in self.graph.quads(
-            (None, RDF.type, URIRef(self.ns["cim"] + "SynchronousMachine"), None)
+            (
+                None,
+                RDF.type,
+                URIRef(self.ns["cim"] + "SynchronousMachine"),
+                None,
+            )
         ):
             assert ctx
             if "EQ" not in str(ctx):
@@ -293,6 +304,24 @@ class XmlModelAdaptor:
                     ),
                 )
             )
+
+    def add_protective_action_equipment(self) -> None:
+        rpact = BNode()
+        sync_machine, _, _, _ = next(
+            self.graph.quads((None, RDF.type, URIRef(self.ns["cim"] + "SynchronousMachine", None)))
+        )
+        eq_graph = self.eq_contexts()[0]
+
+        literal_true = Literal(lexical_or_value=True)
+        eq_graph.addN(
+            [
+                (rpact, URIRef(self.ns["ALG"] + "ProtectiveActionEquipment.Equipment"), sync_machine, eq_graph),
+                (rpact, RDF.type, URIRef(self.ns["ALG"] + "ProtectiveActionEquipment"), eq_graph),
+                (rpact, URIRef(self.ns["cim"] + "IdentifiedObject.name"), Literal("ras"), eq_graph),
+                (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.flowShift"), literal_true, eq_graph),
+                (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.flowShiftFlip"), literal_true, eq_graph),
+            ]
+        )
 
 
 def is_uuid(x: str) -> bool:

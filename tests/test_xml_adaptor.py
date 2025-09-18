@@ -83,3 +83,9 @@ def test_add_market_code_to_non_conform_load(xml_adaptor: XmlModelAdaptor) -> No
 def test_num_base_voltage_in_serialized_graph(xml_adaptor: XmlModelAdaptor) -> None:
     result = xml_adaptor.nq_bytes(xml_adaptor.graph.contexts()).decode()
     assert result.count("BaseVoltage.nominalVoltage") == 8
+
+
+def test_add_ras(xml_adaptor: XmlModelAdaptor) -> None:
+    xml_adaptor.add_protective_action_equipment()
+    query = "select * {graph ?g {?s a ALG:ProtectiveActionEquipment}}"
+    assert len(xml_adaptor.graph.query(query, initNs=xml_adaptor.namespaces())) == 1
