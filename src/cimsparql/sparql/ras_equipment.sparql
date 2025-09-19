@@ -5,6 +5,9 @@ SELECT ?mrid ?equipment_mrid ?name ?flow_shift ?flow_shift_flip WHERE {
   ?rpact (alg:ProtectiveActionEquipment.Equipment | alg:ProtectiveActionAdjustmentAC.ConductingEquipment | alg:ProtectiveActionAdjustmentDCController.DCController)/cim:IdentifiedObject.mRID ?equipment_mrid ;
          cim:IdentifiedObject.mRID ?mrid ;
          cim:IdentifiedObject.name ?name ;
-         alg:ProtectiveAction.flowShift ?flow_shift ;
-         alg:ProtectiveAction.flowShiftFlip ?flow_shift_flip .
+         alg:ProtectiveAction.flowShift ?flow_shift_str ;
+         alg:ProtectiveAction.flowShiftFlip ?flow_shift_flip_str .
+  # Support both typed flow_shift and untyped
+  BIND (IF(STR(?flow_shift_str) = "true",true,false) AS ?flow_shift)
+  BIND (IF(STR(?flow_shift_flip_str) = "true",true,false) AS ?flow_shift_flip)
 }
