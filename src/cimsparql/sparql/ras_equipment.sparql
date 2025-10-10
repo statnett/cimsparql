@@ -1,13 +1,17 @@
 # Name: RAS Equipment
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX alg: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
-SELECT ?mrid ?equipment_mrid ?name ?flow_shift ?flow_shift_flip WHERE {
+SELECT ?mrid ?equipment_mrid ?name ?flow_shift ?flow_shift_flip ?load_contribution ?unit_contribution WHERE {
   ?rpact (alg:ProtectiveActionEquipment.Equipment | alg:ProtectiveActionAdjustmentAC.ConductingEquipment | alg:ProtectiveActionAdjustmentDCController.DCController)/cim:IdentifiedObject.mRID ?equipment_mrid ;
          cim:IdentifiedObject.mRID ?mrid ;
          cim:IdentifiedObject.name ?name ;
          alg:ProtectiveAction.flowShift ?flow_shift_str ;
-         alg:ProtectiveAction.flowShiftFlip ?flow_shift_flip_str .
+         alg:ProtectiveAction.flowShiftFlip ?flow_shift_flip_str ;
+         alg:ProtectiveAction.loadContribution ?load_contribution_str ;
+         alg:ProtectiveAction.unitContribution ?unit_contribution_str .
   # Support both typed flow_shift and untyped
   BIND (IF(STR(?flow_shift_str) = "true",true,false) AS ?flow_shift)
   BIND (IF(STR(?flow_shift_flip_str) = "true",true,false) AS ?flow_shift_flip)
+  BIND (IF(STR(?load_contribution_str) = "true",true,false) AS ?load_contribution)
+  BIND (IF(STR(?unit_contribution_str) = "true",true,false) AS ?unit_contribution)
 }

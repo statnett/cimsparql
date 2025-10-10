@@ -313,6 +313,7 @@ class XmlModelAdaptor:
         eq_graph = self.eq_contexts()[0]
 
         literal_true = Literal(lexical_or_value=True)
+        literal_false = Literal(lexical_or_value=False)
         eq_graph.addN(
             [
                 (rpact, URIRef(self.ns["ALG"] + "ProtectiveActionEquipment.Equipment"), sync_machine, eq_graph),
@@ -320,6 +321,8 @@ class XmlModelAdaptor:
                 (rpact, URIRef(self.ns["cim"] + "IdentifiedObject.name"), Literal("ras"), eq_graph),
                 (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.flowShift"), literal_true, eq_graph),
                 (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.flowShiftFlip"), literal_true, eq_graph),
+                (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.loadContribution"), literal_false, eq_graph),
+                (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.unitContribution"), literal_false, eq_graph),
             ]
         )
 
