@@ -36,7 +36,7 @@ SELECT ?name ?node ?mrid ?status ?p ?market_code WHERE {
                cim:Terminal.ConnectivityNode ?con_node .
     # Extract from the connectivity node of terminal1
     ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_1 .
-    # Extract propertoes for the terminal at squenceNumber 2 for the acline
+    # Extract propertoes for the terminal at sequenceNumber 2 for the acline
     ?terminal2 cim:Terminal.ConductingEquipment ?acline ;
                cim:ACDCTerminal.sequenceNumber 2 ;
                cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 .

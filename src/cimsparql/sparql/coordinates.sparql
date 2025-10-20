@@ -13,4 +13,4 @@ SELECT ?mrid ?x ?y ?epsg (STR(?resource_type) AS ?rdf_type) WHERE {
   BIND (STRAFTER(?co,'EPSG::') AS ?epsg)
   BIND (CONCAT(STR(?mrid), STR(?nr)) AS ?sequence)
 }
-ORDER BY (?sequece)
+ORDER BY (?sequence)

@@ -412,7 +412,7 @@ def test_inject_subclassed_sparql_wrapper():
     wrapper = FixedResultSparqlWrapper()
     client = GraphDBClient(sparql_wrapper=wrapper)
 
-    # Confirm that we can sucessfully run a query
+    # Confirm that we can successfully run a query
     data = client.get_table("select * where {?s ?p ?o}")[0]
     assert set(data.columns) == set(wrapper.result.head.variables)
 

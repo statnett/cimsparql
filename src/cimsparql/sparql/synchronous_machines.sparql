@@ -41,7 +41,7 @@ SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?subs
           }
         }
         FILTER REGEX(?area,'${region}')
-        # Opionally extract non-CIM standard properties generating units
+        # Optionally extract non-CIM standard properties generating units
         OPTIONAL {
           ?machine SN:Equipment.networkAnalysisEnable ?_network_analysis
         }

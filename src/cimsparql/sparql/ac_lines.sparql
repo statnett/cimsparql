@@ -6,7 +6,7 @@ SELECT
 # Below a lot of max aggregation is performed. For variables without any suffix (_1 og _2) all values within the
 # group are equal and we might as well just pick the maximum value. For variables with the suffix _1 og _2, the
 # value we want to extract either exist as one entry in the group. The other entry is an empty string. Since
-# all strings are greater than the empty string, max-aggregation will pick the value we want. For the boolan
+# all strings are greater than the empty string, max-aggregation will pick the value we want. For the boolean
 # value ?connected_1 (or_2), the default value is False. By a similar argument True is larger than False,
 # thus max-aggregation will pick True if it exists in the group
 (MAX(?mrid) AS ?mrid) (MAX(?name) AS ?name)

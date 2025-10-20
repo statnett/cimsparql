@@ -13,7 +13,7 @@ class ValueMapper:
 class MridMapper(ValueMapper):
     """Mrid mapper.
 
-    Replaces all matches of uri_regex with an empty string in columns which constains mrid in the name
+    Replaces all matches of uri_regex with an empty string in columns which contains mrid in the name
     """
 
     def __init__(self, uri_regex: str = "^([^#_|^#]+)(#_|#)") -> None:

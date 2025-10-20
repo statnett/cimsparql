@@ -35,7 +35,7 @@ SELECT ?mrid ?name ?r ?x ?bch ?gch ?status ?length ?un ?p_1 ?q_1 ?p_2 ?q_2 ?v_1 
              cim:SvVoltage.v ?v_1 ;
              cim:SvVoltage.angle ?angle_1 .
   }
-  # Extract conencted flag and active and reactive power for each terminal
+  # Extract connected flag and active and reactive power for each terminal
   ?terminal_1 cim:Terminal.connected | cim:ACDCTerminal.connected ?connected_1 .
   OPTIONAL {
     ?_sv_t_1 cim:SvPowerFlow.Terminal ?terminal_1 ;

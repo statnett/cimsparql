@@ -112,7 +112,7 @@ class Model:
         return distinct
 
     def get_client(self, query_name: str) -> GraphDBClient:
-        """Return the corret graph db client to execute a query.
+        """Return the correct graph db client to execute a query.
 
         By default there is only one client so the same client is returned in all cases
         """
@@ -204,7 +204,7 @@ class Model:
 
     @time_it
     def full_model(self) -> FullModelDataFrame:
-        """Return all models where all depencies has been created and is available.
+        """Return all models where all dependencies has been created and is available.
 
         All profiles EQ/SSH/TP/SV will define a md:FullModel with possible dependencies. One profile
         could be dependent on more than one other. This function will return the models for SSH/TP
@@ -500,7 +500,7 @@ class Model:
 
     @time_it
     def disconnected(self) -> DisconnectedDataFrame:
-        """Query disconneced status from ssh profile (not available in GraphDB)."""
+        """Query disconnected status from ssh profile (not available in GraphDB)."""
         df = self.get_table_and_convert(self.disconnected_query)
         return DisconnectedDataFrame(df)
 

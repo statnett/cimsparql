@@ -22,7 +22,7 @@ swing_bus_query = Template(
 PREFIX cim:<${cim}>
 select ?top_node ?island
 where {
-    ?island cim:TopologicalIsland.AngleRefTopoligicalNode ?top_node
+    ?island cim:TopologicalIsland.AngleRefTopologicalNode ?top_node
 }
 """
 )

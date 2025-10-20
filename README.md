@@ -8,12 +8,12 @@
 # CIMSPARQL Query CIM data using sparql
 
 This Python package provides functionality for reading cim data from
-tripple stores such as GraphDB, BlazeGraph or Rdf4j into Python memory
+triple stores such as GraphDB, BlazeGraph or Rdf4j into Python memory
 as pandas dataframes.
 
 The package provides a set of predefined functions/queries to load CIM
 data such as generator, demand or branch data, though the user can
-easiliy define their own queries.
+easily define their own queries.
 
 ## Usage
 
@@ -67,15 +67,15 @@ which can be used in queries (such as `rdf` and `cim`) can by found by
 
 ### Running Tests Against Docker Databases
 
-Tests can be run agains RDF4J databases if a container with the correct images are available.
+Tests can be run against RDF4J databases if a container with the correct images are available.
 
-```
+```bash
 docker pull eclipse/rdf4j-workbench
 ```
 
 Launch one or both containers and specify the following environment variables
 
-```
+```bash
 RDF4J_URL = "localhost:8080/rdf4j-server"
 ```
 **Note 1**: The port numbers may differ depending on your local Docker configurations.

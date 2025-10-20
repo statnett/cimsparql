@@ -1,3 +1,4 @@
+from logging import INFO
 from typing import Any
 
 import pytest
@@ -26,12 +27,13 @@ class FailFirstSparqlWrapper(SPARQLWrapper):
 
 
 def test_after_callback(caplog: pytest.LogCaptureFixture):
-    wrapper = FailFirstSparqlWrapper("http://some-sparql-endpint")
+    wrapper = FailFirstSparqlWrapper("http://some-sparql-endpoint")
     client = GraphDBClient(
         service_cfg=ServiceConfig(retry_stop_criteria=tenacity.stop_after_attempt(2)),
         sparql_wrapper=wrapper,
     )
-    client.exec_query("# Name: Select everything\nselect * where {?s ?p ?o}")
+    with caplog.at_level(INFO):
+        client.exec_query("# Name: nSelect everything\nselect * where {?s ?p ?o}")
 
     # Expect one message to contain be logged with the query name
     substrings = ["Select everything:", "Something always goes wrong"]

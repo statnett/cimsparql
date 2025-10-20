@@ -14,7 +14,7 @@ SELECT ?mrid (?container_mrid AS ?container) ?container_name ?un ?base_voltage_m
     GROUP BY ?con_node
   }
   FILTER (?num_active > 0)
-  # Extract properties from the connectivity node container associated with each topoligical node
+  # Extract properties from the connectivity node container associated with each topological node
   {
     ?con_node_container cim:VoltageLevel.BaseVoltage ?base_voltage ;
                         cim:VoltageLevel.Substation ?_substation .
@@ -45,7 +45,7 @@ SELECT ?mrid (?container_mrid AS ?container) ?container_name ?un ?base_voltage_m
     ?con_node_container cim:Line.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
                         cim:IdentifiedObject.name ?container_name ;
                         cim:IdentifiedObject.mRID ?container_mrid
-    # Extract voltage levels connectivity nodes related via a conducting equipment (cim:Line has no cim:VoltageLeve.BaseVoltage)
+    # Extract voltage levels connectivity nodes related via a conducting equipment (cim:Line has no cim:VoltageLevel.BaseVoltage)
     {
       SELECT ?base_voltage_mrid ?un {
         ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage ?base_voltage .

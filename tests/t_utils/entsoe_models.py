@@ -37,7 +37,7 @@ def split_tpsvssh(fname: Path) -> tuple[str, str]:
         "http://entsoe.eu/CIM/Topology/4/1",
     }
 
-    # Regex extracts the content between < > of the last occurence on each line
+    # Regex extracts the content between < > of the last occurrence on each line
     prog = re.compile(r"<([^>]+)>[^>]+$")
     with fname.open() as infile:
         for line in infile:

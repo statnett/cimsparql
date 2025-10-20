@@ -35,7 +35,7 @@ class SparqlData(CimsparqlBaseModel):
 
 
 class SparqlResultJson(CimsparqlBaseModel):
-    """Data model for rest api resonse of MIME type.
+    """Data model for rest api response of MIME type.
 
     application/sparql-result+json
 

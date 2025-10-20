@@ -299,7 +299,7 @@ class GraphDBClient:
         response.raise_for_status()
 
     def upload_rdf(self, content: Path | bytes, rdf_format: str, params: dict[str, str] | None = None) -> None:
-        """Upload data in RDF format to a srevice.
+        """Upload data in RDF format to a service.
 
         Args:
             content: Filename to the RDF file to upload

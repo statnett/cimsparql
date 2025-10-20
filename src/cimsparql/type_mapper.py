@@ -28,7 +28,7 @@ as_type_able = [int, float, "Int64", "Int32", "Int16"]
 
 
 def to_timedelta(duration: str) -> pd.Timedelta:
-    # Pandas only supports days, hours, minites, seconds
+    # Pandas only supports days, hours, minutes, seconds
     # not year and month which can be part of
     # https://www.w3.org/TR/xmlschema11-2/#duration
 
