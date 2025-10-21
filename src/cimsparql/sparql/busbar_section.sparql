@@ -1,0 +1,6 @@
+# Name: Busbar Section
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+SELECT DISTINCT ?mrid WHERE {
+  ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/a cim:BusbarSection ;
+            cim:IdentifiedObject.mRID ?mrid ;
+}
