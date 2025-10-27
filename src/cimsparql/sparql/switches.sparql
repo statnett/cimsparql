@@ -1,5 +1,6 @@
 # Name: Switches
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivity_node_1 ?connectivity_node_2 ?name WHERE {
   {
     SELECT * {
@@ -23,10 +24,13 @@ SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivit
                 ^cim:Terminal.ConductingEquipment ?terminal1 ;
                 ^cim:Terminal.ConductingEquipment ?terminal2 ;
                 cim:IdentifiedObject.name ?name .
+        VALUES ?true { True "true" }
         ?terminal1 cim:ACDCTerminal.sequenceNumber 1 ;
-                   cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_1 .
+                   cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_1 ;
+                   cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true .
         ?terminal2 cim:ACDCTerminal.sequenceNumber ?max_terminal_number ;
-                   cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_2 .
+                   cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_2 ;
+                   cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true .
       }
     }
   }
