@@ -4,7 +4,7 @@ import datetime as dt
 
 import pandera.pandas as pa
 from pandera.api.pandas.model_config import BaseConfig
-from pandera.typing import DataFrame, Index, Series
+from pandera.typing import DataFrame, Index
 
 
 class CoercingSchema(pa.DataFrameModel):
@@ -19,11 +19,11 @@ class CoercingSchema(pa.DataFrameModel):
 class FullModelSchema(CoercingSchema):
     """Full model schema that ensures unique time for all profiles."""
 
-    model: Series[str]
-    time: Series[str]
-    profile: Series[str]
-    version: Series[str]
-    description: Series[str]
+    model: str
+    time: str
+    profile: str
+    version: str
+    description: str
 
 
 FullModelDataFrame = DataFrame[FullModelSchema]
@@ -38,17 +38,17 @@ class MridResourceSchema(CoercingSchema):
 class NamedResourceSchema(MridResourceSchema):
     """Common class for resources with an mrid and a name."""
 
-    name: Series[str]
+    name: str
 
 
 class NamedMarketResourceSchema(NamedResourceSchema):
     """Common class for named resources with an (optional) associated market_code."""
 
-    market_code: Series[str] = pa.Field(nullable=True)
+    market_code: str = pa.Field(nullable=True)
 
 
 class MarketDatesSchema(NamedResourceSchema):
-    activation_date: Series[dt.datetime] = pa.Field()
+    activation_date: dt.datetime = pa.Field()
 
 
 MarketDatesDataFrame = DataFrame[MarketDatesSchema]
@@ -56,93 +56,93 @@ MarketDatesDataFrame = DataFrame[MarketDatesSchema]
 
 class BusDataSchema(CoercingSchema):
     node: Index[str] = pa.Field(unique=True, check_name=True)
-    busname: Series[str] = pa.Field()
-    substation: Series[str] = pa.Field()
-    un: Series[float] = pa.Field()
-    substation_mrid: Series[str] = pa.Field()
-    bidzone: Series[str] = pa.Field(nullable=True)
-    sv_voltage: Series[float] = pa.Field()
-    island: Series[str] = pa.Field()
-    is_swing_bus: Series[bool] = pa.Field()
-    base_voltage_mrid: Series[str] = pa.Field()
+    busname: str = pa.Field()
+    substation: str = pa.Field()
+    un: float = pa.Field()
+    substation_mrid: str = pa.Field()
+    bidzone: str = pa.Field(nullable=True)
+    sv_voltage: float = pa.Field()
+    island: str = pa.Field()
+    is_swing_bus: bool = pa.Field()
+    base_voltage_mrid: str = pa.Field()
 
 
 BusDataFrame = DataFrame[BusDataSchema]
 
 
 class LoadsSchema(NamedResourceSchema):
-    substation_mrid: Series[str] = pa.Field()
-    status: Series[bool] = pa.Field()
-    p: Series[float] = pa.Field(nullable=True)
-    q: Series[float] = pa.Field(nullable=True)
-    station_group: Series[str] = pa.Field(nullable=True)
-    connectivity_node: Series[str] = pa.Field()
+    substation_mrid: str = pa.Field()
+    status: bool = pa.Field()
+    p: float = pa.Field(nullable=True)
+    q: float = pa.Field(nullable=True)
+    station_group: str = pa.Field(nullable=True)
+    connectivity_node: str = pa.Field()
 
 
 LoadsDataFrame = DataFrame[LoadsSchema]
 
 
 class WindGeneratingUnitsSchema(NamedMarketResourceSchema):
-    station_group: Series[str] = pa.Field(nullable=True)
-    min_p: Series[float] = pa.Field()
-    max_p: Series[float] = pa.Field()
-    plant_mrid: Series[str] = pa.Field(nullable=True)
+    station_group: str = pa.Field(nullable=True)
+    min_p: float = pa.Field()
+    max_p: float = pa.Field()
+    plant_mrid: str = pa.Field(nullable=True)
 
 
 WindGeneratingUnitsDataFrame = DataFrame[WindGeneratingUnitsSchema]
 
 
 class SynchronousMachinesSchema(NamedMarketResourceSchema):
-    status: Series[bool] = pa.Field()
-    station_group: Series[str] = pa.Field(nullable=True)
-    station_group_name: Series[str] = pa.Field(nullable=True)
-    substation_mrid: Series[str] = pa.Field()
-    max_p: Series[float] = pa.Field()
-    min_p: Series[float] = pa.Field()
-    merit_order: Series[float] = pa.Field(nullable=True)
-    sn: Series[float] = pa.Field()
-    p: Series[float] = pa.Field(nullable=True)
-    q: Series[float] = pa.Field(nullable=True)
-    connectivity_node: Series[str] = pa.Field()
-    generator_type: Series[str] = pa.Field()
-    storage_type: Series[str] = pa.Field(nullable=True)
-    schedule_resource: Series[str] = pa.Field(nullable=True)
-    afrr_prequalified: Series[bool] = pa.Field()
+    status: bool = pa.Field()
+    station_group: str = pa.Field(nullable=True)
+    station_group_name: str = pa.Field(nullable=True)
+    substation_mrid: str = pa.Field()
+    max_p: float = pa.Field()
+    min_p: float = pa.Field()
+    merit_order: float = pa.Field(nullable=True)
+    sn: float = pa.Field()
+    p: float = pa.Field(nullable=True)
+    q: float = pa.Field(nullable=True)
+    connectivity_node: str = pa.Field()
+    generator_type: str = pa.Field()
+    storage_type: str = pa.Field(nullable=True)
+    schedule_resource: str = pa.Field(nullable=True)
+    afrr_prequalified: bool = pa.Field()
 
 
 SynchronousMachinesDataFrame = DataFrame[SynchronousMachinesSchema]
 
 
 class ConnectionsSchema(MridResourceSchema):
-    t_mrid_1: Series[str] = pa.Field()
-    t_mrid_2: Series[str] = pa.Field()
+    t_mrid_1: str = pa.Field()
+    t_mrid_2: str = pa.Field()
 
 
 ConnectionsDataFrame = DataFrame[ConnectionsSchema]
 
 
 class BordersSchema(NamedMarketResourceSchema):
-    area_1: Series[str] = pa.Field()
-    area_2: Series[str] = pa.Field()
-    t_mrid_1: Series[str] = pa.Field()
-    t_mrid_2: Series[str] = pa.Field()
+    area_1: str = pa.Field()
+    area_2: str = pa.Field()
+    t_mrid_1: str = pa.Field()
+    t_mrid_2: str = pa.Field()
 
 
 BordersDataFrame = DataFrame[BordersSchema]
 
 
 class ExchangeSchema(NamedMarketResourceSchema):
-    node: Series[str] = pa.Field()
-    status: Series[bool] = pa.Field()
-    p: Series[float] = pa.Field()
+    node: str = pa.Field()
+    status: bool = pa.Field()
+    p: float = pa.Field()
 
 
 ExchangeDataFrame = DataFrame[ExchangeSchema]
 
 
 class PhaseTapChangerSchema(CoercingSchema):
-    mrid: Series[str] = pa.Field()
-    phase_shift_increment: Series[float] = pa.Field()
+    mrid: str = pa.Field()
+    phase_shift_increment: float = pa.Field()
     enabled: bool = pa.Field()
     neutral_step: int = pa.Field()
     high_step: int = pa.Field()
@@ -156,93 +156,93 @@ PhaseTapChangerDataFrame = DataFrame[PhaseTapChangerSchema]
 
 
 class ConvertersSchema(NamedResourceSchema):
-    alias: Series[str] = pa.Field(nullable=True)
-    substation_mrid: Series[str] = pa.Field()
-    status: Series[bool] = pa.Field()
-    p: Series[float] = pa.Field()
-    q: Series[float] = pa.Field()
-    connectivity_node: Series[str] = pa.Field()
-    controller: Series[str] = pa.Field()
-    controller_factor: Series[float] = pa.Field()
-    pole_loss: Series[float] = pa.Field()
-    loss0: Series[float] = pa.Field()
-    loss1: Series[float] = pa.Field()
-    loss2: Series[float] = pa.Field()
-    vdcn: Series[float] = pa.Field()
-    un: Series[float] = pa.Field()
+    alias: str = pa.Field(nullable=True)
+    substation_mrid: str = pa.Field()
+    status: bool = pa.Field()
+    p: float = pa.Field()
+    q: float = pa.Field()
+    connectivity_node: str = pa.Field()
+    controller: str = pa.Field()
+    controller_factor: float = pa.Field()
+    pole_loss: float = pa.Field()
+    loss0: float = pa.Field()
+    loss1: float = pa.Field()
+    loss2: float = pa.Field()
+    vdcn: float = pa.Field()
+    un: float = pa.Field()
 
 
 ConvertersDataFrame = DataFrame[ConvertersSchema]
 
 
 class TransfConToConverterSchema(NamedResourceSchema):
-    t_mrid: Series[str] = pa.Field()
-    p_mrid: Series[str] = pa.Field()
+    t_mrid: str = pa.Field()
+    p_mrid: str = pa.Field()
 
 
 TransfConToConverterDataFrame = DataFrame[TransfConToConverterSchema]
 
 
 class CoordinatesSchema(CoercingSchema):
-    mrid: Series[str] = pa.Field()
-    x: Series[float] = pa.Field()
-    y: Series[float] = pa.Field()
-    epsg: Series[str] = pa.Field()
-    rdf_type: Series[str] = pa.Field()
+    mrid: str = pa.Field()
+    x: float = pa.Field()
+    y: float = pa.Field()
+    epsg: str = pa.Field()
+    rdf_type: str = pa.Field()
 
 
 CoordinatesDataFrame = DataFrame[CoordinatesSchema]
 
 
 class BranchComponentSchema(NamedResourceSchema):
-    ploss_1: Series[float] = pa.Field(nullable=True)
-    ploss_2: Series[float] = pa.Field(nullable=True)
-    r: Series[float] = pa.Field()
-    rate: Series[float] = pa.Field(nullable=True)
-    status: Series[bool] = pa.Field()
-    un: Series[float] = pa.Field()
-    x: Series[float] = pa.Field()
-    connectivity_node_1: Series[str] = pa.Field()
-    connectivity_node_2: Series[str] = pa.Field()
+    ploss_1: float = pa.Field(nullable=True)
+    ploss_2: float = pa.Field(nullable=True)
+    r: float = pa.Field()
+    rate: float = pa.Field(nullable=True)
+    status: bool = pa.Field()
+    un: float = pa.Field()
+    x: float = pa.Field()
+    connectivity_node_1: str = pa.Field()
+    connectivity_node_2: str = pa.Field()
 
 
 BranchComponentDataFrame = DataFrame[BranchComponentSchema]
 
 
 class ShuntComponentSchema(BranchComponentSchema):
-    b: Series[float] = pa.Field()
-    g: Series[float] = pa.Field()
+    b: float = pa.Field()
+    g: float = pa.Field()
 
 
 ShuntComponentDataFrame = DataFrame[ShuntComponentSchema]
 
 
 class AcLinesSchema(ShuntComponentSchema):
-    length: Series[float] = pa.Field()
-    g: Series[float] = pa.Field(nullable=True)
+    length: float = pa.Field()
+    g: float = pa.Field(nullable=True)
 
 
 AcLinesDataFrame = DataFrame[AcLinesSchema]
 
 
 class TransformersSchema(CoercingSchema):
-    name: Series[str] = pa.Field()
-    p_mrid: Series[str] = pa.Field()
-    w_mrid: Series[str] = pa.Field()
-    end_number: Series[int] = pa.Field()
-    un: Series[float] = pa.Field()
-    t_mrid: Series[str] = pa.Field()
-    r: Series[float] = pa.Field()
-    x: Series[float] = pa.Field()
-    rate: Series[float] = pa.Field(nullable=True)
+    name: str = pa.Field()
+    p_mrid: str = pa.Field()
+    w_mrid: str = pa.Field()
+    end_number: int = pa.Field()
+    un: float = pa.Field()
+    t_mrid: str = pa.Field()
+    r: float = pa.Field()
+    x: float = pa.Field()
+    rate: float = pa.Field(nullable=True)
 
 
 TransformersDataFrame = DataFrame[TransformersSchema]
 
 
 class TransformerWindingSchema(ShuntComponentSchema):
-    angle: Series[float] = pa.Field()
-    ratio: Series[float] = pa.Field()
+    angle: float = pa.Field()
+    ratio: float = pa.Field()
 
 
 TransformerWindingDataFrame = DataFrame[TransformerWindingSchema]
@@ -250,51 +250,51 @@ TransformerWindingDataFrame = DataFrame[TransformerWindingSchema]
 
 class SubstationVoltageSchema(CoercingSchema):
     substation: Index[str] = pa.Field(check_name=True)
-    container: Series[str] = pa.Field()
-    v: Series[float] = pa.Field()
+    container: str = pa.Field()
+    v: float = pa.Field()
 
 
 SubstationVoltageDataFrame = DataFrame[SubstationVoltageSchema]
 
 
 class DisconnectedSchema(CoercingSchema):
-    mrid: Series[str] = pa.Field(unique=True)
+    mrid: str = pa.Field(unique=True)
 
 
 DisconnectedDataFrame = DataFrame[DisconnectedSchema]
 
 
 class PowerFlowSchema(MridResourceSchema):
-    p: Series[float] = pa.Field()
-    q: Series[float] = pa.Field()
-    in_service: Series[bool] = pa.Field()
+    p: float = pa.Field()
+    q: float = pa.Field()
+    in_service: bool = pa.Field()
 
 
 PowerFlowDataFrame = DataFrame[PowerFlowSchema]
 
 
 class BranchWithdrawSchema(MridResourceSchema):
-    node: Series[str] = pa.Field()
-    p: Series[float] = pa.Field()
-    q: Series[float] = pa.Field()
+    node: str = pa.Field()
+    p: float = pa.Field()
+    q: float = pa.Field()
 
 
 BranchWithdrawDataFrame = DataFrame[BranchWithdrawSchema]
 
 
 class DcActiveFlowSchema(MridResourceSchema):
-    p: Series[float] = pa.Field()
+    p: float = pa.Field()
 
 
 DcActiveFlowDataFrame = DataFrame[DcActiveFlowSchema]
 
 
 class RegionsSchema(MridResourceSchema):
-    region: Series[str] = pa.Field()
-    short_name: Series[str] = pa.Field(nullable=True)
-    name: Series[str] = pa.Field()
-    alias_name: Series[str] = pa.Field(nullable=True)
-    region_name: Series[str] = pa.Field(nullable=True)
+    region: str = pa.Field()
+    short_name: str = pa.Field(nullable=True)
+    name: str = pa.Field()
+    alias_name: str = pa.Field(nullable=True)
+    region_name: str = pa.Field(nullable=True)
 
 
 RegionsDataFrame = DataFrame[RegionsSchema]
@@ -302,24 +302,24 @@ RegionsDataFrame = DataFrame[RegionsSchema]
 
 class StationGroupCodeNameSchema(CoercingSchema):
     station_group: Index[str] = pa.Field(unique=True, check_name=True)
-    name: Series[str] = pa.Field()
-    alias_name: Series[str] = pa.Field(nullable=True)
+    name: str = pa.Field()
+    alias_name: str = pa.Field(nullable=True)
 
 
 StationGroupCodeNameDataFrame = DataFrame[StationGroupCodeNameSchema]
 
 
 class HVDCBidzonesSchema(MridResourceSchema):
-    bidzone_1: Series[str] = pa.Field()
-    bidzone_2: Series[str] = pa.Field()
+    bidzone_1: str = pa.Field()
+    bidzone_2: str = pa.Field()
 
 
 HVDCBidzonesDataFrame = DataFrame[HVDCBidzonesSchema]
 
 
 class TransformerWindingsSchema(CoercingSchema):
-    mrid: Series[str] = pa.Field()
-    end_number: Series[int] = pa.Field(gt=0)
+    mrid: str = pa.Field()
+    end_number: int = pa.Field(gt=0)
     w_mrid: Index[str] = pa.Field(unique=True, check_name=True)
 
 
@@ -327,20 +327,20 @@ TransformerWindingsDataFrame = DataFrame[TransformerWindingsSchema]
 
 
 class SvInjectionSchema(CoercingSchema):
-    node: Series[str] = pa.Field(unique=True)
-    p: Series[float] = pa.Field()
-    q: Series[float] = pa.Field()
+    node: str = pa.Field(unique=True)
+    p: float = pa.Field()
+    q: float = pa.Field()
 
 
 SvInjectionDataFrame = DataFrame[SvInjectionSchema]
 
 
 class RASEquipmentSchema(CoercingSchema):
-    mrid: Series[str] = pa.Field(unique=True)
-    equipment_mrid: Series[str] = pa.Field()
-    name: Series[str] = pa.Field()
-    flip: Series[bool] = pa.Field()
-    collection: Series[str] = pa.Field()
+    mrid: str = pa.Field(unique=True)
+    equipment_mrid: str = pa.Field()
+    name: str = pa.Field()
+    flip: bool = pa.Field()
+    collection: str = pa.Field()
 
 
 RASEquipmentDataFrame = DataFrame[RASEquipmentSchema]
@@ -348,12 +348,12 @@ RASEquipmentDataFrame = DataFrame[RASEquipmentSchema]
 
 class Switches(CoercingSchema):
     mrid: Index[str] = pa.Field(unique=True, check_name=True)
-    is_open: Series[bool] = pa.Field()
-    equipment_type: Series[str] = pa.Field()
-    connectivity_node_1: Series[str] = pa.Field()
-    connectivity_node_2: Series[str] = pa.Field()
-    network_enabled: Series[bool] = pa.Field()
-    name: Series[str] = pa.Field()
+    is_open: bool = pa.Field()
+    equipment_type: str = pa.Field()
+    connectivity_node_1: str = pa.Field()
+    connectivity_node_2: str = pa.Field()
+    network_enabled: bool = pa.Field()
+    name: str = pa.Field()
 
 
 SwitchesDataFrame = DataFrame[Switches]
@@ -361,33 +361,33 @@ SwitchesDataFrame = DataFrame[Switches]
 
 class ConnectivityNode(CoercingSchema):
     mrid: Index[str] = pa.Field(unique=True, check_name=True)
-    container: Series[str] = pa.Field()
-    container_name: Series[str] = pa.Field()
-    un: Series[float] = pa.Field(nullable=True)
-    bidzone: Series[str] = pa.Field(nullable=True)
-    container_type: Series[str] = pa.Field()
-    base_voltage_mrid: Series[str] = pa.Field()
+    container: str = pa.Field()
+    container_name: str = pa.Field()
+    un: float = pa.Field(nullable=True)
+    bidzone: str = pa.Field(nullable=True)
+    container_type: str = pa.Field()
+    base_voltage_mrid: str = pa.Field()
 
 
 ConnectivityNodeDataFrame = DataFrame[ConnectivityNode]
 
 
 class SvPowerDeviationSchema(CoercingSchema):
-    node: Series[str] = pa.Field(unique=True)
-    sum_terminal_flow: Series[float] = pa.Field()
-    reported_sv_injection: Series[float] = pa.Field()
-    connectivity_nodes: Series[str] = pa.Field()
-    terminal_names: Series[str] = pa.Field()
+    node: str = pa.Field(unique=True)
+    sum_terminal_flow: float = pa.Field()
+    reported_sv_injection: float = pa.Field()
+    connectivity_nodes: str = pa.Field()
+    terminal_names: str = pa.Field()
 
 
 SvPowerDeviationDataFrame = DataFrame[SvPowerDeviationSchema]
 
 
 class HVDC(CoercingSchema):
-    converter_mrid_1: Series[str] = pa.Field()
-    converter_mrid_2: Series[str] = pa.Field()
-    name: Series[str] = pa.Field()
-    r: Series[float] = pa.Field(ge=0.0)
+    converter_mrid_1: str = pa.Field()
+    converter_mrid_2: str = pa.Field()
+    name: str = pa.Field()
+    r: float = pa.Field(ge=0.0)
 
 
 HVDCDataFrame = DataFrame[HVDC]
