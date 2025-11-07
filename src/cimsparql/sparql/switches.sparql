@@ -1,7 +1,7 @@
 # Name: Switches
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
-SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivity_node_1 ?connectivity_node_2 ?name WHERE {
+SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivity_node_1 ?connectivity_node_2 ?network_enabled ?name WHERE {
   {
     SELECT * {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
@@ -23,14 +23,12 @@ SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivit
                 cim:Switch.normalOpen ?normal_open ;
                 ^cim:Terminal.ConductingEquipment ?terminal1 ;
                 ^cim:Terminal.ConductingEquipment ?terminal2 ;
+                SN:Equipment.networkAnalysisEnable ?net_enabled ;
                 cim:IdentifiedObject.name ?name .
-        VALUES ?true { True "true" }
         ?terminal1 cim:ACDCTerminal.sequenceNumber 1 ;
-                   cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_1 ;
-                   cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true .
+                   cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_1 .
         ?terminal2 cim:ACDCTerminal.sequenceNumber ?max_terminal_number ;
-                   cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_2 ;
-                   cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true .
+                   cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node_2 .
       }
     }
   }
@@ -38,4 +36,5 @@ SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivit
     ?switch cim:Switch.open ?ssh_is_open
   }
   BIND (COALESCE(?ssh_is_open, ?normal_open) AS ?is_open)
+  BIND (IF(LCASE(STR(?net_enabled)) = "true",True,False) AS ?network_enabled)
 }

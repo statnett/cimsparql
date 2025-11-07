@@ -353,6 +353,7 @@ class Switches(CoercingSchema):
     equipment_type: Series[str] = pa.Field()
     connectivity_node_1: Series[str] = pa.Field()
     connectivity_node_2: Series[str] = pa.Field()
+    network_enabled: Series[bool] = pa.Field()
     name: Series[str] = pa.Field()
 
 
