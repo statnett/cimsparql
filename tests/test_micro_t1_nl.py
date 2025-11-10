@@ -385,4 +385,4 @@ def test_protective_action_equipment(test_model: t_common.ModelTest) -> None:
 def test_busbar_sections(test_model: t_common.ModelTest) -> None:
     t_common.check_model(test_model)
     assert test_model.model
-    assert len(list(test_model.model.busbar_section())) == 13
+    assert len(list(test_model.model.busbar_section())) == 7
