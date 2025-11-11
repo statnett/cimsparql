@@ -13,7 +13,7 @@ dependencies = [
   "pandera[pandas]>=0.24.0",
   "polyfactory>=2.17.0",
   "pydantic>=2.9.2",
-  "rdflib>=7.0.0",
+  "rdflib>=7.2.0, <7.3.0",  # Versions above this causes rdf4j tests to take for ever.
   "sparqlwrapper>=2.0.0",
   "tenacity>=9.0.0",
 ]
@@ -24,11 +24,10 @@ dev = [
   "asyncio>=3.4.3",
   "coverage[toml]>=7.6.1",
   "pandas-stubs>=2.2.3.250308",
-  "pytest>=8.3.3",
+  "pytest>=9.0.0",
   "pytest-asyncio>=0.24.0",
   "pytest-cov>=5.0.0",
   "pytest-httpserver>=1.1.0",
-  "pytest-integration>=0.2.3",
   "pytest-profiling>=1.7.0",
 ]
 
@@ -66,7 +65,15 @@ markers = [
   "integration: Mark test as an integration test",
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
-norecursedirs = "_build tmp*  __pycache__ src prof wheel_files tests/t_utils"
+norecursedirs = [
+  "_build",
+  "tmp*",
+  "__pycache__",
+  "src",
+  "prof",
+  "wheel_files",
+  "tests/t_utils",
+]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
