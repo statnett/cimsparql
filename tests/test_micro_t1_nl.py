@@ -378,7 +378,9 @@ def test_protective_action_equipment(test_model: t_common.ModelTest) -> None:
     assert test_model.model
 
     ras = test_model.model.ras_equipment()
-    assert len(ras) == 1
+    assert ras.query('name == "ras_sync_machine"')["flip"].all()
+    assert ras.query('name == "ras_load"')["flip"].astype(int).sum() == 5
+    assert len(ras) == 16
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())

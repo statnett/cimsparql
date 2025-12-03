@@ -338,10 +338,8 @@ class RASEquipmentSchema(CoercingSchema):
     mrid: Series[str] = pa.Field(unique=True)
     equipment_mrid: Series[str] = pa.Field()
     name: Series[str] = pa.Field()
-    flow_shift: Series[bool] = pa.Field()
-    flow_shift_flip: Series[bool] = pa.Field()
-    load_contribution: Series[bool] = pa.Field()
-    unit_contribution: Series[bool] = pa.Field()
+    flip: Series[bool] = pa.Field()
+    collection: Series[str] = pa.Field()
 
 
 RASEquipmentDataFrame = DataFrame[RASEquipmentSchema]
