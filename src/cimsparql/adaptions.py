@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import hashlib
+import itertools
 import re
 import uuid
 from contextlib import suppress
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pyoxigraph import BlankNode, DefaultGraph, Literal, NamedNode, Quad, QuerySolutions, RdfFormat, Store
@@ -13,7 +15,7 @@ from pyoxigraph import BlankNode, DefaultGraph, Literal, NamedNode, Quad, QueryS
 from cimsparql.graphdb import default_namespaces
 
 if TYPE_CHECKING:
-    from collections.abc import Container, Iterator
+    from collections.abc import Container, Iterator, Mapping
     from pathlib import Path
 
 
@@ -22,6 +24,42 @@ class StandardNamespaces:
     xsd_integer = NamedNode("http://www.w3.org/2001/XMLSchema#integer")
     xsd_boolean = NamedNode("http://www.w3.org/2001/XMLSchema#boolean")
     xsd_float = NamedNode("http://www.w3.org/2001/XMLSchema#float")
+
+
+@dataclass
+class ProtectiveActionEquipment:
+    equipment: NamedNode
+    name: str
+    flow_shift: bool
+    flow_shift_flip: bool
+    load_contribution: bool
+    unit_contribution: bool
+
+    def to_quads(self, ns: Mapping[str, str], graph: NamedNode | BlankNode) -> list[Quad]:
+        rpact = BlankNode()
+        collection = BlankNode()
+
+        return [
+            Quad(rpact, StandardNamespaces.rdf_type, NamedNode(ns["ALG"] + "ProtectiveActionEquipment"), graph),
+            Quad(rpact, NamedNode(ns["ALG"] + "ProtectiveActionEquipment.Equipment"), self.equipment, graph),
+            Quad(rpact, NamedNode(ns["cim"] + "IdentifiedObject.name"), Literal(self.name), graph),
+            Quad(rpact, NamedNode(ns["ALG"] + "ProtectiveAction.flowShift"), Literal(self.flow_shift), graph),
+            Quad(rpact, NamedNode(ns["ALG"] + "ProtectiveAction.flowShiftFlip"), Literal(self.flow_shift_flip), graph),
+            Quad(
+                rpact,
+                NamedNode(ns["ALG"] + "ProtectiveAction.loadContribution"),
+                Literal(self.load_contribution),
+                graph,
+            ),
+            Quad(
+                rpact,
+                NamedNode(ns["ALG"] + "ProtectiveAction.unitContribution"),
+                Literal(self.unit_contribution),
+                graph,
+            ),
+            Quad(rpact, NamedNode(ns["ALG"] + "ProtectiveAction.ProtectiveActionCollection"), collection, graph),
+            Quad(collection, StandardNamespaces.rdf_type, NamedNode(ns["ALG"] + "ProtectiveActionCollection"), graph),
+        ]
 
 
 class XmlModelAdaptor:
@@ -277,34 +315,31 @@ class XmlModelAdaptor:
             self.store.add(Quad(schedule_resource, market_code_pred, Literal("market001"), ctx))
 
     def add_protective_action_equipment(self) -> None:
-        rpact = BlankNode()
         sync_machine, _, _, _ = next(
             self.store.quads_for_pattern(
                 None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "SynchronousMachine"), None
             )
         )
+        load, _, _, _ = next(
+            self.store.quads_for_pattern(
+                None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "EnergyConsumer"), None
+            )
+        )
         eq_graph = next(self.eq_contexts())
-
-        literal_true = Literal("true", datatype=StandardNamespaces.xsd_boolean)
-        literal_false = Literal("false", datatype=StandardNamespaces.xsd_boolean)
-
-        self.store.add(
-            Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveActionEquipment.Equipment"), sync_machine, eq_graph)
-        )
-        self.store.add(
-            Quad(rpact, StandardNamespaces.rdf_type, NamedNode(self.ns["ALG"] + "ProtectiveActionEquipment"), eq_graph)
-        )
-        self.store.add(Quad(rpact, NamedNode(self.ns["cim"] + "IdentifiedObject.name"), Literal("ras"), eq_graph))
-        self.store.add(Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveAction.flowShift"), literal_true, eq_graph))
-        self.store.add(
-            Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveAction.flowShiftFlip"), literal_true, eq_graph)
-        )
-        self.store.add(
-            Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveAction.loadContribution"), literal_false, eq_graph)
-        )
-        self.store.add(
-            Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveAction.unitContribution"), literal_false, eq_graph)
-        )
+        for protective_action in (
+            ProtectiveActionEquipment(
+                equipment,
+                name,
+                flow_shift=flow_shift,
+                flow_shift_flip=flow_shift_flip,
+                load_contribution=load_contribution,
+                unit_contribution=False,
+            )
+            for (flow_shift, flow_shift_flip, load_contribution) in itertools.product([True, False], repeat=3)
+            for equipment, name in ((sync_machine, "ras_sync_machine"), (load, "ras_load"))
+        ):
+            for quad in protective_action.to_quads(self.ns, eq_graph):
+                self.store.add(quad)
 
 
 def is_uuid(x: str) -> bool:

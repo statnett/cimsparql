@@ -90,4 +90,4 @@ def test_num_base_voltage_in_serialized_graph(xml_adaptor: XmlModelAdaptor) -> N
 def test_add_ras(xml_adaptor: XmlModelAdaptor) -> None:
     xml_adaptor.add_protective_action_equipment()
     query = "select * {graph ?g {?s a ALG:ProtectiveActionEquipment}}"
-    assert len(list(xml_adaptor.select_query(query, prefixes=xml_adaptor.namespaces()))) == 1
+    assert len(list(xml_adaptor.select_query(query, prefixes=xml_adaptor.namespaces()))) == 16
