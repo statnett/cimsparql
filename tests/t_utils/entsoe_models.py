@@ -60,12 +60,12 @@ def federated_micro_t1() -> t_common.ModelTest:
         adaptor = XmlModelAdaptor.from_folder(this_dir.parent / "data" / "micro")
         adaptor.adapt(eq_client.service_cfg.url)
 
-        logger.info("Number of quads: %d", len(adaptor.graph))
+        logger.info("Number of quads: %d", len(list(adaptor.all_quads())))
         tpsvssh_ctx = adaptor.tpsvssh_contexts()
-        tpsvssh = adaptor.nq_bytes(tpsvssh_ctx)
+        tpsvssh = adaptor.nq_bytes(set(tpsvssh_ctx))
 
         eq_ctx = adaptor.eq_contexts()
-        remaining = adaptor.nq_bytes(eq_ctx)
+        remaining = adaptor.nq_bytes(set(eq_ctx))
 
         logger.info("Federated micro model stats: EQ bytes: %d, TP/SH/SSH bytes: %d", len(remaining), len(tpsvssh))
         tpsvssh_client.upload_rdf(tpsvssh, "n-quads")
@@ -115,10 +115,10 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
         adaptor = XmlModelAdaptor.from_folder(test_folder)
         adaptor.adapt(eq_client.service_cfg.url)
         tpsvssh_client = init_func(url, "smallgrid_tpsvssh")
-        tpsvssh_ctx = adaptor.tpsvssh_contexts()
+        tpsvssh_ctx = set(adaptor.tpsvssh_contexts())
         tpsvssh_client.upload_rdf(adaptor.nq_bytes(tpsvssh_ctx), "n-quads")
 
-        remaining = adaptor.nq_bytes([ctx for ctx in adaptor.graph.contexts() if ctx not in tpsvssh_ctx])
+        remaining = adaptor.nq_bytes({ctx for ctx in adaptor.contexts() if ctx not in tpsvssh_ctx})
 
         eq_client.upload_rdf(remaining, "n-quads")
 

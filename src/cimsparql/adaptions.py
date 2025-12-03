@@ -8,92 +8,107 @@ import uuid
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from rdflib import Graph
-from rdflib.graph import Dataset
-from rdflib.namespace import RDF, XSD
-from rdflib.term import BNode, Literal, Node, URIRef
+from pyoxigraph import BlankNode, DefaultGraph, Literal, NamedNode, Quad, QuerySolutions, RdfFormat, Store
 
 from cimsparql.graphdb import default_namespaces
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Container, Iterator
     from pathlib import Path
+
+
+class StandardNamespaces:
+    rdf_type = NamedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+    xsd_integer = NamedNode("http://www.w3.org/2001/XMLSchema#integer")
+    xsd_boolean = NamedNode("http://www.w3.org/2001/XMLSchema#boolean")
+    xsd_float = NamedNode("http://www.w3.org/2001/XMLSchema#float")
 
 
 class XmlModelAdaptor:
     eq_predicate = "http://entsoe.eu/CIM/EquipmentCore/3/1"
 
-    def __init__(self, filenames: Iterable[Path]) -> None:
-        self.graph = Dataset()
+    def __init__(self, filenames: Iterator[Path]) -> None:
+        self.store = Store()
         self.ns = default_namespaces()
-        for prefix, value in self.ns.items():
-            self.graph.bind(prefix, value)
 
         for filename in filenames:
             profile = filename.stem.rpartition("/")[-1]
-            uri = URIRef(f"http://cimsparql/xml-adpator/{profile}")
-            graph = Graph(identifier=uri).parse(filename, publicID="http://cim")
-            self.graph.addN([(s, p, o, graph) for s, p, o in graph])
+            uri = NamedNode(f"http://cimsparql/xml-adpator/{profile}")
+            profile_store = Store()
+            profile_store.load(None, RdfFormat.RDF_XML, path=filename, base_iri="http://cim.example.org#")
+            for quad in profile_store.quads_for_pattern(None, None, None, None):
+                self.store.add(Quad(quad.subject, quad.predicate, quad.object, uri))
+
+    def select_query(self, query: str, *, prefixes: dict[str, str] | None = None) -> QuerySolutions:
+        result = self.store.query(query, prefixes=prefixes)
+        assert isinstance(result, QuerySolutions)
+        return result
 
     def namespaces(self) -> dict[str, str]:
-        return self.ns | {str(prefix): str(name) for prefix, name in self.graph.namespaces()}
+        return self.ns
 
     def graphs(self) -> set[str]:
-        return {graph for _, _, _, graph in self.graph.quads() if graph}
+        return {graph for _, _, _, graph in self.store.quads_for_pattern(None, None, None, None) if graph}
+
+    def all_quads(self) -> Iterator[Quad]:
+        return self.store.quads_for_pattern(None, None, None, None)
 
     @classmethod
     def from_folder(cls, folder: Path) -> XmlModelAdaptor:
-        return XmlModelAdaptor(list(folder.glob("*.xml")))
+        return XmlModelAdaptor(folder.glob("*.xml"))
 
     def add_mrid(self) -> None:
         """Add cim:IdentifiedObject.mRID if not present."""
         ns = self.namespaces()
-        identified_obj_mrid = URIRef(f"{ns['cim']}IdentifiedObject.mRID")
-        for ctx in self.graph.contexts():
-            subjects = {s for s, _, _ in ctx}
-            for s in subjects:
-                mrid_str = str(s).rpartition("#_")[-1]
-                mrid = mrid_str if is_uuid(mrid_str) else generate_uuid(mrid_str)
-                ctx.add((s, identified_obj_mrid, Literal(mrid)))
+        identified_obj_mrid = NamedNode(f"{ns['cim']}IdentifiedObject.mRID")
+        has_mrid = set(self.store.quads_for_pattern(None, identified_obj_mrid, None, None))
+        missing_mrid = set(self.all_quads()) - has_mrid
+
+        seen_subjects = set[NamedNode | BlankNode]()
+
+        # Sort the quads such that quads in the EQ graph is considered before the other profiles
+        for quad in sorted(missing_mrid, key=lambda quad: "EQ" not in str(quad.graph_name)):
+            if quad.subject in seen_subjects:
+                continue
+            assert isinstance(quad.subject, (NamedNode, BlankNode))
+            seen_subjects.add(quad.subject)
+            mrid_str = str(quad.subject.value).rpartition("#_")[-1]
+            mrid = mrid_str if is_uuid(mrid_str) else generate_uuid(mrid_str)
+            self.store.add(Quad(quad.subject, identified_obj_mrid, Literal(mrid), quad.graph_name))
 
     def add_market_code_to_non_conform_load(self) -> None:
-        updated = set[Node]()
-        for load, _, _, ctx in self.graph.quads((None, RDF.type, URIRef(self.ns["cim"] + "EnergyConsumer"), None)):
+        updated = set[NamedNode | BlankNode]()
+        for load, _, _, ctx in self.store.quads_for_pattern(
+            None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "EnergyConsumer"), None
+        ):
             if load in updated:
                 continue
 
             if "EQ" not in str(ctx):
                 continue
             updated.add(load)
-            assert ctx
 
-            current_graph = self.graph.get_graph(ctx)
-            assert current_graph
-
-            load_group = BNode()
-            schedule_resource = BNode()
-            current_graph.addN(
-                [
-                    (load, URIRef(self.ns["cim"] + "NonConformLoad.LoadGroup"), load_group, current_graph),
-                    (
-                        load_group,
-                        URIRef(self.ns["cim"] + "IdentifiedObject.name"),
-                        Literal("created-group", datatype=XSD.string),
-                        current_graph,
-                    ),
-                    (
-                        load_group,
-                        URIRef(self.ns["SN"] + "NonConformLoadGroup.ScheduleResource"),
-                        schedule_resource,
-                        current_graph,
-                    ),
-                    (
-                        schedule_resource,
-                        URIRef(self.ns["SN"] + "ScheduleResource.marketCode"),
-                        Literal("market001", datatype=XSD.string),
-                        current_graph,
-                    ),
-                ]
+            load_group = BlankNode()
+            schedule_resource = BlankNode()
+            self.store.add(Quad(load, NamedNode(self.ns["cim"] + "NonConformLoad.LoadGroup"), load_group, ctx))
+            self.store.add(
+                Quad(load_group, NamedNode(self.ns["cim"] + "IdentifiedObject.name"), Literal("created_group"), ctx)
+            )
+            self.store.add(
+                Quad(
+                    load_group,
+                    NamedNode(self.ns["SN"] + "NonConformLoadGroup.ScheduleResource"),
+                    schedule_resource,
+                    ctx,
+                )
+            )
+            self.store.add(
+                Quad(
+                    schedule_resource,
+                    NamedNode(self.ns["SN"] + "ScheduleResource.marketCode"),
+                    Literal("market001"),
+                    ctx,
+                )
             )
 
     def adapt(self, eq_uri: str) -> None:
@@ -109,221 +124,186 @@ class XmlModelAdaptor:
         self.add_network_analysis_enable()
 
     def add_zero_sv_power_flow(self) -> None:
-        sv_graph = Graph(identifier=URIRef("http://cimsparql/xml-adpator/SV"))
-        sv_power_flow_terminal = URIRef(self.ns["cim"] + "SvPowerFlow.Terminal")
+        sv_graph = NamedNode("http://cimsparql/xml-adpator/SV")
+        sv_power_flow_terminal = NamedNode(self.ns["cim"] + "SvPowerFlow.Terminal")
+        has_sv_power_flow = {
+            quad.object for quad in self.store.quads_for_pattern(None, sv_power_flow_terminal, None, None)
+        }
 
-        zero_sv_flow_added = set()
+        zero_sv_flow_added = set[NamedNode | BlankNode]()
 
-        for terminal, _, _, _ in self.graph.quads((None, RDF.type, URIRef(self.ns["cim"] + "Terminal"), None)):
+        for terminal, _, _, _ in self.store.quads_for_pattern(
+            None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "Terminal"), None
+        ):
             # Do not add SvPowerFlow if it already exists
-            if any(self.graph.quads((None, sv_power_flow_terminal, terminal, None))) or terminal in zero_sv_flow_added:
+            if terminal in has_sv_power_flow or terminal in zero_sv_flow_added:
                 continue
             zero_sv_flow_added.add(terminal)
-            power_flow = BNode()
-            sv_graph.addN(
-                (
-                    (power_flow, sv_power_flow_terminal, terminal, sv_graph),
-                    (power_flow, URIRef(self.ns["cim"] + "SvPowerFlow.p"), Literal(0.0), sv_graph),
-                    (power_flow, URIRef(self.ns["cim"] + "SvPowerFlow.q"), Literal(0.0), sv_graph),
-                )
-            )
-        self.graph.add_graph(sv_graph)
+            power_flow = BlankNode()
+            self.store.add(Quad(power_flow, sv_power_flow_terminal, terminal, sv_graph))
+            self.store.add(Quad(power_flow, NamedNode(self.ns["cim"] + "SvPowerFlow.p"), Literal(0.0), sv_graph))
+            self.store.add(Quad(power_flow, NamedNode(self.ns["cim"] + "SvPowerFlow.q"), Literal(0.0), sv_graph))
 
     def add_dtypes(self) -> None:
         fields = {
-            "endNumber": XSD.integer,
-            "sequenceNumber": XSD.integer,
-            "phaseAngleClock": XSD.integer,
-            "SvPowerFlow.p": XSD.float,
-            ".open": XSD.boolean,
-            ".connected": XSD.boolean,
-            ".nominalVoltage": XSD.float,
+            "endNumber": int,
+            "sequenceNumber": int,
+            "phaseAngleClock": int,
+            "SvPowerFlow.p": float,
+            ".open": to_boolean,
+            ".connected": to_boolean,
+            ".nominalVoltage": float,
         }
-        for s, predicate, o, g in self.graph.quads():
-            assert g
-            current_graph = self.graph.get_graph(g)
-            assert current_graph
+        for quad in self.all_quads():
             with suppress(StopIteration):
-                f = next(f for f in fields if f in str(predicate))
-                current_graph.remove((s, predicate, o))
+                f = next(f for f in fields if f in str(quad.predicate))
+                self.store.remove(quad)
 
-                literal = Literal(str(o), datatype=fields[f])
-                current_graph.add((s, predicate, literal))
+                caster = fields[f]
+                assert isinstance(quad.object, Literal)
+                literal = Literal(caster(quad.object.value))
+                self.store.add(Quad(quad.subject, quad.predicate, literal, quad.graph_name))
 
-    def tpsvssh_contexts(self) -> list[Graph]:
-        return [ctx for ctx in self.graph.contexts() if any(token in str(ctx) for token in ("SSH", "TP", "SV"))]
+    def tpsvssh_contexts(self) -> Iterator[NamedNode | BlankNode]:
+        return (
+            node for node in self.store.named_graphs() if any(substr in str(node) for substr in ("SV", "TP", "SSH"))
+        )
 
-    def eq_contexts(self) -> list[Graph]:
-        return [ctx for ctx in self.graph.contexts() if any(token in str(ctx) for token in ("EQ", "GL"))]
+    def eq_contexts(self) -> Iterator[NamedNode | BlankNode]:
+        return (node for node in self.store.named_graphs() if any(substr in str(node) for substr in ("EQ", "GL")))
 
-    def nq_bytes(self, contexts: Iterable[Graph] | None = None) -> bytes:
+    def contexts(self) -> Iterator[NamedNode | BlankNode]:
+        return self.store.named_graphs()
+
+    def nq_bytes(self, contexts: Container[NamedNode | BlankNode | DefaultGraph] | None = None) -> bytes:
         """Return the contexts as bytes. If contexts is None, the entire graph is exported."""
-        if contexts is None:
-            return self.graph.serialize(format="nquads", encoding="utf8")
+        store = Store()
+        for quad in self.all_quads():
+            if contexts is None or quad.graph_name in contexts:
+                store.add(quad)
 
-        graph = Dataset()
-        for ctx in contexts:
-            graph.addN((s, p, o, ctx) for s, p, o in ctx)
-        return graph.serialize(format="nquads", encoding="utf8")
+        result = store.dump(format=RdfFormat.N_QUADS)
+        assert isinstance(result, bytes)
+        return result
 
     def add_internal_eq_link(self, eq_uri: str) -> None:
         # Insert in one SV graph
         ctx = next(c for c in self.tpsvssh_contexts() if "SV" in str(c))
-        graph = self.graph.get_graph(ctx.identifier)
-        assert graph
-        graph.add((BNode(), URIRef(self.eq_predicate), URIRef(eq_uri)))
+        self.store.add(Quad(BlankNode(), NamedNode(self.eq_predicate), NamedNode(eq_uri), ctx))
 
     def add_zero_sv_injection(self) -> None:
-        tp_node_type = URIRef(self.ns["cim"] + "TopologicalNode")
-        sv_inj_type = URIRef(self.ns["cim"] + "SvInjection")
+        tp_node_type = NamedNode(self.ns["cim"] + "TopologicalNode")
+        sv_inj_type = NamedNode(self.ns["cim"] + "SvInjection")
 
-        graph = Graph(identifier=URIRef("http://cimsparql/xml-adpator/SV-injection"))
-        used_nodes = set()
-        for s, _, _, _ in self.graph.quads((None, RDF.type, tp_node_type, None)):
+        graph = NamedNode("http://cimsparql/xml-adpator/SV-injection")
+        used_nodes = set[NamedNode | BlankNode]()
+        for s, _, _, _ in self.store.quads_for_pattern(None, StandardNamespaces.rdf_type, tp_node_type, None):
             if s in used_nodes:
                 continue
             used_nodes.add(s)
-            sv_injection = BNode()
-            graph.addN(
-                (
-                    (sv_injection, RDF.type, sv_inj_type, graph),
-                    (sv_injection, URIRef(self.ns["cim"] + "SvInjection.TopologicalNode"), s, graph),
-                    (
-                        sv_injection,
-                        URIRef(self.ns["cim"] + "SvInjection.pInjection"),
-                        Literal(0.0, datatype=XSD.float),
-                        graph,
-                    ),
-                )
+            sv_injection = BlankNode()
+            self.store.add(Quad(sv_injection, StandardNamespaces.rdf_type, sv_inj_type, graph))
+            self.store.add(Quad(sv_injection, NamedNode(self.ns["cim"] + "SvInjection.TopologicalNode"), s, graph))
+            self.store.add(
+                Quad(sv_injection, NamedNode(self.ns["cim"] + "SvInjection.pInjection"), Literal(0.0), graph)
             )
-        self.graph.add_graph(graph)
 
     def add_eic_code(self) -> None:
-        for substation, _, _, ctx in self.graph.quads((None, RDF.type, URIRef(self.ns["cim"] + "Substation"), None)):
-            assert ctx
-            current_graph = self.graph.get_graph(ctx)
-            assert current_graph
-            market_delivery_point = BNode()
-            bidding_area = BNode()
-            eic_code = Literal("10Y1001A1001A48H", datatype=XSD.string)
-            current_graph.addN(
-                (
-                    (
-                        substation,
-                        URIRef(f"{self.ns['SN']}Substation.MarketDeliveryPoint"),
-                        market_delivery_point,
-                        current_graph,
-                    ),
-                    (
-                        market_delivery_point,
-                        URIRef(f"{self.ns['SN']}MarketDeliveryPoint.BiddingArea"),
-                        bidding_area,
-                        current_graph,
-                    ),
-                    (
-                        bidding_area,
-                        URIRef(f"{self.ns['entsoeSecretariat']}IdentifiedObject.energyIdentCodeEIC"),
-                        eic_code,
-                        current_graph,
-                    ),
+        for substation, _, _, ctx in self.store.quads_for_pattern(
+            None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "Substation"), None
+        ):
+            market_delivery_point = BlankNode()
+            bidding_area = BlankNode()
+            eic_code = Literal("10Y1001A1001A48H")
+            self.store.add(
+                Quad(
+                    substation, NamedNode(f"{self.ns['SN']}Substation.MarketDeliveryPoint"), market_delivery_point, ctx
+                )
+            )
+            self.store.add(
+                Quad(
+                    market_delivery_point,
+                    NamedNode(f"{self.ns['SN']}MarketDeliveryPoint.BiddingArea"),
+                    bidding_area,
+                    ctx,
+                )
+            )
+            self.store.add(
+                Quad(
+                    bidding_area,
+                    NamedNode(f"{self.ns['entsoeSecretariat']}IdentifiedObject.energyIdentCodeEIC"),
+                    eic_code,
+                    ctx,
                 )
             )
 
     def add_network_analysis_enable(self) -> None:
-        used_equipment = set()
-        for _, _, equipment, ctx in self.graph.quads(
-            (
-                None,
-                URIRef(f"{self.ns['cim']}Terminal.ConductingEquipment"),
-                None,
-                None,
-            )
-        ):
+        conducting_equipment = NamedNode(f"{self.ns['cim']}Terminal.ConductingEquipment")
+        used_equipment = set[NamedNode | BlankNode]()
+        for _, _, equipment, ctx in self.store.quads_for_pattern(None, conducting_equipment, None, None):
             if equipment in used_equipment:
                 continue
             used_equipment.add(equipment)
             assert ctx
-            graph = self.graph.get_graph(ctx)
-            assert graph
-            graph.add(
-                (
-                    equipment,
-                    URIRef(f"{self.ns['SN']}Equipment.networkAnalysisEnable"),
-                    Literal("true", datatype=XSD.boolean),
-                ),
-            )
+            network_analysis_enable = NamedNode(f"{self.ns['SN']}Equipment.networkAnalysisEnable")
+            self.store.add(Quad(equipment, network_analysis_enable, Literal(value=True), ctx))
 
     def add_generating_unit(self) -> None:
-        updated = set()
-        for sync_machine, _, _, ctx in self.graph.quads(
-            (
-                None,
-                RDF.type,
-                URIRef(self.ns["cim"] + "SynchronousMachine"),
-                None,
-            )
+        updated = set[NamedNode | BlankNode]()
+        sync_machine_type = NamedNode(self.ns["cim"] + "SynchronousMachine")
+        for sync_machine, _, _, ctx in self.store.quads_for_pattern(
+            None, StandardNamespaces.rdf_type, sync_machine_type, None
         ):
-            assert ctx
             if "EQ" not in str(ctx):
                 continue
             if sync_machine in updated:
                 continue
-
-            generating_unit = BNode()
-            schedule_resource = BNode()
-            current_graph = self.graph.get_graph(ctx)
-            assert current_graph
+            generating_unit = BlankNode()
+            schedule_resource = BlankNode()
             updated.add(sync_machine)
-            current_graph.addN(
-                (
-                    (
-                        sync_machine,
-                        URIRef(self.ns["cim"] + "SynchronousMachine.GeneratingUnit"),
-                        generating_unit,
-                        current_graph,
-                    ),
-                    (generating_unit, RDF.type, URIRef(self.ns["cim"] + "ThermalGeneratingUnit"), current_graph),
-                    (
-                        generating_unit,
-                        URIRef(self.ns["cim"] + "IdentifiedObject.name"),
-                        Literal("GeneratingUnit", datatype=XSD.string),
-                        current_graph,
-                    ),
-                    (
-                        generating_unit,
-                        URIRef(self.ns["SN"] + "GeneratingUnit.ScheduleResource"),
-                        schedule_resource,
-                        current_graph,
-                    ),
-                    (schedule_resource, RDF.type, URIRef(self.ns["SN"] + "ScheduleResource"), current_graph),
-                    (
-                        schedule_resource,
-                        URIRef(self.ns["SN"] + "ScheduleResource.marketCode"),
-                        Literal("market001", datatype=XSD.string),
-                        current_graph,
-                    ),
-                )
-            )
+
+            gen_unit_pred = NamedNode(self.ns["cim"] + "SynchronousMachine.GeneratingUnit")
+            thermal_gen_unit_type = NamedNode(self.ns["cim"] + "ThermalGeneratingUnit")
+            name_pred = NamedNode(self.ns["cim"] + "IdentifiedObject.name")
+            schedule_resource_pred = NamedNode(self.ns["SN"] + "GeneratingUnit.ScheduleResource")
+            scheduler_resource_type = NamedNode(self.ns["SN"] + "ScheduleResource")
+            market_code_pred = NamedNode(self.ns["SN"] + "ScheduleResource.marketCode")
+
+            self.store.add(Quad(sync_machine, gen_unit_pred, generating_unit, ctx))
+            self.store.add(Quad(gen_unit_pred, StandardNamespaces.rdf_type, thermal_gen_unit_type))
+            self.store.add(Quad(generating_unit, name_pred, Literal("GeneratuinggUnit"), ctx))
+            self.store.add(Quad(generating_unit, schedule_resource_pred, schedule_resource, ctx))
+            self.store.add(Quad(schedule_resource, StandardNamespaces.rdf_type, scheduler_resource_type, ctx))
+            self.store.add(Quad(schedule_resource, market_code_pred, Literal("market001"), ctx))
 
     def add_protective_action_equipment(self) -> None:
-        rpact = BNode()
+        rpact = BlankNode()
         sync_machine, _, _, _ = next(
-            self.graph.quads((None, RDF.type, URIRef(self.ns["cim"] + "SynchronousMachine", None)))
+            self.store.quads_for_pattern(
+                None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "SynchronousMachine"), None
+            )
         )
-        eq_graph = self.eq_contexts()[0]
+        eq_graph = next(self.eq_contexts())
 
-        literal_true = Literal(lexical_or_value=True)
-        literal_false = Literal(lexical_or_value=False)
-        eq_graph.addN(
-            [
-                (rpact, URIRef(self.ns["ALG"] + "ProtectiveActionEquipment.Equipment"), sync_machine, eq_graph),
-                (rpact, RDF.type, URIRef(self.ns["ALG"] + "ProtectiveActionEquipment"), eq_graph),
-                (rpact, URIRef(self.ns["cim"] + "IdentifiedObject.name"), Literal("ras"), eq_graph),
-                (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.flowShift"), literal_true, eq_graph),
-                (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.flowShiftFlip"), literal_true, eq_graph),
-                (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.loadContribution"), literal_false, eq_graph),
-                (rpact, URIRef(self.ns["ALG"] + "ProtectiveAction.unitContribution"), literal_false, eq_graph),
-            ]
+        literal_true = Literal("true", datatype=StandardNamespaces.xsd_boolean)
+        literal_false = Literal("false", datatype=StandardNamespaces.xsd_boolean)
+
+        self.store.add(
+            Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveActionEquipment.Equipment"), sync_machine, eq_graph)
+        )
+        self.store.add(
+            Quad(rpact, StandardNamespaces.rdf_type, NamedNode(self.ns["ALG"] + "ProtectiveActionEquipment"), eq_graph)
+        )
+        self.store.add(Quad(rpact, NamedNode(self.ns["cim"] + "IdentifiedObject.name"), Literal("ras"), eq_graph))
+        self.store.add(Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveAction.flowShift"), literal_true, eq_graph))
+        self.store.add(
+            Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveAction.flowShiftFlip"), literal_true, eq_graph)
+        )
+        self.store.add(
+            Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveAction.loadContribution"), literal_false, eq_graph)
+        )
+        self.store.add(
+            Quad(rpact, NamedNode(self.ns["ALG"] + "ProtectiveAction.unitContribution"), literal_false, eq_graph)
         )
 
 
@@ -334,3 +314,7 @@ def is_uuid(x: str) -> bool:
 def generate_uuid(x: str) -> str:
     h = hashlib.md5(x.encode(), usedforsecurity=False)
     return str(uuid.UUID(hex=h.hexdigest()))
+
+
+def to_boolean(x: str) -> bool:
+    return x.lower() in {"true", "1"}
