@@ -32,6 +32,6 @@ SELECT (?mrid AS ?node) ?busname (?substation_name AS ?substation) ?un ?base_vol
     }
   } .
   FILTER REGEX(?area,'${region}')
-  BIND (IF(BOUND(?angle_ref),True,False) AS ?is_swing_bus)
+  BIND (BOUND(?angle_ref) AS ?is_swing_bus)
   BIND (COALESCE(?island_name, "Unknown") AS ?island)
 }

@@ -12,5 +12,5 @@ SELECT ?mrid ?p ?q ?in_service WHERE {
   OPTIONAL {
     ?terminal cim:Terminal.ConductingEquipment/^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?_in_service
   }
-  BIND (COALESCE(?_in_service, True) AS ?in_service)
+  BIND (COALESCE(?_in_service, true) AS ?in_service)
 }

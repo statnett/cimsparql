@@ -42,7 +42,7 @@ SELECT ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?connectivity_node ?con
                      ALG:VoltageSourceConverter.loss2 ?_loss2 .
           ?pole cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?_vdcn ;
         }
-        BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
+        BIND (COALESCE(?_analysis_enabled, true) AS ?analysis_enabled)
         BIND (COALESCE(?_loss0, 0.0) AS ?loss0)
         BIND (COALESCE(?_loss1, 0.0) AS ?loss1)
         BIND (COALESCE(?_loss2, 0.0) AS ?loss2)

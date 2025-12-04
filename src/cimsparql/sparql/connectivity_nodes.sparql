@@ -8,7 +8,7 @@ SELECT ?mrid (?container_mrid AS ?container) ?container_name ?un ?base_voltage_m
   {
     SELECT ?con_node (COUNT(*) AS ?num_active) {
       # Support both typed and not typed networkAnalysisEnable flag
-      VALUES ?true { True "true" }
+      VALUES ?true { true "true" }
       ?con_node ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true
     }
     GROUP BY ?con_node

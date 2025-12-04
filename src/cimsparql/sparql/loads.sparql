@@ -23,7 +23,7 @@ SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_n
         OPTIONAL {
           ?load SN:Equipment.networkAnalysisEnable ?_network_analysis
         } .
-        BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
+        BIND (COALESCE(?_network_analysis, true) AS ?network_analysis)
         FILTER (?network_analysis)
         # Extract mRID and connectivity node for each terminal associated with a load
         ?terminal cim:Terminal.ConductingEquipment ?load ;

@@ -3,10 +3,10 @@ PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?mrid WHERE {
   {
     ?mrid a cim:Disconnector ;
-          cim:Switch.open True .
+          cim:Switch.open true .
   }
   UNION {
     ?mrid a cim:Terminal ;
-          cim:Terminal.connected | cim:ACDCTerminal.connected False .
+          cim:Terminal.connected | cim:ACDCTerminal.connected false .
   }
 }

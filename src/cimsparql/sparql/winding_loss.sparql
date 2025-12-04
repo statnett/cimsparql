@@ -24,7 +24,7 @@ SELECT ?mrid (SUM(xsd:double(STR(?sv_p))) / SUM(?in_service) AS ?ploss_2) WHERE 
   }
   BIND (IF(COALESCE(?_in_service, ?connected),1,0) AS ?in_service) .
   BIND (COALESCE(?_sv_p, xsd:double(0.0)) AS ?sv_p)
-  BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
+  BIND (COALESCE(?_network_analysis, true) AS ?network_analysis)
   FILTER (?network_analysis)
 }
 GROUP BY ?mrid

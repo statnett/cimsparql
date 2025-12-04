@@ -18,6 +18,6 @@ SELECT ?mrid ?t_mrid_1 ?t_mrid_2 WHERE {
   OPTIONAL {
     ?connector SN:Equipment.networkAnalysisEnable ?_analysis_enabled .
   }
-  BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
+  BIND (COALESCE(?_analysis_enabled, true) AS ?analysis_enabled)
   FILTER (?analysis_enabled)
 }

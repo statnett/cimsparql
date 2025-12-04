@@ -36,5 +36,5 @@ SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivit
     ?switch cim:Switch.open ?ssh_is_open
   }
   BIND (COALESCE(?ssh_is_open, ?normal_open) AS ?is_open)
-  BIND (IF(LCASE(STR(?net_enabled)) = "true",True,False) AS ?network_enabled)
+  BIND (LCASE(STR(?net_enabled)) = "true" AS ?network_enabled)
 }
