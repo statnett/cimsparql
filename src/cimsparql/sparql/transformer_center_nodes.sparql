@@ -2,7 +2,7 @@
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 PREFIX entsoeSecretariat: <http://entsoe.eu/Secretariat/ProfileExtension/1#>
-SELECT ?node ?busname (?container_name AS ?substation) ?un ?base_voltage_mrid (?container_mrid AS ?substation_mrid) ?bidzone ?island ( False AS ?is_swing_bus) ?connectivity_node (?un AS ?sv_voltage) WHERE {
+SELECT ?node ?busname (?container_name AS ?substation) ?un ?base_voltage_mrid (?container_mrid AS ?substation_mrid) ?bidzone ?island (false AS ?is_swing_bus) ?connectivity_node (?un AS ?sv_voltage) WHERE {
   OPTIONAL {
     ?con_node cim:ConnectivityNode.TopologicalNode ?top_node .
     ?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name
@@ -28,6 +28,6 @@ SELECT ?node ?busname (?container_name AS ?substation) ?un ?base_voltage_mrid (?
                   cim:BaseVoltage.nominalVoltage ?un
   }
   FILTER (?network_analysis)
-  BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
+  BIND (COALESCE(?_network_analysis, true) AS ?network_analysis)
   BIND (COALESCE(?island_name, "Unknown") AS ?island)
 }

@@ -26,8 +26,8 @@ SELECT DISTINCT ?mrid ?name ?t_mrid ?p_mrid WHERE {
   OPTIONAL {
     ?converter SN:Equipment.networkAnalysisEnable ?_converter_analysis_enabled .
   }
-  BIND (COALESCE(?_transformer_analysis_enabled, True) AS ?transformer_analysis_enabled)
-  BIND (COALESCE(?_converter_analysis_enabled, True) AS ?converter_analysis_enabled)
+  BIND (COALESCE(?_transformer_analysis_enabled, true) AS ?transformer_analysis_enabled)
+  BIND (COALESCE(?_converter_analysis_enabled, true) AS ?converter_analysis_enabled)
   FILTER (?transformer_analysis_enabled)
   FILTER (?converter_analysis_enabled)
 }

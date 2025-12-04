@@ -12,7 +12,7 @@ SELECT
 (MAX(?mrid) AS ?mrid) (MAX(?name) AS ?name)
 # If SvPower at node 1 is smaller than SvPower at node 2, we assign the loss (sum of the two) to node_1. In case
 # SvPower at node 1 is larger than on node 2, the loss is assigned to node_2
-(IF(xsd:double(MAX(?p_1)) < xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_1) (IF(xsd:double(MAX(?p_1)) > xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_2) (MAX(?r) AS ?r) (MAX(?rate) AS ?rate) (COALESCE(MAX(?in_service), MAX(?connected_1) && MAX(?connected_2), True) AS ?status) (MAX(?un) AS ?un) (MAX(?x) AS ?x) (MAX(?b) AS ?b) (MAX(?g) AS ?g) (MAX(?length) AS ?length) (MAX(?connectivity_node_1) AS ?connectivity_node_1) (MAX(?connectivity_node_2) AS ?connectivity_node_2) WHERE {
+(IF(xsd:double(MAX(?p_1)) < xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_1) (IF(xsd:double(MAX(?p_1)) > xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_2) (MAX(?r) AS ?r) (MAX(?rate) AS ?rate) (COALESCE(MAX(?in_service), MAX(?connected_1) && MAX(?connected_2), true) AS ?status) (MAX(?un) AS ?un) (MAX(?x) AS ?x) (MAX(?b) AS ?b) (MAX(?g) AS ?g) (MAX(?length) AS ?length) (MAX(?connectivity_node_1) AS ?connectivity_node_1) (MAX(?connectivity_node_2) AS ?connectivity_node_2) WHERE {
   # TODO: Check if SN:Equipment.networkAnalysisEnable is on it's way into the standard
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for ACLineSegments
@@ -58,9 +58,9 @@ SELECT
   }
   # Create variables for node 1 and node 2
   BIND (IF(?nr = 1,STR(?p),'') AS ?p_1)
-  BIND (IF(?nr = 1,?connected,False) AS ?connected_1)
+  BIND (IF(?nr = 1,?connected,false) AS ?connected_1)
   BIND (IF(?nr = 2,STR(?p),'') AS ?p_2)
-  BIND (IF(?nr = 2,?connected,False) AS ?connected_2)
+  BIND (IF(?nr = 2,?connected,false) AS ?connected_2)
   BIND (IF(?nr = 1,?connectivity_node,'') AS ?connectivity_node_1)
   BIND (IF(?nr = 2,?connectivity_node,'') AS ?connectivity_node_2)
   FILTER (REGEX(?area,'${region}'))
@@ -70,4 +70,4 @@ GROUP BY ?acline
 # 1) We don't need lines connecting nodes to themselves
 # 2) Only extract lines where at least two nodes exist
 # 3) Only extract lines where SN:Equipment.networkAnalysisEnable is True (if the field exists)
-HAVING ((MAX(?connectivity_node_1) != MAX(?connectivity_node_2)) && (MAX(?connectivity_node_1) != "") && (MAX(?connectivity_node_2) != "") && (COUNT(*) > 1) && COALESCE(MAX(?analysis_enabled), True))
+HAVING ((MAX(?connectivity_node_1) != MAX(?connectivity_node_2)) && (MAX(?connectivity_node_1) != "") && (MAX(?connectivity_node_2) != "") && (COUNT(*) > 1) && COALESCE(MAX(?analysis_enabled), true))

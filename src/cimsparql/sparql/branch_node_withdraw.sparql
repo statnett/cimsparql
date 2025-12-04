@@ -39,7 +39,7 @@ SELECT ?mrid ?node ?p ?q ?connectivity_node WHERE {
   }
   ?topological_node cim:IdentifiedObject.mRID ?node .
   # Assign analysis enabled (all True if not exist)
-  BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
+  BIND (COALESCE(?_analysis_enabled, true) AS ?analysis_enabled)
   FILTER (?analysis_enabled)
   FILTER (?connected)
 }

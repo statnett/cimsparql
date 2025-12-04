@@ -60,7 +60,7 @@ SELECT ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate ?angle ?ratio ?connectivity_nod
   } .
   BIND (COALESCE(?ssh_step, ?normal_step) AS ?step)
   BIND (IF(BOUND(?inc),1 + (xsd:integer(STR(?step)) - xsd:integer(STR(?neutral_step))) * xsd:double(STR(?inc)) / 100.0,1.0) AS ?tau)
-  BIND (COALESCE(?_network_analysis, True) AS ?network_analysis)
+  BIND (COALESCE(?_network_analysis, true) AS ?network_analysis)
   FILTER (?network_analysis)
   # Assign status flag to the transformer. The first that exists is used
   # 1) in_service flag on the transformer

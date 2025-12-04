@@ -25,5 +25,5 @@ SELECT ?name ?p_mrid ?w_mrid ?end_number ?un ?t_mrid ?r ?x ?rate WHERE {
     ?p_transformer SN:Equipment.networkAnalysisEnable ?_analysis_enabled .
   }
   FILTER (?analysis_enabled)
-  BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
+  BIND (COALESCE(?_analysis_enabled, true) AS ?analysis_enabled)
 }
