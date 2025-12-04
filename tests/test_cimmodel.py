@@ -19,13 +19,15 @@ from cimsparql.utils import query_name
 
 def test_map_data_types():
     config = ServiceConfig(rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
-    cim_model = Model({"default": GraphDBClient(config)}, mapper=LocalTypeMapper(config))
+    client = GraphDBClient(config)
+    cim_model = Model({"default": client}, mapper=LocalTypeMapper(client))
     assert cim_model.map_data_types
 
 
 def test_not_map_data_types():
     config = ServiceConfig(rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
-    cim_model = Model({"default": GraphDBClient(config)}, mapper=LocalTypeMapper(config))
+    client = GraphDBClient(config)
+    cim_model = Model({"default": client}, mapper=LocalTypeMapper(client))
     cim_model.client.prefixes.pop("cim")
     assert not cim_model.map_data_types
 
@@ -64,7 +66,7 @@ def test_multi_client_model_defined_clients_exist():
     tpsv = GraphDBClient(config)
     m_cfg = ModelConfig()
 
-    model = get_federated_cim_model(eq, tpsv, m_cfg, LocalTypeMapper(config))
+    model = get_federated_cim_model(eq, tpsv, m_cfg, LocalTypeMapper(eq))
 
     query_names = list[str]()
     for f in sparql_folder.glob("*.sparql"):
@@ -99,7 +101,7 @@ def test_correlation_id(httpserver: HTTPServer):
 
     model = Model(
         {"name1": GraphDBClient(config), "name2": GraphDBClient(config)},
-        mapper=LocalTypeMapper(config),
+        mapper=LocalTypeMapper(GraphDBClient(config)),
     )
     query1 = "# Name: name1\nselect * {?s ?p ?o}"
     query2 = "# Name: name2\nselect * {?s ?p ?o}"
@@ -176,5 +178,5 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
 def test_three_winding_empty_result():
     config = ServiceConfig(server="http://some-server", rest_api=RestApi.DIRECT_SPARQL_ENDPOINT)
     client = GraphDBClient(service_cfg=config, sparql_wrapper=EmptyThreeWindingTransformerSPARQLWrapper())
-    model = Model(defaultdict(lambda: client), mapper=LocalTypeMapper(config))
+    model = Model(defaultdict(lambda: client), mapper=LocalTypeMapper(client))
     assert model.transformer_branches().empty

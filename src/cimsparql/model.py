@@ -99,7 +99,7 @@ class Model:
     ) -> None:
         self.clients = clients
         self.config = config or ModelConfig()
-        self.mapper = mapper or TypeMapper(self.get_client("Type mapper").service_cfg)
+        self.mapper = mapper or TypeMapper(self.get_client("Type mapper"))
 
     @property
     def distinct_clients(self) -> list[GraphDBClient]:
