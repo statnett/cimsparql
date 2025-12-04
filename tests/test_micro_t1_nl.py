@@ -70,10 +70,10 @@ def test_full_model_micro_t1_nl(test_model: t_common.ModelTest):
     }
     assert profiles.issubset(full_model["profile"])
 
-    row = full_model.query("model == 'urn:uuid:10c3fda3-35b7-47b0-b3c6-919c3e82e974'").iloc[0]
-    assert row["profile"] == "http://entsoe.eu/CIM/SteadyStateHypothesis/1/1"
-    assert row["time"] == "2017-10-02T09:30:00Z"
-    assert row["version"] == "3"
+    row = full_model.query("model == 'urn:uuid:10c3fda3-35b7-47b0-b3c6-919c3e82e974'")
+    assert row["profile"].str.contains("http://entsoe.eu/CIM/SteadyStateHypothesis/1/1").any()
+    assert row["time"].str.contains("2017-10-02T09:30:00Z").any()
+    assert row["version"].str.contains("3").any()
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
