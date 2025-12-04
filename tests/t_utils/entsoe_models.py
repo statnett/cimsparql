@@ -4,9 +4,12 @@ import os
 import re
 from pathlib import Path
 
+from pyoxigraph import DefaultGraph, Quad, Store
+
 import tests.t_utils.common as t_common
 from cimsparql.adaptions import XmlModelAdaptor
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig, new_repo_blazegraph
+from cimsparql.local_client import LocalClient
 from cimsparql.model import ModelConfig, SingleClientModel, get_federated_cim_model, get_single_client_model
 
 this_dir = Path(__file__).parent
@@ -132,8 +135,28 @@ def small_grid_model(url: str, api: RestApi) -> t_common.ModelTest:
     return t_common.ModelTest(model, name="small-grid-federated")
 
 
+@functools.lru_cache
+def pyoxigraph_model(model_kind: str) -> t_common.ModelTest:
+    eq_graph = "http://EQ-model"
+
+    test_folder = Path(__file__).parent.parent / "data" / model_kind
+    adaptor = XmlModelAdaptor.from_folder(test_folder)
+    adaptor.adapt(eq_graph)
+
+    store = Store()
+
+    # Add tpsvssh context to the default graph
+    for quad in adaptor.all_quads():
+        store.add(Quad(quad.subject, quad.predicate, quad.object, DefaultGraph()))
+
+    # Create a client where 'SERVICE <IRI>' will be stripped from queries
+    client = LocalClient(store=store, strip_service_specifier=True)
+    model = SingleClientModel(client)
+    return t_common.ModelTest(model=model, name=f"pyoxigraph-{model_kind}", cleanup=False)
+
+
 def micro_models() -> list[t_common.ModelTest]:
-    return [micro_t1_nl(), federated_micro_t1()]
+    return [micro_t1_nl(), federated_micro_t1(), pyoxigraph_model("micro")]
 
 
 def smallgrid_models() -> list[t_common.ModelTest]:

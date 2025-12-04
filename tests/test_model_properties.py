@@ -139,7 +139,7 @@ async def test_all_connectivity_nodes_fetched(test_model: t_common.ModelTest):
         PREFIX SN:<${SN}>
 
         select (count(distinct ?s) as ?count) where  {
-            values ?true {True "true"}
+            values ?true {true "true"}
             ?s ^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment/SN:Equipment.networkAnalysisEnable ?true
         }
         """
