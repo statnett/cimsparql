@@ -13,7 +13,7 @@ from pandera.typing import DataFrame
 
 from cimsparql import type_mapper
 from cimsparql.data_models import CoercingSchema
-from cimsparql.graphdb import RestApi
+from cimsparql.graphdb import GraphDBClient, RestApi
 from cimsparql.model import ServiceConfig
 
 if TYPE_CHECKING:
@@ -42,7 +42,8 @@ def test_python_type_map_bool():
 
 def test_get_map_empty_pandas(httpserver: HTTPServer):
     service_cfg = init_triple_store_server(httpserver)
-    mapper = type_mapper.TypeMapper(service_cfg)
+    client = GraphDBClient(service_cfg)
+    mapper = type_mapper.TypeMapper(client)
     assert mapper.get_map() == {}
 
 
@@ -62,7 +63,8 @@ def test_map_data_types(httpserver: HTTPServer):
     service_cfg = init_triple_store_server(httpserver, sparql_result)
 
     types = {"http://c#Degrees": float, "http://c#Status": bool, "http://c#Amount": int}
-    tm = type_mapper.TypeMapper(service_cfg, custom_additions=types)
+    client = GraphDBClient(service_cfg)
+    tm = type_mapper.TypeMapper(client, custom_additions=types)
 
     angles = pd.DataFrame(
         {
@@ -125,7 +127,8 @@ def test_xsd_types(dtype: str, test: tuple[str, Any]):
 )
 def test_have_cim_version(httpserver: HTTPServer, cim_version: int, have_cim_version: bool):
     service_cfg = init_triple_store_server(httpserver)
-    tm = type_mapper.TypeMapper(service_cfg)
+    client = GraphDBClient(service_cfg)
+    tm = type_mapper.TypeMapper(client)
     assert tm.have_cim_version(str(cim_version)) == have_cim_version
 
 
@@ -144,8 +147,9 @@ FloadDataFrame = DataFrame[FloatSchema]
     ],
 )
 def test_coerce_missing_type(httpserver: HTTPServer, in_data: dict[str, Any], out_data: dict[str, Any]):
-    client = init_triple_store_server(httpserver)
+    service_config = init_triple_store_server(httpserver)
     in_df, out_df = pd.DataFrame(in_data), pd.DataFrame(out_data)
+    client = GraphDBClient(service_config)
     mapper = type_mapper.TypeMapper(client)
 
     col_map = {"float_col": "http://non-existent#type"}
@@ -154,7 +158,8 @@ def test_coerce_missing_type(httpserver: HTTPServer, in_data: dict[str, Any], ou
 
 
 def test_coerce_float_from_literal(httpserver: HTTPServer):
-    client = init_triple_store_server(httpserver)
+    service_config = init_triple_store_server(httpserver)
+    client = GraphDBClient(service_config)
     mapper = type_mapper.TypeMapper(client)
 
     # Set the type to literal which could happen if the triple store contains non-typed entries.

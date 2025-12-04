@@ -295,7 +295,7 @@ def test_data_row_missing_column():
 
 
 def test_dtypes(model: SingleClientModel):
-    mapper = TypeMapper(model.client.service_cfg)
+    mapper = TypeMapper(model.client)
     data = model.client.get_table(mapper.query)[0]
     assert data["sparql_type"].isna().sum() == 0
 

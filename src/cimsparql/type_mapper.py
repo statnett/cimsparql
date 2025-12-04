@@ -9,11 +9,12 @@ from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
-from cimsparql.graphdb import GraphDBClient, ServiceConfig
 from cimsparql.templates import TYPE_MAPPER_QUERY
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
+
+    from cimsparql.graphdb import GraphDBClient
 
 # Type-caster that can be used with pandas. It can be python types, numpy dtypes or string
 # value. Examples: float, "int", int, "string"
@@ -96,10 +97,10 @@ def build_type_map(prefixes: dict[PREFIX, URI]) -> dict[SPARQL_TYPE, TYPE_CASTER
 class TypeMapper:
     def __init__(
         self,
-        service_cfg: ServiceConfig | None = None,
+        client: GraphDBClient,
         custom_additions: dict[str, Any] | None = None,
     ) -> None:
-        self.client = GraphDBClient(service_cfg)
+        self.client = client
 
         self.query = TYPE_MAPPER_QUERY.substitute(self.client.prefixes)
         custom_additions = custom_additions or {}
