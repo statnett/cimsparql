@@ -8,22 +8,47 @@ import re
 import uuid
 from contextlib import suppress
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from pyoxigraph import BlankNode, DefaultGraph, Literal, NamedNode, Quad, QuerySolutions, RdfFormat, Store
+from pyoxigraph import BlankNode, DefaultGraph, Literal, NamedNode, Quad, QuerySolutions, RdfFormat, Store, Triple
 
 from cimsparql.graphdb import default_namespaces
 
 if TYPE_CHECKING:
-    from collections.abc import Container, Iterator, Mapping
+    from collections.abc import Container, Generator, Iterable, Iterator, Mapping
     from pathlib import Path
 
 
 class StandardNamespaces:
     rdf_type = NamedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+    rdfs_label = NamedNode("http://www.w3.org/2000/01/rdf-schema#label")
     xsd_integer = NamedNode("http://www.w3.org/2001/XMLSchema#integer")
     xsd_boolean = NamedNode("http://www.w3.org/2001/XMLSchema#boolean")
     xsd_float = NamedNode("http://www.w3.org/2001/XMLSchema#float")
+    sesame_direct_type = NamedNode("http://www.openrdf.org/schema/sesame#directType")
+
+
+class GenUnitType(StrEnum):
+    hydro = "HydroGeneratingUnit"
+    thermal = "ThermalGeneratingUnit"
+
+
+class HydroPlantStorageKind:
+    run_of_river = NamedNode("http://www.statnett.no/CIM-schema-cim15-extension#HydroPlantStorageKind.runOfRiver")
+    pumped_storage = NamedNode("http://www.statnett.no/CIM-schema-cim15-extension#HydroPlantStorageKind.pumpedStorage")
+    storage = NamedNode("http://www.statnett.no/CIM-schema-cim15-extension#HydroPlantStorageKind.storage")
+
+    @classmethod
+    def to_quads(cls, ctx: NamedNode | BlankNode, ns: Mapping[str, str]) -> Iterator[Quad]:
+        prefix = ns["SN"] + cls.__name__
+        for prefixx, name in [
+            (cls.run_of_river, "runOfRiver"),
+            (cls.pumped_storage, "pumpedStorage"),
+            (cls.storage, "storage"),
+        ]:
+            yield Quad(prefixx, StandardNamespaces.rdf_type, NamedNode(prefix), ctx)
+            yield Quad(prefixx, StandardNamespaces.rdfs_label, Literal(name), ctx)
 
 
 @dataclass
@@ -62,6 +87,55 @@ class ProtectiveActionEquipment:
         ]
 
 
+def hydro_plants_quads(
+    ctx: NamedNode, ns: Mapping[str, str], generating_unit: NamedNode | BlankNode
+) -> Generator[Quad]:
+    hydro_power_plant = BlankNode()
+    hydro_power_type = NamedNode(ns["cim"] + "HydroPowerPlant")
+    yield from (
+        Quad(generating_unit, NamedNode(ns["cim"] + f"{GenUnitType.hydro}.HydroPowerPlant"), hydro_power_plant, ctx),
+        Quad(hydro_power_plant, StandardNamespaces.rdf_type, hydro_power_type, ctx),
+        Quad(
+            hydro_power_plant,
+            NamedNode(ns["SN"] + "HydroPowerPlant.hydroPlantStorageType"),
+            HydroPlantStorageKind.run_of_river,
+            ctx,
+        ),
+    )
+
+
+def generator_quads(
+    ctx: NamedNode, ns: Mapping[str, str], gen_unit: NamedNode, unit_type: GenUnitType
+) -> Iterator[Quad]:
+    schedule_resource = BlankNode()
+    name_pred = NamedNode(ns["cim"] + "IdentifiedObject.name")
+    schedule_resource_pred = NamedNode(ns["SN"] + "GeneratingUnit.ScheduleResource")
+    scheduler_resource_type = NamedNode(ns["SN"] + "ScheduleResource")
+    market_code_pred = NamedNode(ns["SN"] + "ScheduleResource.marketCode")
+    generating_unit_marked_code = NamedNode(ns["SN"] + "GeneratingUnit.marketCode")
+    group_allocation_weight = NamedNode(ns["SN"] + "GeneratingUnit.groupAllocationWeight")
+    yield from (
+        Quad(gen_unit, schedule_resource_pred, schedule_resource, ctx),
+        Quad(gen_unit, generating_unit_marked_code, Literal("gen_market_code001"), ctx),
+        Quad(gen_unit, group_allocation_weight, Literal(1), ctx),
+        Quad(schedule_resource, StandardNamespaces.rdf_type, scheduler_resource_type, ctx),
+        Quad(schedule_resource, market_code_pred, Literal("market001"), ctx),
+        Quad(schedule_resource, name_pred, Literal("station group"), ctx),
+    )
+
+    if unit_type == GenUnitType.hydro:
+        yield from hydro_plants_quads(ctx, ns, gen_unit)
+
+
+def sorted_unique_quads(quads: Iterable[Quad]) -> Iterator[Quad]:
+    seen_subjects = set[NamedNode | BlankNode | Triple]()
+    for quad in sorted(quads, key=lambda quad: "EQ" not in str(quad.graph_name)):
+        if quad.subject in seen_subjects:
+            continue
+        yield quad
+        seen_subjects.add(quad.subject)
+
+
 class XmlModelAdaptor:
     eq_predicate = "http://entsoe.eu/CIM/EquipmentCore/3/1"
 
@@ -91,6 +165,10 @@ class XmlModelAdaptor:
     def all_quads(self) -> Iterator[Quad]:
         return self.store.quads_for_pattern(None, None, None, None)
 
+    def add_direct_type(self) -> None:
+        for quad in sorted_unique_quads(self.store.quads_for_pattern(None, StandardNamespaces.rdf_type, None)):
+            self.store.add(Quad(quad.subject, StandardNamespaces.sesame_direct_type, quad.object, quad.graph_name))
+
     @classmethod
     def from_folder(cls, folder: Path) -> XmlModelAdaptor:
         return XmlModelAdaptor(folder.glob("*.xml"))
@@ -101,15 +179,9 @@ class XmlModelAdaptor:
         identified_obj_mrid = NamedNode(f"{ns['cim']}IdentifiedObject.mRID")
         has_mrid = set(self.store.quads_for_pattern(None, identified_obj_mrid, None, None))
         missing_mrid = set(self.all_quads()) - has_mrid
-
-        seen_subjects = set[NamedNode | BlankNode]()
-
         # Sort the quads such that quads in the EQ graph is considered before the other profiles
-        for quad in sorted(missing_mrid, key=lambda quad: "EQ" not in str(quad.graph_name)):
-            if quad.subject in seen_subjects:
-                continue
+        for quad in sorted_unique_quads(missing_mrid):
             assert isinstance(quad.subject, (NamedNode, BlankNode))
-            seen_subjects.add(quad.subject)
             mrid_str = str(quad.subject.value).rpartition("#_")[-1]
             mrid = mrid_str if is_uuid(mrid_str) else generate_uuid(mrid_str)
             self.store.add(Quad(quad.subject, identified_obj_mrid, Literal(mrid), quad.graph_name))
@@ -160,6 +232,12 @@ class XmlModelAdaptor:
         self.add_internal_eq_link(eq_uri)
         self.add_eic_code()
         self.add_network_analysis_enable()
+        self.add_hydro_plant_kind_enum()
+        self.add_direct_type()
+
+    def add_hydro_plant_kind_enum(self) -> None:
+        for quad in HydroPlantStorageKind.to_quads(next(self.eq_contexts()), self.ns):
+            self.store.add(quad)
 
     def add_zero_sv_power_flow(self) -> None:
         sv_graph = NamedNode("http://cimsparql/xml-adpator/SV")
@@ -287,32 +365,32 @@ class XmlModelAdaptor:
             self.store.add(Quad(equipment, network_analysis_enable, Literal(value=True), ctx))
 
     def add_generating_unit(self) -> None:
-        updated = set[NamedNode | BlankNode]()
-        sync_machine_type = NamedNode(self.ns["cim"] + "SynchronousMachine")
-        for sync_machine, _, _, ctx in self.store.quads_for_pattern(
-            None, StandardNamespaces.rdf_type, sync_machine_type, None
+        updated = set[NamedNode]()
+        gen_unit_pred = NamedNode(self.ns["cim"] + "RotatingMachine.GeneratingUnit")
+
+        hydro = set()
+        hydro_generating_unit = NamedNode(self.ns["cim"] + "HydroGeneratingUnit")
+        for quad in self.store.quads_for_pattern(
+            None,
+            StandardNamespaces.rdf_type,
+            NamedNode(self.ns["cim"] + "GeneratingUnit"),
         ):
+            if "EQ" not in str(quad.graph_name):
+                continue
+            self.store.remove(quad)
+            self.store.add(Quad(quad.subject, quad.predicate, hydro_generating_unit, quad.graph_name))
+            hydro.add(quad.subject)
+
+        for _, _, gen_unit, ctx in self.store.quads_for_pattern(None, gen_unit_pred, None, None):
             if "EQ" not in str(ctx):
                 continue
-            if sync_machine in updated:
+            if gen_unit in updated:
                 continue
-            generating_unit = BlankNode()
-            schedule_resource = BlankNode()
-            updated.add(sync_machine)
-
-            gen_unit_pred = NamedNode(self.ns["cim"] + "SynchronousMachine.GeneratingUnit")
-            thermal_gen_unit_type = NamedNode(self.ns["cim"] + "ThermalGeneratingUnit")
-            name_pred = NamedNode(self.ns["cim"] + "IdentifiedObject.name")
-            schedule_resource_pred = NamedNode(self.ns["SN"] + "GeneratingUnit.ScheduleResource")
-            scheduler_resource_type = NamedNode(self.ns["SN"] + "ScheduleResource")
-            market_code_pred = NamedNode(self.ns["SN"] + "ScheduleResource.marketCode")
-
-            self.store.add(Quad(sync_machine, gen_unit_pred, generating_unit, ctx))
-            self.store.add(Quad(gen_unit_pred, StandardNamespaces.rdf_type, thermal_gen_unit_type))
-            self.store.add(Quad(generating_unit, name_pred, Literal("GeneratuinggUnit"), ctx))
-            self.store.add(Quad(generating_unit, schedule_resource_pred, schedule_resource, ctx))
-            self.store.add(Quad(schedule_resource, StandardNamespaces.rdf_type, scheduler_resource_type, ctx))
-            self.store.add(Quad(schedule_resource, market_code_pred, Literal("market001"), ctx))
+            updated.add(gen_unit)
+            for quad in generator_quads(
+                ctx, self.ns, gen_unit, GenUnitType.hydro if gen_unit in hydro else GenUnitType.thermal
+            ):
+                self.store.add(quad)
 
     def add_protective_action_equipment(self) -> None:
         sync_machine, _, _, _ = next(

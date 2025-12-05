@@ -11,7 +11,7 @@ this_dir = pathlib.Path(__file__).parent
 
 
 @pytest.fixture(scope="session", autouse=True)
-def delete_models() -> Generator[None, None, None]:
+def delete_models() -> Generator[None]:
     """Fixture for deleting micro model repos created in during tests."""
     yield
     models = t_entsoe.micro_models() + t_entsoe.smallgrid_models()
@@ -23,7 +23,7 @@ def delete_models() -> Generator[None, None, None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def delete_picasso_repo() -> Generator[None, None, None]:
+def delete_picasso_repo() -> Generator[None]:
     yield
     with suppress(Exception):
         client = t_common.initialized_rdf4j_repo()

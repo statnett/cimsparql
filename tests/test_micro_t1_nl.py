@@ -123,6 +123,8 @@ def test_sync_machines(test_model: t_common.ModelTest, region: str, expected_nam
     assert test_model.model
     synchronous_machines = test_model.model.synchronous_machines(region)
     assert expected_names == set(synchronous_machines["name"])
+    hydro = synchronous_machines["generator_type"] == "HydroGeneratingUnit"
+    assert synchronous_machines.loc[hydro, "storage_type"].unique() == "runOfRiver"
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())

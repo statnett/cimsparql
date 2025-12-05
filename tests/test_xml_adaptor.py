@@ -70,7 +70,7 @@ def test_add_network_analysis_enable(xml_adaptor: XmlModelAdaptor) -> None:
 
 def test_add_generating_unit(xml_adaptor: XmlModelAdaptor) -> None:
     xml_adaptor.add_generating_unit()
-    query = "select * {graph ?g {?machine cim:SynchronousMachine.GeneratingUnit ?unit}}"
+    query = "select * {graph ?g {?machine cim:RotatingMachine.GeneratingUnit ?unit}}"
     assert len(list(xml_adaptor.select_query(query, prefixes=xml_adaptor.namespaces()))) > 0
 
 
