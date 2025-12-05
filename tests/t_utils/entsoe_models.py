@@ -56,6 +56,8 @@ def split_tpsvssh(fname: Path) -> tuple[str, str]:
 def federated_micro_t1() -> t_common.ModelTest:
     model = None
     url = t_common.rdf4j_url()
+    if not url:
+        return t_common.ModelTest()
     try:
         tpsvssh_client = t_common.init_repo_rdf4j(url, "federated_micro_t1_nl_tpsvssh")
         eq_client = t_common.init_repo_rdf4j(url, "federated_micro_t1_nl_eq")
@@ -96,10 +98,12 @@ def micro_t1_nl() -> t_common.ModelTest:
     """Micro model in RDF4J. It is cached, so multiple calls with the same url returns the same model."""
     model = None
     try:
-        url = t_common.rdf4j_url()
-        client = t_common.init_repo_rdf4j(url, "micro_t1_nl")
-        upload_micro_model(client)
-        model = SingleClientModel(client)
+        if url := t_common.rdf4j_url():
+            client = t_common.init_repo_rdf4j(url, "micro_t1_nl")
+            upload_micro_model(client)
+            model = SingleClientModel(client)
+        else:
+            return t_common.ModelTest()
     except Exception:
         logger.exception("Failed to get single client model")
     return t_common.ModelTest(model, name="micro-combined")
@@ -160,5 +164,7 @@ def micro_models() -> list[t_common.ModelTest]:
 
 
 def smallgrid_models() -> list[t_common.ModelTest]:
-    rdfj4_model = small_grid_model(t_common.rdf4j_url(), RestApi.RDF4J)
-    return [rdfj4_model]
+    if url := t_common.rdf4j_url():
+        rdfj4_model = small_grid_model(url, RestApi.RDF4J)
+        return [rdfj4_model]
+    return []

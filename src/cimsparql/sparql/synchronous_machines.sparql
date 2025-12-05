@@ -2,7 +2,8 @@
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type ?schedule_resource ?afrr_prequalified WHERE {
+PREFIX sesame: <http://www.openrdf.org/schema/sesame#>
+SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?substation_mrid ?max_p ?min_p ?merit_order ?sn ?p ?q ?connectivity_node ?generator_type (STRAFTER(STR(?storage_type_enum),"HydroPlantStorageKind.") AS ?storage_type) ?schedule_resource ?afrr_prequalified WHERE {
   # Extract properties for synchronous machines.
   {
     SELECT * WHERE {
@@ -16,11 +17,13 @@ SELECT ?mrid ?name ?market_code ?status ?station_group ?station_group_name ?subs
                  cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
         # TODO: Seems like cim15 uses SynchronousMachine while cim16 uses RotatingMachine. Will fix this when we have a proper cim16 model
         OPTIONAL {
-          VALUES ?gen_type { cim:NuclearGeneratingUnit cim:MktGeneratingUnit cim:HydroGeneratingUnit cim:WindGeneratingUnit cim:ThermalGeneratingUnit cim:SolarGeneratingUnit }
           ?machine cim:SynchronousMachine.GeneratingUnit | cim:RotatingMachine.GeneratingUnit ?nullable_gen_unit .
-          ?nullable_gen_unit a ?gen_type
+          ?nullable_gen_unit sesame:directType ?gen_type .
         }
         BIND (COALESCE(?nullable_gen_unit, URI("http://no-gen-unit")) AS ?gen_unit)
+        OPTIONAL {
+          ?gen_unit cim:HydroGeneratingUnit.HydroPowerPlant/SN:HydroPowerPlant.hydroPlantStorageType ?storage_type_enum .
+        }
         ?terminal cim:Terminal.ConnectivityNode ?con_node .
         ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
         # Extract area and mrid for the substation associated with a sync machine
