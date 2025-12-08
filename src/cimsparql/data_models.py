@@ -105,6 +105,7 @@ class SynchronousMachinesSchema(NamedMarketResourceSchema):
     q: Series[float] = pa.Field(nullable=True)
     connectivity_node: Series[str] = pa.Field()
     generator_type: Series[str] = pa.Field()
+    storage_type: Series[str] = pa.Field(nullable=True)
     schedule_resource: Series[str] = pa.Field(nullable=True)
     afrr_prequalified: Series[bool] = pa.Field()
 
