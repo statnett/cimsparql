@@ -11,10 +11,11 @@ SELECT ?mrid ?equipment_mrid ?name ?flip ?collection WHERE {
          alg:ProtectiveAction.ProtectiveActionCollection/cim:IdentifiedObject.mRID ?collection .
   ?equipment cim:IdentifiedObject.mRID ?equipment_mrid ;
   OPTIONAL {
-    SELECT ?equipment (true AS ?is_load) WHERE {
-      ?equipment a cim:EnergyConsumer .
+    SELECT ?equipment (true AS ?is_branch) WHERE {
+      VALUES ?type { cim:ACLineSegment cim:PowerTransformer cim:TransformerEnd }
+      ?equipment a ?type .
     }
   }
   # Support both typed flow_shift and untyped
-  BIND (!BOUND(?is_load) || (((STR(?flow_shift) = "true") && (STR(?flow_shift_flip) = "true")) || (STR(?load_contribution) = "true")) AS ?flip)
+  BIND (BOUND(?is_branch) && (((STR(?flow_shift) = "true") && (STR(?flow_shift_flip) = "true")) || (STR(?load_contribution) = "true")) AS ?flip)
 }

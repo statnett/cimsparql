@@ -403,6 +403,16 @@ class XmlModelAdaptor:
                 None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "EnergyConsumer"), None
             )
         )
+        ac_line, _, _, _ = next(
+            self.store.quads_for_pattern(
+                None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "ACLineSegment"), None
+            )
+        )
+        trafo, _, _, _ = next(
+            self.store.quads_for_pattern(
+                None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "PowerTransformer"), None
+            )
+        )
         eq_graph = next(self.eq_contexts())
         for protective_action in (
             ProtectiveActionEquipment(
@@ -414,7 +424,12 @@ class XmlModelAdaptor:
                 unit_contribution=False,
             )
             for (flow_shift, flow_shift_flip, load_contribution) in itertools.product([True, False], repeat=3)
-            for equipment, name in ((sync_machine, "ras_sync_machine"), (load, "ras_load"))
+            for equipment, name in (
+                (sync_machine, "ras_sync_machine"),
+                (load, "ras_load"),
+                (ac_line, "ras_ac_line"),
+                (trafo, "ras_trafo"),
+            )
         ):
             for quad in protective_action.to_quads(self.ns, eq_graph):
                 self.store.add(quad)
