@@ -1,9 +1,9 @@
 # Name: Add MRID
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 INSERT {
-  GRAPH ${g} {?s cim:IdentifiedObject.mRID ?mrid}}
+  GRAPH $ {g} {?s cim:IdentifiedObject.mRID ?mrid}}
 WHERE {
-  graph ${g} {?s a $ { rdf_type}} filter (not exists {?s cim:IdentifiedObject.mRID ?mrid})
-  bind
-  (str(?s) as ?mrid)
+  GRAPH ${g} {?s a $ { rdf_type}} FILTER (NOT EXISTS {?s cim:IdentifiedObject.mRID ?mrid})
+  BIND
+  (STR(?s) AS ?mrid)
 }

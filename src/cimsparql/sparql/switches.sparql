@@ -1,7 +1,13 @@
 # Name: Switches
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
-SELECT ?mrid ?is_open (STRAFTER(STR(?type),"#") AS ?equipment_type) ?connectivity_node_1 ?connectivity_node_2 ?network_enabled ?name WHERE {
+SELECT ?mrid
+       ?is_open
+       (STRAFTER(STR(?type),"#") AS ?equipment_type)
+       ?connectivity_node_1
+       ?connectivity_node_2
+       ?network_enabled
+       ?name WHERE {
   {
     SELECT * {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .

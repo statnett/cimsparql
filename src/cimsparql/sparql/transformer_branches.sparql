@@ -3,7 +3,19 @@ PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 # Name: Transformer branches
-SELECT ?status ?name ?mrid ?un ?r ?x ?b ?g ?rate ?angle ?ratio ?connectivity_node_1 (?node_2 AS ?connectivity_node_2) WHERE {
+SELECT ?status
+       ?name
+       ?mrid
+       ?un
+       ?r
+       ?x
+       ?b
+       ?g
+       ?rate
+       ?angle
+       ?ratio
+       ?connectivity_node_1
+       (?node_2 AS ?connectivity_node_2) WHERE {
   {
     SELECT * WHERE {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .

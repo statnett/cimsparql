@@ -3,7 +3,22 @@ PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 PREFIX ALG: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
-SELECT ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un WHERE {
+SELECT ?mrid
+       ?name
+       ?alias
+       ?p
+       ?q
+       ?substation_mrid
+       ?status
+       ?connectivity_node
+       ?controller
+       ?controller_factor
+       ?pole_loss
+       ?loss0
+       ?loss1
+       ?loss2
+       ?vdcn
+       ?un WHERE {
   {
     SELECT * WHERE {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .

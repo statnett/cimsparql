@@ -2,7 +2,10 @@
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX ALG: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-SELECT ?converter_mrid_1 ?converter_mrid_2 (GROUP_CONCAT(?name; SEPARATOR="--") AS ?name) (SUM(xsd:float(STR(?r))) AS ?r) WHERE {
+SELECT ?converter_mrid_1
+       ?converter_mrid_2
+       (GROUP_CONCAT(?name; SEPARATOR="--") AS ?name)
+       (SUM(xsd:float(STR(?r))) AS ?r) WHERE {
   ?converter_1 a ALG:VoltageSourceConverter ;
                cim:IdentifiedObject.mRID ?converter_mrid_1 .
   ?converter_2 a ALG:VoltageSourceConverter ;

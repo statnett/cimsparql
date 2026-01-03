@@ -40,4 +40,4 @@ repos:
         language: python
         types: [file]
         files: \.sparql$
-        additional_dependencies: [qlue-ls==0.6.2]
+        additional_dependencies: [qlue-ls==2.1.0]

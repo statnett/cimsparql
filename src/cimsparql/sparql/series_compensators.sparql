@@ -2,7 +2,17 @@
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-SELECT (MAX(?mrid) AS ?mrid) (MAX(?name) AS ?name) (IF(xsd:double(MAX(?p_1)) < xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_1) (IF(xsd:double(MAX(?p_1)) > xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_2) (MAX(?r) AS ?r) (MAX(?rate) AS ?rate) (COALESCE(MAX(?in_service), MAX(?connected_1) && MAX(?connected_2)) AS ?status) (MAX(?un) AS ?un) (MAX(?x) AS ?x) (MAX(?connectivity_node_1) AS ?connectivity_node_1) (MAX(?connectivity_node_2) AS ?connectivity_node_2) WHERE {
+SELECT (MAX(?mrid) AS ?mrid)
+       (MAX(?name) AS ?name)
+       (IF(xsd:double(MAX(?p_1)) < xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_1)
+       (IF(xsd:double(MAX(?p_1)) > xsd:double(MAX(?p_2)),xsd:double(MAX(?p_1)) + xsd:double(MAX(?p_2)),xsd:double(0.0)) AS ?ploss_2)
+       (MAX(?r) AS ?r)
+       (MAX(?rate) AS ?rate)
+       (COALESCE(MAX(?in_service), MAX(?connected_1) && MAX(?connected_2)) AS ?status)
+       (MAX(?un) AS ?un)
+       (MAX(?x) AS ?x)
+       (MAX(?connectivity_node_1) AS ?connectivity_node_1)
+       (MAX(?connectivity_node_2) AS ?connectivity_node_2) WHERE {
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for series compensator
   ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
