@@ -208,6 +208,7 @@ def model() -> Model:
     test_model = t_custom.federated_model()
     if not test_model.model:
         pytest.skip("Require access to GraphDB")
+    assert isinstance(test_model.model, Model)
     return test_model.model
 
 
