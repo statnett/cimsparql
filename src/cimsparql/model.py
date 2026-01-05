@@ -9,6 +9,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
+from types import FunctionType
 from typing import TYPE_CHECKING, ParamSpec, Self, TypeVar
 from uuid import uuid4
 
@@ -84,6 +85,7 @@ def time_it(f: Callable[P, T]) -> Callable[P, T]:
         started = time.time()
         result = f(*args, **kwargs)
         finished = time.time()
+        assert isinstance(f, FunctionType)
         logger.debug("%s took %f seconds", f.__name__, finished - started)
         return result
 
@@ -348,7 +350,7 @@ class Model:
             region: Inside area
         """
         if region is None:
-            cols = ["name", "node", "status", "p", "market_code"]
+            cols = pd.Index(["name", "node", "status", "p", "market_code"])
             index = pd.Index([], name="mrid")
             df = pd.DataFrame([], columns=cols, index=index)
             return ExchangeDataFrame(df)
