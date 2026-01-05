@@ -3,12 +3,11 @@ import logging
 import os
 import re
 from base64 import b64encode
-from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from functools import lru_cache
 from http import HTTPStatus
-from typing import Any, ParamSpec, TypeVar
+from typing import Any
 
 import httpx
 import pandas as pd
@@ -35,19 +34,6 @@ from cimsparql.sparql_result_json import SparqlResultJsonFactory, SparqlResultVa
 from cimsparql.type_mapper import TypeMapper
 
 logger = logging.getLogger()
-
-T = TypeVar("T")
-P = ParamSpec("P")
-R = TypeVar("R")
-
-
-def exception_logging(func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R:
-    logger.debug("Starting %s", func.__name__)
-    try:
-        return func(*args, **kwargs)
-    except Exception:
-        logger.exception("Exception for %s", func.__name__)
-        return R() if callable(R) else R
 
 
 @dataclass
