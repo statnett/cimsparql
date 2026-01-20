@@ -20,7 +20,7 @@ repos:
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
   - repo: https://github.com/crate-ci/typos
-    rev: v1.42.0
+    rev: v1.42.1
     hooks:
       - id: typos
   - repo: https://github.com/tombi-toml/tombi-pre-commit
