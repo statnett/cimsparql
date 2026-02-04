@@ -143,7 +143,7 @@ class Model:
 
     @staticmethod
     def _col_map(data_row: dict[str, SparqlResultValue]) -> dict[str, str]:
-        return {column: data.datatype if data.datatype else data.value_type for column, data in data_row.items()}
+        return {column: data.datatype or data.value_type for column, data in data_row.items()}
 
     @classmethod
     def col_map(cls, data_row: dict[str, SparqlResultValue], columns: dict[str, str]) -> dict[str, str]:
