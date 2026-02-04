@@ -136,7 +136,7 @@ class FloatSchema(CoercingSchema):
     float_col: float = pa.Field(nullable=True)
 
 
-FloadDataFrame = DataFrame[FloatSchema]
+FloatDataFrame = DataFrame[FloatSchema]
 
 
 @pytest.mark.parametrize(
@@ -153,7 +153,7 @@ def test_coerce_missing_type(httpserver: HTTPServer, in_data: dict[str, Any], ou
     mapper = type_mapper.TypeMapper(client)
 
     col_map = {"float_col": "http://non-existent#type"}
-    df = FloadDataFrame(mapper.map_data_types(in_df, col_map))
+    df = FloatDataFrame(mapper.map_data_types(in_df, col_map))
     pd.testing.assert_frame_equal(df, out_df)
 
 
@@ -169,11 +169,16 @@ def test_coerce_float_from_literal(httpserver: HTTPServer):
 
     # None should now be preserved by the mapper
     df = mapper.map_data_types(df, col_map)
-    assert df.loc[1, "float_col"] is None
+    float_value = df.loc[1, "float_col"]
+    if next(int(version) for version in pd.__version__.split(".")) >= 3:
+        assert isinstance(float_value, float)
+        assert pd.isna(float_value)
+    else:
+        assert float_value is None
 
-    df = FloadDataFrame(df)
+        df = FloatDataFrame(df)
 
-    # Now the None value should be casted into np.nan
-    missing = df.loc[1, "float_col"]
-    assert missing is not None
-    assert pd.isna(missing)
+        # Now the None value should be casted into np.nan
+        missing = df.loc[1, "float_col"]
+        assert missing is not None
+        assert pd.isna(missing)
