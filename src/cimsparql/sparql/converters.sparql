@@ -3,25 +3,29 @@ PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 PREFIX ALG: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
-SELECT ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un WHERE {
+SELECT ?mrid ?name ?alias ?p ?q ?substation_mrid (?pole_mrid AS ?pole) ?status ?connectivity_node ?controller ?controller_factor ?pole_loss ?loss0 ?loss1 ?loss2 ?vdcn ?un ?capacity WHERE {
   {
     SELECT * WHERE {
       ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
-        # Extract mrid, name, substation and optionally aliasName of the converter
+        # Extract converter data
         ?converter cim:IdentifiedObject.mRID ?mrid ;
                    cim:IdentifiedObject.name ?name ;
-                   ALG:VoltageSourceConverter.DCPole | ALG:DCConverter.DCPole ?pole .
-        ?pole ALG:DCPole.DCController/cim:IdentifiedObject.mRID ?controller .
+                   ALG:VoltageSourceConverter.DCPole | ALG:DCConverter.DCPole ?_pole ;
+                   ALG:VoltageSourceConverter.DCPole/cim:IdentifiedObject.mRID | ALG:DCConverter.DCPole/cim:IdentifiedObject.mRID ?pole_mrid ;
+                   ALG:VoltageSourceConverter.bridgeNominalVoltage | ALG:DCConverter.bridgeNominalVoltage ?ur ;
+                   ALG:VoltageSourceConverter.ratedIAC | ALG:DCConverter.currentRating ?ir .
+        ?_pole ALG:DCPole.DCController/cim:IdentifiedObject.mRID ?controller .
         {
-          SELECT ?pole (MAX(xsd:float(STR(?controller_factor))) / COUNT(*) AS ?controller_factor) {
-            ?converter ALG:VoltageSourceConverter.DCPole | ALG:DCConverter.DCPole ?pole .
-            ?pole ALG:DCPole.participationFactor ?controller_factor .
+          SELECT ?_pole (MAX(xsd:float(STR(?controller_factor))) / COUNT(*) AS ?controller_factor) {
+            ?converter ALG:VoltageSourceConverter.DCPole | ALG:DCConverter.DCPole ?_pole .
+            ?_pole ALG:DCPole.participationFactor ?controller_factor .
           }
-          GROUP BY ?pole
+          GROUP BY ?_pole
         }
         OPTIONAL {
-          ?converter cim:IdentifiedObject.aliasName ?alias .
+          ?converter cim:IdentifiedObject.aliasName ?alias ;
+                     ALG:VoltageSourceConverter.bridges ?bridges
         }
         # Extract properties for the terminals for the converter
         ?terminal cim:Terminal.ConductingEquipment ?converter ;
@@ -40,13 +44,14 @@ SELECT ?mrid ?name ?alias ?p ?q ?substation_mrid ?status ?connectivity_node ?con
           ?converter ALG:VoltageSourceConverter.loss0 ?_loss0 ;
                      ALG:VoltageSourceConverter.loss1 ?_loss1 ;
                      ALG:VoltageSourceConverter.loss2 ?_loss2 .
-          ?pole cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?_vdcn ;
+          ?_pole cim:ConductingEquipment.BaseVoltage/cim:BaseVoltage.nominalVoltage ?_vdcn ;
         }
         BIND (COALESCE(?_analysis_enabled, true) AS ?analysis_enabled)
         BIND (COALESCE(?_loss0, 0.0) AS ?loss0)
         BIND (COALESCE(?_loss1, 0.0) AS ?loss1)
         BIND (COALESCE(?_loss2, 0.0) AS ?loss2)
         BIND (COALESCE(?_vdcn, 0.0) AS ?vdcn)
+        BIND ((xsd:float(?ir) * xsd:float(?ur) * xsd:float(COALESCE(?bridges, 1)) / 1000) AS ?capacity)
         FILTER (?analysis_enabled)
       }
     }
