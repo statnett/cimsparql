@@ -36,7 +36,7 @@ repos:
     hooks:
       - id: sparql-formatter
         name: sparql-formatter
-        entry: sh -c 'for file in "$@"; do uv run qlue-ls format "$file" -w; done' --
+        entry: sh -c 'for file in "$@"; do qlue-ls format "$file" -w; done' --
         language: python
         types: [file]
         files: \.sparql$
