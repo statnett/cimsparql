@@ -244,8 +244,9 @@ class GraphDBClient:
                     sparql_result.validate_column_consistency()
         return sparql_result or SparqlResultJson(head=SparqlResultHead(), results=SparqlData(bindings=[]))
 
+    @staticmethod
     def _convert_query_result_to_df(
-        self, sparql_result: SparqlResultJson
+        sparql_result: SparqlResultJson,
     ) -> tuple[pd.DataFrame, dict[str, SparqlResultValue]]:
         df = (
             pd.DataFrame(sparql_result.results.values_as_dict(), columns=sparql_result.head.variables)

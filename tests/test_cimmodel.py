@@ -7,6 +7,7 @@ import pytest
 import werkzeug
 from pytest_httpserver import HTTPServer
 from SPARQLWrapper import SPARQLWrapper
+from typing_extensions import override
 
 from cimsparql.adaptions import is_uuid
 from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig
@@ -80,6 +81,7 @@ def test_multi_client_model_defined_clients_exist():
 
 
 class LocalTypeMapper(TypeMapper):
+    @override
     def get_map(self) -> dict[str, Any]:
         return {}
 
@@ -133,7 +135,8 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
         super().__init__("http://fixed-result-endpoint")
         self.result = SparqlResultJsonFactory.build()
 
-    def three_winding_result(self) -> SparqlResultJson:
+    @staticmethod
+    def three_winding_result() -> SparqlResultJson:
         variables = [
             "node_1",
             "node_2",
@@ -155,10 +158,12 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
         ]
         return SparqlResultJson(head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[]))
 
-    def angle(self) -> SparqlResultJson:
+    @staticmethod
+    def angle() -> SparqlResultJson:
         return SparqlResultJson(head=SparqlResultHead(vars=["mrid", "angle"]), results=SparqlData(bindings=[]))
 
-    def three_winding_loss(self) -> SparqlResultJson:
+    @staticmethod
+    def three_winding_loss() -> SparqlResultJson:
         variables = ["mrid", "ploss_2"]
         return SparqlResultJson(head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[]))
 

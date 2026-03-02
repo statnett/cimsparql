@@ -7,6 +7,7 @@ class ValueMapper:
     """Base value mapper."""
 
     def map(self, df: pd.DataFrame) -> pd.DataFrame:
+        _ = self
         return df
 
 

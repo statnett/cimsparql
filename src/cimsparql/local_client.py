@@ -5,6 +5,7 @@ from pathlib import Path
 
 import httpx
 from pyoxigraph import NamedNode, QueryResultsFormat, QuerySolutions, RdfFormat, Store
+from typing_extensions import override
 
 from cimsparql.graphdb import GraphDBClient, default_namespaces
 from cimsparql.sparql_result_json import SparqlResultJson
@@ -54,6 +55,7 @@ class LocalClient(GraphDBClient):
         else:
             self.store.load(content, format=data_format, to_graph=named_graph, base_iri=base_iri)
 
+    @override
     def update_query(self, query: str) -> None:
         _ = query
         raise NotImplementedError("Update query is currently not implemented")
