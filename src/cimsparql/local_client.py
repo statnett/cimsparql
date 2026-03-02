@@ -23,7 +23,7 @@ class LocalClient(GraphDBClient):
 
     def exec_query(self, query: str) -> SparqlResultJson:
         if self.strip_service_specifier:
-            query = re.sub("SERVICE[^{]+", "", query)
+            query = re.sub(r"SERVICE[^{]+", "", query)
 
         result = self.store.query(query, prefixes=self.prefixes)
         if not isinstance(result, QuerySolutions):

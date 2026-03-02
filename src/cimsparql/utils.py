@@ -8,5 +8,5 @@ def query_name(query: str) -> str:
 
     If no match is found, an empty string is returned
     """
-    m = re.search("^# Name: ([a-zA-Z0-9 ]+)", query)
+    m = re.search(r"^# Name: ([a-zA-Z0-9 ]+)", query)
     return m.group(1) if m else ""

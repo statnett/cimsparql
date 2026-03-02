@@ -436,7 +436,7 @@ class XmlModelAdaptor:
 
 
 def is_uuid(x: str) -> bool:
-    return re.match("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", x) is not None
+    return re.match(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", x) is not None
 
 
 def generate_uuid(x: str) -> str:

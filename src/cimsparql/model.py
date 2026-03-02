@@ -196,7 +196,7 @@ class Model:
 
     @cached_property
     def cim_version(self) -> int:
-        if m := re.search("cim(\\d+)", self.client.prefixes["cim"]):
+        if m := re.search(r"cim(\d+)", self.client.prefixes["cim"]):
             return int(m.group(1))
         return 0
 
