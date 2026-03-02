@@ -58,7 +58,7 @@ def test_query_name():
 
 def test_query_without_name():
     query = "select * {?s ?p ?o}"
-    assert query_name(query) == ""
+    assert not query_name(query)
 
 
 def test_multi_client_model_defined_clients_exist():
