@@ -273,7 +273,7 @@ class GraphDBClient:
     def get_prefixes(self, http_transport: httpx.BaseTransport | None = None) -> dict[str, str]:
         prefixes = default_namespaces()
 
-        if self.service_cfg.rest_api in (RestApi.BLAZEGRAPH, RestApi.DIRECT_SPARQL_ENDPOINT):
+        if self.service_cfg.rest_api in {RestApi.BLAZEGRAPH, RestApi.DIRECT_SPARQL_ENDPOINT}:
             # These APis does not expose prefixes. Custom prefixes must be added
             # via `update_prefixes`. By default we load a pre-defined set of prefixes
             return prefixes

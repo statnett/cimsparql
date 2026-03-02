@@ -311,7 +311,7 @@ def test_create_delete_repo():
     # Check if it is possible to make contact
     try:
         resp = httpx.get("http://" + url, timeout=5.0)
-        if resp.status_code not in [HTTPStatus.OK, HTTPStatus.FOUND] and not os.getenv("CI"):
+        if resp.status_code not in {HTTPStatus.OK, HTTPStatus.FOUND} and not os.getenv("CI"):
             pytest.skip("Could not contact RDF4J server")
     except Exception as exc:
         if os.getenv("CI"):
