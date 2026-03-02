@@ -168,15 +168,15 @@ class EmptyThreeWindingTransformerSPARQLWrapper(SPARQLWrapper):
         return SparqlResultJson(head=SparqlResultHead(vars=variables), results=SparqlData(bindings=[]))
 
     def queryAndConvert(self) -> dict[str, Any]:  # noqa: N802
-        name = query_name(self.queryString)
-        if name == "Transformer branches":
-            result = self.three_winding_result()
-        elif name == "Transformer branches loss":
-            result = self.three_winding_loss()
-        elif name == "Winding transformer angle":
-            result = self.angle()
-        else:
-            raise ValueError(f"No handler for query: {self.queryString}")
+        match query_name(self.queryString):
+            case "Transformer branches":
+                result = self.three_winding_result()
+            case "Transformer branches loss":
+                result = self.three_winding_loss()
+            case "Winding transformer angle":
+                result = self.angle()
+            case _:
+                raise ValueError(f"No handler for query: {self.queryString}")
         return result.model_dump(mode="json")
 
 
