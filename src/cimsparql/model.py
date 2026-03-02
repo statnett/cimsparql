@@ -745,8 +745,6 @@ def get_single_client_model(
     Args:
         service_cfg: Configurations for the triple store service
         model_cfg: Configurations for the CIM mode
-        async_sparql_wrapper: If True http calls are made via asynchronous requests.
-            If False, the native SparqlWrapper sends requests via urllib
         custom_headers: Custom headers to be added to the requests
     """
     return SingleClientModel(GraphDBClient(service_cfg, custom_headers), model_cfg)
