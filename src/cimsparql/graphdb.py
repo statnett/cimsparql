@@ -92,10 +92,12 @@ class ServiceConfig:
 
     @property
     def url(self) -> str:
-        if self.rest_api == RestApi.BLAZEGRAPH:
-            return service_blazegraph(self.server, self.repo, self.protocol)
-        if self.rest_api == RestApi.DIRECT_SPARQL_ENDPOINT:
-            return self.server
+        match self.rest_api:
+            case RestApi.BLAZEGRAPH:
+                return service_blazegraph(self.server, self.repo, self.protocol)
+            case RestApi.DIRECT_SPARQL_ENDPOINT:
+                return self.server
+
         return service(self.repo, self.server, self.protocol, self.path)
 
     @property
