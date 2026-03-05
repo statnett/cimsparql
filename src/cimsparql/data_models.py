@@ -1,10 +1,17 @@
 """Data models used to describe and validate sparql queries from cimsparql."""
 
 import datetime as dt
+from enum import StrEnum
 
 import pandera.pandas as pa
 from pandera.api.pandas.model_config import BaseConfig
 from pandera.typing import DataFrame, Index, Series
+
+
+class LoadType(StrEnum):
+    conform_load = "ConformLoad"
+    non_conform_load = "NonConformLoad"
+    energy_consumer = "EnergyConsumer"
 
 
 class CoercingSchema(pa.DataFrameModel):
@@ -77,6 +84,7 @@ class LoadsSchema(NamedResourceSchema):
     q: Series[float] = pa.Field(nullable=True)
     station_group: Series[str] = pa.Field(nullable=True)
     connectivity_node: Series[str] = pa.Field()
+    load_type: Series[str] = pa.Field(isin=LoadType)
 
 
 LoadsDataFrame = DataFrame[LoadsSchema]
