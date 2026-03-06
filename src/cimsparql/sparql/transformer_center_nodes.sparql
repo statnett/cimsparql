@@ -17,15 +17,14 @@ SELECT ?node
     ?con_node cim:ConnectivityNode.TopologicalNode ?top_node .
     ?top_node ^cim:TopologicalIsland.TopologicalNodes/cim:IdentifiedObject.name ?island_name
   } .
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   SERVICE ?eq_repo {
     ?p_transformer cim:IdentifiedObject.mRID ?node ;
                    cim:IdentifiedObject.name ?busname ;
                    cim:Equipment.EquipmentContainer ?container .
-    ?winding cim:TransformerEnd.endNumber 1 ;
-             cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
-             cim:TransformerEnd.Terminal ?terminal .
-    ?terminal cim:Terminal.ConnectivityNode ?con_node .
+    [] cim:TransformerEnd.endNumber 1 ;
+       cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
+       cim:TransformerEnd.Terminal/cim:Terminal.ConnectivityNode ?con_node .
     ?con_node cim:IdentifiedObject.mRID ?connectivity_node ;
               cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.BaseVoltage ?base_voltage .
     ?container cim:IdentifiedObject.mRID ?container_mrid ;

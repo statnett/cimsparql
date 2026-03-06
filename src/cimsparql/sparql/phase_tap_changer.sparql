@@ -12,7 +12,7 @@ SELECT ?mrid
   ?tap_changer cim:TapChanger.controlEnabled ?enabled_1 .
   ?tap_changer_control cim:RegulatingControl.enabled ?enabled_2 ;
                        cim:RegulatingControl.targetValue ?target_value .
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   SERVICE ?eq_repo {
     ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?phase_shift_increment ;
                  cim:TapChanger.TapChangerControl ?tap_changer_control ;

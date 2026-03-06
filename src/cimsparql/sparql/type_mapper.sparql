@@ -10,8 +10,8 @@ SELECT DISTINCT ?sparql_type ?range WHERE {
   UNION {
     ?sparql_type ^rdfs:domain/cims:dataType ?_dtype .
     ?_dtype cims:stereotype "CIMDatatype" .
-    ?_dtype_value rdfs:domain ?_dtype ;
-                  rdfs:label "value"@en ;
-                  cims:dataType ?range
+    [] rdfs:domain ?_dtype ;
+       rdfs:label "value"@en ;
+       cims:dataType ?range
   }
 }

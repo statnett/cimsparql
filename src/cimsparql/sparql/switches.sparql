@@ -10,7 +10,7 @@ SELECT ?mrid
        ?name WHERE {
   {
     SELECT * {
-      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
         {
           # Extract the maximum terminal number per switch. This number is used to deduce the second terminal

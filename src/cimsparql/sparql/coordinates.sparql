@@ -1,7 +1,7 @@
 # Name: Coordinates
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?mrid ?x ?y ?epsg (STR(?resource_type) AS ?rdf_type) WHERE {
-  ?s cim:PositionPoint.Location ?location ;
+  [] cim:PositionPoint.Location ?location ;
      cim:PositionPoint.sequenceNumber ?nr ;
      cim:PositionPoint.xPosition ?x ;
      cim:PositionPoint.yPosition ?y .

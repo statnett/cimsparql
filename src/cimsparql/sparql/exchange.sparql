@@ -20,7 +20,7 @@ SELECT ?name ?node ?mrid ?status ?p ?market_code WHERE {
   OPTIONAL {
     ?acline ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
   } .
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   SERVICE ?eq_repo {
     # Extract name and mrid for aclines
     ?acline a cim:ACLineSegment ;

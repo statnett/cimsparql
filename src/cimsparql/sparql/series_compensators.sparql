@@ -15,7 +15,7 @@ SELECT (MAX(?mrid) AS ?mrid)
        (MAX(?connectivity_node_2) AS ?connectivity_node_2) WHERE {
   # Assume π equivalent with at least r,x and b shunt.
   # Extract properties for series compensator
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   SERVICE ?eq_repo {
     ?compensator cim:SeriesCompensator.r ?r ;
                  cim:SeriesCompensator.x ?x ;
@@ -35,10 +35,10 @@ SELECT (MAX(?mrid) AS ?mrid)
     FILTER (REGEX(?area,'${region}'))
     # Optionally extract current limits
     OPTIONAL {
-      ?_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?compensator ;
-            a cim:CurrentLimit ;
-            cim:IdentifiedObject.name '${rate}' ;
-            cim:CurrentLimit.value ?_rate .
+      [] cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?compensator ;
+         a cim:CurrentLimit ;
+         cim:IdentifiedObject.name '${rate}' ;
+         cim:CurrentLimit.value ?_rate .
       # Convert rate from current to power using √3 * U [kV] * I [A] / 1000.0 [MVA]
       BIND (1.7320508075688772 * xsd:double(xsd:string(?un)) * xsd:double(xsd:string(?_rate)) / 1000.0 AS ?rate)
     } .

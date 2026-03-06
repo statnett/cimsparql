@@ -6,7 +6,7 @@ SELECT ?mrid ?angle WHERE {
   OPTIONAL {
     ?tap_changer ^cim:SvTapStep.TapChanger/cim:SvTapStep.position ?sv_position
   } .
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   SERVICE ?eq_repo {
     ?tap_changer cim:PhaseTapChangerLinear.stepPhaseShiftIncrement ?inc ;
                  cim:TapChanger.neutralStep ?neutralstep ;

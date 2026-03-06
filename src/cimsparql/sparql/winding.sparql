@@ -16,7 +16,7 @@ SELECT ?p_transformer
   OPTIONAL {
     ?terminal ^cim:SvPowerFlow.Terminal/cim:SvPowerFlow.p ?_sv_p .
   }
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   SERVICE ?eq_repo {
     ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
              cim:TransformerEnd.Terminal ?terminal .

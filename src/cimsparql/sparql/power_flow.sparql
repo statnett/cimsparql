@@ -1,11 +1,11 @@
 # Name: Power flow
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?mrid ?p ?q ?in_service WHERE {
-  ?_s a cim:SvPowerFlow ;
-      cim:SvPowerFlow.Terminal ?terminal ;
-      cim:SvPowerFlow.p ?p ;
-      cim:SvPowerFlow.q ?q .
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  [] a cim:SvPowerFlow ;
+     cim:SvPowerFlow.Terminal ?terminal ;
+     cim:SvPowerFlow.p ?p ;
+     cim:SvPowerFlow.q ?q .
+  [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   SERVICE ?eq_repo {
     ?terminal cim:IdentifiedObject.mRID ?mrid .
   }

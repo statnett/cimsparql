@@ -8,7 +8,7 @@ SELECT ?node
        (GROUP_CONCAT(?terminal_name; SEPARATOR=",") AS ?terminal_names) WHERE {
   {
     SELECT * {
-      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
         ?terminal cim:Terminal.ConnectivityNode ?con_node ;
                   cim:Terminal.ConductingEquipment ?equipment ;
