@@ -16,10 +16,10 @@ SELECT ?name ?p_mrid ?w_mrid ?end_number ?un ?t_mrid ?r ?x ?rate WHERE {
            cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid ;
   FILTER REGEX(?area,'${region}') .
   OPTIONAL {
-    ?p_lim cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?winding ;
-           a cim:ActivePowerLimit ;
-           cim:IdentifiedObject.name '${rate}' ;
-           cim:ActivePowerLimit.value ?rate
+    [] cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?winding ;
+       a cim:ActivePowerLimit ;
+       cim:IdentifiedObject.name '${rate}' ;
+       cim:ActivePowerLimit.value ?rate
   }
   OPTIONAL {
     ?p_transformer SN:Equipment.networkAnalysisEnable ?_analysis_enabled .

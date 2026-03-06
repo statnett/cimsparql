@@ -1,7 +1,7 @@
 # Name: SvInjection
 PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 SELECT ?node ?p ?q WHERE {
-  ?sv_injection cim:SvInjection.TopologicalNode/cim:IdentifiedObject.mRID ?node ;
-                cim:SvInjection.pInjection ?p ;
-                cim:SvInjection.qInjection ?q .
+  [] cim:SvInjection.TopologicalNode/cim:IdentifiedObject.mRID ?node ;
+     cim:SvInjection.pInjection ?p ;
+     cim:SvInjection.qInjection ?q .
 }

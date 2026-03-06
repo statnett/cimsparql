@@ -24,7 +24,7 @@ SELECT ?mrid
   # Extract properties for synchronous machines.
   {
     SELECT * WHERE {
-      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
         ?machine a cim:SynchronousMachine ;
                  cim:IdentifiedObject.mRID ?machine_mrid ;
@@ -77,9 +77,9 @@ SELECT ?mrid
   OPTIONAL {
     ?machine ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
   } .
-  ?sv_power_flow cim:SvPowerFlow.Terminal ?terminal ;
-                 cim:SvPowerFlow.p ?p ;
-                 cim:SvPowerFlow.q ?q .
+  [] cim:SvPowerFlow.Terminal ?terminal ;
+     cim:SvPowerFlow.p ?p ;
+     cim:SvPowerFlow.q ?q .
   BIND (COALESCE(?_network_analysis, true) AS ?network_analysis)
   BIND (COALESCE(?in_service, ?connected) AS ?status)
   BIND (COALESCE(?nullable_maxP, IF(xsd:double(STR(?p)) >= 0.0,?p,0.0), 0.0) AS ?max_p)

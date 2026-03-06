@@ -4,7 +4,7 @@ PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 SELECT ?mrid ?node ?p ?q ?connectivity_node WHERE {
   {
     SELECT * WHERE {
-      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
         # Specify components wer are interested in
         VALUES ?rdf_type { cim:ACLineSegment cim:SeriesCompensator cim:PowerTransformer } .
@@ -25,9 +25,9 @@ SELECT ?mrid ?node ?p ?q ?connectivity_node WHERE {
   # Extract properties of each terminal from the SV/TP/SSH profile.
   # If exists, the mRID of the topological node associated with the terminal is etracted
   ?terminal cim:ACDCTerminal.connected ?connected .
-  ?_sv_t cim:SvPowerFlow.Terminal ?terminal ;
-         cim:SvPowerFlow.p ?p ;
-         cim:SvPowerFlow.q ?q .
+  [] cim:SvPowerFlow.Terminal ?terminal ;
+     cim:SvPowerFlow.p ?p ;
+     cim:SvPowerFlow.q ?q .
   {
     ?con_node cim:ConnectivityNode.TopologicalNode ?topological_node .
   }

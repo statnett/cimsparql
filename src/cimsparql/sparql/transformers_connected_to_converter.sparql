@@ -16,9 +16,9 @@ SELECT DISTINCT ?mrid ?name ?t_mrid ?p_mrid WHERE {
                  cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
                  ^cim:Terminal.ConductingEquipment/cim:Terminal.ConnectivityNode/^cim:Terminal.ConnectivityNode/cim:Terminal.ConductingEquipment ?converter .
   # Extract the mRID of the terminal associated with the first winding on each power transformer
-  ?winding cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
-           cim:TransformerEnd.endNumber 1 ;
-           cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid .
+  [] cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
+     cim:TransformerEnd.endNumber 1 ;
+     cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid .
   FILTER REGEX(?area,'${region}')
   OPTIONAL {
     ?p_transformer SN:Equipment.networkAnalysisEnable ?_transformer_analysis_enabled .

@@ -10,7 +10,7 @@ SELECT ?mrid ?un ?operating_voltage {
     }
     GROUP BY ?base_voltage
   }
-  ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+  [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
   SERVICE ?eq_repo {
     # Find the nominal voltage from the base voltage associated with the topological node
     ?base_voltage cim:BaseVoltage.nominalVoltage ?un ;

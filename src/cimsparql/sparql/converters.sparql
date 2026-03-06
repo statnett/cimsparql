@@ -21,7 +21,7 @@ SELECT ?mrid
        ?un WHERE {
   {
     SELECT * WHERE {
-      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
         # Extract mrid, name, substation and optionally aliasName of the converter
         ?converter cim:IdentifiedObject.mRID ?mrid ;

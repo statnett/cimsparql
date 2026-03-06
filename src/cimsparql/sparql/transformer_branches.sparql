@@ -18,7 +18,7 @@ SELECT ?status
        (?node_2 AS ?connectivity_node_2) WHERE {
   {
     SELECT * WHERE {
-      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
         # Use mrid of transformer as dummy node
         ?p_transformer cim:IdentifiedObject.mRID ?node_2 ;
@@ -45,10 +45,10 @@ SELECT ?status
                   cim:IdentifiedObject.mRID ?connectivity_node_1 .
         # Optionally extract active power limits
         OPTIONAL {
-          ?_lim a cim:ActivePowerLimit ;
-                cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?terminal ;
-                cim:IdentifiedObject.name '${rate}' ;
-                cim:ActivePowerLimit.value ?rate .
+          [] a cim:ActivePowerLimit ;
+             cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Terminal ?terminal ;
+             cim:IdentifiedObject.name '${rate}' ;
+             cim:ActivePowerLimit.value ?rate .
         }
         OPTIONAL {
           ?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis

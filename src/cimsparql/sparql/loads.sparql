@@ -5,7 +5,7 @@ SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_n
   {
     # Appears to be significantly faster to run the query if the EQ part is executed within its own sub-query
     SELECT * WHERE {
-      ?_eq_subject <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
+      [] <http://entsoe.eu/CIM/EquipmentCore/3/1> ?eq_repo .
       SERVICE ?eq_repo {
         # Extract mRID, name and substation for each load
         VALUES ?load_type { cim:ConformLoad cim:NonConformLoad cim:EnergyConsumer }
@@ -27,8 +27,7 @@ SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_n
         FILTER (?network_analysis)
         # Extract mRID and connectivity node for each terminal associated with a load
         ?terminal cim:Terminal.ConductingEquipment ?load ;
-                  cim:Terminal.ConnectivityNode ?con_node .
-        ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
+                  cim:Terminal.ConnectivityNode/cim:IdentifiedObject.mRID ?connectivity_node .
       } .
     }
   }
@@ -38,9 +37,9 @@ SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_n
   OPTIONAL {
     ?load ^cim:SvStatus.ConductingEquipment/cim:SvStatus.inService ?in_service
   } .
-  ?sv_power_flow cim:SvPowerFlow.Terminal ?terminal ;
-                 cim:SvPowerFlow.p ?p ;
-                 cim:SvPowerFlow.q ?q .
+  [] cim:SvPowerFlow.Terminal ?terminal ;
+     cim:SvPowerFlow.p ?p ;
+     cim:SvPowerFlow.q ?q .
   # Assign status flag for load. The status flag is set to the first existing of
   # 1) in_service flag
   # 2) connected flag the terminal
