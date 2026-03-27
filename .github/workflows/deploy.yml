@@ -59,7 +59,7 @@ jobs:
         run: uvx --with cimsparql --with sphinx-autodoc-typehints --with recommonmark --with sphinx-rtd-theme --from sphinx sphinx-build docs html
       - name: Setup Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
