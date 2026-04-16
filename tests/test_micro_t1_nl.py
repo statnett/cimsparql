@@ -384,7 +384,8 @@ def test_protective_action_equipment(test_model: t_common.ModelTest) -> None:
     assert not ras.query('name == "ras_load"')["flip"].any()
     assert ras.query('name == "ras_trafo"')["flip"].astype(int).sum() == 5
     assert ras.query('name == "ras_ac_line"')["flip"].astype(int).sum() == 5
-    assert len(ras) == 32
+    assert not ras.query('name == "ras_winding"')["flip"].any()
+    assert len(ras) == 40
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())

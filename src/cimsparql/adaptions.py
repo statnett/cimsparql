@@ -59,13 +59,14 @@ class ProtectiveActionEquipment:
     flow_shift_flip: bool
     load_contribution: bool
     unit_contribution: bool
+    prefix: str
 
     def to_quads(self, ns: Mapping[str, str], graph: NamedNode | BlankNode) -> list[Quad]:
         rpact = BlankNode()
         collection = BlankNode()
 
         return [
-            Quad(rpact, StandardNamespaces.rdf_type, NamedNode(ns["ALG"] + "ProtectiveActionEquipment"), graph),
+            Quad(rpact, StandardNamespaces.rdf_type, NamedNode(self.prefix + "ProtectiveActionEquipment"), graph),
             Quad(rpact, NamedNode(ns["ALG"] + "ProtectiveActionEquipment.Equipment"), self.equipment, graph),
             Quad(rpact, NamedNode(ns["cim"] + "IdentifiedObject.name"), Literal(self.name), graph),
             Quad(rpact, NamedNode(ns["ALG"] + "ProtectiveAction.flowShift"), Literal(self.flow_shift), graph),
@@ -413,6 +414,11 @@ class XmlModelAdaptor:
                 None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "PowerTransformer"), None
             )
         )
+        winding, _, _, _ = next(
+            self.store.quads_for_pattern(
+                None, StandardNamespaces.rdf_type, NamedNode(self.ns["cim"] + "PowerTransformerEnd"), None
+            )
+        )
         eq_graph = next(self.eq_contexts())
         for protective_action in (
             ProtectiveActionEquipment(
@@ -422,6 +428,7 @@ class XmlModelAdaptor:
                 flow_shift_flip=flow_shift_flip,
                 load_contribution=load_contribution,
                 unit_contribution=False,
+                prefix=self.ns["SN"] if equipment == winding else self.ns["ALG"],
             )
             for (flow_shift, flow_shift_flip, load_contribution) in itertools.product([True, False], repeat=3)
             for equipment, name in (
@@ -429,6 +436,7 @@ class XmlModelAdaptor:
                 (load, "ras_load"),
                 (ac_line, "ras_ac_line"),
                 (trafo, "ras_trafo"),
+                (winding, "ras_winding"),
             )
         ):
             for quad in protective_action.to_quads(self.ns, eq_graph):
