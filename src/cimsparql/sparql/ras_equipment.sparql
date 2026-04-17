@@ -3,6 +3,7 @@ PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
 PREFIX alg: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
 PREFIX SN: <http://www.statnett.no/CIM-schema-cim15-extension#>
 SELECT ?mrid ?equipment_mrid ?name ?flip ?collection WHERE {
+  VALUES ?equipment_type { cim:Breaker cim:ACLineSegment cim:PowerTransformerEnd cim:Disconnector cim:NonConformLoad cim:SynchronousMachine cim:ConformLoad cim:StaticVarCompensator alg:DCController cim:EnergyConsumer }
   [] (alg:ProtectiveActionEquipment.Equipment | alg:ProtectiveActionAdjustmentAC.ConductingEquipment | alg:ProtectiveActionAdjustmentDCController.DCController | SN:ProtectiveActionEquipment.TransformerEnd) ?equipment ;
      cim:IdentifiedObject.mRID ?mrid ;
      cim:IdentifiedObject.name ?name ;
@@ -11,9 +12,10 @@ SELECT ?mrid ?equipment_mrid ?name ?flip ?collection WHERE {
      alg:ProtectiveAction.loadContribution ?load_contribution ;
      alg:ProtectiveAction.ProtectiveActionCollection/cim:IdentifiedObject.mRID ?collection .
   ?equipment cim:IdentifiedObject.mRID ?equipment_mrid ;
+             a ?equipment_type .
   OPTIONAL {
     SELECT ?equipment (true AS ?is_branch) WHERE {
-      VALUES ?type { cim:ACLineSegment cim:PowerTransformer cim:TransformerEnd }
+      VALUES ?type { cim:ACLineSegment cim:PowerTransformerEnd }
       ?equipment a ?type .
     }
   }
