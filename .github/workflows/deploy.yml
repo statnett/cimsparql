@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: 3.14
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8
         with:
           enable-cache: false
       - name: build package
@@ -54,7 +54,7 @@ jobs:
         with:
           python-version: 3.14
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8
       - name: build docs
         run: uvx --with cimsparql --with sphinx-autodoc-typehints --with recommonmark --with sphinx-rtd-theme --from sphinx sphinx-build docs html
       - name: Setup Pages
