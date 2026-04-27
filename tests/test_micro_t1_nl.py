@@ -392,4 +392,8 @@ def test_protective_action_equipment(test_model: t_common.ModelTest) -> None:
 def test_busbar_sections(test_model: t_common.ModelTest) -> None:
     t_common.check_model(test_model)
     assert test_model.model
-    assert len(list(test_model.model.busbar_section())) == 7
+    bus = test_model.model.busbar_section()
+    assert bus.shape[0] == 13
+
+    # terminal_count > 3 is relevant for finding busbars for radially connected nodes
+    assert bus.query("terminal_count > 3").shape[0] == 7

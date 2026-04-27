@@ -23,6 +23,7 @@ from cimsparql.data_models import (
     BordersDataFrame,
     BranchComponentDataFrame,
     BranchWithdrawDataFrame,
+    BusBarSectionsDataFrame,
     BusDataFrame,
     ConnectionsDataFrame,
     ConnectivityNodeDataFrame,
@@ -59,7 +60,7 @@ from cimsparql.type_mapper import TypeMapper
 from cimsparql.utils import query_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable
+    from collections.abc import Callable, Iterable
     from string import Template
     from types import TracebackType
 
@@ -706,10 +707,10 @@ class Model:
         return StationGroupForPowerUnitDataFrame(self.get_table_and_convert(query))
 
     @time_it
-    def busbar_section(self) -> Generator[str]:
-        """Return set of mrids for all busbar sections in model."""
+    def busbar_section(self) -> BusBarSectionsDataFrame:
+        """Return data for busbar sections in model."""
         query = self.template_to_query(templates.BUSBAR_SECTION)
-        return (val["mrid"] for val in self.get_client(query_name(query)).exec_query(query).results.values_as_dict())
+        return BusBarSectionsDataFrame(self.get_table_and_convert(query))
 
 
 class SingleClientModel(Model):
