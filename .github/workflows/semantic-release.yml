@@ -1,4 +1,4 @@
-
+---
 name: Semantic release
 on:
   push:
@@ -30,16 +30,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Github Release
-        uses: softprops/action-gh-release@v3.0.0
         if: ${{ steps.create_release.outputs.new_release_published == 'true' }}
-        with:
-          tag_name: ${{ steps.create_release.outputs.new_release_git_tag }}
-          body: ${{ steps.create_release.outputs.new_release_notes }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_RELEASE_GIT_TAG: ${{ steps.create_release.outputs.new_release_git_tag }}
+          NEW_RELEASE_NOTES: ${{ steps.create_release.outputs.new_release_notes }}
+        run: gh release create "${NEW_RELEASE_GIT_TAG}" --notes "${NEW_RELEASE_NOTES}"
+
     outputs:
       release_created: ${{ steps.create_release.outputs.new_release_published }}
       new_tag: ${{ steps.create_release.outputs.new_release_git_tag }}
       release_notes: ${{ steps.create_release.outputs.new_release_notes }}
-
 
   publish-to-pypi:
     needs: semantic-release
