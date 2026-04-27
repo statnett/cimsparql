@@ -436,3 +436,12 @@ class StationGroupForPowerUnitSchema(CoercingSchema):
 
 
 StationGroupForPowerUnitDataFrame = DataFrame[StationGroupForPowerUnitSchema]
+
+
+class BusBarSectionsSchema(CoercingSchema):
+    mrid: str = pa.Field(unique=True)
+    busbar_mrid: str
+    terminal_count: int
+
+
+BusBarSectionsDataFrame = DataFrame[BusBarSectionsSchema]
