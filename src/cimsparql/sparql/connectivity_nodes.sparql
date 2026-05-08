@@ -57,5 +57,4 @@ SELECT ?mrid (?container_mrid AS ?container) ?container_name ?un ?base_voltage_m
     }
     BIND ("Line" AS ?container_type)
   }
-  FILTER REGEX(?area,'.*')
 }
