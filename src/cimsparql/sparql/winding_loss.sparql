@@ -17,7 +17,6 @@ SELECT ?mrid (SUM(xsd:double(STR(?sv_p))) / SUM(?in_service) AS ?ploss_2) WHERE 
              cim:TransformerEnd.Terminal ?terminal .
     ?p_transformer cim:IdentifiedObject.mRID ?mrid ;
                    cim:Equipment.EquipmentContainer/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-    FILTER (REGEX(?area,'.*'))
     OPTIONAL {
       ?p_transformer SN:Equipment.networkAnalysisEnable ?_network_analysis
     }
