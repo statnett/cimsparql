@@ -13,8 +13,7 @@ from pandera.typing import DataFrame
 
 from cimsparql import type_mapper
 from cimsparql.data_models import CoercingSchema
-from cimsparql.graphdb import GraphDBClient, RestApi
-from cimsparql.model import ServiceConfig
+from cimsparql.graphdb import GraphDBClient, RestApi, ServiceConfig
 
 if TYPE_CHECKING:
     from typing import Any
