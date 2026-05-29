@@ -15,7 +15,7 @@ SELECT ?mrid
         {
           # Extract the maximum terminal number per switch. This number is used to deduce the second terminal
           # Normally this equals 2, but occasionally it can be one. In that case it means that the switch
-          # has only one termainal. A switch with only one terminal can not connect or disconnect anything
+          # has only one terminal. A switch with only one terminal can not connect or disconnect anything
           # which is equivalent of setting terminal 2 equal to terminal 1
           SELECT (?internal_switch AS ?switch) (MAX(?nr) AS ?max_terminal_number) {
             ?internal_switch cim:Switch.normalOpen ?_unused_normal_open ;
