@@ -30,6 +30,7 @@ from cimsparql.data_models import (
     ConvertersDataFrame,
     CoordinatesDataFrame,
     DcActiveFlowDataFrame,
+    DCControllersDataFrame,
     DisconnectedDataFrame,
     ExchangeDataFrame,
     FullModelDataFrame,
@@ -628,6 +629,15 @@ class Model:
         """Fetch mrid of converters placed on HVDC exchange corridors together with to/from bidzone."""
         df = self.get_table_and_convert(self.hvdc_converter_bidzone_query, index="mrid")
         return HVDCBidzonesDataFrame(df)
+
+    @property
+    def dc_controllers_query(self) -> str:
+        return self.template_to_query(templates.DC_CONTROLLERS_QUERY)
+
+    @time_it
+    def dc_controllers(self) -> DCControllersDataFrame:
+        df = self.get_table_and_convert(self.dc_controllers_query)
+        return DCControllersDataFrame(df)
 
     @property
     def ras_equipment_query(self) -> str:
