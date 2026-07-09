@@ -389,6 +389,19 @@ def test_protective_action_equipment(test_model: t_common.ModelTest) -> None:
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+def test_dc_controllers(test_model: t_common.ModelTest) -> None:
+    t_common.check_model(test_model)
+    assert test_model.model
+
+    controllers = test_model.model.dc_controllers()
+    assert set(controllers["name"]) == {"test_dc_controller_1", "test_dc_controller_2"}
+    assert controllers.query('name == "test_dc_controller_1"')["max_p"].iloc[0] == pytest.approx(500.0)
+    assert controllers.query('name == "test_dc_controller_1"')["min_p"].iloc[0] == pytest.approx(-500.0)
+    assert controllers.query('name == "test_dc_controller_2"')["max_p"].iloc[0] == pytest.approx(300.0)
+    assert controllers.query('name == "test_dc_controller_2"')["min_p"].iloc[0] == pytest.approx(-300.0)
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
 def test_busbar_sections(test_model: t_common.ModelTest) -> None:
     t_common.check_model(test_model)
     assert test_model.model

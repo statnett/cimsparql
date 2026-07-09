@@ -1,0 +1,11 @@
+# Name: DC controllers with export/import limits
+PREFIX ALG: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?name ?mrid ?max_p ?min_p WHERE {
+  ?mrid ALG:DCController.DCTieCorridor ?dc_tie ;
+        cim:IdentifiedObject.name ?name .
+  ?dc_tie ALG:DCTieCorridor.maxDCExportOp ?max_p ;
+          ALG:DCTieCorridor.maxDCImportOp ?_min_p .
+  BIND (-xsd:double(STR(?_min_p)) AS ?min_p)
+}

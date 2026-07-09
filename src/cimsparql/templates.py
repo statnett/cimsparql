@@ -24,6 +24,7 @@ CONNECTIVITY_NODES_QUERY = _read_template(sparql_folder / "connectivity_nodes.sp
 CONVERTERS_QUERY = _read_template(sparql_folder / "converters.sparql")
 COORDINATES_QUERY = _read_template(sparql_folder / "coordinates.sparql")
 DC_ACTIVE_POWER_FLOW_QUERY = _read_template(sparql_folder / "dc_active_power_flow.sparql")
+DC_CONTROLLERS_QUERY = _read_template(sparql_folder / "dc_controllers.sparql")
 DISCONNECTED_QUERY = _read_template(sparql_folder / "disconnected.sparql")
 EXCHANGE_QUERY = _read_template(sparql_folder / "exchange.sparql")
 FULL_MODEL_QUERY = _read_template(sparql_folder / "full_model.sparql")

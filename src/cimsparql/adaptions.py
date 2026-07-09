@@ -88,6 +88,23 @@ class ProtectiveActionEquipment:
         ]
 
 
+@dataclass
+class DCController:
+    name: str
+    max_p: float
+    min_p: float
+
+    def to_quads(self, ns: Mapping[str, str], graph: NamedNode | BlankNode) -> list[Quad]:
+        controller = BlankNode()
+        dc_tie = BlankNode()
+        return [
+            Quad(controller, NamedNode(ns["cim"] + "IdentifiedObject.name"), Literal(self.name), graph),
+            Quad(controller, NamedNode(ns["ALG"] + "DCController.DCTieCorridor"), dc_tie, graph),
+            Quad(dc_tie, NamedNode(ns["ALG"] + "DCTieCorridor.maxDCExportOp"), Literal(self.max_p), graph),
+            Quad(dc_tie, NamedNode(ns["ALG"] + "DCTieCorridor.maxDCImportOp"), Literal(self.min_p), graph),
+        ]
+
+
 def hydro_plants_quads(
     ctx: NamedNode, ns: Mapping[str, str], generating_unit: NamedNode | BlankNode
 ) -> Generator[Quad]:
@@ -228,6 +245,7 @@ class XmlModelAdaptor:
         self.add_generating_unit()
         self.add_market_code_to_non_conform_load()
         self.add_protective_action_equipment()
+        self.add_dc_controllers()
         self.add_mrid()
         self.add_dtypes()
         self.add_internal_eq_link(eq_uri)
@@ -391,6 +409,15 @@ class XmlModelAdaptor:
             for quad in generator_quads(
                 ctx, self.ns, gen_unit, GenUnitType.hydro if gen_unit in hydro else GenUnitType.thermal
             ):
+                self.store.add(quad)
+
+    def add_dc_controllers(self) -> None:
+        eq_graph = next(self.eq_contexts())
+        for dc_controller in (
+            DCController("test_dc_controller_1", max_p=500.0, min_p=500.0),
+            DCController("test_dc_controller_2", max_p=300.0, min_p=300.0),
+        ):
+            for quad in dc_controller.to_quads(self.ns, eq_graph):
                 self.store.add(quad)
 
     def add_protective_action_equipment(self) -> None:

@@ -354,6 +354,16 @@ class RASEquipmentSchema(CoercingSchema):
 RASEquipmentDataFrame = DataFrame[RASEquipmentSchema]
 
 
+class DCControllersSchema(CoercingSchema):
+    mrid: Index[str] = pa.Field(unique=True)
+    name: Series[str] = pa.Field()
+    max_p: Series[float] = pa.Field()
+    min_p: Series[float] = pa.Field()
+
+
+DCControllersDataFrame = DataFrame[DCControllersSchema]
+
+
 class Switches(CoercingSchema):
     mrid: Index[str] = pa.Field(unique=True, check_name=True)
     is_open: Series[bool] = pa.Field()
