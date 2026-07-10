@@ -98,8 +98,8 @@ class DCController:
         controller = BlankNode()
         dc_tie = BlankNode()
         return [
-            Quad(controller, NamedNode(ns["cim"] + "IdentifiedObject.name"), Literal(self.name), graph),
-            Quad(controller, NamedNode(ns["ALG"] + "DCController.DCTieCorridor"), dc_tie, graph),
+            Quad(dc_tie, NamedNode(ns["cim"] + "IdentifiedObject.name"), Literal(self.name), graph),
+            Quad(dc_tie, NamedNode(ns["ALG"] + "DCTieCorridor.DCController"), controller, graph),
             Quad(dc_tie, NamedNode(ns["ALG"] + "DCTieCorridor.maxDCExportOp"), Literal(self.max_p), graph),
             Quad(dc_tie, NamedNode(ns["ALG"] + "DCTieCorridor.maxDCImportOp"), Literal(self.min_p), graph),
         ]
