@@ -20,7 +20,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: 3.14
       - name: Install uv
@@ -50,7 +50,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: 3.14
       - name: Install uv
