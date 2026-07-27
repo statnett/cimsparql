@@ -90,6 +90,7 @@ class ProtectiveActionEquipment:
 
 @dataclass
 class DCController:
+    mrid: str
     name: str
     max_p: float
     min_p: float
@@ -98,6 +99,7 @@ class DCController:
         controller = BlankNode()
         dc_tie = BlankNode()
         return [
+            Quad(controller, NamedNode(ns["cim"] + "IdentifiedObject.mRID"), Literal(self.mrid), graph),
             Quad(dc_tie, NamedNode(ns["cim"] + "IdentifiedObject.name"), Literal(self.name), graph),
             Quad(dc_tie, NamedNode(ns["ALG"] + "DCTieCorridor.DCController"), controller, graph),
             Quad(dc_tie, NamedNode(ns["ALG"] + "DCTieCorridor.maxDCExportOp"), Literal(self.max_p), graph),
@@ -414,8 +416,8 @@ class XmlModelAdaptor:
     def add_dc_controllers(self) -> None:
         eq_graph = next(self.eq_contexts())
         for dc_controller in (
-            DCController("test_dc_controller_1", max_p=500.0, min_p=500.0),
-            DCController("test_dc_controller_2", max_p=300.0, min_p=300.0),
+            DCController("mrid1", "dc_controller_1", max_p=500.0, min_p=500.0),
+            DCController("mrid2", "dc_controller_2", max_p=300.0, min_p=300.0),
         ):
             for quad in dc_controller.to_quads(self.ns, eq_graph):
                 self.store.add(quad)

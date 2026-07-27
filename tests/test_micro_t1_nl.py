@@ -3,10 +3,12 @@ from copy import deepcopy
 from string import Template
 from typing import Any
 
+import pandas as pd
 import pytest
 
 import tests.t_utils.common as t_common
 import tests.t_utils.entsoe_models as t_entsoe
+from cimsparql.data_models import DCControllersDataFrame
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.model import SingleClientModel
 
@@ -394,11 +396,15 @@ def test_dc_controllers(test_model: t_common.ModelTest) -> None:
     assert test_model.model
 
     controllers = test_model.model.dc_controllers()
-    assert set(controllers["name"]) == {"test_dc_controller_1", "test_dc_controller_2"}
-    assert controllers.query('name == "test_dc_controller_1"')["max_p"].iloc[0] == pytest.approx(500.0)
-    assert controllers.query('name == "test_dc_controller_1"')["min_p"].iloc[0] == pytest.approx(-500.0)
-    assert controllers.query('name == "test_dc_controller_2"')["max_p"].iloc[0] == pytest.approx(300.0)
-    assert controllers.query('name == "test_dc_controller_2"')["min_p"].iloc[0] == pytest.approx(-300.0)
+
+    expected = DCControllersDataFrame(
+        [
+            {"name": "dc_controller_1", "mrid": "mrid1", "max_p": 500.0, "min_p": -500.0},
+            {"name": "dc_controller_2", "mrid": "mrid2", "max_p": 300.0, "min_p": -300.0},
+        ]
+    )
+
+    pd.testing.assert_frame_equal(controllers, expected)
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())
