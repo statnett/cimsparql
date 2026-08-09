@@ -1,0 +1,10 @@
+# Name: Protective Action Collection
+PREFIX cim: <http://iec.ch/TC57/2013/CIM-schema-cim16#>
+PREFIX alg: <http://www.alstom.com/grid/CIM-schema-cim15-extension#>
+SELECT ?collection ?gen_max ?load_max ?load_warn ?name WHERE {
+  [] ^alg:TriggerCondition.RemedialActionScheme/alg:TriggerCondition.GateTrigger/^alg:StageTrigger.GateTrigger/alg:StageTrigger.ProtectiveActionCollection/cim:IdentifiedObject.mRID ?collection ;
+     alg:RemedialActionScheme.GenHighThreshold ?gen_max ;
+     alg:RemedialActionScheme.LoadHighThreshold ?load_max ;
+     alg:RemedialActionScheme.LoadHighWarnThreshold ?load_warn ;
+     cim:IdentifiedObject.name ?name .
+}
