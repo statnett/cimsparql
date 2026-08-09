@@ -8,7 +8,7 @@ import pytest
 
 import tests.t_utils.common as t_common
 import tests.t_utils.entsoe_models as t_entsoe
-from cimsparql.data_models import DCControllersDataFrame
+from cimsparql.data_models import DCControllersDataFrame, PACDataFrame
 from cimsparql.graphdb import GraphDBClient
 from cimsparql.model import SingleClientModel
 
@@ -388,6 +388,23 @@ def test_protective_action_equipment(test_model: t_common.ModelTest) -> None:
     assert ras.query('name == "ras_ac_line"')["flip"].astype(int).sum() == 5
     assert ras.query('name == "ras_trafo"').empty
     assert len(ras) == 32
+
+
+@pytest.mark.parametrize("test_model", t_entsoe.micro_models())
+def test_protective_action_collection(test_model: t_common.ModelTest):
+    t_common.check_model(test_model)
+    assert test_model.model
+    pac = test_model.model.pac()
+    expected = PACDataFrame(
+        {
+            "collection": test_model.model.ras_equipment()["collection"].unique(),
+            "gen_max": 1200.0,
+            "load_max": 500.0,
+            "load_warn": 9999.0,
+            "name": "ras_name",
+        }
+    )
+    pd.testing.assert_frame_equal(pac, expected)
 
 
 @pytest.mark.parametrize("test_model", t_entsoe.micro_models())

@@ -52,6 +52,38 @@ class HydroPlantStorageKind:
 
 
 @dataclass
+class ProtectiveActionCollection:
+    gen_max: float
+    load_max: float
+    load_warn: float
+    name: str
+
+    def to_quads(self, ns: Mapping[str, str], graph: NamedNode | BlankNode, collection: BlankNode) -> list[Quad]:
+        stage_trigger = BlankNode()
+        gate_trigger = BlankNode()
+        trigger_condition = BlankNode()
+        ras = BlankNode()
+        "Remedial action scheme"
+
+        return [
+            Quad(stage_trigger, StandardNamespaces.rdf_type, NamedNode(ns["ALG"] + "StageTrigger"), graph),
+            Quad(gate_trigger, StandardNamespaces.rdf_type, NamedNode(ns["ALG"] + "GateTrigger"), graph),
+            Quad(trigger_condition, StandardNamespaces.rdf_type, NamedNode(ns["ALG"] + "TriggerCondition"), graph),
+            Quad(ras, StandardNamespaces.rdf_type, NamedNode(ns["ALG"] + "RemedialActionScheme"), graph),
+            Quad(stage_trigger, NamedNode(ns["ALG"] + "StageTrigger.ProtectiveActionCollection"), collection, graph),
+            Quad(stage_trigger, NamedNode(ns["ALG"] + "StageTrigger.GateTrigger"), gate_trigger, graph),
+            Quad(trigger_condition, NamedNode(ns["ALG"] + "TriggerCondition.GateTrigger"), gate_trigger, graph),
+            Quad(trigger_condition, NamedNode(ns["ALG"] + "TriggerCondition.RemedialActionScheme"), ras, graph),
+            Quad(ras, NamedNode(ns["ALG"] + "RemedialActionScheme.GenHighThreshold"), Literal(self.gen_max), graph),
+            Quad(ras, NamedNode(ns["ALG"] + "RemedialActionScheme.LoadHighThreshold"), Literal(self.load_max), graph),
+            Quad(
+                ras, NamedNode(ns["ALG"] + "RemedialActionScheme.LoadHighWarnThreshold"), Literal(self.load_warn), graph
+            ),
+            Quad(ras, NamedNode(ns["cim"] + "IdentifiedObject.name"), Literal(self.name), graph),
+        ]
+
+
+@dataclass
 class ProtectiveActionEquipment:
     equipment: NamedNode
     name: str
@@ -61,10 +93,8 @@ class ProtectiveActionEquipment:
     unit_contribution: bool
     prefix: str
 
-    def to_quads(self, ns: Mapping[str, str], graph: NamedNode | BlankNode) -> list[Quad]:
+    def to_quads(self, ns: Mapping[str, str], graph: NamedNode | BlankNode, collection: BlankNode) -> list[Quad]:
         rpact = BlankNode()
-        collection = BlankNode()
-
         return [
             Quad(rpact, StandardNamespaces.rdf_type, NamedNode(self.prefix + "ProtectiveActionEquipment"), graph),
             Quad(rpact, NamedNode(ns["ALG"] + "ProtectiveActionEquipment.Equipment"), self.equipment, graph),
@@ -84,7 +114,6 @@ class ProtectiveActionEquipment:
                 graph,
             ),
             Quad(rpact, NamedNode(ns["ALG"] + "ProtectiveAction.ProtectiveActionCollection"), collection, graph),
-            Quad(collection, StandardNamespaces.rdf_type, NamedNode(ns["ALG"] + "ProtectiveActionCollection"), graph),
         ]
 
 
@@ -449,6 +478,13 @@ class XmlModelAdaptor:
             )
         )
         eq_graph = next(self.eq_contexts())
+        collection = BlankNode()
+        for pred, obj in (
+            (StandardNamespaces.rdf_type, NamedNode(self.ns["ALG"] + "ProtectiveActionCollection")),
+            (NamedNode(self.ns["cim"] + "IdentifiedObject.name"), Literal("pac_name")),
+        ):
+            self.store.add(Quad(collection, pred, obj, eq_graph))
+
         for protective_action in (
             ProtectiveActionEquipment(
                 equipment,
@@ -468,8 +504,11 @@ class XmlModelAdaptor:
                 (winding, "ras_winding"),
             )
         ):
-            for quad in protective_action.to_quads(self.ns, eq_graph):
+            for quad in protective_action.to_quads(self.ns, eq_graph, collection):
                 self.store.add(quad)
+        pac = ProtectiveActionCollection(gen_max=1200.0, load_max=500.0, load_warn=9999.0, name="ras_name")
+        for quad in pac.to_quads(self.ns, eq_graph, collection):
+            self.store.add(quad)
 
 
 def is_uuid(x: str) -> bool:

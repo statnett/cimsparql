@@ -265,6 +265,17 @@ class SubstationVoltageSchema(CoercingSchema):
 SubstationVoltageDataFrame = DataFrame[SubstationVoltageSchema]
 
 
+class PACSchema(CoercingSchema):
+    collection: str
+    gen_max: float
+    load_max: float
+    load_warn: float
+    name: str
+
+
+PACDataFrame = DataFrame[PACSchema]
+
+
 class DisconnectedSchema(CoercingSchema):
     mrid: Series[str] = pa.Field(unique=True)
 

@@ -90,7 +90,7 @@ class LocalTypeMapper(TypeMapper):
 
 class CorrelationIdPicker:
     def __init__(self) -> None:
-        self.correlation_id = None
+        self.correlation_id: str | None = None
 
     def extract_correlation_id(self, request: werkzeug.Request) -> werkzeug.Response:
         self.correlation_id = request.headers.get(GraphDBClient.x_correlation_id)

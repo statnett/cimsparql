@@ -39,6 +39,7 @@ from cimsparql.data_models import (
     HVDCDataFrame,
     LoadsDataFrame,
     MarketDatesDataFrame,
+    PACDataFrame,
     PhaseTapChangerDataFrame,
     PowerFlowDataFrame,
     RASEquipmentDataFrame,
@@ -427,6 +428,16 @@ class Model:
     def transformers_query(self, region: str | None = None, rate: str | None = None) -> str:
         substitutes = {"region": region or ".*", "rate": rate or "Normal@20"}
         return self.template_to_query(templates.TRANSFORMERS_QUERY, substitutes)
+
+    def pac_query(self) -> str:
+        return self.template_to_query(templates.PAC_QUERY)
+
+    @time_it
+    def pac(self) -> PACDataFrame:
+        """Protective Action Collection."""
+        query = self.pac_query()
+        df = self.get_table_and_convert(query)
+        return PACDataFrame(df)
 
     @time_it
     def transformers(self, region: str | None = None, rate: str | None = None) -> TransformersDataFrame:
