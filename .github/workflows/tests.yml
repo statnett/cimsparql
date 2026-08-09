@@ -26,7 +26,7 @@ jobs:
         run: uv sync
 
       - name: Linting
-        run: uvx pre-commit run --all-files
+        run: uvx prek run --all-files
 
   Tests:
     needs: Linting
