@@ -33,7 +33,9 @@ def test_not_map_data_types():
     assert not cim_model.map_data_types
 
 
-@pytest.mark.parametrize("sparql_query", sparql_folder.glob("*.sparql"))
+@pytest.mark.parametrize(
+    "sparql_query", [pytest.param(fname, id=fname.name) for fname in sparql_folder.glob("*.sparql")]
+)
 def test_name_in_header(sparql_query: Path):
     with sparql_query.open() as infile:
         line = infile.readline()
