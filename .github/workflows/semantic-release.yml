@@ -25,7 +25,7 @@ jobs:
         id: create_release
         uses: cycjimmy/semantic-release-action@v6
         with:
-          semantic_version: 24.2.9
+          semantic_version: 25.0.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
