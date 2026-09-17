@@ -338,6 +338,12 @@ class GraphDBClient:
         response.raise_for_status()
 
     @require_rdf4j
+    def clear_repo(self) -> None:
+        endpoint = delete_repo_endpoint(self.service_cfg)
+        response = httpx.delete(f"{endpoint}/statements", timeout=5.0)
+        response.raise_for_status()
+
+    @require_rdf4j
     def set_namespace(self, prefix: str, value: str) -> None:
         response = httpx.put(
             self.service_cfg.url + f"/namespaces/{prefix}",

@@ -51,11 +51,12 @@ def test_rdf4j_prefixes(rdf4j_gdb: GraphDBClient):
     assert set(rdf4j_gdb.prefixes.keys()).issuperset({"ex", "foaf"})
 
 
-@pytest.fixture
-def upload_client() -> Generator[GraphDBClient, None, None]:
+@pytest.fixture(scope="module")
+def upload_client_delete_repo() -> Generator[GraphDBClient, None, None]:
     client = None
     try:
-        yield t_common.init_repo_rdf4j(t_common.rdf4j_url(), "upload")
+        client = t_common.init_repo_rdf4j(t_common.rdf4j_url(), "upload")
+        yield client
     except Exception as exc:
         if os.getenv("CI"):
             pytest.fail(f"{exc}")
@@ -66,8 +67,14 @@ def upload_client() -> Generator[GraphDBClient, None, None]:
             client.delete_repo()
 
 
+@pytest.fixture
+def upload_client(upload_client_delete_repo: GraphDBClient) -> Generator[GraphDBClient, None, None]:
+    yield upload_client_delete_repo
+    upload_client_delete_repo.clear_repo()
+
+
 def test_upload_rdf_xml(upload_client: GraphDBClient):
-    xml_file = Path(__file__).parent / "data/demo.xml"
+    xml_file = Path(__file__).parent / "data" / "demo.xml"
     upload_client.upload_rdf(xml_file, "rdf/xml")
 
     prefixes = Template("PREFIX rdf:<${rdf}>\nPREFIX md:<${md}>").substitute(upload_client.prefixes)
@@ -88,7 +95,7 @@ def test_namespaces(rdf4j_gdb: GraphDBClient):
 
 
 def test_upload_with_context(upload_client: GraphDBClient):
-    xml_file = Path(__file__).parent / "data/demo.xml"
+    xml_file = Path(__file__).parent / "data" / "demo.xml"
     graph = "<http://mygraph.com/demo/1/1>"
     upload_client.upload_rdf(xml_file, "rdf/xml", {"context": graph})
 
