@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -95,14 +95,14 @@ def test_map_data_types(httpserver: HTTPServer):
         ("date", ("2021-12-14", pd.Timestamp("2021-12-14 00:00:00"))),
         (
             "dateTime",
-            ("2002-10-14T12:00:00", datetime.datetime(2002, 10, 14, 12, 0, 0)),  # noqa: DTZ001
+            ("2002-10-14T12:00:00", dt.datetime(2002, 10, 14, 12, 0, 0)),  # noqa: DTZ001
         ),
         ("dateTime", ("2002-10-14T12:00:00Z", pd.Timestamp("2002-10-14 12:00:00+0000", tz="UTC"))),
-        ("duration", ("P365D", datetime.timedelta(365))),
-        ("duration", ("-P365D", datetime.timedelta(-365))),
+        ("duration", ("P365D", dt.timedelta(365))),
+        ("duration", ("-P365D", dt.timedelta(-365))),
         (
             "duration",
-            ("P3DT5H20M30.123S", datetime.timedelta(days=3, seconds=5 * 3600 + 20 * 60 + 30.123)),
+            ("P3DT5H20M30.123S", dt.timedelta(days=3, seconds=5 * 3600 + 20 * 60 + 30.123)),
         ),
         ("decimal", ("2.3", Decimal("2.3"))),
         ("time", ("21:32:52", pd.Timestamp("21:32:52"))),
