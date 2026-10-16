@@ -27,7 +27,7 @@ SELECT ?mrid ?p ?direction WHERE {
     ?region cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?regionName .
     # Extract the mRID for the component
     ?component cim:IdentifiedObject.mRID ?mrid .
-    FILTER (REGEX(?regionName,'${region}'))
-    BIND (IF(?nr = 1,1,-1) AS ?direction)
+    FILTER (REGEX(?regionName, '${region}'))
+    BIND (IF(?nr = 1, 1, -1) AS ?direction)
   }
 }

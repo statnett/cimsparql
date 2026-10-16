@@ -14,11 +14,11 @@ SELECT ?mrid ?name ?substation_mrid ?status ?p ?q ?station_group ?connectivity_n
               cim:IdentifiedObject.name ?name ;
               cim:Equipment.EquipmentContainer/cim:VoltageLevel.Substation ?substation .
         # Convert load_type_iri to trimmed string
-        BIND (STRAFTER(STR(?_load_type_iri),"#") AS ?load_type)
+        BIND (STRAFTER(STR(?_load_type_iri), "#") AS ?load_type)
         # Extract area and mRID (referred to as 'station') for the substation of each load
         ?substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area ;
                     cim:IdentifiedObject.mRID ?substation_mrid .
-        FILTER REGEX(?area,'${region}')
+        FILTER REGEX(?area, '${region}')
         OPTIONAL {
           ?load cim:NonConformLoad.LoadGroup/SN:NonConformLoadGroup.ScheduleResource/SN:ScheduleResource.marketCode ?station_group
         } .

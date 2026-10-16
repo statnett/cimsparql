@@ -26,7 +26,7 @@ SELECT ?name ?node ?mrid ?status ?p ?market_code WHERE {
     ?acline a cim:ACLineSegment ;
             cim:IdentifiedObject.name ?name ;
             cim:IdentifiedObject.mRID ?mrid .
-    FILTER (!REGEX(?name,'HVDC')) .
+    FILTER (!REGEX(?name, 'HVDC')) .
     OPTIONAL {
       ?acline cim:Equipment.EquipmentContainer/SN:Line.marketCode ?market_code .
     }
@@ -43,7 +43,7 @@ SELECT ?name ?node ?mrid ?status ?p ?market_code WHERE {
     # When a region is provided: only keep results that satisfy either
     # 1) area_1 = region and area_2 != region
     # 2) area_2 = region and area_1 != region
-    FILTER ((REGEX(?area_1,'${region}') && !REGEX(?area_2,'${region}')) || (REGEX(?area_1,'${region}') && !REGEX(?area_2,'${region}')))
+    FILTER ((REGEX(?area_1, '${region}') && !REGEX(?area_2, '${region}')) || (REGEX(?area_1, '${region}') && !REGEX(?area_2, '${region}')))
     OPTIONAL {
       ?acline SN:Equipment.networkAnalysisEnable ?_analysis_enabled .
     }

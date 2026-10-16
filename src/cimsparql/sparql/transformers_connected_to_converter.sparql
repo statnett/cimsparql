@@ -19,7 +19,7 @@ SELECT DISTINCT ?mrid ?name ?t_mrid ?p_mrid WHERE {
   [] cim:PowerTransformerEnd.PowerTransformer ?p_transformer ;
      cim:TransformerEnd.endNumber 1 ;
      cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid .
-  FILTER REGEX(?area,'${region}')
+  FILTER REGEX(?area, '${region}')
   OPTIONAL {
     ?p_transformer SN:Equipment.networkAnalysisEnable ?_transformer_analysis_enabled .
   }

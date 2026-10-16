@@ -14,7 +14,7 @@ SELECT ?name ?p_mrid ?w_mrid ?end_number ?un ?t_mrid ?r ?x ?rate WHERE {
            cim:IdentifiedObject.name ?name ;
            cim:TransformerEnd.endNumber ?end_number ;
            cim:TransformerEnd.Terminal/cim:IdentifiedObject.mRID ?t_mrid ;
-  FILTER REGEX(?area,'${region}') .
+  FILTER REGEX(?area, '${region}') .
   OPTIONAL {
     [] cim:OperationalLimit.OperationalLimitSet/cim:OperationalLimitSet.Equipment ?winding ;
        a cim:ActivePowerLimit ;

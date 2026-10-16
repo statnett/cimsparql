@@ -25,8 +25,8 @@ SELECT ?mrid ?name ?market_code ?area_1 ?area_2 ?t_mrid_1 ?t_mrid_2 WHERE {
              cim:Terminal.ConnectivityNode/cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area_2 ;
              cim:IdentifiedObject.mRID ?t_mrid_2 .
   FILTER (?area_1 != ?area_2)
-  FILTER (REGEX(?area_1,'${region}') || REGEX(?area_2,'${region}'))
-  FILTER (!REGEX(?name,'HVDC')) # Ignore HVDC
+  FILTER (REGEX(?area_1, '${region}') || REGEX(?area_2, '${region}'))
+  FILTER (!REGEX(?name, 'HVDC')) # Ignore HVDC
   BIND (COALESCE(?_analysis_enabled, True) AS ?analysis_enabled)
   FILTER (?analysis_enabled)
 }

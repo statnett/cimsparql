@@ -23,7 +23,7 @@ SELECT ?p_transformer
     ?p_transformer cim:IdentifiedObject.name ?_name .
   }
   BIND (COALESCE(?_connected, 1) AS ?connected)
-  BIND (IF(COALESCE(?_in_service, ?connected),1,0) AS ?in_service) .
+  BIND (IF(COALESCE(?_in_service, ?connected), 1, 0) AS ?in_service) .
   BIND (COALESCE(?_sv_p, xsd:double(0.0)) AS ?sv_p)
   BIND (1 AS ?_count)
 }

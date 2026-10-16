@@ -18,7 +18,7 @@ SELECT ?mrid
        ?q
        ?connectivity_node
        ?generator_type
-       (STRAFTER(STR(?storage_type_enum),"HydroPlantStorageKind.") AS ?storage_type)
+       (STRAFTER(STR(?storage_type_enum), "HydroPlantStorageKind.") AS ?storage_type)
        ?schedule_resource
        ?afrr_prequalified WHERE {
   # Extract properties for synchronous machines.
@@ -60,12 +60,12 @@ SELECT ?mrid
                               cim:IdentifiedObject.name ?station_group_name .
           }
         }
-        FILTER REGEX(?area,'${region}')
+        FILTER REGEX(?area, '${region}')
         # Optionally extract non-CIM standard properties generating units
         OPTIONAL {
           ?machine SN:Equipment.networkAnalysisEnable ?_network_analysis
         }
-        BIND (IF(BOUND(?gen_type),replace(STR(?gen_type), STR(cim:), ""),"unknown") AS ?generator_type)
+        BIND (IF(BOUND(?gen_type), replace(STR(?gen_type), STR(cim:), ""), "unknown") AS ?generator_type)
         BIND (COALESCE(?gen_unit_mrid, ?machine_mrid) AS ?mrid)
         BIND (EXISTS {
           ?gen_unit SN:GeneratingUnit.ScheduleFRRResource []
@@ -82,7 +82,7 @@ SELECT ?mrid
      cim:SvPowerFlow.q ?q .
   BIND (COALESCE(?_network_analysis, true) AS ?network_analysis)
   BIND (COALESCE(?in_service, ?connected) AS ?status)
-  BIND (COALESCE(?nullable_maxP, IF(xsd:double(STR(?p)) >= 0.0,?p,0.0), 0.0) AS ?max_p)
-  BIND (COALESCE(?nullable_minP, IF(xsd:double(STR(?p)) < 0.0,?p,0.0), 0.0) AS ?min_p)
+  BIND (COALESCE(?nullable_maxP, IF(xsd:double(STR(?p)) >= 0.0, ?p, 0.0), 0.0) AS ?max_p)
+  BIND (COALESCE(?nullable_minP, IF(xsd:double(STR(?p)) < 0.0, ?p, 0.0), 0.0) AS ?min_p)
   FILTER (?network_analysis)
 }

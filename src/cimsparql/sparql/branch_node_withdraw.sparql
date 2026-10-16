@@ -18,7 +18,7 @@ SELECT ?mrid ?node ?p ?q ?connectivity_node WHERE {
         ?con_node cim:IdentifiedObject.mRID ?connectivity_node .
         # Find area for the connectivity node of the terminal
         ?con_node cim:ConnectivityNode.ConnectivityNodeContainer/cim:VoltageLevel.Substation/cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-        FILTER (REGEX(?area,'${region}'))
+        FILTER (REGEX(?area, '${region}'))
       }
     }
   }

@@ -24,7 +24,7 @@ SELECT ?status
         ?p_transformer cim:IdentifiedObject.mRID ?node_2 ;
                        cim:Equipment.EquipmentContainer ?Substation .
         ?Substation cim:Substation.Region/cim:SubGeographicalRegion.Region/cim:IdentifiedObject.name ?area .
-        FILTER (REGEX(?area,'${region}'))
+        FILTER (REGEX(?area, '${region}'))
         # Extract properties for the windings associated with p_transformer
         ?winding cim:TransformerEnd.Terminal ?terminal ;
                  cim:IdentifiedObject.mRID ?mrid ;
@@ -71,7 +71,7 @@ SELECT ?status
     ?ratio_tap_changer cim:TapChanger.step ?ssh_step
   } .
   BIND (COALESCE(?ssh_step, ?normal_step) AS ?step)
-  BIND (IF(BOUND(?inc),1 + (xsd:integer(STR(?step)) - xsd:integer(STR(?neutral_step))) * xsd:double(STR(?inc)) / 100.0,1.0) AS ?tau)
+  BIND (IF(BOUND(?inc), 1 + (xsd:integer(STR(?step)) - xsd:integer(STR(?neutral_step))) * xsd:double(STR(?inc)) / 100.0, 1.0) AS ?tau)
   BIND (COALESCE(?_network_analysis, true) AS ?network_analysis)
   FILTER (?network_analysis)
   # Assign status flag to the transformer. The first that exists is used

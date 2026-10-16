@@ -40,7 +40,7 @@ SELECT (?mrid AS ?node)
       ?_substation SN:Substation.MarketDeliveryPoint/SN:MarketDeliveryPoint.BiddingArea/entsoeSecretariat:IdentifiedObject.energyIdentCodeEIC ?bidzone
     }
   } .
-  FILTER REGEX(?area,'${region}')
+  FILTER REGEX(?area, '${region}')
   BIND (BOUND(?angle_ref) AS ?is_swing_bus)
   BIND (COALESCE(?island_name, "Unknown") AS ?island)
 }
